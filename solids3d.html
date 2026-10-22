@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>גיאומטריה מרחבית</title>
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:#f0fdfa;color:#1e293b;}
+  .hdr{background:linear-gradient(135deg,#134e4a,#0d9488);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .hdr h1{margin:0;font-size:1.2rem;}
+  .ch-nav{display:flex;gap:6px;flex-wrap:wrap;}
+  .ch-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.85rem;transition:.15s;}
+  .ch-btn:hover{background:rgba(255,255,255,.28);}
+  .ch-btn.active{background:#fff;color:#134e4a;font-weight:700;}
+  .content{max-width:780px;margin:20px auto;padding:0 16px 60px;}
+  .card{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(19,78,74,.08);margin-bottom:16px;}
+  .card-t{font-size:1.15rem;font-weight:700;color:#0f766e;margin-bottom:12px;}
+  .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .tab{background:#ccfbf1;border:1px solid #5eead4;color:#0f766e;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.88rem;}
+  .tab.active{background:#0d9488;color:#fff;border-color:#0d9488;font-weight:700;}
+  .sub-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .sub-tab{background:#f0fdfa;border:1px solid #99f6e4;color:#0f766e;padding:6px 12px;border-radius:7px;cursor:pointer;font-size:.82rem;}
+  .sub-tab.active{background:#14b8a6;color:#fff;border-color:#14b8a6;font-weight:700;}
+  .step-card{background:#fff;border:1px solid #99f6e4;border-radius:12px;padding:16px;margin-bottom:14px;}
+  .step-done{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:8px;color:#166534;font-size:.9rem;}
+  .hint{color:#64748b;font-size:.9rem;margin-bottom:10px;}
+  .formula-box{font-size:1.25rem;font-weight:700;text-align:center;background:#f0fdfa;border:1px dashed #5eead4;border-radius:10px;padding:14px;margin:8px 0;color:#0f766e;direction:ltr;}
+  .formula-box small{display:block;font-size:.75rem;font-weight:400;color:#64748b;margin-top:6px;direction:rtl;}
+  .info-box{background:#fef9c3;border-radius:8px;padding:10px 14px;font-size:.86rem;color:#713f12;margin-bottom:10px;}
+  .given-box{background:#f0fdfa;border-radius:8px;padding:10px 14px;font-size:.95rem;color:#0f766e;margin-bottom:10px;font-weight:600;}
+  .ans-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0;flex-wrap:wrap;direction:ltr;}
+  .ans-row input{padding:8px 10px;border:2px solid #5eead4;border-radius:8px;font-size:1rem;text-align:center;direction:ltr;min-width:120px;}
+  .ans-row input:focus{outline:none;border-color:#0d9488;}
+  .btn{background:#ccfbf1;border:1px solid #5eead4;color:#0f766e;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600;}
+  .btn:hover{background:#99f6e4;}
+  .bp{background:#0d9488;color:#fff;border-color:#0d9488;}
+  .bp:hover{background:#0f766e;}
+  .bg{background:#16a34a;color:#fff;border-color:#16a34a;margin-top:10px;}
+  .bg:hover{background:#15803d;}
+  .fb{margin:6px 0;font-weight:700;text-align:center;}
+  .fb.ok{color:#16a34a;}
+  .fb.err{color:#dc2626;}
+  .banner{background:#f0fdf4;border:2px solid #86efac;color:#166534;border-radius:12px;padding:16px;text-align:center;font-size:1rem;font-weight:700;}
+  .banner button{display:block;margin:10px auto 0;}
+  .parts-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0;}
+  .part-btn{background:#fff;border:2px solid #99f6e4;color:#0f766e;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;}
+  .part-btn.active{background:#0d9488;color:#fff;border-color:#0d9488;}
+  .def-box{text-align:center;color:#0f766e;font-size:.92rem;background:#f0fdfa;border-radius:8px;padding:10px;min-height:20px;}
+  .svg-wrap{display:flex;justify-content:center;margin:10px 0;}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 4px;font-size:.82em;line-height:1.15;}
+  .frac .fl{border-top:2px solid currentColor;width:100%;min-width:16px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const {useState,useEffect,useRef} = React;
+
+/* ================= generic helpers ================= */
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+const PI=3.14159265358979;
+const PY_TRIPLES=[[3,4,5],[6,8,10],[5,12,13],[9,12,15]];
+function pickTriple(){ const t=pick(PY_TRIPLES); return Math.random()<0.5?[t[0],t[1],t[2]]:[t[1],t[0],t[2]]; }
+const BOX_QUADS=[[3,4,12,13],[2,6,9,11],[6,6,7,11],[4,4,7,9],[2,3,6,7],[2,10,11,15]];
+function pickQuad(){
+  const q=pick(BOX_QUADS);
+  const legs=[q[0],q[1],q[2]];
+  // shuffle legs
+  for(let i=legs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [legs[i],legs[j]]=[legs[j],legs[i]]; }
+  return {l:legs[0],w:legs[1],h:legs[2],d:q[3]};
+}
+
+function safeEvalExpr(raw){
+  if(typeof raw!=='string') return null;
+  if(!/^[0-9+\-*/.()×÷√π²³\s]*$/.test(raw)) return null;
+  let e = raw.replace(/×/g,'*').replace(/÷/g,'/').replace(/π/g,'('+PI+')').replace(/√/g,'Math.sqrt');
+  e = e.replace(/Math\.sqrt(\d+(\.\d+)?)/g,'Math.sqrt($1)');
+  e = e.replace(/(\d|\))(\s*)(\(|Math\.sqrt)/g,'$1*$3');
+  e = e.replace(/\)²/g,')**2').replace(/\)³/g,')**3');
+  e = e.replace(/(\d+(\.\d+)?)²/g,'($1**2)').replace(/(\d+(\.\d+)?)³/g,'($1**3)');
+  try{
+    const fn=new Function('Math','return ('+e+')');
+    const v=fn(Math);
+    return (typeof v==='number' && isFinite(v)) ? v : null;
+  }catch(err){ return null; }
+}
+function numsInExpr(raw){
+  const m=(raw||'').match(/\d+(\.\d+)?/g);
+  return m ? m.map(Number) : [];
+}
+function checkNumericSolution(text,expected,requiredNums,tolerance){
+  const raw=(text||'').trim();
+  if(!raw) return false;
+  const tol = tolerance!=null ? tolerance : Math.max(0.05, Math.abs(expected)*0.001);
+  const parts = raw.split('=').map(s=>s.trim()).filter(Boolean);
+  if(parts.length===0) return false;
+  const lastExpr = parts[parts.length-1];
+  const val = safeEvalExpr(lastExpr);
+  if(val==null) return false;
+  if(Math.abs(val-expected) > tol) return false;
+  const nums = numsInExpr(raw);
+  return (requiredNums||[]).every(n=> nums.includes(n));
+}
+function Fb({ok}){
+  return <div className={`fb ${ok?'ok':'err'}`}>{ok?'✓ נכון!':'✗ לא נכון, נסו שוב'}</div>;
+}
+function Frac({num,den}){
+  return <span className="frac"><span>{num}</span><span className="fl"></span><span>{den}</span></span>;
+}
+
+/* Universal free-text "equation + result" checked step */
+function EquationResultInput({requiredNums,expected,placeholder,tolerance,onCorrect}){
+  const [txt,setTxt]=useState('');
+  const [fb,setFb]=useState(null);
+  function check(){
+    if(checkNumericSolution(txt,expected,requiredNums,tolerance)){ setFb('ok'); setTimeout(onCorrect,450); }
+    else setFb('err');
+  }
+  return <div>
+    <div className="ans-row">
+      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} placeholder={placeholder} style={{minWidth:200}}
+        onKeyDown={e=>{if(e.key==='Enter') check();}}/>
+      <button className="btn bp" onClick={check}>✓ בדוק</button>
+    </div>
+    {fb==='err' && <Fb ok={false}/>}
+    {fb==='ok' && <Fb ok={true}/>}
+  </div>;
+}
+
+/* Coefficient + fixed root/π label input, e.g.  ___ √2  or  ___ π */
+function CoeffSuffixInput({suffix,expectedCoeff,onCorrect}){
+  const [txt,setTxt]=useState('');
+  const [fb,setFb]=useState(null);
+  function check(){
+    const n=parseFloat(txt);
+    if(!isNaN(n) && Math.abs(n-expectedCoeff)<0.001){ setFb('ok'); setTimeout(onCorrect,450); }
+    else setFb('err');
+  }
+  return <div>
+    <div className="ans-row">
+      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:90}}
+        onKeyDown={e=>{if(e.key==='Enter') check();}}/>
+      <span style={{fontSize:'1.2rem',fontWeight:700,color:'#0f766e'}}>{suffix}</span>
+      <button className="btn bp" onClick={check}>✓ בדוק</button>
+    </div>
+    {fb==='err' && <Fb ok={false}/>}
+    {fb==='ok' && <Fb ok={true}/>}
+  </div>;
+}
+
+/* Sequential multi-step runner: steps = [{hint, render(onCorrect)}] */
+function MultiStep({steps, doneMsg}){
+  const [idx,setIdx]=useState(0);
+  const [done,setDone]=useState(false);
+  return <div>
+    {steps.slice(0,idx).map((s,i)=><div key={i} className="step-done">✓ {s.hint}</div>)}
+    {!done && idx<steps.length && <div>
+      <div className="hint">{steps[idx].hint}</div>
+      {steps[idx].render(()=>{
+        if(idx+1>=steps.length) setDone(true);
+        else setIdx(idx+1);
+      })}
+    </div>}
+    {done && <div className="fb ok">{doneMsg || '✓ כל השלבים נפתרו נכון!'}</div>}
+  </div>;
+}
+
+/* ================= isometric projection helper ================= */
+const ISO_COS=Math.sqrt(3)/2, ISO_SIN=0.5;
+function isoP(x,y,z){ return {X:(x-y)*ISO_COS, Y:(x+y)*ISO_SIN - z}; }
+function makeProjector(pts3d, viewW, viewH, pad){
+  const proj = pts3d.map(p=>isoP(p.x,p.y,p.z));
+  const xs=proj.map(p=>p.X), ys=proj.map(p=>p.Y);
+  const minX=Math.min(...xs), maxX=Math.max(...xs);
+  const minY=Math.min(...ys), maxY=Math.max(...ys);
+  const w=(maxX-minX)||1, h=(maxY-minY)||1;
+  const scale=Math.min((viewW-2*pad)/w,(viewH-2*pad)/h);
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  const vcx=viewW/2, vcy=viewH/2;
+  return function(x,y,z){
+    const P=isoP(x,y,z);
+    return {x: vcx+(P.X-cx)*scale, y: vcy+(P.Y-cy)*scale};
+  };
+}
+function EdgeLabel({p1,p2,text,color,dx,dy}){
+  const mx=(p1.x+p2.x)/2+(dx||0), my=(p1.y+p2.y)/2+(dy||0);
+  return <text x={mx} y={my} fontSize="13" fontWeight="700" fill={color||'#334155'} textAnchor="middle">{text}</text>;
+}
+
+/* ================= Chapter 1: Cube ================= */
+const CUBE_PARTS=[
+  {id:'edge',label:'צלע',def:'קטע המחבר שני קודקודים סמוכים. בקובייה יש 12 צלעות שוות באורכן.'},
+  {id:'face',label:'פאה',def:'ריבוע. לקובייה 6 פאות חופפות.'},
+  {id:'vertex',label:'קודקוד',def:'נקודת מפגש של 3 צלעות. לקובייה 8 קודקודים.'},
+  {id:'basediag',label:'אלכסון בסיס',def:'אלכסון של אחת הפאות (הריבועים); מחשבים אותו לפי פיתגורס: a√2.'},
+  {id:'spacediag',label:'אלכסון מרחבי',def:'קטע המחבר שני קודקודים נגדיים דרך תוך הגוף; אורכו a√3.'},
+];
+function CubeSVG({a,activePart,showBaseDiag,showSpaceDiag}){
+  const s=1; // unit cube, projector scales anyway
+  const pts={
+    A:{x:0,y:0,z:0}, B:{x:s,y:0,z:0}, C:{x:s,y:s,z:0}, D:{x:0,y:s,z:0},
+    E:{x:0,y:0,z:s}, F:{x:s,y:0,z:s}, G:{x:s,y:s,z:s}, H:{x:0,y:s,z:s},
+  };
+  const p3=makeProjector(Object.values(pts),260,220,28);
+  const P={}; Object.keys(pts).forEach(k=>P[k]=p3(pts[k].x,pts[k].y,pts[k].z));
+  const edgeHi = activePart==='edge' ? '#16a34a':'#334155';
+  const faceHi = activePart==='face';
+  const vertHi = activePart==='vertex' ? '#16a34a':'#334155';
+  return <svg viewBox="0 0 260 220" width="260" height="220">
+    {faceHi && <polygon points={`${P.E.x},${P.E.y} ${P.F.x},${P.F.y} ${P.G.x},${P.G.y} ${P.H.x},${P.H.y}`} fill="#bbf7d0" opacity="0.7"/>}
+    {/* hidden edges */}
+    <line x1={P.A.x} y1={P.A.y} x2={P.D.x} y2={P.D.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.D.x} y1={P.D.y} x2={P.C.x} y2={P.C.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.D.x} y1={P.D.y} x2={P.H.x} y2={P.H.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    {/* visible edges */}
+    {[['A','B'],['B','C'],['A','E'],['B','F'],['C','G'],['E','F'],['F','G'],['G','H'],['E','H']].map(([u,v],i)=>
+      <line key={i} x1={P[u].x} y1={P[u].y} x2={P[v].x} y2={P[v].y} stroke={edgeHi} strokeWidth="2.2"/>)}
+    {showBaseDiag && <line x1={P.E.x} y1={P.E.y} x2={P.G.x} y2={P.G.y} stroke="#2563eb" strokeWidth="2.6" strokeDasharray="6,3"/>}
+    {showSpaceDiag && <line x1={P.A.x} y1={P.A.y} x2={P.G.x} y2={P.G.y} stroke="#dc2626" strokeWidth="2.6"/>}
+    {Object.entries(P).map(([k,p])=><circle key={k} cx={p.x} cy={p.y} r={vertHi==='#16a34a'?4:2.6} fill={vertHi}/>)}
+    <EdgeLabel p1={P.A} p2={P.B} text={a} dx={0} dy={16}/>
+    <EdgeLabel p1={P.B} p2={P.F} text={a} dx={14} dy={0}/>
+    <EdgeLabel p1={P.A} p2={P.E} text={a} dx={-14} dy={0}/>
+  </svg>;
+}
+function genCube(){ return {a:randInt(2,12)}; }
+function Ch1PartA(){
+  const [data]=useState(genCube);
+  const [active,setActive]=useState(null);
+  const part = CUBE_PARTS.find(p=>p.id===active);
+  return <div className="step-card">
+    <div className="svg-wrap"><CubeSVG a={data.a} activePart={active}
+      showBaseDiag={active==='basediag'} showSpaceDiag={active==='spacediag'}/></div>
+    <div className="parts-row">
+      {CUBE_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
+    </div>
+    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+  </div>;
+}
+function Ch1PartB(){
+  return <div className="step-card">
+    <div className="formula-box">V = a³<small>נפח הקובייה = צלע בחזקת שלוש (הצלע מוכפלת בעצמה 3 פעמים)</small></div>
+    <div className="formula-box">S = 6a²<small>שטח הפנים = סכום שטחי 6 הפאות הריבועיות החופפות</small></div>
+    <div className="formula-box">d<sub>בסיס</sub> = a√2 &nbsp;,&nbsp; d = a√3<small>אלכסון פאה מתקבל מפיתגורס במישור; האלכסון המרחבי מתקבל מהפעלה נוספת של פיתגורס בין אלכסון הבסיס לגובה</small></div>
+  </div>;
+}
+function Ch1Q1(){ // volume
+  const [data,setData]=useState(genCube);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCube()); setDone(false); }
+  return <div className="step-card">
+    <div className="given-box">צלע הקובייה: a = {data.a}</div>
+    <div className="hint">חשבו את נפח הקובייה (הזינו את החישוב המלא והתוצאה)</div>
+    {!done && <EquationResultInput requiredNums={[data.a]} expected={data.a**3} placeholder={`לדוגמה: ${data.a}×${data.a}×${data.a}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch1Q2(){ // surface area
+  const [data,setData]=useState(genCube);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCube()); setDone(false); }
+  return <div className="step-card">
+    <div className="given-box">צלע הקובייה: a = {data.a}</div>
+    <div className="hint">חשבו את שטח הפנים הכולל של הקובייה</div>
+    {!done && <EquationResultInput requiredNums={[data.a]} expected={6*data.a*data.a} placeholder={`לדוגמה: 6×${data.a}×${data.a}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch1Q3(){ // missing measure via base+space diagonal, two Pythagorean steps
+  const [data,setData]=useState(genCube);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCube()); setDone(false); }
+  const {a}=data;
+  return <div className="step-card">
+    <div className="given-box">צלע הקובייה: a = {a}</div>
+    <div className="hint">מצאו את האלכסון המרחבי של הקובייה בעזרת פיתגורס, צעד אחר צעד</div>
+    <div className="svg-wrap"><CubeSVG a={a} showBaseDiag={true} showSpaceDiag={!done}/></div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד! מצאתם את האלכסון המרחבי." steps={[
+      {hint:`שלב 1: אלכסון הבסיס d_בסיס = a√2`, render:(onOk)=><CoeffSuffixInput suffix="√2" expectedCoeff={a} onCorrect={onOk}/>},
+      {hint:`שלב 2: אלכסון מרחבי d = √(d_בסיס² + a²) = a√3`, render:(onOk)=><CoeffSuffixInput suffix="√3" expectedCoeff={a} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch1Q4(){ // combined: given space diagonal (as a√3), find V and S
+  const [data,setData]=useState(genCube);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCube()); setDone(false); }
+  const {a}=data;
+  return <div className="step-card">
+    <div className="given-box">האלכסון המרחבי של הקובייה: d = {a}√3</div>
+    <div className="hint">מצאו את אורך הצלע, ולאחר מכן את הנפח ואת שטח הפנים</div>
+    <div className="svg-wrap"><CubeSVG a={a} showSpaceDiag={true}/></div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: מצאו את אורך הצלע a', render:(onOk)=><EquationResultInput requiredNums={[]} expected={a} placeholder="a = ..." onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו את נפח הקובייה', render:(onOk)=><EquationResultInput requiredNums={[a]} expected={a**3} placeholder={`לדוגמה: ${a}×${a}×${a}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את שטח הפנים', render:(onOk)=><EquationResultInput requiredNums={[a]} expected={6*a*a} placeholder={`לדוגמה: 6×${a}×${a}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch1PartC(){
+  const [sub,setSub]=useState('v');
+  return <div>
+    <div className="sub-tabs">
+      <button className={`sub-tab ${sub==='v'?'active':''}`} onClick={()=>setSub('v')}>נפח</button>
+      <button className={`sub-tab ${sub==='s'?'active':''}`} onClick={()=>setSub('s')}>שטח פנים</button>
+      <button className={`sub-tab ${sub==='m'?'active':''}`} onClick={()=>setSub('m')}>אלכסון מרחבי</button>
+      <button className={`sub-tab ${sub==='c'?'active':''}`} onClick={()=>setSub('c')}>שאלה משולבת</button>
+    </div>
+    {sub==='v' && <Ch1Q1 key="v"/>}
+    {sub==='s' && <Ch1Q2 key="s"/>}
+    {sub==='m' && <Ch1Q3 key="m"/>}
+    {sub==='c' && <Ch1Q4 key="c"/>}
+  </div>;
+}
+function Chapter1(){
+  const [tab,setTab]=useState('a');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">קובייה</div>
+      <div className="tabs">
+        <button className={`tab ${tab==='a'?'active':''}`} onClick={()=>setTab('a')}>א. הצגה ויזואלית</button>
+        <button className={`tab ${tab==='b'?'active':''}`} onClick={()=>setTab('b')}>ב. נוסחאות</button>
+        <button className={`tab ${tab==='c'?'active':''}`} onClick={()=>setTab('c')}>ג. תרגול</button>
+      </div>
+      {tab==='a' && <Ch1PartA/>}
+      {tab==='b' && <Ch1PartB/>}
+      {tab==='c' && <Ch1PartC/>}
+    </div>
+  </div>;
+}
+
+/* ================= Chapter 2: Box (rectangular prism) ================= */
+const BOX_PARTS=[
+  {id:'edge',label:'צלעות (l,w,h)',def:'לתיבה 3 אורכי צלע שונים: אורך (l), רוחב (w) וגובה (h).'},
+  {id:'face',label:'פאה',def:'מלבן. לתיבה 6 פאות מלבניות, בזוגות חופפים.'},
+  {id:'vertex',label:'קודקוד',def:'נקודת מפגש של 3 צלעות. לתיבה 8 קודקודים.'},
+  {id:'diag',label:'אלכסון מרחבי',def:'קטע המחבר שני קודקודים נגדיים דרך תוך הגוף; d = √(l²+w²+h²).'},
+];
+function BoxSVG({l,w,h,activePart,showDiag}){
+  const pts={
+    A:{x:0,y:0,z:0}, B:{x:l,y:0,z:0}, C:{x:l,y:w,z:0}, D:{x:0,y:w,z:0},
+    E:{x:0,y:0,z:h}, F:{x:l,y:0,z:h}, G:{x:l,y:w,z:h}, H:{x:0,y:w,z:h},
+  };
+  const p3=makeProjector(Object.values(pts),280,220,30);
+  const P={}; Object.keys(pts).forEach(k=>P[k]=p3(pts[k].x,pts[k].y,pts[k].z));
+  const edgeHi = activePart==='edge' ? '#16a34a':'#334155';
+  const faceHi = activePart==='face';
+  const vertHi = activePart==='vertex' ? '#16a34a':'#334155';
+  return <svg viewBox="0 0 280 220" width="280" height="220">
+    {faceHi && <polygon points={`${P.E.x},${P.E.y} ${P.F.x},${P.F.y} ${P.G.x},${P.G.y} ${P.H.x},${P.H.y}`} fill="#bbf7d0" opacity="0.7"/>}
+    <line x1={P.A.x} y1={P.A.y} x2={P.D.x} y2={P.D.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.D.x} y1={P.D.y} x2={P.C.x} y2={P.C.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.D.x} y1={P.D.y} x2={P.H.x} y2={P.H.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    {[['A','B'],['B','C'],['A','E'],['B','F'],['C','G'],['E','F'],['F','G'],['G','H'],['E','H']].map(([u,v],i)=>
+      <line key={i} x1={P[u].x} y1={P[u].y} x2={P[v].x} y2={P[v].y} stroke={edgeHi} strokeWidth="2.2"/>)}
+    {showDiag && <line x1={P.A.x} y1={P.A.y} x2={P.G.x} y2={P.G.y} stroke="#dc2626" strokeWidth="2.6"/>}
+    {Object.entries(P).map(([k,p])=><circle key={k} cx={p.x} cy={p.y} r={vertHi==='#16a34a'?4:2.6} fill={vertHi}/>)}
+    <EdgeLabel p1={P.A} p2={P.B} text={`l=${l}`} color="#2563eb" dx={0} dy={16}/>
+    <EdgeLabel p1={P.B} p2={P.C} text={`w=${w}`} color="#ea580c" dx={14} dy={4}/>
+    <EdgeLabel p1={P.A} p2={P.E} text={`h=${h}`} color="#7c3aed" dx={-16} dy={0}/>
+  </svg>;
+}
+function genBox(){ const q=pickQuad(); return q; }
+function Ch2PartA(){
+  const [data]=useState(genBox);
+  const [active,setActive]=useState(null);
+  const part = BOX_PARTS.find(p=>p.id===active);
+  return <div className="step-card">
+    <div className="svg-wrap"><BoxSVG l={data.l} w={data.w} h={data.h} activePart={active} showDiag={active==='diag'}/></div>
+    <div className="parts-row">
+      {BOX_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
+    </div>
+    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+  </div>;
+}
+function Ch2PartB(){
+  return <div className="step-card">
+    <div className="formula-box">V = l·w·h<small>נפח התיבה = מכפלת שלושת המידות: אורך, רוחב וגובה</small></div>
+    <div className="formula-box">S = 2(lw+lh+wh)<small>שטח הפנים = סכום שטחי 3 הזוגות של פאות חופפות, כפול 2</small></div>
+    <div className="formula-box">d = √(l²+w²+h²)<small>האלכסון המרחבי מתקבל מהפעלת פיתגורס במרחב על שלוש המידות יחד</small></div>
+  </div>;
+}
+function Ch2Q1(){
+  const [data,setData]=useState(genBox);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genBox()); setDone(false); }
+  const {l,w,h}=data;
+  return <div className="step-card">
+    <div className="given-box">l = {l}, w = {w}, h = {h}</div>
+    <div className="hint">חשבו את נפח התיבה</div>
+    {!done && <EquationResultInput requiredNums={[l,w,h]} expected={l*w*h} placeholder={`לדוגמה: ${l}×${w}×${h}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch2Q2(){
+  const [data,setData]=useState(genBox);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genBox()); setDone(false); }
+  const {l,w,h}=data;
+  return <div className="step-card">
+    <div className="given-box">l = {l}, w = {w}, h = {h}</div>
+    <div className="hint">חשבו את שטח הפנים הכולל של התיבה</div>
+    {!done && <EquationResultInput requiredNums={[l,w,h]} expected={2*(l*w+l*h+w*h)} placeholder={`לדוגמה: 2×(${l}×${w}+${l}×${h}+${w}×${h})=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch2Q3(){
+  const [data,setData]=useState(genBox);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genBox()); setDone(false); }
+  const {l,w,h,d}=data;
+  const sq=l*l+w*w+h*h;
+  return <div className="step-card">
+    <div className="given-box">l = {l}, w = {w}, h = {h}</div>
+    <div className="hint">מצאו את האלכסון המרחבי של התיבה בעזרת פיתגורס, צעד אחר צעד</div>
+    <div className="svg-wrap"><BoxSVG l={l} w={w} h={h} showDiag={true}/></div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד! מצאתם את האלכסון המרחבי." steps={[
+      {hint:'שלב 1: חשבו l²+w²+h²', render:(onOk)=><EquationResultInput requiredNums={[l,w,h]} expected={sq} placeholder={`לדוגמה: ${l}²+${w}²+${h}²=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו d = √(l²+w²+h²)', render:(onOk)=><EquationResultInput requiredNums={[sq]} expected={d} placeholder={`לדוגמה: √${sq}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function genBoxRatio(){
+  const ratios=[[1,2,2],[1,2,3],[2,3,4],[1,1,2],[2,2,3],[1,3,4]];
+  const [p,q,r]=pick(ratios);
+  const kMax=Math.floor(12/Math.max(p,q,r));
+  const k=randInt(2,Math.max(2,kMax));
+  const l=p*k,w=q*k,h=r*k;
+  return {p,q,r,k,l,w,h,V:l*w*h};
+}
+function Ch2Q4(){
+  const [data,setData]=useState(genBoxRatio);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genBoxRatio()); setDone(false); }
+  const {p,q,r,k,l,w,h,V}=data;
+  return <div className="step-card">
+    <div className="given-box">נפח התיבה V = {V}, ויחס המידות l : w : h = {p} : {q} : {r}</div>
+    <div className="hint">מצאו את גורם הקנה-מידה k (כך ש- l=k·{p}, w=k·{q}, h=k·{r}), ולאחר מכן את שטח הפנים</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: מצאו את k', render:(onOk)=><EquationResultInput requiredNums={[]} expected={k} placeholder="k = ..." onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו את שטח הפנים (השתמשו ב-l,w,h שמצאתם)', render:(onOk)=><EquationResultInput requiredNums={[l,w,h]} expected={2*(l*w+l*h+w*h)} placeholder={`לדוגמה: 2×(${l}×${w}+${l}×${h}+${w}×${h})=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch2PartC(){
+  const [sub,setSub]=useState('v');
+  return <div>
+    <div className="sub-tabs">
+      <button className={`sub-tab ${sub==='v'?'active':''}`} onClick={()=>setSub('v')}>נפח</button>
+      <button className={`sub-tab ${sub==='s'?'active':''}`} onClick={()=>setSub('s')}>שטח פנים</button>
+      <button className={`sub-tab ${sub==='m'?'active':''}`} onClick={()=>setSub('m')}>אלכסון מרחבי</button>
+      <button className={`sub-tab ${sub==='c'?'active':''}`} onClick={()=>setSub('c')}>שאלה משולבת</button>
+    </div>
+    {sub==='v' && <Ch2Q1 key="v"/>}
+    {sub==='s' && <Ch2Q2 key="s"/>}
+    {sub==='m' && <Ch2Q3 key="m"/>}
+    {sub==='c' && <Ch2Q4 key="c"/>}
+  </div>;
+}
+function Chapter2(){
+  const [tab,setTab]=useState('a');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">תיבה (מלבנית)</div>
+      <div className="tabs">
+        <button className={`tab ${tab==='a'?'active':''}`} onClick={()=>setTab('a')}>א. הצגה ויזואלית</button>
+        <button className={`tab ${tab==='b'?'active':''}`} onClick={()=>setTab('b')}>ב. נוסחאות</button>
+        <button className={`tab ${tab==='c'?'active':''}`} onClick={()=>setTab('c')}>ג. תרגול</button>
+      </div>
+      {tab==='a' && <Ch2PartA/>}
+      {tab==='b' && <Ch2PartB/>}
+      {tab==='c' && <Ch2PartC/>}
+    </div>
+  </div>;
+}
+
+/* ================= shared: circular-solid ellipse helpers ================= */
+function circlePts3D(r,z,n){
+  const out=[];
+  for(let i=0;i<n;i++){ const t=2*Math.PI*i/n; out.push({x:r*Math.cos(t), y:r*Math.sin(t), z}); }
+  return out;
+}
+function ellipseArcs(projPts){
+  const cy = projPts.reduce((s,p)=>s+p.y,0)/projPts.length;
+  const front = projPts.filter(p=>p.y>=cy);
+  const back = projPts.filter(p=>p.y<=cy);
+  function sortByX(arr){ return [...arr].sort((a,b)=>a.x-b.x); }
+  return {front:sortByX(front), back:sortByX(back)};
+}
+function pathFrom(pts){ if(!pts.length) return ''; return 'M'+pts.map(p=>`${p.x},${p.y}`).join(' L '); }
+
+/* ================= Chapter 3: Cylinder ================= */
+const CYL_PARTS=[
+  {id:'base',label:'בסיס',def:'שני מעגלים חופפים ומקבילים (עליון ותחתון), שהם בסיסי הגליל.'},
+  {id:'radius',label:'רדיוס (r)',def:'המרחק ממרכז הבסיס להיקפו.'},
+  {id:'height',label:'גובה (h)',def:'המרחק בין שני הבסיסים, ניצב אליהם.'},
+  {id:'lateral',label:'המעטפת',def:'המשטח המעוגל המחבר בין שני הבסיסים; כשפורשים אותו מתקבל מלבן שרוחבו 2πr וגובהו h.'},
+];
+function CylinderSVG({r,h,activePart}){
+  const n=40;
+  const bottom3=circlePts3D(r,0,n), top3=circlePts3D(r,h,n);
+  const allPts=[...bottom3,...top3,{x:0,y:0,z:0},{x:0,y:0,z:h}];
+  const p3=makeProjector(allPts,260,230,26);
+  const bottomP=bottom3.map(p=>p3(p.x,p.y,p.z));
+  const topP=top3.map(p=>p3(p.x,p.y,p.z));
+  const bc=p3(0,0,0), tc=p3(0,0,h);
+  const {front,back}=ellipseArcs(bottomP);
+  const leftT = topP.reduce((m,p)=>p.x<m.x?p:m, topP[0]);
+  const rightT = topP.reduce((m,p)=>p.x>m.x?p:m, topP[0]);
+  const leftB = bottomP.reduce((m,p)=>p.x<m.x?p:m, bottomP[0]);
+  const rightB = bottomP.reduce((m,p)=>p.x>m.x?p:m, bottomP[0]);
+  const baseHi = activePart==='base' ? '#16a34a' : '#334155';
+  const latHi = activePart==='lateral' ? '#16a34a' : '#334155';
+  return <svg viewBox="0 0 260 230" width="260" height="230">
+    <path d={pathFrom(back)} fill="none" stroke={baseHi} strokeDasharray="4,3"/>
+    <line x1={leftT.x} y1={leftT.y} x2={leftB.x} y2={leftB.y} stroke={latHi} strokeWidth="2.2"/>
+    <line x1={rightT.x} y1={rightT.y} x2={rightB.x} y2={rightB.y} stroke={latHi} strokeWidth="2.2"/>
+    <path d={pathFrom(front)} fill="none" stroke={baseHi} strokeWidth="2.2"/>
+    <path d={pathFrom(topP)+' Z'} fill="none" stroke={baseHi} strokeWidth="2.2"/>
+    {activePart==='height' && <line x1={bc.x} y1={bc.y} x2={tc.x} y2={tc.y} stroke="#ea580c" strokeWidth="2.6" strokeDasharray="5,3"/>}
+    {activePart==='radius' && <line x1={tc.x} y1={tc.y} x2={rightT.x} y2={rightT.y} stroke="#2563eb" strokeWidth="2.6"/>}
+    {activePart!=='height' && activePart!=='radius' && <>
+      <line x1={bc.x} y1={bc.y} x2={tc.x} y2={tc.y} stroke="#ea580c" strokeWidth="1.6" strokeDasharray="5,3" opacity="0.55"/>
+      <line x1={tc.x} y1={tc.y} x2={rightT.x} y2={rightT.y} stroke="#2563eb" strokeWidth="1.6" opacity="0.55"/>
+    </>}
+    <EdgeLabel p1={bc} p2={tc} text={`h=${h}`} color="#ea580c" dx={-26} dy={0}/>
+    <EdgeLabel p1={tc} p2={rightT} text={`r=${r}`} color="#2563eb" dx={0} dy={-10}/>
+  </svg>;
+}
+function genCylinder(){ return {r:randInt(2,8), h:randInt(2,12)}; }
+function Ch3PartA(){
+  const [data]=useState(genCylinder);
+  const [active,setActive]=useState(null);
+  const part = CYL_PARTS.find(p=>p.id===active);
+  return <div className="step-card">
+    <div className="svg-wrap"><CylinderSVG r={data.r} h={data.h} activePart={active}/></div>
+    <div className="parts-row">
+      {CYL_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
+    </div>
+    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+  </div>;
+}
+function Ch3PartB(){
+  return <div className="step-card">
+    <div className="formula-box">V = πr²h<small>נפח הגליל = שטח הבסיס העגול (πr²) כפול הגובה</small></div>
+    <div className="formula-box">S = 2πr² + 2πrh<small>שטח הפנים = שני הבסיסים העגולים (2πr²) בתוספת המעטפת הפרושה (2πrh)</small></div>
+  </div>;
+}
+function Ch3Q1(){
+  const [data,setData]=useState(genCylinder);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCylinder()); setDone(false); }
+  const {r,h}=data;
+  const expected=PI*r*r*h;
+  return <div className="step-card">
+    <div className="given-box">r = {r}, h = {h}</div>
+    <div className="hint">חשבו את נפח הגליל (אפשר להשתמש בסימן π)</div>
+    {!done && <EquationResultInput requiredNums={[r,h]} expected={expected} tolerance={Math.max(0.5,expected*0.01)} placeholder={`לדוגמה: π×${r}²×${h}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch3Q2(){
+  const [data,setData]=useState(genCylinder);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCylinder()); setDone(false); }
+  const {r,h}=data;
+  const expected=2*PI*r*r+2*PI*r*h;
+  return <div className="step-card">
+    <div className="given-box">r = {r}, h = {h}</div>
+    <div className="hint">חשבו את שטח הפנים הכולל של הגליל</div>
+    {!done && <EquationResultInput requiredNums={[r,h]} expected={expected} tolerance={Math.max(0.5,expected*0.01)} placeholder={`לדוגמה: 2×π×${r}²+2×π×${r}×${h}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch3Q3(){
+  const [data,setData]=useState(()=>{ const r=randInt(2,8), h=randInt(2,12); return {r,h,V:r*r*h}; });
+  const [done,setDone]=useState(false);
+  function reset(){ const r=randInt(2,8), h=randInt(2,12); setData({r,h,V:r*r*h}); setDone(false); }
+  const {r,h,V}=data;
+  return <div className="step-card">
+    <div className="given-box">נפח הגליל V = {V}π, ורדיוס הבסיס r = {r}</div>
+    <div className="hint">מצאו את גובה הגליל, צעד אחר צעד</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו r²', render:(onOk)=><EquationResultInput requiredNums={[r]} expected={r*r} placeholder={`לדוגמה: ${r}²=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו h = V/r²', render:(onOk)=><EquationResultInput requiredNums={[V,r*r]} expected={h} placeholder={`לדוגמה: ${V}/${r*r}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch3Q4(){
+  const [data,setData]=useState(()=>{ const a=pick([2,4,6,8,10,12]); return {a}; });
+  const [done,setDone]=useState(false);
+  function reset(){ setData({a:pick([2,4,6,8,10,12])}); setDone(false); }
+  const {a}=data;
+  const cubeV=a**3;
+  const cylR=a/2, cylH=a;
+  const cylV=PI*cylR*cylR*cylH;
+  const remaining=cubeV-cylV;
+  return <div className="step-card">
+    <div className="given-box">קובייה שצלעה a = {a}, ובתוכה חרוט גליל שקוטרו שווה לצלע הקובייה וגובהו שווה לגובה הקובייה</div>
+    <div className="hint">מצאו את נפח הגליל החרוט, ולאחר מכן את הנפח הנותר מחוץ לגליל (בתוך הקובייה)</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:`שלב 1: מהו רדיוס הגליל?`, render:(onOk)=><EquationResultInput requiredNums={[a]} expected={cylR} placeholder={`לדוגמה: ${a}/2=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו את נפח הגליל', render:(onOk)=><EquationResultInput requiredNums={[cylR]} expected={cylV} tolerance={Math.max(0.5,cylV*0.01)} placeholder={`לדוגמה: π×${cylR}²×${a}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את נפח הקובייה', render:(onOk)=><EquationResultInput requiredNums={[a]} expected={cubeV} placeholder={`לדוגמה: ${a}×${a}×${a}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 4: חשבו את הנפח הנותר (נפח הקובייה פחות נפח הגליל)', render:(onOk)=><EquationResultInput requiredNums={[]} expected={remaining} tolerance={Math.max(0.5,Math.abs(remaining)*0.01)} placeholder="לדוגמה: 512-π×4²×8=..." onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch3PartC(){
+  const [sub,setSub]=useState('v');
+  return <div>
+    <div className="sub-tabs">
+      <button className={`sub-tab ${sub==='v'?'active':''}`} onClick={()=>setSub('v')}>נפח</button>
+      <button className={`sub-tab ${sub==='s'?'active':''}`} onClick={()=>setSub('s')}>שטח פנים</button>
+      <button className={`sub-tab ${sub==='m'?'active':''}`} onClick={()=>setSub('m')}>מציאת גובה</button>
+      <button className={`sub-tab ${sub==='c'?'active':''}`} onClick={()=>setSub('c')}>שאלה משולבת</button>
+    </div>
+    {sub==='v' && <Ch3Q1 key="v"/>}
+    {sub==='s' && <Ch3Q2 key="s"/>}
+    {sub==='m' && <Ch3Q3 key="m"/>}
+    {sub==='c' && <Ch3Q4 key="c"/>}
+  </div>;
+}
+function Chapter3(){
+  const [tab,setTab]=useState('a');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">גליל</div>
+      <div className="tabs">
+        <button className={`tab ${tab==='a'?'active':''}`} onClick={()=>setTab('a')}>א. הצגה ויזואלית</button>
+        <button className={`tab ${tab==='b'?'active':''}`} onClick={()=>setTab('b')}>ב. נוסחאות</button>
+        <button className={`tab ${tab==='c'?'active':''}`} onClick={()=>setTab('c')}>ג. תרגול</button>
+      </div>
+      {tab==='a' && <Ch3PartA/>}
+      {tab==='b' && <Ch3PartB/>}
+      {tab==='c' && <Ch3PartC/>}
+    </div>
+  </div>;
+}
+
+/* ================= Chapter 4: Cone ================= */
+const CONE_PARTS=[
+  {id:'base',label:'בסיס',def:'מעגל שרדיוסו r, המהווה את תחתית החרוט.'},
+  {id:'radius',label:'רדיוס (r)',def:'המרחק ממרכז הבסיס להיקפו.'},
+  {id:'height',label:'גובה (h)',def:'המרחק מהקודקוד (ראש החרוט) למרכז הבסיס, ניצב לבסיס.'},
+  {id:'slant',label:'גובה אלכסוני (l)',def:'המרחק מהקודקוד להיקף הבסיס; l = √(r²+h²).'},
+];
+function ConeSVG({r,h,activePart}){
+  const n=40;
+  const base3=circlePts3D(r,0,n);
+  const allPts=[...base3,{x:0,y:0,z:0},{x:0,y:0,z:h}];
+  const p3=makeProjector(allPts,260,230,26);
+  const baseP=base3.map(p=>p3(p.x,p.y,p.z));
+  const bc=p3(0,0,0), apex=p3(0,0,h);
+  const {front,back}=ellipseArcs(baseP);
+  const leftB = baseP.reduce((m,p)=>p.x<m.x?p:m, baseP[0]);
+  const rightB = baseP.reduce((m,p)=>p.x>m.x?p:m, baseP[0]);
+  const baseHi = activePart==='base' ? '#16a34a' : '#334155';
+  const slantHi = activePart==='slant';
+  return <svg viewBox="0 0 260 230" width="260" height="230">
+    <path d={pathFrom(back)} fill="none" stroke={baseHi} strokeDasharray="4,3"/>
+    <line x1={apex.x} y1={apex.y} x2={leftB.x} y2={leftB.y} stroke="#334155" strokeWidth="2.2"/>
+    <line x1={apex.x} y1={apex.y} x2={rightB.x} y2={rightB.y} stroke={slantHi?'#dc2626':'#334155'} strokeWidth={slantHi?3:2.2}/>
+    <path d={pathFrom(front)} fill="none" stroke={baseHi} strokeWidth="2.2"/>
+    {activePart==='height' && <line x1={apex.x} y1={apex.y} x2={bc.x} y2={bc.y} stroke="#ea580c" strokeWidth="2.6" strokeDasharray="5,3"/>}
+    {activePart==='radius' && <line x1={bc.x} y1={bc.y} x2={rightB.x} y2={rightB.y} stroke="#2563eb" strokeWidth="2.6" strokeDasharray="4,2"/>}
+    {activePart!=='height' && <line x1={apex.x} y1={apex.y} x2={bc.x} y2={bc.y} stroke="#ea580c" strokeWidth="1.4" strokeDasharray="5,3" opacity="0.5"/>}
+    {activePart!=='radius' && <line x1={bc.x} y1={bc.y} x2={rightB.x} y2={rightB.y} stroke="#2563eb" strokeWidth="1.4" strokeDasharray="4,2" opacity="0.5"/>}
+    <EdgeLabel p1={apex} p2={bc} text={`h=${h}`} color="#ea580c" dx={-22} dy={0}/>
+    <EdgeLabel p1={bc} p2={rightB} text={`r=${r}`} color="#2563eb" dx={10} dy={16}/>
+    <EdgeLabel p1={apex} p2={rightB} text={`l`} color={slantHi?'#dc2626':'#64748b'} dx={16} dy={-6}/>
+  </svg>;
+}
+function genCone(){ const [r,h,l]=pickTriple(); return {r,h,l}; }
+function Ch4PartA(){
+  const [data]=useState(genCone);
+  const [active,setActive]=useState(null);
+  const part = CONE_PARTS.find(p=>p.id===active);
+  return <div className="step-card">
+    <div className="svg-wrap"><ConeSVG r={data.r} h={data.h} activePart={active}/></div>
+    <div className="parts-row">
+      {CONE_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
+    </div>
+    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+  </div>;
+}
+function Ch4PartB(){
+  return <div>
+    <div className="formula-box">V = <Frac num="1" den="3"/> πr²h<small>נפח החרוט = שליש מנפח הגליל בעל אותו בסיס וגובה</small></div>
+    <div className="formula-box">l = √(r²+h²)<small>גובה אלכסוני מתקבל מפיתגורס במשולש שצלעותיו r, h ו-l</small></div>
+    <div className="formula-box">S = πr² + πrl<small>שטח הפנים = שטח הבסיס העגול (πr²) בתוספת שטח המעטפת החרוטית הפרושה (πrl)</small></div>
+  </div>;
+}
+function Ch4Q1(){
+  const [data,setData]=useState(genCone);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCone()); setDone(false); }
+  const {r,h}=data;
+  const expected=PI*r*r*h/3;
+  return <div className="step-card">
+    <div className="given-box">r = {r}, h = {h}</div>
+    <div className="hint">חשבו את נפח החרוט</div>
+    {!done && <EquationResultInput requiredNums={[r,h]} expected={expected} tolerance={Math.max(0.5,expected*0.01)} placeholder={`לדוגמה: (1/3)×π×${r}²×${h}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch4Q2(){
+  const [data,setData]=useState(genCone);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCone()); setDone(false); }
+  const {r,l}=data;
+  const expected=PI*r*r+PI*r*l;
+  return <div className="step-card">
+    <div className="given-box">r = {r}, l = {l}</div>
+    <div className="hint">חשבו את שטח הפנים הכולל של החרוט</div>
+    {!done && <EquationResultInput requiredNums={[r,l]} expected={expected} tolerance={Math.max(0.5,expected*0.01)} placeholder={`לדוגמה: π×${r}²+π×${r}×${l}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch4Q3(){
+  const [data,setData]=useState(genCone);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCone()); setDone(false); }
+  const {r,h,l}=data;
+  const sq=r*r+h*h;
+  return <div className="step-card">
+    <div className="given-box">r = {r}, h = {h}</div>
+    <div className="hint">מצאו את הגובה האלכסוני l של החרוט בעזרת פיתגורס, צעד אחר צעד</div>
+    <div className="svg-wrap"><ConeSVG r={r} h={h} activePart="slant"/></div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו r²+h²', render:(onOk)=><EquationResultInput requiredNums={[r,h]} expected={sq} placeholder={`לדוגמה: ${r}²+${h}²=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו l = √(r²+h²)', render:(onOk)=><EquationResultInput requiredNums={[sq]} expected={l} placeholder={`לדוגמה: √${sq}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch4Q4(){
+  const [data,setData]=useState(genCone);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genCone()); setDone(false); }
+  const {r,h,l}=data;
+  const sq=r*r+h*h;
+  const expected=PI*r*r+PI*r*l;
+  return <div className="step-card">
+    <div className="given-box">r = {r}, h = {h}</div>
+    <div className="hint">מצאו תחילה את הגובה האלכסוני, ולאחר מכן את שטח הפנים המלא</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו r²+h²', render:(onOk)=><EquationResultInput requiredNums={[r,h]} expected={sq} placeholder={`לדוגמה: ${r}²+${h}²=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו l = √(r²+h²)', render:(onOk)=><EquationResultInput requiredNums={[sq]} expected={l} placeholder={`לדוגמה: √${sq}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את שטח הפנים המלא S = πr²+πrl', render:(onOk)=><EquationResultInput requiredNums={[r,l]} expected={expected} tolerance={Math.max(0.5,expected*0.01)} placeholder={`לדוגמה: π×${r}²+π×${r}×${l}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch4PartC(){
+  const [sub,setSub]=useState('v');
+  return <div>
+    <div className="sub-tabs">
+      <button className={`sub-tab ${sub==='v'?'active':''}`} onClick={()=>setSub('v')}>נפח</button>
+      <button className={`sub-tab ${sub==='s'?'active':''}`} onClick={()=>setSub('s')}>שטח פנים</button>
+      <button className={`sub-tab ${sub==='m'?'active':''}`} onClick={()=>setSub('m')}>גובה אלכסוני</button>
+      <button className={`sub-tab ${sub==='c'?'active':''}`} onClick={()=>setSub('c')}>שאלה משולבת</button>
+    </div>
+    {sub==='v' && <Ch4Q1 key="v"/>}
+    {sub==='s' && <Ch4Q2 key="s"/>}
+    {sub==='m' && <Ch4Q3 key="m"/>}
+    {sub==='c' && <Ch4Q4 key="c"/>}
+  </div>;
+}
+function Chapter4(){
+  const [tab,setTab]=useState('a');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">קונוס</div>
+      <div className="tabs">
+        <button className={`tab ${tab==='a'?'active':''}`} onClick={()=>setTab('a')}>א. הצגה ויזואלית</button>
+        <button className={`tab ${tab==='b'?'active':''}`} onClick={()=>setTab('b')}>ב. נוסחאות</button>
+        <button className={`tab ${tab==='c'?'active':''}`} onClick={()=>setTab('c')}>ג. תרגול</button>
+      </div>
+      {tab==='a' && <Ch4PartA/>}
+      {tab==='b' && <Ch4PartB/>}
+      {tab==='c' && <Ch4PartC/>}
+    </div>
+  </div>;
+}
+
+/* ================= Chapter 5: Pyramid (square / triangular base) ================= */
+const PYR_TRIPLES=[{half:3,h:4,m:5,b:6},{half:6,h:8,m:10,b:12},{half:5,h:12,m:13,b:10}];
+function pickPyr(){ return pick(PYR_TRIPLES); }
+const PYR_PARTS=[
+  {id:'base',label:'בסיס',def:'המצולע התחתון של הפירמידה (ריבוע או משולש).'},
+  {id:'apex',label:'קודקוד עליון',def:'הנקודה העליונה שאליה מתחברות כל הפאות הצדדיות.'},
+  {id:'height',label:'גובה (h)',def:'המרחק מהקודקוד העליון למרכז הבסיס, ניצב לבסיס.'},
+  {id:'apothem',label:'אפותם (m)',def:'גובה הפאה הצדדית — המרחק מהקודקוד העליון לאמצע צלע הבסיס; m = √(h²+(חצי-צלע)²).'},
+];
+function PyramidSquareSVG({b,h,activePart}){
+  const half=b/2;
+  const pts={A:{x:0,y:0,z:0},B:{x:b,y:0,z:0},C:{x:b,y:b,z:0},D:{x:0,y:b,z:0},Apex:{x:half,y:half,z:h}};
+  const p3=makeProjector(Object.values(pts),260,220,26);
+  const P={}; Object.keys(pts).forEach(k=>P[k]=p3(pts[k].x,pts[k].y,pts[k].z));
+  const center=p3(half,half,0);
+  const midBC=p3(b,half,0);
+  const baseHi = activePart==='base' ? '#16a34a' : '#334155';
+  const apexHi = activePart==='apex' ? '#16a34a' : '#334155';
+  return <svg viewBox="0 0 260 220" width="260" height="220">
+    <line x1={P.A.x} y1={P.A.y} x2={P.D.x} y2={P.D.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.D.x} y1={P.D.y} x2={P.C.x} y2={P.C.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.D.x} y1={P.D.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.A.x} y1={P.A.y} x2={P.B.x} y2={P.B.y} stroke={baseHi} strokeWidth="2.2"/>
+    <line x1={P.B.x} y1={P.B.y} x2={P.C.x} y2={P.C.y} stroke={baseHi} strokeWidth="2.2"/>
+    <line x1={P.A.x} y1={P.A.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#334155" strokeWidth="2.2"/>
+    <line x1={P.B.x} y1={P.B.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#334155" strokeWidth="2.2"/>
+    <line x1={P.C.x} y1={P.C.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#334155" strokeWidth="2.2"/>
+    {activePart==='height' && <line x1={center.x} y1={center.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#ea580c" strokeWidth="2.6" strokeDasharray="5,3"/>}
+    {activePart==='apothem' && <line x1={midBC.x} y1={midBC.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#dc2626" strokeWidth="2.8"/>}
+    {activePart!=='height' && <line x1={center.x} y1={center.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#ea580c" strokeWidth="1.4" strokeDasharray="5,3" opacity="0.5"/>}
+    {activePart!=='apothem' && <line x1={midBC.x} y1={midBC.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#dc2626" strokeWidth="1.4" opacity="0.4"/>}
+    <circle cx={P.Apex.x} cy={P.Apex.y} r={apexHi==='#16a34a'?5:2.8} fill={apexHi}/>
+    <EdgeLabel p1={P.A} p2={P.B} text={`b=${b}`} dx={0} dy={16}/>
+    <EdgeLabel p1={center} p2={P.Apex} text={`h=${h}`} color="#ea580c" dx={-20} dy={0}/>
+  </svg>;
+}
+function PyramidTriSVG({b,h,activePart}){
+  const H=b*Math.sqrt(3)/2;
+  const pts={A:{x:0,y:0,z:0},B:{x:b,y:0,z:0},C:{x:b/2,y:H,z:0},Apex:{x:b/2,y:H/3,z:h}};
+  const p3=makeProjector(Object.values(pts),260,220,26);
+  const P={}; Object.keys(pts).forEach(k=>P[k]=p3(pts[k].x,pts[k].y,pts[k].z));
+  const center=p3(b/2,H/3,0);
+  const midAB=p3(b/2,0,0);
+  const baseHi = activePart==='base' ? '#16a34a' : '#334155';
+  const apexHi = activePart==='apex' ? '#16a34a' : '#334155';
+  return <svg viewBox="0 0 260 220" width="260" height="220">
+    <line x1={P.B.x} y1={P.B.y} x2={P.C.x} y2={P.C.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.B.x} y1={P.B.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#94a3b8" strokeDasharray="4,3"/>
+    <line x1={P.A.x} y1={P.A.y} x2={P.B.x} y2={P.B.y} stroke={baseHi} strokeWidth="2.2"/>
+    <line x1={P.A.x} y1={P.A.y} x2={P.C.x} y2={P.C.y} stroke={baseHi} strokeWidth="2.2"/>
+    <line x1={P.A.x} y1={P.A.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#334155" strokeWidth="2.2"/>
+    <line x1={P.C.x} y1={P.C.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#334155" strokeWidth="2.2"/>
+    {activePart==='height' && <line x1={center.x} y1={center.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#ea580c" strokeWidth="2.6" strokeDasharray="5,3"/>}
+    {activePart==='apothem' && <line x1={midAB.x} y1={midAB.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#dc2626" strokeWidth="2.8"/>}
+    {activePart!=='height' && <line x1={center.x} y1={center.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#ea580c" strokeWidth="1.4" strokeDasharray="5,3" opacity="0.5"/>}
+    {activePart!=='apothem' && <line x1={midAB.x} y1={midAB.y} x2={P.Apex.x} y2={P.Apex.y} stroke="#dc2626" strokeWidth="1.4" opacity="0.4"/>}
+    <circle cx={P.Apex.x} cy={P.Apex.y} r={apexHi==='#16a34a'?5:2.8} fill={apexHi}/>
+    <EdgeLabel p1={P.A} p2={P.B} text={`b=${b}`} dx={0} dy={16}/>
+    <EdgeLabel p1={center} p2={P.Apex} text={`h=${h}`} color="#ea580c" dx={-20} dy={0}/>
+  </svg>;
+}
+function Ch5PartA(){
+  const [variant,setVariant]=useState('sq');
+  const [data]=useState(pickPyr);
+  const [active,setActive]=useState(null);
+  const part = PYR_PARTS.find(p=>p.id===active);
+  return <div className="step-card">
+    <div className="sub-tabs">
+      <button className={`sub-tab ${variant==='sq'?'active':''}`} onClick={()=>setVariant('sq')}>בסיס מרובע</button>
+      <button className={`sub-tab ${variant==='tri'?'active':''}`} onClick={()=>setVariant('tri')}>בסיס משולשי</button>
+    </div>
+    <div className="svg-wrap">
+      {variant==='sq' ? <PyramidSquareSVG b={data.b} h={data.h} activePart={active}/> : <PyramidTriSVG b={data.b} h={data.h} activePart={active}/>}
+    </div>
+    <div className="parts-row">
+      {PYR_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
+    </div>
+    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+  </div>;
+}
+function Ch5PartB(){
+  return <div>
+    <div className="formula-box">V = <Frac num="1" den="3"/> · שטח_בסיס · h<small>נפח הפירמידה = שליש משטח הבסיס כפול הגובה</small></div>
+    <div className="formula-box">m = √(h² + (חצי-צלע)²)<small>אפותם (גובה הפאה הצדדית) מתקבל מפיתגורס בין הגובה לחצי צלע הבסיס</small></div>
+    <div className="formula-box">S = שטח_בסיס + סכום שטחי הפאות הצדדיות<small>כל פאה צדדית היא משולש ששטחו (1/2)·צלע·m</small></div>
+  </div>;
+}
+function Ch5Q1Sq(){
+  const [data,setData]=useState(pickPyr);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(pickPyr()); setDone(false); }
+  const {b,h}=data;
+  const expected=b*b*h/3;
+  return <div className="step-card">
+    <div className="given-box">בסיס מרובע: b = {b}, גובה h = {h}</div>
+    <div className="hint">חשבו את נפח הפירמידה</div>
+    {!done && <EquationResultInput requiredNums={[b,h]} expected={expected} placeholder={`לדוגמה: (1/3)×${b}²×${h}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch5Q1Tri(){
+  const [data,setData]=useState(pickPyr);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(pickPyr()); setDone(false); }
+  const {b,h}=data;
+  const k=b*b/4;
+  const coeff=k*h/3;
+  return <div className="step-card">
+    <div className="given-box">בסיס משולש שווה-צלעות: b = {b}, גובה הפירמידה h = {h}</div>
+    <div className="hint">שטח הבסיס: <Frac num="√3" den="4"/>b² = {k}√3. חשבו את נפח הפירמידה (בצורת מקדם × √3)</div>
+    {!done && <CoeffSuffixInput suffix="√3" expectedCoeff={coeff} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch5Q2Sq(){
+  const [data,setData]=useState(pickPyr);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(pickPyr()); setDone(false); }
+  const {b,m}=data;
+  const expected=b*b+2*b*m;
+  return <div className="step-card">
+    <div className="given-box">בסיס מרובע: b = {b}, אפותם m = {m}</div>
+    <div className="hint">חשבו את שטח הפנים הכולל</div>
+    {!done && <EquationResultInput requiredNums={[b,m]} expected={expected} placeholder={`לדוגמה: ${b}²+2×${b}×${m}=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch5Q2Tri(){
+  const [data,setData]=useState(pickPyr);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(pickPyr()); setDone(false); }
+  const {b,m}=data;
+  const k=b*b/4;
+  const intPart=3*b*m/2;
+  return <div className="step-card">
+    <div className="given-box">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = {k}√3)</div>
+    <div className="hint">חשבו את שטח הפנים הכולל (בצורה: מספר שלם + מקדם×√3)</div>
+    {!done && <EquationResultInput requiredNums={[b,m]} expected={intPart+k*Math.sqrt(3)} tolerance={0.05} placeholder={`לדוגמה: 3×${b}×${m}/2+${k}√3=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch5Q3(){ // apothem via pythagoras — same for both variants
+  const [data,setData]=useState(pickPyr);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(pickPyr()); setDone(false); }
+  const {half,h,m}=data;
+  const sq=half*half+h*h;
+  return <div className="step-card">
+    <div className="given-box">חצי-צלע הבסיס = {half}, גובה הפירמידה h = {h}</div>
+    <div className="hint">מצאו את האפותם (גובה הפאה הצדדית) בעזרת פיתגורס, צעד אחר צעד</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו (חצי-צלע)²+h²', render:(onOk)=><EquationResultInput requiredNums={[half,h]} expected={sq} placeholder={`לדוגמה: ${half}²+${h}²=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו m = √(...)', render:(onOk)=><EquationResultInput requiredNums={[sq]} expected={m} placeholder={`לדוגמה: √${sq}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch5Q4Sq(){
+  const [data,setData]=useState(pickPyr);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(pickPyr()); setDone(false); }
+  const {b,m,half,h}=data;
+  const sq=m*m-half*half;
+  const V=b*b*h/3, S=b*b+2*b*m;
+  return <div className="step-card">
+    <div className="given-box">בסיס מרובע: b = {b}, אפותם m = {m}</div>
+    <div className="hint">מצאו את גובה הפירמידה, ולאחר מכן את הנפח ואת שטח הפנים</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו h² = m²-(חצי-צלע)²', render:(onOk)=><EquationResultInput requiredNums={[m,half]} expected={sq} placeholder={`לדוגמה: ${m}²-${half}²=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו את הגובה h', render:(onOk)=><EquationResultInput requiredNums={[sq]} expected={h} placeholder={`לדוגמה: √${sq}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את הנפח', render:(onOk)=><EquationResultInput requiredNums={[b,h]} expected={V} placeholder={`לדוגמה: (1/3)×${b}²×${h}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 4: חשבו את שטח הפנים', render:(onOk)=><EquationResultInput requiredNums={[b,m]} expected={S} placeholder={`לדוגמה: ${b}²+2×${b}×${m}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch5Q4Tri(){
+  const [data,setData]=useState(pickPyr);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(pickPyr()); setDone(false); }
+  const {b,m,half,h}=data;
+  const sq=m*m-half*half;
+  const k=b*b/4;
+  const Vcoeff=k*h/3;
+  const intPart=3*b*m/2;
+  return <div className="step-card">
+    <div className="given-box">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = {k}√3)</div>
+    <div className="hint">מצאו את גובה הפירמידה, ולאחר מכן את הנפח ואת שטח הפנים</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו h² = m²-(חצי-צלע)²', render:(onOk)=><EquationResultInput requiredNums={[m,half]} expected={sq} placeholder={`לדוגמה: ${m}²-${half}²=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו את הגובה h', render:(onOk)=><EquationResultInput requiredNums={[sq]} expected={h} placeholder={`לדוגמה: √${sq}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את הנפח (מקדם × √3)', render:(onOk)=><CoeffSuffixInput suffix="√3" expectedCoeff={Vcoeff} onCorrect={onOk}/>},
+      {hint:'שלב 4: חשבו את שטח הפנים (מספר שלם + מקדם×√3)', render:(onOk)=><EquationResultInput requiredNums={[b,m]} expected={intPart+k*Math.sqrt(3)} tolerance={0.05} placeholder={`לדוגמה: 3×${b}×${m}/2+${k}√3=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch5PartC(){
+  const [variant,setVariant]=useState('sq');
+  const [sub,setSub]=useState('v');
+  return <div>
+    <div className="sub-tabs">
+      <button className={`sub-tab ${variant==='sq'?'active':''}`} onClick={()=>setVariant('sq')}>בסיס מרובע</button>
+      <button className={`sub-tab ${variant==='tri'?'active':''}`} onClick={()=>setVariant('tri')}>בסיס משולשי</button>
+    </div>
+    <div className="sub-tabs">
+      <button className={`sub-tab ${sub==='v'?'active':''}`} onClick={()=>setSub('v')}>נפח</button>
+      <button className={`sub-tab ${sub==='s'?'active':''}`} onClick={()=>setSub('s')}>שטח פנים</button>
+      <button className={`sub-tab ${sub==='m'?'active':''}`} onClick={()=>setSub('m')}>אפותם</button>
+      <button className={`sub-tab ${sub==='c'?'active':''}`} onClick={()=>setSub('c')}>שאלה משולבת</button>
+    </div>
+    {variant==='sq' && sub==='v' && <Ch5Q1Sq key="sqv"/>}
+    {variant==='sq' && sub==='s' && <Ch5Q2Sq key="sqs"/>}
+    {variant==='sq' && sub==='m' && <Ch5Q3 key="sqm"/>}
+    {variant==='sq' && sub==='c' && <Ch5Q4Sq key="sqc"/>}
+    {variant==='tri' && sub==='v' && <Ch5Q1Tri key="triv"/>}
+    {variant==='tri' && sub==='s' && <Ch5Q2Tri key="tris"/>}
+    {variant==='tri' && sub==='m' && <Ch5Q3 key="trim"/>}
+    {variant==='tri' && sub==='c' && <Ch5Q4Tri key="tric"/>}
+  </div>;
+}
+function Chapter5(){
+  const [tab,setTab]=useState('a');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">פירמידה</div>
+      <div className="tabs">
+        <button className={`tab ${tab==='a'?'active':''}`} onClick={()=>setTab('a')}>א. הצגה ויזואלית</button>
+        <button className={`tab ${tab==='b'?'active':''}`} onClick={()=>setTab('b')}>ב. נוסחאות</button>
+        <button className={`tab ${tab==='c'?'active':''}`} onClick={()=>setTab('c')}>ג. תרגול</button>
+      </div>
+      {tab==='a' && <Ch5PartA/>}
+      {tab==='b' && <Ch5PartB/>}
+      {tab==='c' && <Ch5PartC/>}
+    </div>
+  </div>;
+}
+
+/* ================= Chapter 6: Sphere ================= */
+const SPHERE_PARTS=[
+  {id:'center',label:'מרכז',def:'הנקודה שממנה כל נקודות הכדור מרוחקות באותו מרחק — הרדיוס.'},
+  {id:'radius',label:'רדיוס (r)',def:'המרחק ממרכז הכדור לכל נקודה על פני השטח שלו.'},
+  {id:'surface',label:'פני השטח',def:'המשטח המעוגל התוחם את הכדור; שטחו S = 4πr².'},
+];
+function SphereSVG({r,activePart}){
+  const W=220,Hh=220,cx=W/2,cy=Hh/2,rad=80;
+  const surfHi = activePart==='surface' ? '#16a34a':'#334155';
+  const centerHi = activePart==='center' ? '#16a34a':'#334155';
+  const radHi = activePart==='radius';
+  return <svg viewBox={`0 0 ${W} ${Hh}`} width={W} height={Hh}>
+    <circle cx={cx} cy={cy} r={rad} fill="none" stroke={surfHi} strokeWidth="2.4"/>
+    <ellipse cx={cx} cy={cy} rx={rad} ry={rad*0.32} fill="none" stroke="#94a3b8" strokeDasharray="4,3"/>
+    <ellipse cx={cx} cy={cy} rx={rad*0.32} ry={rad} fill="none" stroke="#94a3b8" strokeDasharray="4,3" opacity="0.5"/>
+    <line x1={cx} y1={cy} x2={cx+rad} y2={cy} stroke={radHi?'#2563eb':'#2563eb'} strokeWidth={radHi?2.8:1.6} opacity={radHi?1:0.55}/>
+    <circle cx={cx} cy={cy} r={centerHi==='#16a34a'?4:2.6} fill={centerHi}/>
+    <EdgeLabel p1={{x:cx,y:cy}} p2={{x:cx+rad,y:cy}} text={`r=${r}`} color="#2563eb" dx={0} dy={-10}/>
+  </svg>;
+}
+function genSphere(){ return {r:pick([3,6,9,12])}; }
+function Ch6PartA(){
+  const [data]=useState(genSphere);
+  const [active,setActive]=useState(null);
+  const part = SPHERE_PARTS.find(p=>p.id===active);
+  return <div className="step-card">
+    <div className="svg-wrap"><SphereSVG r={data.r} activePart={active}/></div>
+    <div className="parts-row">
+      {SPHERE_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
+    </div>
+    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+  </div>;
+}
+function Ch6PartB(){
+  return <div>
+    <div className="formula-box">V = <Frac num="4" den="3"/> πr³<small>נפח הכדור מתקבל מנוסחה זו — קצת פחות מנפח הגליל החוסם אותו</small></div>
+    <div className="formula-box">S = 4πr²<small>שטח פני הכדור שווה לארבע פעמים שטח מעגל גדול (חתך מרכזי) של הכדור</small></div>
+  </div>;
+}
+function Ch6Q1(){
+  const [data,setData]=useState(genSphere);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genSphere()); setDone(false); }
+  const {r}=data;
+  const expected=PI*(4/3)*r*r*r;
+  return <div className="step-card">
+    <div className="given-box">r = {r}</div>
+    <div className="hint">חשבו את נפח הכדור</div>
+    {!done && <EquationResultInput requiredNums={[r]} expected={expected} tolerance={Math.max(0.5,expected*0.01)} placeholder={`לדוגמה: (4/3)×π×${r}³=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch6Q2(){
+  const [data,setData]=useState(genSphere);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genSphere()); setDone(false); }
+  const {r}=data;
+  const expected=4*PI*r*r;
+  return <div className="step-card">
+    <div className="given-box">r = {r}</div>
+    <div className="hint">חשבו את שטח הפנים של הכדור</div>
+    {!done && <EquationResultInput requiredNums={[r]} expected={expected} tolerance={Math.max(0.5,expected*0.01)} placeholder={`לדוגמה: 4×π×${r}²=...`} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch6Q3(){
+  const [data,setData]=useState(genSphere);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(genSphere()); setDone(false); }
+  const {r}=data;
+  const k=4*r*r;
+  const rsq=r*r;
+  const Vcoeff=(4/3)*r*r*r;
+  return <div className="step-card">
+    <div className="given-box">שטח הפנים של הכדור: S = {k}π</div>
+    <div className="hint">מצאו את נפח הכדור, צעד אחר צעד</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו r² = S/(4π)  (כלומר k/4)', render:(onOk)=><EquationResultInput requiredNums={[k]} expected={rsq} placeholder={`לדוגמה: ${k}/4=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו r = √(r²)', render:(onOk)=><EquationResultInput requiredNums={[rsq]} expected={r} placeholder={`לדוגמה: √${rsq}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את הנפח (מקדם × π)', render:(onOk)=><CoeffSuffixInput suffix="π" expectedCoeff={Vcoeff} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch6Q4(){
+  const [data,setData]=useState(()=>({a:pick([6,12])}));
+  const [done,setDone]=useState(false);
+  function reset(){ setData({a:pick([6,12])}); setDone(false); }
+  const {a}=data;
+  const r=a/2;
+  const cubeV=a**3;
+  const sphereV=PI*(4/3)*r*r*r;
+  const remaining=cubeV-sphereV;
+  return <div className="step-card">
+    <div className="given-box">קובייה שצלעה a = {a}, ובתוכה חסום כדור שקוטרו שווה לצלע הקובייה</div>
+    <div className="hint">מצאו את נפח הכדור, ולאחר מכן את הנפח הנותר מחוץ לכדור (בתוך הקובייה)</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: מהו רדיוס הכדור?', render:(onOk)=><EquationResultInput requiredNums={[a]} expected={r} placeholder={`לדוגמה: ${a}/2=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו את נפח הכדור', render:(onOk)=><EquationResultInput requiredNums={[r]} expected={sphereV} tolerance={Math.max(0.5,sphereV*0.01)} placeholder={`לדוגמה: (4/3)×π×${r}³=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את נפח הקובייה', render:(onOk)=><EquationResultInput requiredNums={[a]} expected={cubeV} placeholder={`לדוגמה: ${a}×${a}×${a}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 4: חשבו את הנפח הנותר', render:(onOk)=><EquationResultInput requiredNums={[]} expected={remaining} tolerance={Math.max(0.5,Math.abs(remaining)*0.01)} placeholder={`לדוגמה: ${cubeV}-π×${r}³×(4/3)=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Ch6PartC(){
+  const [sub,setSub]=useState('v');
+  return <div>
+    <div className="sub-tabs">
+      <button className={`sub-tab ${sub==='v'?'active':''}`} onClick={()=>setSub('v')}>נפח</button>
+      <button className={`sub-tab ${sub==='s'?'active':''}`} onClick={()=>setSub('s')}>שטח פנים</button>
+      <button className={`sub-tab ${sub==='m'?'active':''}`} onClick={()=>setSub('m')}>משטח לנפח</button>
+      <button className={`sub-tab ${sub==='c'?'active':''}`} onClick={()=>setSub('c')}>שאלה משולבת</button>
+    </div>
+    {sub==='v' && <Ch6Q1 key="v"/>}
+    {sub==='s' && <Ch6Q2 key="s"/>}
+    {sub==='m' && <Ch6Q3 key="m"/>}
+    {sub==='c' && <Ch6Q4 key="c"/>}
+  </div>;
+}
+function Chapter6(){
+  const [tab,setTab]=useState('a');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">כדור</div>
+      <div className="tabs">
+        <button className={`tab ${tab==='a'?'active':''}`} onClick={()=>setTab('a')}>א. הצגה ויזואלית</button>
+        <button className={`tab ${tab==='b'?'active':''}`} onClick={()=>setTab('b')}>ב. נוסחאות</button>
+        <button className={`tab ${tab==='c'?'active':''}`} onClick={()=>setTab('c')}>ג. תרגול</button>
+      </div>
+      {tab==='a' && <Ch6PartA/>}
+      {tab==='b' && <Ch6PartB/>}
+      {tab==='c' && <Ch6PartC/>}
+    </div>
+  </div>;
+}
+
+/* ================= Chapter 7: Combined questions ================= */
+const COMP_PARTS=[
+  {id:'cyl',label:'החלק הגלילי',def:'הגליל התחתון — נפחו πr²h, ומעטפתו 2πrh.'},
+  {id:'cone',label:'החלק החרוטי',def:'החרוט העליון, על אותו בסיס — נפחו (1/3)πr²h, ומעטפתו πrl.'},
+];
+function CompositeSVG({r,h1,h2,activePart}){
+  const n=40;
+  const bottom3=circlePts3D(r,0,n), mid3=circlePts3D(r,h1,n);
+  const allPts=[...bottom3,...mid3,{x:0,y:0,z:0},{x:0,y:0,z:h1+h2}];
+  const p3=makeProjector(allPts,260,240,26);
+  const bottomP=bottom3.map(p=>p3(p.x,p.y,p.z));
+  const midP=mid3.map(p=>p3(p.x,p.y,p.z));
+  const bc=p3(0,0,0), mc=p3(0,0,h1), apex=p3(0,0,h1+h2);
+  const {front:bf,back:bb}=ellipseArcs(bottomP);
+  const leftM = midP.reduce((m,p)=>p.x<m.x?p:m, midP[0]);
+  const rightM = midP.reduce((m,p)=>p.x>m.x?p:m, midP[0]);
+  const leftB = bottomP.reduce((m,p)=>p.x<m.x?p:m, bottomP[0]);
+  const rightB = bottomP.reduce((m,p)=>p.x>m.x?p:m, bottomP[0]);
+  const cylHi = activePart==='cyl' ? '#16a34a' : '#334155';
+  const coneHi = activePart==='cone' ? '#16a34a' : '#334155';
+  return <svg viewBox="0 0 260 240" width="260" height="240">
+    <path d={pathFrom(bb)} fill="none" stroke={cylHi} strokeDasharray="4,3"/>
+    <line x1={leftM.x} y1={leftM.y} x2={leftB.x} y2={leftB.y} stroke={cylHi} strokeWidth="2.2"/>
+    <line x1={rightM.x} y1={rightM.y} x2={rightB.x} y2={rightB.y} stroke={cylHi} strokeWidth="2.2"/>
+    <path d={pathFrom(bf)} fill="none" stroke={cylHi} strokeWidth="2.2"/>
+    <path d={pathFrom(midP)+' Z'} fill="none" stroke={cylHi} strokeWidth="1.6" strokeDasharray="3,2" opacity="0.6"/>
+    <line x1={apex.x} y1={apex.y} x2={leftM.x} y2={leftM.y} stroke={coneHi} strokeWidth="2.2"/>
+    <line x1={apex.x} y1={apex.y} x2={rightM.x} y2={rightM.y} stroke={coneHi} strokeWidth="2.2"/>
+    <EdgeLabel p1={bc} p2={mc} text={`h1=${h1}`} color="#ea580c" dx={-26} dy={0}/>
+    <EdgeLabel p1={mc} p2={apex} text={`h2=${h2}`} color="#7c3aed" dx={26} dy={0}/>
+    <EdgeLabel p1={bc} p2={rightB} text={`r=${r}`} color="#2563eb" dx={10} dy={16}/>
+  </svg>;
+}
+function Ch7PartA(){
+  const [data]=useState(()=>{ const [r,h2,l]=pickTriple(); return {r,h1:randInt(3,10),h2,l}; });
+  const [active,setActive]=useState(null);
+  const part = COMP_PARTS.find(p=>p.id===active);
+  return <div className="step-card">
+    <div className="svg-wrap"><CompositeSVG r={data.r} h1={data.h1} h2={data.h2} activePart={active}/></div>
+    <div className="parts-row">
+      {COMP_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
+    </div>
+    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה — גליל וחרוט המחוברים על אותו בסיס'}</div>
+  </div>;
+}
+function Ch7PartB(){
+  return <div>
+    <div className="formula-box">V<sub>מורכב</sub> = V₁ + V₂<small>נפח גוף מורכב משני גופים המחוברים = סכום נפחיהם</small></div>
+    <div className="formula-box">S<sub>מורכב</sub> = סכום השטחים החיצוניים בלבד<small>פני השטח המשותפים לשני הגופים (פנימיים) אינם נכללים בשטח הפנים הכולל</small></div>
+    <div className="formula-box">V<sub>נותר</sub> = V<sub>חיצוני</sub> - V<sub>פנימי</sub><small>גוף חסום בתוך גוף אחר — הנפח הנותר הוא ההפרש</small></div>
+    <div className="formula-box">יחס צלעות k &nbsp;⟹&nbsp; יחס שטחים k² &nbsp;⟹&nbsp; יחס נפחים k³<small>בגופים דומים, יחס הנפחים שווה לחזקה השלישית של יחס האורכים</small></div>
+  </div>;
+}
+function Ch7Q1(){ // composite cylinder+cone
+  const [data,setData]=useState(()=>{ const [r,h2,l]=pickTriple(); return {r,h1:randInt(3,10),h2,l}; });
+  const [done,setDone]=useState(false);
+  function reset(){ const [r,h2,l]=pickTriple(); setData({r,h1:randInt(3,10),h2,l}); setDone(false); }
+  const {r,h1,h2,l}=data;
+  const cylV=PI*r*r*h1, coneV=PI*r*r*h2/3, totalV=cylV+coneV;
+  const cylLat=2*PI*r*h1, coneLat=PI*r*l, baseArea=PI*r*r, totalS=cylLat+coneLat+baseArea;
+  return <div className="step-card">
+    <div className="given-box">גליל וחרוט על אותו בסיס: r = {r}, גובה הגליל h₁ = {h1}, גובה החרוט h₂ = {h2} (גובה אלכסוני החרוט l = {l})</div>
+    <div className="hint">מצאו את הנפח הכולל, ולאחר מכן את שטח הפנים החיצוני הכולל</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו את נפח הגליל', render:(onOk)=><EquationResultInput requiredNums={[r,h1]} expected={cylV} tolerance={Math.max(0.5,cylV*0.01)} placeholder={`לדוגמה: π×${r}²×${h1}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו את נפח החרוט', render:(onOk)=><EquationResultInput requiredNums={[r,h2]} expected={coneV} tolerance={Math.max(0.5,coneV*0.01)} placeholder={`לדוגמה: (1/3)×π×${r}²×${h2}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את הנפח הכולל', render:(onOk)=><EquationResultInput requiredNums={[]} expected={totalV} tolerance={Math.max(0.5,totalV*0.01)} placeholder="סכום שני הנפחים" onCorrect={onOk}/>},
+      {hint:'שלב 4: חשבו את מעטפת הגליל (2πrh₁)', render:(onOk)=><EquationResultInput requiredNums={[r,h1]} expected={cylLat} tolerance={Math.max(0.5,cylLat*0.01)} placeholder={`לדוגמה: 2×π×${r}×${h1}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 5: חשבו את מעטפת החרוט (πrl)', render:(onOk)=><EquationResultInput requiredNums={[r,l]} expected={coneLat} tolerance={Math.max(0.5,coneLat*0.01)} placeholder={`לדוגמה: π×${r}×${l}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 6: הוסיפו את בסיס הגליל התחתון (πr²), וחשבו את שטח הפנים הכולל', render:(onOk)=><EquationResultInput requiredNums={[r]} expected={totalS} tolerance={Math.max(0.5,totalS*0.01)} placeholder={`לדוגמה: π×${r}²=... ואז הסכום`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>שאלה חדשה ↺</button></div>}
+  </div>;
+}
+function Ch7Q2(){ // cone inscribed in cylinder — remaining volume
+  const [data,setData]=useState(()=>{ const [r,h]=pickTriple(); return {r,h}; });
+  const [done,setDone]=useState(false);
+  function reset(){ const [r,h]=pickTriple(); setData({r,h}); setDone(false); }
+  const {r,h}=data;
+  const cylV=r*r*h, coneV=r*r*h/3, remCoeff=cylV-coneV;
+  return <div className="step-card">
+    <div className="given-box">בתוך גליל שרדיוסו r = {r} וגובהו h = {h} חרוט חרוט (קונוס) באותו בסיס ובאותו גובה</div>
+    <div className="hint">מצאו את הנפח הנותר בגליל מחוץ לחרוט (בצורת מקדם × π)</div>
+    {!done && <CoeffSuffixInput suffix="π" expectedCoeff={remCoeff} onCorrect={()=>setDone(true)}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>שאלה חדשה ↺</button></div>}
+  </div>;
+}
+function Ch7Q3(){ // pythagoras-first: box given l,w,d find h then volume
+  const [data,setData]=useState(pickQuad);
+  const [done,setDone]=useState(false);
+  function reset(){ setData(pickQuad()); setDone(false); }
+  const {l,w,h,d}=data;
+  const sq=d*d-l*l-w*w;
+  const V=l*w*h;
+  return <div className="step-card">
+    <div className="given-box">תיבה: l = {l}, w = {w}, אלכסון מרחבי d = {d}</div>
+    <div className="hint">מצאו תחילה את הגובה החסר בעזרת פיתגורס, ולאחר מכן את נפח התיבה</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:'שלב 1: חשבו h² = d²-l²-w²', render:(onOk)=><EquationResultInput requiredNums={[d,l,w]} expected={sq} placeholder={`לדוגמה: ${d}²-${l}²-${w}²=...`} onCorrect={onOk}/>},
+      {hint:'שלב 2: חשבו את הגובה h', render:(onOk)=><EquationResultInput requiredNums={[sq]} expected={h} placeholder={`לדוגמה: √${sq}=...`} onCorrect={onOk}/>},
+      {hint:'שלב 3: חשבו את נפח התיבה', render:(onOk)=><EquationResultInput requiredNums={[l,w,h]} expected={V} placeholder={`לדוגמה: ${l}×${w}×${h}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>שאלה חדשה ↺</button></div>}
+  </div>;
+}
+function Ch7Q4(){ // similarity ratio -> volume ratio k^3
+  const [data,setData]=useState(()=>({p:randInt(1,4),q:randInt(2,5)}));
+  const [done,setDone]=useState(false);
+  function reset(){ setData({p:randInt(1,4),q:randInt(2,5)}); setDone(false); }
+  const {p,q}=data;
+  return <div className="step-card">
+    <div className="given-box">שני גופים דומים; היחס בין אורכי הצלעות המתאימות הוא {p} : {q}</div>
+    <div className="hint">מצאו את היחס בין נפחי הגופים (חשבו כל אגף בנפרד)</div>
+    {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
+      {hint:`שלב 1: חשבו ${p}³`, render:(onOk)=><EquationResultInput requiredNums={[p]} expected={p**3} placeholder={`לדוגמה: ${p}×${p}×${p}=...`} onCorrect={onOk}/>},
+      {hint:`שלב 2: חשבו ${q}³`, render:(onOk)=><EquationResultInput requiredNums={[q]} expected={q**3} placeholder={`לדוגמה: ${q}×${q}×${q}=...`} onCorrect={()=>{onOk();setDone(true);}}/>},
+    ]}/>}
+    {done && <div className="banner">✅ כל הכבוד! יחס הנפחים הוא {p**3} : {q**3}<button className="btn bg" onClick={reset}>שאלה חדשה ↺</button></div>}
+  </div>;
+}
+function Ch7PartC(){
+  const [sub,setSub]=useState('a');
+  return <div>
+    <div className="sub-tabs">
+      <button className={`sub-tab ${sub==='a'?'active':''}`} onClick={()=>setSub('a')}>גוף מורכב</button>
+      <button className={`sub-tab ${sub==='b'?'active':''}`} onClick={()=>setSub('b')}>גוף בתוך גוף</button>
+      <button className={`sub-tab ${sub==='c'?'active':''}`} onClick={()=>setSub('c')}>פיתגורס תחילה</button>
+      <button className={`sub-tab ${sub==='d'?'active':''}`} onClick={()=>setSub('d')}>יחס דמיון</button>
+    </div>
+    {sub==='a' && <Ch7Q1 key="a"/>}
+    {sub==='b' && <Ch7Q2 key="b"/>}
+    {sub==='c' && <Ch7Q3 key="c"/>}
+    {sub==='d' && <Ch7Q4 key="d"/>}
+  </div>;
+}
+function Chapter7(){
+  const [tab,setTab]=useState('a');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">שאלות משולבות</div>
+      <div className="tabs">
+        <button className={`tab ${tab==='a'?'active':''}`} onClick={()=>setTab('a')}>א. הצגה ויזואלית</button>
+        <button className={`tab ${tab==='b'?'active':''}`} onClick={()=>setTab('b')}>ב. נוסחאות</button>
+        <button className={`tab ${tab==='c'?'active':''}`} onClick={()=>setTab('c')}>ג. תרגול</button>
+      </div>
+      {tab==='a' && <Ch7PartA/>}
+      {tab==='b' && <Ch7PartB/>}
+      {tab==='c' && <Ch7PartC/>}
+    </div>
+  </div>;
+}
+
+/* ================= App (chapters 3-7 appended below) ================= */
+const CHAPTERS=[
+  {id:1,label:'1. קובייה',Comp:Chapter1},
+  {id:2,label:'2. תיבה',Comp:Chapter2},
+  {id:3,label:'3. גליל',Comp:Chapter3},
+  {id:4,label:'4. קונוס',Comp:Chapter4},
+  {id:5,label:'5. פירמידה',Comp:Chapter5},
+  {id:6,label:'6. כדור',Comp:Chapter6},
+  {id:7,label:'7. שאלות משולבות',Comp:Chapter7},
+];
+function App(){
+  const [chapter,setChapter]=useState(1);
+  const active=CHAPTERS.find(c=>c.id===chapter);
+  return <div>
+    <div className="hdr">
+      <h1>גיאומטריה מרחבית — כיתה ט׳ מוגבר</h1>
+      <div className="ch-nav">
+        {CHAPTERS.map(c=><button key={c.id} className={`ch-btn ${chapter===c.id?'active':''}`} onClick={()=>setChapter(c.id)}>{c.label}</button>)}
+      </div>
+    </div>
+    {active && <active.Comp/>}
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

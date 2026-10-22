@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משפט פיתגורס — כיתות ח׳-ט׳</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;min-height:100vh;}
+.hdr{background:linear-gradient(135deg,#4338ca,#6366f1);color:#fff;padding:14px 14px 12px;text-align:center;}
+.hdr-title{font-size:22px;font-weight:700;margin-bottom:8px;}
+.ch-btns{display:flex;gap:8px;justify-content:center;}
+.ch-btn{padding:5px 18px;border:2px solid rgba(255,255,255,0.4);border-radius:8px;background:transparent;color:rgba(255,255,255,0.85);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.ch-btn:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.ch-btn.active{background:rgba(255,255,255,0.25);border-color:#fff;color:#fff;}
+.main{display:flex;direction:ltr;max-width:1040px;margin:20px auto;gap:20px;padding:0 16px;align-items:flex-start;}
+.tri-box{flex:0 0 310px;background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.08);text-align:center;position:sticky;top:20px;}
+.steps{flex:1;direction:rtl;display:flex;flex-direction:column;gap:14px;}
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+.card.done{opacity:.5;padding:12px 18px;}
+.card.on{border:2px solid #4338ca;}
+.card-t{font-size:17px;font-weight:700;color:#4338ca;margin-bottom:10px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;}
+.eq{direction:ltr;text-align:center;font-family:'Courier New',monospace;font-size:20px;margin:10px 0;}
+.btn{padding:7px 18px;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600;transition:background .2s;}
+.btn:disabled{opacity:.4;cursor:default;}
+.bp{background:#4338ca;color:#fff;}.bp:hover:not(:disabled){background:#3730a3;}
+.bg{background:#16a34a;color:#fff;}.bg:hover:not(:disabled){background:#15803d;}
+.fb{margin-top:8px;padding:8px 12px;border-radius:8px;font-size:14px;}
+.fb.err{background:#fee2e2;color:#991b1b;}
+select,input{padding:5px 8px;border:2px solid #d1d5db;border-radius:6px;font-size:17px;text-align:center;}
+select:focus,input:focus{outline:none;border-color:#4338ca;}
+.drag{cursor:pointer;background:#e0e7ff;padding:4px 10px;border-radius:6px;display:inline-block;transition:all .15s;font-weight:600;}
+.drag:hover{background:#c7d2fe;transform:scale(1.08);}
+.banner{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;padding:20px;border-radius:12px;text-align:center;font-size:22px;font-weight:700;}
+@media(max-width:720px){.main{flex-direction:column;}.tri-box{position:static;flex:none;width:100%;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useMemo} = React;
+
+/* ═══════════════ helpers ═══════════════ */
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+function fmtVal(v) {
+  return Math.abs(v - Math.round(v)) < 0.001 ? String(Math.round(v)) : v.toFixed(2);
+}
+
+/* ═══════════════ Chapter 1 data ═══════════════ */
+function makeTri() {
+  const mt = randInt(0, 2);
+  let legH, legV, hyp;
+  if (mt === 2) {
+    legH = randInt(2, 15); legV = randInt(2, 15);
+    hyp = Math.sqrt(legH * legH + legV * legV);
+  } else {
+    let kl, hv;
+    do { kl = randInt(2, 13); hv = randInt(kl + 1, 15); } while (hv * hv - kl * kl < 4);
+    const ol = Math.sqrt(hv * hv - kl * kl);
+    if (mt === 0) { legH = ol; legV = kl; hyp = hv; }
+    else          { legH = kl; legV = ol; hyp = hv; }
+  }
+  const names = ['BC', 'AC', 'AB'];
+  const vals  = [legH, legV, hyp];
+  const known = {};
+  for (let i = 0; i < 3; i++) if (i !== mt) known[names[i]] = Math.round(vals[i]);
+  return { legH, legV, hyp, mt, missingName: names[mt], missingVal: vals[mt], known };
+}
+
+/* ═══════════════ Chapter 2 data ═══════════════ */
+function makeQuad() {
+  const types = ['square', 'rectangle', 'trapezoid'];
+  const type = types[randInt(0, 2)];
+
+  const mkT = (verts, rightAt, sideNames, hyp, missingName, missingVal, known) => ({
+    verts: new Set(verts), rightAt, sideNames, hyp, missingName, missingVal, known
+  });
+
+  if (type === 'square') {
+    const s = randInt(3, 15);
+    const diag = Math.sqrt(2) * s;
+    return {
+      type, label: '\u05E8\u05D9\u05D1\u05D5\u05E2',
+      sideLabels: { AB: s, BC: s, CD: s, AD: s },
+      dashLine: ['A', 'C'],
+      rightAngles: [['A','B','D'], ['B','A','C'], ['C','B','D'], ['D','A','C']],
+      validTriangles: [
+        mkT(['A','B','C'], 'B', ['AB','AC','BC'], 'AC', 'AC', diag, {AB:s, BC:s}),
+        mkT(['A','C','D'], 'D', ['AC','AD','CD'], 'AC', 'AC', diag, {AD:s, CD:s}),
+      ]
+    };
+  }
+
+  if (type === 'rectangle') {
+    let w, h;
+    do { w = randInt(3, 15); h = randInt(3, 15); } while (w === h);
+    const diag = Math.sqrt(w * w + h * h);
+    return {
+      type, label: '\u05DE\u05DC\u05D1\u05DF',
+      sideLabels: { AB: w, BC: h, CD: w, AD: h },
+      dashLine: ['A', 'C'],
+      rightAngles: [['A','B','D'], ['B','A','C'], ['C','B','D'], ['D','A','C']],
+      validTriangles: [
+        mkT(['A','B','C'], 'B', ['AB','AC','BC'], 'AC', 'AC', diag, {AB:w, BC:h}),
+        mkT(['A','C','D'], 'D', ['AC','AD','CD'], 'AC', 'AC', diag, {AD:h, CD:w}),
+      ]
+    };
+  }
+
+  /* right trapezoid — right angles at A and D */
+  const h = randInt(3, 12);
+  const topBase = randInt(3, 10);
+  const bottomBase = topBase + randInt(2, 6);
+
+  if (Math.random() < 0.5) {
+    const bd = Math.sqrt(h * h + bottomBase * bottomBase);
+    return {
+      type, label: '\u05D8\u05E8\u05E4\u05D6 \u05D9\u05E9\u05E8 \u05D6\u05D5\u05D5\u05D9\u05EA',
+      dims: { bottomBase, topBase, h },
+      sideLabels: { AB: bottomBase, AD: h, CD: topBase },
+      dashLine: ['B', 'D'],
+      rightAngles: [['A','B','D'], ['D','A','C']],
+      validTriangles: [
+        mkT(['A','B','D'], 'A', ['AB','AD','BD'], 'BD', 'BD', bd, {AB:bottomBase, AD:h}),
+      ]
+    };
+  } else {
+    const ac = Math.sqrt(h * h + topBase * topBase);
+    return {
+      type, label: '\u05D8\u05E8\u05E4\u05D6 \u05D9\u05E9\u05E8 \u05D6\u05D5\u05D5\u05D9\u05EA',
+      dims: { bottomBase, topBase, h },
+      sideLabels: { AB: bottomBase, AD: h, CD: topBase },
+      dashLine: ['A', 'C'],
+      rightAngles: [['A','B','D'], ['D','A','C']],
+      validTriangles: [
+        mkT(['A','C','D'], 'D', ['AC','AD','CD'], 'AC', 'AC', ac, {AD:h, CD:topBase}),
+      ]
+    };
+  }
+}
+
+/* ═══════════════ Triangle SVG (Ch 1) ═══════════════ */
+function TriSVG({ tri, showAns }) {
+  const { legH, legV, missingName, missingVal, known } = tri;
+  const maxD = 180, sc = maxD / Math.max(legH, legV);
+  const w = Math.max(legH * sc, 50), h = Math.max(legV * sc, 50);
+  const pad = 55, svgW = w + pad * 2, svgH = h + pad * 2;
+
+  const C = { x: pad + w, y: pad + h };
+  const B = { x: pad,     y: pad + h };
+  const A = { x: pad + w, y: pad     };
+  const ms = 15;
+
+  const label = n => {
+    if (showAns && n === missingName) return fmtVal(missingVal);
+    return n === missingName ? '?' : String(known[n]);
+  };
+  const col = n => n === missingName ? '#dc2626' : '#1e293b';
+
+  const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+  const dx = A.x - B.x, dy = A.y - B.y, len = Math.sqrt(dx * dx + dy * dy);
+  const nx = (dy / len) * 24, ny = (-dx / len) * 24;
+
+  return (
+    <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ maxWidth: '100%', height: 'auto', direction: 'ltr' }}>
+      <polygon points={`${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`}
+        fill="#eef2ff" stroke="#4338ca" strokeWidth="2.5" />
+      <polyline points={`${C.x - ms},${C.y} ${C.x - ms},${C.y - ms} ${C.x},${C.y - ms}`}
+        fill="none" stroke="#4338ca" strokeWidth="1.5" />
+
+      <text x={A.x + 8} y={A.y - 6}  fontSize="15" fill="#4338ca" fontWeight="bold" fontFamily="serif">A</text>
+      <text x={B.x - 16} y={B.y + 6} fontSize="15" fill="#4338ca" fontWeight="bold" fontFamily="serif">B</text>
+      <text x={C.x + 8} y={C.y + 18} fontSize="15" fill="#4338ca" fontWeight="bold" fontFamily="serif">C</text>
+
+      <text x={(B.x + C.x) / 2} y={C.y + 20} textAnchor="middle" fontSize="11" fill="#6b7280">BC</text>
+      <text x={(B.x + C.x) / 2} y={C.y + 36} textAnchor="middle" fontSize="16" fontWeight="bold" fill={col('BC')}>{label('BC')}</text>
+
+      <text x={A.x + 16} y={(A.y + C.y) / 2 - 4} textAnchor="start" fontSize="11" fill="#6b7280">AC</text>
+      <text x={A.x + 16} y={(A.y + C.y) / 2 + 14} textAnchor="start" fontSize="16" fontWeight="bold" fill={col('AC')}>{label('AC')}</text>
+
+      <text x={mx + nx} y={my + ny - 8} textAnchor="middle" fontSize="11" fill="#6b7280">AB</text>
+      <text x={mx + nx} y={my + ny + 10} textAnchor="middle" fontSize="16" fontWeight="bold" fill={col('AB')}>{label('AB')}</text>
+    </svg>
+  );
+}
+
+/* ═══════════════ Quadrilateral SVG (Ch 2) ═══════════════ */
+function QuadSVG({ quad, selected, onClickVertex, clickMode, activeTri, showAns }) {
+  const { type, sideLabels, dashLine, rightAngles } = quad;
+  const maxD = 180, pad = 55;
+
+  /* vertex coordinates */
+  let A, B, C, D;
+  if (type === 'square') {
+    const sc = maxD / sideLabels.AB, sz = sideLabels.AB * sc;
+    A = { x: pad, y: pad + sz }; B = { x: pad + sz, y: pad + sz };
+    C = { x: pad + sz, y: pad }; D = { x: pad, y: pad };
+  } else if (type === 'rectangle') {
+    const sc = maxD / Math.max(sideLabels.AB, sideLabels.BC);
+    const sw = sideLabels.AB * sc, sh = sideLabels.BC * sc;
+    A = { x: pad, y: pad + sh }; B = { x: pad + sw, y: pad + sh };
+    C = { x: pad + sw, y: pad }; D = { x: pad, y: pad };
+  } else {
+    const { bottomBase, topBase, h } = quad.dims;
+    const sc = maxD / Math.max(bottomBase, h);
+    A = { x: pad, y: pad + h * sc }; B = { x: pad + bottomBase * sc, y: pad + h * sc };
+    C = { x: pad + topBase * sc, y: pad }; D = { x: pad, y: pad };
+  }
+
+  const pts = { A, B, C, D };
+  const svgW = Math.max(B.x, C.x) + pad;
+  const svgH = Math.max(A.y, B.y) + pad;
+  const cx = (A.x + B.x + C.x + D.x) / 4, cy = (A.y + B.y + C.y + D.y) / 4;
+  const polyStr = [A, B, C, D].map(p => `${p.x},${p.y}`).join(' ');
+
+  /* dashed diagonal */
+  const dl0 = pts[dashLine[0]], dl1 = pts[dashLine[1]];
+  const dashName = [...dashLine].sort().join('');
+  const dlMx = (dl0.x + dl1.x) / 2, dlMy = (dl0.y + dl1.y) / 2;
+  const ddx = dl1.x - dl0.x, ddy = dl1.y - dl0.y, dlen = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+  let dnx = -ddy / dlen * 22, dny = ddx / dlen * 22;
+  if (dny > 0) { dnx = -dnx; dny = -dny; }
+
+  /* side labels (outside shape via perpendicular from center) */
+  const sides = [];
+  const addSide = (name, p1, p2) => {
+    if (sideLabels[name] === undefined) return;
+    const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+    const sdx = p2.x - p1.x, sdy = p2.y - p1.y;
+    const slen = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
+    const n1x = -sdy / slen, n1y = sdx / slen;
+    const dot = n1x * (mx - cx) + n1y * (my - cy);
+    const nx = dot >= 0 ? n1x : -n1x, ny = dot >= 0 ? n1y : -n1y;
+    sides.push({ name, val: sideLabels[name], x: mx + nx * 24, y: my + ny * 24 });
+  };
+  addSide('AB', A, B); addSide('BC', B, C); addSide('CD', C, D); addSide('AD', A, D);
+
+  /* right-angle marks */
+  const raSize = 12;
+  const raMark = (v, t1, t2) => {
+    const vt = pts[v], p1 = pts[t1], p2 = pts[t2];
+    const dx1 = p1.x - vt.x, dy1 = p1.y - vt.y, d1 = Math.sqrt(dx1*dx1+dy1*dy1)||1;
+    const ux1 = dx1/d1*raSize, uy1 = dy1/d1*raSize;
+    const dx2 = p2.x - vt.x, dy2 = p2.y - vt.y, d2 = Math.sqrt(dx2*dx2+dy2*dy2)||1;
+    const ux2 = dx2/d2*raSize, uy2 = dy2/d2*raSize;
+    return `${vt.x+ux1},${vt.y+uy1} ${vt.x+ux1+ux2},${vt.y+uy1+uy2} ${vt.x+ux2},${vt.y+uy2}`;
+  };
+
+  /* vertex label positions (away from center) */
+  const vlPos = v => {
+    const dx = pts[v].x - cx, dy = pts[v].y - cy;
+    const d = Math.sqrt(dx*dx+dy*dy)||1;
+    return { x: pts[v].x + dx/d*18, y: pts[v].y + dy/d*18 + 5 };
+  };
+
+  /* triangle highlight */
+  let triPoly = null;
+  if (activeTri) {
+    triPoly = [...activeTri.verts].map(v => `${pts[v].x},${pts[v].y}`).join(' ');
+  }
+  const diagVal = showAns && activeTri ? fmtVal(activeTri.missingVal) : '?';
+
+  return (
+    <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ maxWidth: '100%', height: 'auto', direction: 'ltr' }}>
+      {/* shape fill */}
+      <polygon points={polyStr} fill="#eef2ff" stroke="#4338ca" strokeWidth="2.5" />
+
+      {/* triangle highlight */}
+      {triPoly && <polygon points={triPoly} fill="rgba(99,102,241,0.18)" stroke="#6366f1" strokeWidth="2" />}
+
+      {/* dashed diagonal */}
+      <line x1={dl0.x} y1={dl0.y} x2={dl1.x} y2={dl1.y}
+        stroke="#6366f1" strokeWidth="2" strokeDasharray="8,5" />
+
+      {/* right-angle marks */}
+      {rightAngles.map((ra, i) =>
+        <polyline key={i} points={raMark(ra[0], ra[1], ra[2])} fill="none" stroke="#4338ca" strokeWidth="1.5" />
+      )}
+
+      {/* vertex labels */}
+      {['A','B','C','D'].map(v => {
+        const p = vlPos(v);
+        return <text key={v} x={p.x} y={p.y} textAnchor="middle"
+          fontSize="15" fill="#4338ca" fontWeight="bold" fontFamily="serif">{v}</text>;
+      })}
+
+      {/* side labels */}
+      {sides.map(s => (
+        <g key={s.name}>
+          <text x={s.x} y={s.y - 7} textAnchor="middle" fontSize="11" fill="#6b7280">{s.name}</text>
+          <text x={s.x} y={s.y + 9} textAnchor="middle" fontSize="15" fontWeight="bold" fill="#1e293b">{s.val}</text>
+        </g>
+      ))}
+
+      {/* diagonal label */}
+      <text x={dlMx+dnx} y={dlMy+dny-7} textAnchor="middle" fontSize="11" fill="#6b7280">{dashName}</text>
+      <text x={dlMx+dnx} y={dlMy+dny+10} textAnchor="middle" fontSize="16" fontWeight="bold" fill="#dc2626">{diagVal}</text>
+
+      {/* clickable vertex circles */}
+      {clickMode && ['A','B','C','D'].map(v => (
+        <circle key={'c'+v} cx={pts[v].x} cy={pts[v].y} r={14}
+          fill={selected.has(v) ? '#4338ca' : 'rgba(67,56,202,0.1)'}
+          stroke="#4338ca" strokeWidth="2.5" style={{cursor:'pointer'}}
+          onClick={() => onClickVertex(v)} />
+      ))}
+    </svg>
+  );
+}
+
+/* ═══════════════ Shared: drag-solve step ═══════════════ */
+function Step4({ tri, eqOrder, onDone }) {
+  const buildEq = () => {
+    const left = [], right = [];
+    for (let i = 0; i < 2; i++) {
+      const nm = eqOrder[i];
+      if (nm === tri.missingName) left.push({ id: 'u', v: 0, s: 1, unk: true });
+      else { const k = tri.known[nm]; left.push({ id: `n${i}`, v: k * k, s: 1, unk: false }); }
+    }
+    const nm2 = eqOrder[2];
+    if (nm2 === tri.missingName) right.push({ id: 'u', v: 0, s: 1, unk: true });
+    else { const k = tri.known[nm2]; right.push({ id: 'n2', v: k * k, s: 1, unk: false }); }
+    return { left, right };
+  };
+
+  const [eq, setEq] = useState(buildEq);
+  const [rootMode, setRootMode] = useState(false);
+  const [ans, setAns] = useState('');
+  const [fb, setFb] = useState('');
+
+  const sqInfo = eqOrder
+    .filter(nm => nm !== tri.missingName)
+    .map(nm => { const k = tri.known[nm]; return `${k}\u00B2 = ${k * k}`; })
+    .join(' ,  ');
+
+  const solved = useMemo(() => {
+    const { left: L, right: R } = eq;
+    if (L.length === 1 && L[0].unk && R.length === 1 && !R[0].unk && R[0].v * R[0].s > 0)
+      return R[0].v * R[0].s;
+    if (R.length === 1 && R[0].unk && L.length === 1 && !L[0].unk && L[0].v * L[0].s > 0)
+      return L[0].v * L[0].s;
+    return null;
+  }, [eq]);
+
+  const move = (side, id) => {
+    setEq(p => {
+      const from = side === 'L' ? [...p.left] : [...p.right];
+      const to   = side === 'L' ? [...p.right] : [...p.left];
+      const i = from.findIndex(t => t.id === id);
+      if (i < 0 || from[i].unk) return p;
+      to.push({ ...from[i], s: -from[i].s });
+      from.splice(i, 1);
+      return side === 'L' ? { left: from, right: to } : { left: to, right: from };
+    });
+    setFb('');
+  };
+
+  const simplify = () => setEq(p => {
+    const simp = ts => {
+      const us = ts.filter(t => t.unk), ns = ts.filter(t => !t.unk);
+      if (ns.length <= 1) return ts;
+      const sum = ns.reduce((a, t) => a + t.v * t.s, 0);
+      const res = [...us];
+      if (sum !== 0) res.push({ id: ns[0].id, v: Math.abs(sum), s: sum > 0 ? 1 : -1, unk: false });
+      return res.length ? res : [{ id: 'z', v: 0, s: 1, unk: false }];
+    };
+    return { left: simp(p.left), right: simp(p.right) };
+  });
+
+  const resetEq = () => { setEq(buildEq()); setRootMode(false); setAns(''); setFb(''); };
+
+  const checkRoot = () => {
+    const student = parseFloat(ans);
+    if (isNaN(student)) { setFb('\u05D4\u05D6\u05DF \u05DE\u05E1\u05E4\u05E8.'); return; }
+    const correct = Math.sqrt(solved);
+    if (Math.abs(student - correct) < 0.05) onDone(parseFloat(fmtVal(correct)));
+    else setFb('\u2717 \u05DC\u05D0 \u05E0\u05DB\u05D5\u05DF, \u05E0\u05E1\u05D4 \u05E9\u05D5\u05D1.');
+  };
+
+  const renderSide = (terms, side) => {
+    if (!terms.length) return <span style={{ color: '#9ca3af' }}>0</span>;
+    return terms.map((t, i) => {
+      const pre = i === 0 ? (t.s < 0 ? '\u2212' : '') : (t.s > 0 ? ' + ' : ' \u2212 ');
+      const txt = t.unk ? '?\u00B2' : String(t.v);
+      const can = !t.unk && !rootMode;
+      return (
+        <React.Fragment key={t.id + '_' + i}>
+          <span>{pre}</span>
+          <span className={can ? 'drag' : ''} onClick={can ? () => move(side, t.id) : undefined}
+            style={t.unk ? { color: '#dc2626', fontWeight: 700 } : {}}>{txt}</span>
+        </React.Fragment>
+      );
+    });
+  };
+
+  return (
+    <div>
+      <div style={{ color: '#6b7280', fontSize: 13, textAlign: 'center', marginBottom: 4 }}>{'\u05D7\u05D9\u05E9\u05D5\u05D1 \u05E8\u05D9\u05D1\u05D5\u05E2\u05D9\u05DD:'}</div>
+      <div style={{ direction: 'ltr', textAlign: 'center', fontSize: 14, color: '#6b7280', marginBottom: 10 }}>{sqInfo}</div>
+
+      <p style={{ marginBottom: 8, fontSize: 14 }}>{'\u05DC\u05D7\u05E5 \u05E2\u05DC \u05DE\u05E1\u05E4\u05E8 \u05DB\u05D3\u05D9 \u05DC\u05D4\u05E2\u05D1\u05D9\u05E8 \u05D0\u05D5\u05EA\u05D5 \u05DC\u05E6\u05D3 \u05D4\u05E9\u05E0\u05D9:'}</p>
+
+      <div className="eq" style={{ fontSize: 24, padding: 14, background: '#f8fafc', borderRadius: 8 }}>
+        {renderSide(eq.left, 'L')}
+        <span style={{ margin: '0 10px' }}>=</span>
+        {renderSide(eq.right, 'R')}
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 10, display: 'flex', gap: 8, justifyContent: 'center' }}>
+        {!rootMode && <button className="btn bp" onClick={simplify}>{'\u05E4\u05E9\u05D8 \u2295'}</button>}
+        <button className="btn" style={{ background: '#e5e7eb', color: '#374151' }} onClick={resetEq}>{'\u21BA \u05D0\u05E4\u05E1'}</button>
+      </div>
+
+      {solved !== null && !rootMode && (
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <button className="btn bg" onClick={() => setRootMode(true)}
+            style={{ fontSize: 17, padding: '10px 28px' }}>{'\u221A'} {'\u05D4\u05D5\u05E6\u05D0 \u05E9\u05D5\u05E8\u05E9'}</button>
+        </div>
+      )}
+
+      {rootMode && (
+        <div style={{ textAlign: 'center', marginTop: 16, direction: 'ltr' }}>
+          <div style={{ fontSize: 16, marginBottom: 10, color: '#4338ca', fontWeight: 600 }}>{'\u05D4\u05D5\u05E6\u05D0 \u05E9\u05D5\u05E8\u05E9 \u05DE\u05E9\u05E0\u05D9 \u05D4\u05D0\u05D2\u05E4\u05D9\u05DD:'}</div>
+          <span style={{ fontSize: 20, fontFamily: 'monospace' }}>? = </span>
+          <input style={{ width: 80 }} value={ans}
+            onChange={e => { setAns(e.target.value); setFb(''); }}
+            onKeyDown={e => e.key === 'Enter' && checkRoot()} />
+          <button className="btn bg" style={{ marginLeft: 8 }} onClick={checkRoot}>{'\u2713'} {'\u05D1\u05D3\u05D5\u05E7'}</button>
+        </div>
+      )}
+
+      {fb && <div className="fb err" style={{ textAlign: 'center' }}>{fb}</div>}
+    </div>
+  );
+}
+
+/* ═══════════════ Chapter 1 component ═══════════════ */
+function Chapter1() {
+  const [tri, setTri] = useState(() => makeTri());
+  const [phase, setPhase] = useState(0);
+
+  const [s1, setS1]     = useState('');
+  const [s1fb, setS1fb] = useState('');
+  const [s2, setS2]     = useState('');
+  const [s2fb, setS2fb] = useState('');
+  const [eqOrd, setEqOrd] = useState([]);
+  const [s3, setS3]     = useState(['', '', '']);
+  const [s3fb, setS3fb] = useState('');
+  const [solVal, setSolVal] = useState(null);
+
+  const sideNames = ['AB', 'BC', 'AC'];
+
+  const reset = () => {
+    setTri(makeTri()); setPhase(0);
+    setS1(''); setS1fb('');
+    setS2(''); setS2fb(''); setEqOrd([]);
+    setS3(['', '', '']); setS3fb('');
+    setSolVal(null);
+  };
+
+  const chk1 = () => {
+    if (s1 === 'AB') { setS1fb(''); setPhase(1); }
+    else setS1fb('\u05D4\u05D9\u05EA\u05E8 \u05D4\u05D9\u05D0 \u05D4\u05E6\u05DC\u05E2 \u05D4\u05D0\u05E8\u05D5\u05DB\u05D4 \u05D1\u05D9\u05D5\u05EA\u05E8, \u05D4\u05E0\u05DE\u05E6\u05D0\u05EA \u05DE\u05D5\u05DC \u05D4\u05D6\u05D5\u05D5\u05D9\u05EA \u05D4\u05D9\u05E9\u05E8\u05D4. \u05E0\u05E1\u05D4 \u05E9\u05D5\u05D1.');
+  };
+
+  const chk2 = () => {
+    const legs = sideNames.filter(n => n !== 'AB');
+    const clean = s2.replace(/\s+/g, '').toUpperCase();
+    const m = clean.match(/^([A-Z]{2})(?:\^2|\*\*2|\u00B2)\+([A-Z]{2})(?:\^2|\*\*2|\u00B2)=([A-Z]{2})(?:\^2|\*\*2|\u00B2)$/);
+    const ok = m && m[3] === 'AB' && new Set([m[1], m[2]]).size === 2 &&
+      [m[1], m[2]].every(n => legs.includes(n));
+    if (!ok) { setS2fb('\u2717 \u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA \u05D4\u05DE\u05E9\u05D5\u05D5\u05D0\u05D4.'); return; }
+    setS2fb(''); setEqOrd([m[1], m[2], m[3]]); setPhase(2);
+  };
+
+  const chk3 = () => {
+    for (let i = 0; i < 3; i++) {
+      const nm = eqOrd[i];
+      if (nm === tri.missingName) {
+        if (s3[i].trim() !== '?') { setS3fb('\u05E1\u05DE\u05DF ? \u05E2\u05D1\u05D5\u05E8 \u05D4\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4.'); return; }
+      } else {
+        const v = parseFloat(s3[i]);
+        if (isNaN(v) || v !== tri.known[nm]) { setS3fb('\u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05D4\u05DE\u05E1\u05E4\u05E8\u05D9\u05D9\u05DD \u05E9\u05D4\u05D6\u05E0\u05EA.'); return; }
+      }
+    }
+    setS3fb(''); setPhase(3);
+  };
+
+  const upS3 = (i, v) => { const a = [...s3]; a[i] = v; setS3(a); };
+
+  return (
+    <div className="main">
+      <div className="tri-box">
+        <TriSVG tri={tri} showAns={phase === 4} />
+        <div style={{ marginTop: 10 }}>
+          <button className="btn bp" onClick={reset}>{'\u05DE\u05E9\u05D5\u05DC\u05E9 \u05D7\u05D3\u05E9 \u21BA'}</button>
+        </div>
+      </div>
+
+      <div className="steps">
+        {/* Step 1 — identify hypotenuse */}
+        <div className={`card ${phase > 0 ? 'done' : 'on'}`}>
+          <div className="card-t">{'\u05E9\u05DC\u05D1 1 \u2014 \u05D6\u05D9\u05D4\u05D5\u05D9 \u05D4\u05D9\u05EA\u05E8'}</div>
+          {phase === 0 ? (<>
+            <p>{'\u05D0\u05D9\u05D6\u05D5 \u05E6\u05DC\u05E2 \u05D4\u05D9\u05D0 \u05D4\u05D9\u05EA\u05E8?'}</p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, justifyContent: 'center' }}>
+              {sideNames.map(n => (
+                <button key={n} className={`btn ${s1 === n ? 'bp' : ''}`}
+                  style={s1 !== n ? { background: '#e5e7eb', color: '#1e293b' } : {}}
+                  onClick={() => { setS1(n); setS1fb(''); }}>{n}</button>
+              ))}
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 10 }}>
+              <button className="btn bg" onClick={chk1} disabled={!s1}>{'\u2713'} {'\u05D1\u05D3\u05D5\u05E7'}</button>
+            </div>
+            {s1fb && <div className="fb err">{s1fb}</div>}
+          </>) : (
+            <p style={{ color: '#16a34a' }}>{'\u2713'} AB</p>
+          )}
+        </div>
+
+        {/* Step 2 — write equation */}
+        {phase >= 1 && (
+          <div className={`card ${phase > 1 ? 'done' : 'on'}`}>
+            <div className="card-t">{'\u05E9\u05DC\u05D1 2 \u2014 \u05DB\u05EA\u05D9\u05D1\u05EA \u05D4\u05DE\u05E9\u05D5\u05D5\u05D0\u05D4'}</div>
+            {phase === 1 ? (<>
+              <p>{'\u05DB\u05EA\u05D5\u05D1 \u05D0\u05EA \u05DE\u05E9\u05E4\u05D8 \u05E4\u05D9\u05EA\u05D2\u05D5\u05E8\u05E1 \u05E2\u05D1\u05D5\u05E8 \u05D4\u05DE\u05E9\u05D5\u05DC\u05E9 (\u05DC\u05D3\u05D5\u05D2\u05DE\u05D4: XY\u00B2+YZ\u00B2=XZ\u00B2):'}</p>
+              <div className="eq" style={{ textAlign: 'center' }}>
+                <input style={{ width: 220, direction: 'ltr' }} value={s2}
+                  onChange={e => { setS2(e.target.value); setS2fb(''); }}
+                  onKeyDown={e => e.key === 'Enter' && chk2()} />
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 10 }}>
+                <button className="btn bg" onClick={chk2}>{'\u2713'} {'\u05D1\u05D3\u05D5\u05E7'}</button>
+              </div>
+              {s2fb && <div className="fb err">{s2fb}</div>}
+            </>) : (
+              <p className="eq" style={{ color: '#16a34a' }}>
+                {'\u2713'} {eqOrd[0]}{'\u00B2'} + {eqOrd[1]}{'\u00B2'} = {eqOrd[2]}{'\u00B2'}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Step 3 — substitute values */}
+        {phase >= 2 && (
+          <div className={`card ${phase > 2 ? 'done' : 'on'}`}>
+            <div className="card-t">{'\u05E9\u05DC\u05D1 3 \u2014 \u05D4\u05E6\u05D1\u05EA \u05E2\u05E8\u05DB\u05D9\u05DD'}</div>
+            {phase === 2 ? (<>
+              <p>{'\u05D4\u05E6\u05D1 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05D1\u05DE\u05E9\u05D5\u05D5\u05D0\u05D4 (\u05E1\u05DE\u05DF ? \u05DC\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4):'}</p>
+              <div className="eq" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 6 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{eqOrd[0]}</div>
+                  <input style={{ width: 55 }} value={s3[0]} onChange={e => upS3(0, e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && chk3()} />
+                  <span>{'\u00B2'}</span>
+                </div>
+                <span style={{ fontSize: 20, paddingBottom: 4 }}>+</span>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{eqOrd[1]}</div>
+                  <input style={{ width: 55 }} value={s3[1]} onChange={e => upS3(1, e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && chk3()} />
+                  <span>{'\u00B2'}</span>
+                </div>
+                <span style={{ fontSize: 20, paddingBottom: 4 }}>=</span>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{eqOrd[2]}</div>
+                  <input style={{ width: 55 }} value={s3[2]} onChange={e => upS3(2, e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && chk3()} />
+                  <span>{'\u00B2'}</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 10 }}>
+                <button className="btn bg" onClick={chk3}>{'\u2713'} {'\u05D1\u05D3\u05D5\u05E7'}</button>
+              </div>
+              {s3fb && <div className="fb err">{s3fb}</div>}
+            </>) : (
+              <p className="eq" style={{ color: '#16a34a' }}>
+                {'\u2713'} {s3[0]}{'\u00B2'} + {s3[1]}{'\u00B2'} = {s3[2]}{'\u00B2'}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Step 4 — solve */}
+        {phase >= 3 && (
+          <div className={`card ${phase > 3 ? 'done' : 'on'}`}>
+            <div className="card-t">{'\u05E9\u05DC\u05D1 4 \u2014 \u05D7\u05D9\u05E9\u05D5\u05D1 \u05D5\u05E4\u05EA\u05E8\u05D5\u05DF'}</div>
+            {phase === 3 ? (
+              <Step4 tri={tri} eqOrder={eqOrd} onDone={v => { setSolVal(v); setPhase(4); }} />
+            ) : (
+              <p className="eq" style={{ color: '#16a34a' }}>
+                {'\u2713'} {tri.missingName} = {solVal}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Success banner */}
+        {phase === 4 && (
+          <div className="banner">
+            {'\u2705'} {'\u05DB\u05DC \u05D4\u05DB\u05D1\u05D5\u05D3!'} &nbsp; {tri.missingName} = {solVal}
+            <div style={{ marginTop: 12 }}>
+              <button className="btn" style={{ background: '#fff', color: '#16a34a', fontSize: 17 }}
+                onClick={reset}>{'\u05DE\u05E9\u05D5\u05DC\u05E9 \u05D7\u05D3\u05E9 \u21BA'}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════ Chapter 2 component ═══════════════ */
+function Chapter2() {
+  const [quad, setQuad] = useState(() => makeQuad());
+  const [phase, setPhase] = useState(0); // 0-5
+  const [activeTri, setActiveTri] = useState(null);
+
+  const [selVerts, setSelVerts] = useState(new Set());
+  const [s1fb, setS1fb] = useState('');
+
+  const [s2, setS2]     = useState('');
+  const [s2fb, setS2fb] = useState('');
+
+  const [s3, setS3]     = useState('');
+  const [s3fb, setS3fb] = useState('');
+  const [eqOrd, setEqOrd] = useState([]);
+
+  const [s4, setS4]     = useState(['', '', '']);
+  const [s4fb, setS4fb] = useState('');
+
+  const [solVal, setSolVal] = useState(null);
+
+  const reset = () => {
+    setQuad(makeQuad()); setPhase(0); setActiveTri(null);
+    setSelVerts(new Set()); setS1fb('');
+    setS2(''); setS2fb('');
+    setS3(''); setS3fb(''); setEqOrd([]);
+    setS4(['', '', '']); setS4fb('');
+    setSolVal(null);
+  };
+
+  const onClickVertex = v => {
+    if (phase !== 0) return;
+    setSelVerts(prev => {
+      const next = new Set(prev);
+      if (next.has(v)) next.delete(v); else if (next.size < 3) next.add(v);
+      return next;
+    });
+    setS1fb('');
+  };
+
+  /* step checks */
+  const chk1 = () => {
+    if (selVerts.size !== 3) { setS1fb('\u05D1\u05D7\u05E8 3 \u05E7\u05D5\u05D3\u05E7\u05D5\u05D3\u05D9\u05DD.'); return; }
+    const match = quad.validTriangles.find(t => {
+      if (t.verts.size !== selVerts.size) return false;
+      for (const v of selVerts) if (!t.verts.has(v)) return false;
+      return true;
+    });
+    if (!match) {
+      setS1fb('\u05D4\u05E7\u05D5\u05D3\u05E7\u05D5\u05D3\u05D9\u05DD \u05E9\u05E0\u05D1\u05D7\u05E8\u05D5 \u05DC\u05D0 \u05D9\u05D5\u05E6\u05E8\u05D9\u05DD \u05DE\u05E9\u05D5\u05DC\u05E9 \u05D9\u05E9\u05E8-\u05D6\u05D5\u05D5\u05D9\u05EA \u05E9\u05DB\u05D5\u05DC\u05DC \u05D0\u05EA \u05D4\u05E7\u05D5 \u05D4\u05DE\u05E7\u05D5\u05D5\u05E7\u05D5. \u05E0\u05E1\u05D4 \u05E9\u05D5\u05D1.');
+      return;
+    }
+    setActiveTri(match); setS1fb(''); setPhase(1);
+  };
+
+  const chk2 = () => {
+    if (s2 === activeTri.hyp) { setS2fb(''); setPhase(2); }
+    else setS2fb('\u05D4\u05D9\u05EA\u05E8 \u05D4\u05D9\u05D0 \u05D4\u05E6\u05DC\u05E2 \u05D4\u05D0\u05E8\u05D5\u05DB\u05D4 \u05D1\u05D9\u05D5\u05EA\u05E8, \u05DE\u05D5\u05DC \u05D4\u05D6\u05D5\u05D5\u05D9\u05EA \u05D4\u05D9\u05E9\u05E8\u05D4. \u05E0\u05E1\u05D4 \u05E9\u05D5\u05D1.');
+  };
+
+  const chk3 = () => {
+    const legs = activeTri.sideNames.filter(n => n !== activeTri.hyp);
+    const clean = s3.replace(/\s+/g, '').toUpperCase();
+    const m = clean.match(/^([A-Z]{2})(?:\^2|\*\*2|\u00B2)\+([A-Z]{2})(?:\^2|\*\*2|\u00B2)=([A-Z]{2})(?:\^2|\*\*2|\u00B2)$/);
+    const ok = m && m[3] === activeTri.hyp && new Set([m[1], m[2]]).size === 2 &&
+      [m[1], m[2]].every(n => legs.includes(n));
+    if (!ok) { setS3fb('\u2717 \u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA \u05D4\u05DE\u05E9\u05D5\u05D5\u05D0\u05D4.'); return; }
+    setS3fb(''); setEqOrd([m[1], m[2], m[3]]); setPhase(3);
+  };
+
+  const chk4 = () => {
+    for (let i = 0; i < 3; i++) {
+      const nm = eqOrd[i];
+      if (nm === activeTri.missingName) {
+        if (s4[i].trim() !== '?') { setS4fb('\u05E1\u05DE\u05DF ? \u05E2\u05D1\u05D5\u05E8 \u05D4\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4.'); return; }
+      } else {
+        const v = parseFloat(s4[i]);
+        if (isNaN(v) || v !== activeTri.known[nm]) { setS4fb('\u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05E9\u05D4\u05D6\u05E0\u05EA.'); return; }
+      }
+    }
+    setS4fb(''); setPhase(4);
+  };
+
+  const upS4 = (i, v) => { const a = [...s4]; a[i] = v; setS4(a); };
+
+  return (
+    <div className="main">
+      {/* shape panel */}
+      <div className="tri-box">
+        <div style={{ fontWeight: 700, color: '#4338ca', marginBottom: 8, fontSize: 17 }}>{quad.label}</div>
+        <QuadSVG quad={quad} selected={selVerts} onClickVertex={onClickVertex}
+          clickMode={phase === 0} activeTri={phase >= 1 ? activeTri : null} showAns={phase === 5} />
+        <div style={{ marginTop: 10 }}>
+          <button className="btn bp" onClick={reset}>{'\u05EA\u05E8\u05D2\u05D9\u05DC \u05D7\u05D3\u05E9 \u21BA'}</button>
+        </div>
+      </div>
+
+      {/* steps */}
+      <div className="steps">
+
+        {/* ── Step 1 — identify the triangle ── */}
+        <div className={`card ${phase > 0 ? 'done' : 'on'}`}>
+          <div className="card-t">{'\u05E9\u05DC\u05D1 1 \u2014 \u05D6\u05D9\u05D4\u05D5\u05D9 \u05D4\u05DE\u05E9\u05D5\u05DC\u05E9 \u05D4\u05D9\u05E9\u05E8-\u05D6\u05D5\u05D5\u05D9\u05EA'}</div>
+          {phase === 0 ? (<>
+            <p>{'\u05DC\u05D7\u05E5 \u05E2\u05DC 3 \u05E7\u05D5\u05D3\u05E7\u05D5\u05D3\u05D9\u05DD \u05E9\u05D9\u05D5\u05E6\u05E8\u05D9\u05DD \u05DE\u05E9\u05D5\u05DC\u05E9 \u05D9\u05E9\u05E8-\u05D6\u05D5\u05D5\u05D9\u05EA \u05D1\u05EA\u05D5\u05DA \u05D4'}{quad.label}:</p>
+            <div style={{ textAlign: 'center', marginTop: 8, minHeight: 30 }}>
+              {selVerts.size > 0 && (
+                <span style={{ fontWeight: 700, fontSize: 18, color: '#4338ca' }}>
+                  {[...selVerts].sort().join(' , ')}
+                </span>
+              )}
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 10 }}>
+              <button className="btn bg" onClick={chk1} disabled={selVerts.size !== 3}>{'\u2713'} {'\u05D1\u05D3\u05D5\u05E7'}</button>
+            </div>
+            {s1fb && <div className="fb err">{s1fb}</div>}
+          </>) : (
+            <p style={{ color: '#16a34a' }}>{'\u2713'} {'\u25B3'}{[...activeTri.verts].sort().join('')}</p>
+          )}
+        </div>
+
+        {/* ── Step 2 — identify hypotenuse ── */}
+        {phase >= 1 && (
+          <div className={`card ${phase > 1 ? 'done' : 'on'}`}>
+            <div className="card-t">{'\u05E9\u05DC\u05D1 2 \u2014 \u05D6\u05D9\u05D4\u05D5\u05D9 \u05D4\u05D9\u05EA\u05E8'}</div>
+            {phase === 1 ? (<>
+              <p>{'\u05D0\u05D9\u05D6\u05D5 \u05E6\u05DC\u05E2 \u05D4\u05D9\u05D0 \u05D4\u05D9\u05EA\u05E8 \u05D1\u05DE\u05E9\u05D5\u05DC\u05E9 '}{[...activeTri.verts].sort().join('')}?</p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10, justifyContent: 'center' }}>
+                {activeTri.sideNames.map(n => (
+                  <button key={n} className={`btn ${s2 === n ? 'bp' : ''}`}
+                    style={s2 !== n ? { background: '#e5e7eb', color: '#1e293b' } : {}}
+                    onClick={() => { setS2(n); setS2fb(''); }}>{n}</button>
+                ))}
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 10 }}>
+                <button className="btn bg" onClick={chk2} disabled={!s2}>{'\u2713'} {'\u05D1\u05D3\u05D5\u05E7'}</button>
+              </div>
+              {s2fb && <div className="fb err">{s2fb}</div>}
+            </>) : (
+              <p style={{ color: '#16a34a' }}>{'\u2713'} {activeTri.hyp}</p>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 3 — write equation ── */}
+        {phase >= 2 && (
+          <div className={`card ${phase > 2 ? 'done' : 'on'}`}>
+            <div className="card-t">{'\u05E9\u05DC\u05D1 3 \u2014 \u05DB\u05EA\u05D9\u05D1\u05EA \u05D4\u05DE\u05E9\u05D5\u05D5\u05D0\u05D4'}</div>
+            {phase === 2 ? (<>
+              <p>{'\u05DB\u05EA\u05D5\u05D1 \u05D0\u05EA \u05DE\u05E9\u05E4\u05D8 \u05E4\u05D9\u05EA\u05D2\u05D5\u05E8\u05E1 \u05E2\u05D1\u05D5\u05E8 \u05D4\u05DE\u05E9\u05D5\u05DC\u05E9 (\u05DC\u05D3\u05D5\u05D2\u05DE\u05D4: XY\u00B2+YZ\u00B2=XZ\u00B2):'}</p>
+              <div className="eq" style={{ textAlign: 'center' }}>
+                <input style={{ width: 220, direction: 'ltr' }} value={s3}
+                  onChange={e => { setS3(e.target.value); setS3fb(''); }}
+                  onKeyDown={e => e.key === 'Enter' && chk3()} />
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 10 }}>
+                <button className="btn bg" onClick={chk3}>{'\u2713'} {'\u05D1\u05D3\u05D5\u05E7'}</button>
+              </div>
+              {s3fb && <div className="fb err">{s3fb}</div>}
+            </>) : (
+              <p className="eq" style={{ color: '#16a34a' }}>
+                {'\u2713'} {eqOrd[0]}{'\u00B2'} + {eqOrd[1]}{'\u00B2'} = {eqOrd[2]}{'\u00B2'}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 4 — substitute values ── */}
+        {phase >= 3 && (
+          <div className={`card ${phase > 3 ? 'done' : 'on'}`}>
+            <div className="card-t">{'\u05E9\u05DC\u05D1 4 \u2014 \u05D4\u05E6\u05D1\u05EA \u05E2\u05E8\u05DB\u05D9\u05DD'}</div>
+            {phase === 3 ? (<>
+              <p>{'\u05D4\u05E6\u05D1 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD (\u05E1\u05DE\u05DF ? \u05DC\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4):'}</p>
+              <div className="eq" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 6 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{eqOrd[0]}</div>
+                  <input style={{ width: 55 }} value={s4[0]} onChange={e => upS4(0, e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && chk4()} />
+                  <span>{'\u00B2'}</span>
+                </div>
+                <span style={{ fontSize: 20, paddingBottom: 4 }}>+</span>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{eqOrd[1]}</div>
+                  <input style={{ width: 55 }} value={s4[1]} onChange={e => upS4(1, e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && chk4()} />
+                  <span>{'\u00B2'}</span>
+                </div>
+                <span style={{ fontSize: 20, paddingBottom: 4 }}>=</span>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{eqOrd[2]}</div>
+                  <input style={{ width: 55 }} value={s4[2]} onChange={e => upS4(2, e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && chk4()} />
+                  <span>{'\u00B2'}</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 10 }}>
+                <button className="btn bg" onClick={chk4}>{'\u2713'} {'\u05D1\u05D3\u05D5\u05E7'}</button>
+              </div>
+              {s4fb && <div className="fb err">{s4fb}</div>}
+            </>) : (
+              <p className="eq" style={{ color: '#16a34a' }}>
+                {'\u2713'} {s4[0]}{'\u00B2'} + {s4[1]}{'\u00B2'} = {s4[2]}{'\u00B2'}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── Step 5 — solve ── */}
+        {phase >= 4 && (
+          <div className={`card ${phase > 4 ? 'done' : 'on'}`}>
+            <div className="card-t">{'\u05E9\u05DC\u05D1 5 \u2014 \u05D7\u05D9\u05E9\u05D5\u05D1 \u05D5\u05E4\u05EA\u05E8\u05D5\u05DF'}</div>
+            {phase === 4 ? (
+              <Step4 tri={activeTri} eqOrder={eqOrd}
+                onDone={v => { setSolVal(v); setPhase(5); }} />
+            ) : (
+              <p className="eq" style={{ color: '#16a34a' }}>
+                {'\u2713'} {activeTri.missingName} = {solVal}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Success banner */}
+        {phase === 5 && (
+          <div className="banner">
+            {'\u2705'} {'\u05DB\u05DC \u05D4\u05DB\u05D1\u05D5\u05D3!'} &nbsp; {activeTri.missingName} = {solVal}
+            <div style={{ marginTop: 12 }}>
+              <button className="btn" style={{ background: '#fff', color: '#16a34a', fontSize: 17 }}
+                onClick={reset}>{'\u05EA\u05E8\u05D2\u05D9\u05DC \u05D7\u05D3\u05E9 \u21BA'}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════ Main App ═══════════════ */
+function App() {
+  const [chapter, setChapter] = useState(1);
+  return (
+    <div>
+      <div className="hdr">
+        <div className="hdr-title">{'\u05DE\u05E9\u05E4\u05D8 \u05E4\u05D9\u05EA\u05D2\u05D5\u05E8\u05E1'}</div>
+        <div className="ch-btns">
+          <button className={`ch-btn ${chapter === 1 ? 'active' : ''}`}
+            onClick={() => setChapter(1)}>{'\u05E4\u05E8\u05E7 1 \u2014 \u05DE\u05E9\u05D5\u05DC\u05E9\u05D9\u05DD'}</button>
+          <button className={`ch-btn ${chapter === 2 ? 'active' : ''}`}
+            onClick={() => setChapter(2)}>{'\u05E4\u05E8\u05E7 2 \u2014 \u05D9\u05D9\u05E9\u05D5\u05DD'}</button>
+        </div>
+      </div>
+      {chapter === 1 ? <Chapter1 key="ch1" /> : <Chapter2 key="ch2" />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

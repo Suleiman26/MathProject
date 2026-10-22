@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מרובעים — כיתות ז׳-ח׳</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;min-height:100vh;}
+.hdr{background:linear-gradient(135deg,#164e63,#0891b2);color:#fff;padding:14px 14px 12px;text-align:center;}
+.hdr-title{font-size:22px;font-weight:700;margin-bottom:8px;}
+.ch-btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.ch-btn{padding:6px 14px;border:2px solid rgba(255,255,255,0.4);border-radius:8px;background:transparent;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.ch-btn:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.ch-btn.active{background:rgba(255,255,255,0.25);border-color:#fff;color:#fff;}
+.sub-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+.sub-tab{padding:6px 14px;border:2px solid #a5f3fc;border-radius:20px;background:#fff;color:#0e7490;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.sub-tab.active{background:#0e7490;color:#fff;border-color:#0e7490;}
+.content{max-width:820px;margin:20px auto;padding:0 16px;}
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:14px;}
+.card-t{font-size:17px;font-weight:700;color:#0e7490;margin-bottom:10px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;text-align:center;}
+.btn{padding:7px 18px;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600;transition:background .2s;}
+.btn:disabled{opacity:.4;cursor:default;}
+.bp{background:#0e7490;color:#fff;}.bp:hover:not(:disabled){background:#0c5f74;}
+.bg{background:#16a34a;color:#fff;}.bg:hover:not(:disabled){background:#15803d;}
+.fb{margin-top:8px;padding:8px 12px;border-radius:8px;font-size:14px;text-align:center;}
+.fb.ok{background:#dcfce7;color:#166534;}
+.fb.err{background:#fee2e2;color:#991b1b;}
+input[type=text],input[type=number],input:not([type]){padding:5px 8px;border:2px solid #d1d5db;border-radius:6px;font-size:16px;text-align:center;direction:ltr;width:80px;}
+input:focus{outline:none;border-color:#0e7490;}
+.banner{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;padding:20px;border-radius:12px;text-align:center;font-size:20px;font-weight:700;margin-bottom:14px;}
+.center{text-align:center;}
+.step-card{background:#f8fafc;border:2px solid #e5e7eb;border-radius:10px;padding:14px;margin-top:12px;}
+.step-card.done{border-color:#16a34a;background:#f0fdf4;}
+.step-label{font-size:14px;font-weight:700;color:#0e7490;margin-bottom:8px;}
+.ans-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0;direction:ltr;flex-wrap:wrap;}
+.hint{font-size:13px;color:#6b7280;text-align:center;margin:6px 0;}
+.choice-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
+.choice-btn{padding:8px 16px;border:2px solid #d1d5db;border-radius:8px;background:#f8fafc;color:#334155;font-size:14px;cursor:pointer;font-weight:600;transition:all .2s;}
+.choice-btn:hover{border-color:#0e7490;color:#0e7490;}
+.choice-btn.active{background:#cffafe;border-color:#0e7490;color:#0e7490;}
+.formula-box{background:#fefce8;border:2px solid #fde047;border-radius:10px;padding:10px;text-align:center;margin:10px 0;direction:ltr;font-family:'Courier New',monospace;font-size:16px;font-weight:700;color:#854d0e;}
+.given-box{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 12px;text-align:center;font-size:14px;color:#0c4a6e;margin:8px 0;}
+.quad-wrap{display:flex;justify-content:center;margin:8px 0;}
+.prop-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0;}
+.prop-btn{padding:7px 13px;border:2px solid #cbd5e1;border-radius:20px;background:#fff;color:#334155;font-size:12.5px;cursor:pointer;font-weight:600;transition:all .18s;}
+.prop-btn:hover{border-color:#0e7490;}
+.prop-btn.active{background:#0e7490;color:#fff;border-color:#0e7490;}
+.def-box{background:#ecfeff;border:2px solid #67e8f9;border-radius:10px;padding:12px 16px;text-align:center;font-size:14px;color:#155e75;margin-top:10px;min-height:20px;}
+.q-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+@media(min-width:680px){.q-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:500px){input{width:60px;font-size:14px;}.choice-btn{font-size:12px;padding:6px 10px;}.ch-btn{font-size:11px;padding:5px 10px;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+
+/* ═══════════════════ Utilities ═══════════════════ */
+function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pick(arr){return arr[randInt(0,arr.length-1)];}
+const ANGLES=[30,45,60,90,120,150];
+const ANGLES_NO90=[30,45,60,120,150];
+const PY_TRIPLES=[[3,4,5],[6,8,10],[5,12,13],[9,12,15],[8,15,17],[12,16,20],[15,20,25]];
+function pickTriple(maxLeg){
+  const opts=PY_TRIPLES.filter(t=>t[0]<=maxLeg&&t[1]<=maxLeg);
+  const t=pick(opts.length?opts:[[3,4,5]]);
+  return Math.random()<0.5?[t[0],t[1],t[2]]:[t[1],t[0],t[2]];
+}
+
+/* ═══════════════════ Equation-check helpers ═══════════════════ */
+function safeEvalExpr(expr){
+  if(!/^[0-9+\-*/().\s]+$/.test(expr)) return NaN;
+  try{ const v=Function('"use strict";return ('+expr+')')(); return typeof v==='number'&&isFinite(v)?v:NaN; }
+  catch(e){ return NaN; }
+}
+function numsInExpr(expr){ return (expr.match(/\d+(?:\.\d+)?/g)||[]).map(Number); }
+function checkEquation(text, unknownVal, requiredNums){
+  const raw=String(text).trim();
+  if((raw.match(/\?/g)||[]).length!==1 || (raw.match(/=/g)||[]).length!==1) return false;
+  const filled=raw.replace('?', String(unknownVal));
+  const parts=filled.split('=');
+  const lv=safeEvalExpr(parts[0]), rv=safeEvalExpr(parts[1]);
+  if(isNaN(lv)||isNaN(rv)||Math.abs(lv-rv)>1e-6) return false;
+  const nums=numsInExpr(raw.replace('?',''));
+  return requiredNums.every(r=>nums.some(n=>Math.abs(n-r)<1e-9));
+}
+
+/* ═══════════════════ Feedback ═══════════════════ */
+function Fb({fb}){
+  if(!fb) return null;
+  return fb==='ok'?<div className="fb ok">✓ נכון!</div>:<div className="fb err">✗ לא נכון, נסה שוב.</div>;
+}
+
+/* ═══════════════════ Geometry: angle arc ═══════════════════ */
+function angleArcAtVertex(vx,vy,p1,p2,radius){
+  const a1=Math.atan2(p1.y-vy,p1.x-vx);
+  const a2=Math.atan2(p2.y-vy,p2.x-vx);
+  let start=a1,end=a2;
+  let diff=(end-start+2*Math.PI)%(2*Math.PI);
+  if(diff>Math.PI){const t=start;start=end;end=t;diff=2*Math.PI-diff;}
+  const sx=vx+radius*Math.cos(start),sy=vy+radius*Math.sin(start);
+  const ex=vx+radius*Math.cos(end),ey=vy+radius*Math.sin(end);
+  const large=diff>Math.PI?1:0;
+  return{path:`M${sx},${sy}A${radius},${radius} 0 ${large} 1 ${ex},${ey}`,
+    midX:vx+(radius+8)*Math.cos(start+diff/2),midY:vy+(radius+8)*Math.sin(start+diff/2)};
+}
+
+/* ═══════════════════ Generic quadrilateral SVG ═══════════════════ */
+function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[]}){
+  const n=order.length;
+  const pts=order.map(k=>verts[k]);
+  const sides=order.map((k,i)=>({id:k+order[(i+1)%n], a:verts[k], b:verts[order[(i+1)%n]]}));
+  const isHi=(kind,id)=> highlight && highlight.kind===kind && highlight.ids.includes(id);
+  const cx=pts.reduce((s,p)=>s+p.x,0)/n, cy=pts.reduce((s,p)=>s+p.y,0)/n;
+
+  return (
+    <svg viewBox="0 0 300 270" style={{width:'100%',maxWidth:300,height:'auto',direction:'ltr'}}>
+      <polygon points={pts.map(p=>`${p.x},${p.y}`).join(' ')} fill="#eef2ff" stroke="none"/>
+
+      {diagonals.map(([p1,p2])=>{
+        const id=p1+p2; const A=verts[p1],B=verts[p2]; const active=isHi('diag',id);
+        return <line key={id} x1={A.x} y1={A.y} x2={B.x} y2={B.y}
+          stroke={active?'#7c3aed':'#94a3b8'} strokeWidth={active?3:1.5}
+          strokeDasharray="6,4" style={{cursor:'pointer'}} onClick={()=>onPart('diag',id)}/>;
+      })}
+
+      {sides.map(s=>{
+        const midx=(s.a.x+s.b.x)/2, midy=(s.a.y+s.b.y)/2;
+        const dx=s.b.x-s.a.x, dy=s.b.y-s.a.y, len=Math.hypot(dx,dy)||1;
+        const ux=dx/len, uy=dy/len;
+        const outSign = ((midx-cx)*(-uy)+(midy-cy)*(ux))>=0?1:-1;
+        const nx=-uy*outSign, ny=ux*outSign;
+        const tickCount=ticks[s.id]||0;
+        const arrowCount=parallelArrows[s.id]||0;
+        const active=isHi('side',s.id);
+        return <g key={s.id} style={{cursor:'pointer'}} onClick={()=>onPart('side',s.id)}>
+          <line x1={s.a.x} y1={s.a.y} x2={s.b.x} y2={s.b.y}
+            stroke={active?'#7c3aed':'#334155'} strokeWidth={active?4:2.5}/>
+          <line x1={s.a.x} y1={s.a.y} x2={s.b.x} y2={s.b.y} stroke="transparent" strokeWidth={18}/>
+          {Array.from({length:tickCount}).map((_,i)=>{
+            const off=(i-(tickCount-1)/2)*7;
+            const tx=midx+ux*off, ty=midy+uy*off;
+            return <line key={i} x1={tx-nx*6} y1={ty-ny*6} x2={tx+nx*6} y2={ty+ny*6} stroke="#334155" strokeWidth={2}/>;
+          })}
+          {Array.from({length:arrowCount}).map((_,i)=>{
+            const off=(i-(arrowCount-1)/2)*11;
+            const cx2=midx+ux*off, cy2=midy+uy*off;
+            const p1x=cx2-ux*5+nx*5, p1y=cy2-uy*5+ny*5;
+            const p2x=cx2+ux*5, p2y=cy2+uy*5;
+            const p3x=cx2-ux*5-nx*5, p3y=cy2-uy*5-ny*5;
+            return <polyline key={i} points={`${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}`} fill="none" stroke="#334155" strokeWidth={2}/>;
+          })}
+          {sideLabels[s.id]&&<text x={midx+nx*18} y={midy+ny*18+4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#334155">{sideLabels[s.id]}</text>}
+        </g>;
+      })}
+
+      {order.map((k,i)=>{
+        const v=verts[k];
+        const prev=verts[order[(i-1+n)%n]], next=verts[order[(i+1)%n]];
+        const active=isHi('angle',k);
+        const isRight=rightAngleAt.includes(k);
+        const arc=angleArcAtVertex(v.x,v.y,prev,next,isRight?16:20);
+        const outx=v.x+(v.x-cx)*0.001, outy=v.y+(v.y-cy)*0.001;
+        const labelDx=(v.x-cx)>=0?18:-18, labelDy=(v.y-cy)>=0?18:-18;
+        return <g key={k} style={{cursor:'pointer'}} onClick={()=>onPart('angle',k)}>
+          <circle cx={v.x} cy={v.y} r={26} fill="transparent"/>
+          {isRight?(
+            <RightSquareMark v={v} prev={prev} next={next} active={active}/>
+          ):(
+            <path d={arc.path} fill="none" stroke={active?'#7c3aed':'#94a3b8'} strokeWidth={active?3:1.5}/>
+          )}
+          {angleLabels[k]!=null&&<text x={v.x+labelDx*0.75} y={v.y+labelDy*0.75} textAnchor="middle" fontSize="12" fontWeight="700" fill={active?'#7c3aed':'#475569'}>{angleLabels[k]}</text>}
+          <text x={v.x+labelDx} y={v.y+labelDy} textAnchor="middle" fontSize="12" fontWeight="700" fill="#1e293b">{k}</text>
+        </g>;
+      })}
+    </svg>
+  );
+}
+function RightSquareMark({v,prev,next,active}){
+  const a1=Math.atan2(prev.y-v.y,prev.x-v.x);
+  const a2=Math.atan2(next.y-v.y,next.x-v.x);
+  const s=13;
+  const p1x=v.x+s*Math.cos(a1), p1y=v.y+s*Math.sin(a1);
+  const p2x=v.x+s*Math.cos(a2), p2y=v.y+s*Math.sin(a2);
+  const p3x=p1x+(p2x-v.x), p3y=p1y+(p2y-v.y);
+  return <polyline points={`${p1x},${p1y} ${p3x},${p3y} ${p2x},${p2y}`} fill="none"
+    stroke={active?'#7c3aed':'#94a3b8'} strokeWidth={active?3:1.5}/>;
+}
+
+/* ═══════════════════ Interactive diagram (Part A — one property at a time) ═══════════════════ */
+function lineIntersect(A,B,C,D){
+  const a1=B.y-A.y, b1=A.x-B.x, c1=a1*A.x+b1*A.y;
+  const a2=D.y-C.y, b2=C.x-D.x, c2=a2*C.x+b2*C.y;
+  const det=a1*b2-a2*b1;
+  if(Math.abs(det)<1e-9) return {x:(A.x+B.x)/2,y:(A.y+B.y)/2};
+  return {x:(b2*c1-b1*c2)/det, y:(a1*c2-a2*c1)/det};
+}
+function SegTick({p,ux,uy,count}){
+  const nx=-uy, ny=ux;
+  return <>{Array.from({length:count}).map((_,i)=>{
+    const off=(i-(count-1)/2)*6;
+    const tx=p.x+ux*off, ty=p.y+uy*off;
+    return <line key={i} x1={tx-nx*6} y1={ty-ny*6} x2={tx+nx*6} y2={ty+ny*6} stroke="#7c3aed" strokeWidth={2.5}/>;
+  })}</>;
+}
+
+function InteractiveQuadBase({verts, order, diagonals=[], activeProp}){
+  const n=order.length;
+  const pts=order.map(k=>verts[k]);
+  const sides=order.map((k,i)=>({id:k+order[(i+1)%n], a:verts[k], b:verts[order[(i+1)%n]]}));
+  const cx=pts.reduce((s,p)=>s+p.x,0)/n, cy=pts.reduce((s,p)=>s+p.y,0)/n;
+
+  const kind = activeProp && activeProp.kind;
+  const ids = activeProp ? activeProp.ids : [];
+  const mark = activeProp && activeProp.mark;
+  const groups = activeProp && activeProp.groups;
+  const groupCount = id => {
+    if(!groups) return 1;
+    const gi = groups.findIndex(g=>g.includes(id));
+    return gi>=0? gi+1 : 1;
+  };
+
+  let diagInt=null;
+  if(diagonals.length>=2 && (mark==='diagPerp'||mark==='diagBisect'||mark==='kiteDiag')){
+    const [p1a,p1b]=diagonals[0], [p2a,p2b]=diagonals[1];
+    diagInt=lineIntersect(verts[p1a],verts[p1b],verts[p2a],verts[p2b]);
+  }
+
+  return (
+    <svg viewBox="0 0 300 270" style={{width:'100%',maxWidth:300,height:'auto',direction:'ltr'}}>
+      <polygon points={pts.map(p=>`${p.x},${p.y}`).join(' ')} fill="#eef2ff" stroke="none"/>
+
+      {diagonals.map(([p1,p2])=>{
+        const id=p1+p2; const A=verts[p1],B=verts[p2];
+        const active = kind==='diag' && ids.includes(id);
+        return <line key={id} x1={A.x} y1={A.y} x2={B.x} y2={B.y}
+          stroke={active?'#7c3aed':'#cbd5e1'} strokeWidth={active?3:1.5} strokeDasharray="6,4"/>;
+      })}
+
+      {kind==='diag' && mark==='diagEqual' && diagonals.filter(([p1,p2])=>ids.includes(p1+p2)).map(([p1,p2])=>{
+        const A=verts[p1],B=verts[p2]; const len=Math.hypot(B.x-A.x,B.y-A.y)||1;
+        const ux=(B.x-A.x)/len, uy=(B.y-A.y)/len;
+        const pA={x:A.x+ux*len*0.35,y:A.y+uy*len*0.35};
+        const pB={x:A.x+ux*len*0.65,y:A.y+uy*len*0.65};
+        return <React.Fragment key={p1+p2}>
+          <SegTick p={pA} ux={ux} uy={uy} count={1}/>
+          <SegTick p={pB} ux={ux} uy={uy} count={1}/>
+        </React.Fragment>;
+      })}
+
+      {kind==='diag' && mark==='diagPerp' && diagInt &&
+        <RightSquareMark v={diagInt} prev={verts[diagonals[0][0]]} next={verts[diagonals[1][0]]} active={true}/>}
+
+      {kind==='diag' && mark==='diagBisect' && diagInt && diagonals.filter(([p1,p2])=>ids.includes(p1+p2)).map(([p1,p2],gi)=>{
+        const A=verts[p1],B=verts[p2]; const len=Math.hypot(B.x-A.x,B.y-A.y)||1;
+        const ux=(B.x-A.x)/len, uy=(B.y-A.y)/len;
+        const midA={x:(A.x+diagInt.x)/2,y:(A.y+diagInt.y)/2};
+        const midB={x:(B.x+diagInt.x)/2,y:(B.y+diagInt.y)/2};
+        const count=gi+1;
+        return <React.Fragment key={p1+p2}>
+          <SegTick p={midA} ux={ux} uy={uy} count={count}/>
+          <SegTick p={midB} ux={ux} uy={uy} count={count}/>
+        </React.Fragment>;
+      })}
+
+      {kind==='diag' && mark==='kiteDiag' && diagInt && (()=>{
+        const [p1,p2]=diagonals[1]; const A=verts[p1],B=verts[p2];
+        const len=Math.hypot(B.x-A.x,B.y-A.y)||1;
+        const ux=(B.x-A.x)/len, uy=(B.y-A.y)/len;
+        const midA={x:(A.x+diagInt.x)/2,y:(A.y+diagInt.y)/2};
+        const midB={x:(B.x+diagInt.x)/2,y:(B.y+diagInt.y)/2};
+        return <React.Fragment>
+          <RightSquareMark v={diagInt} prev={A} next={verts[diagonals[0][1]]} active={true}/>
+          <SegTick p={midA} ux={ux} uy={uy} count={1}/>
+          <SegTick p={midB} ux={ux} uy={uy} count={1}/>
+        </React.Fragment>;
+      })()}
+
+      {sides.map(s=>{
+        const midx=(s.a.x+s.b.x)/2, midy=(s.a.y+s.b.y)/2;
+        const dx=s.b.x-s.a.x, dy=s.b.y-s.a.y, len=Math.hypot(dx,dy)||1;
+        const ux=dx/len, uy=dy/len;
+        const outSign = ((midx-cx)*(-uy)+(midy-cy)*(ux))>=0?1:-1;
+        const nx=-uy*outSign, ny=ux*outSign;
+        const active = kind==='side' && ids.includes(s.id);
+        const showTick = active && mark==='tick';
+        const showArrow = active && mark==='arrow';
+        const count = groupCount(s.id);
+        return <g key={s.id}>
+          <line x1={s.a.x} y1={s.a.y} x2={s.b.x} y2={s.b.y}
+            stroke={active?'#7c3aed':'#334155'} strokeWidth={active?4:2.5}/>
+          {showTick && Array.from({length:count}).map((_,i)=>{
+            const off=(i-(count-1)/2)*7;
+            const tx=midx+ux*off, ty=midy+uy*off;
+            return <line key={i} x1={tx-nx*6} y1={ty-ny*6} x2={tx+nx*6} y2={ty+ny*6} stroke="#7c3aed" strokeWidth={2.5}/>;
+          })}
+          {showArrow && Array.from({length:count}).map((_,i)=>{
+            const off=(i-(count-1)/2)*11;
+            const cx2=midx+ux*off, cy2=midy+uy*off;
+            const p1x=cx2-ux*5+nx*5, p1y=cy2-uy*5+ny*5;
+            const p2x=cx2+ux*5, p2y=cy2+uy*5;
+            const p3x=cx2-ux*5-nx*5, p3y=cy2-uy*5-ny*5;
+            return <polyline key={i} points={`${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}`} fill="none" stroke="#7c3aed" strokeWidth={2.5}/>;
+          })}
+        </g>;
+      })}
+
+      {order.map((k,i)=>{
+        const v=verts[k];
+        const prev=verts[order[(i-1+n)%n]], next=verts[order[(i+1)%n]];
+        const active = kind==='angle' && ids.includes(k);
+        const showRight = active && mark==='right';
+        const showArc = active && mark==='arc';
+        const arc=angleArcAtVertex(v.x,v.y,prev,next,showRight?16:20);
+        const labelDx=(v.x-cx)>=0?18:-18, labelDy=(v.y-cy)>=0?18:-18;
+        return <g key={k}>
+          {showRight && <RightSquareMark v={v} prev={prev} next={next} active={true}/>}
+          {showArc && <path d={arc.path} fill="none" stroke="#7c3aed" strokeWidth={3}/>}
+          <text x={v.x+labelDx} y={v.y+labelDy} textAnchor="middle" fontSize="12" fontWeight="700" fill="#1e293b">{k}</text>
+        </g>;
+      })}
+    </svg>
+  );
+}
+
+/* ═══════════════════ Property explorer (Part A) ═══════════════════ */
+function PropertyExplorer({verts, order, diagonals=[], properties}){
+  const [active,setActive]=useState(null);
+  const prop = properties.find(p=>p.id===active);
+  return (
+    <div className="card">
+      <div className="card-t">חלק א׳ — הצגה ויזואלית</div>
+      <div className="quad-wrap">
+        <InteractiveQuadBase verts={verts} order={order} diagonals={diagonals} activeProp={prop||null}/>
+      </div>
+      <div className="prop-list">
+        {properties.map(p=>(
+          <button key={p.id} className={`prop-btn ${active===p.id?'active':''}`}
+            onClick={()=>setActive(p.id)}>{p.label}</button>
+        ))}
+      </div>
+      <div className="def-box">{prop?prop.def:'לחץ על תכונה כדי לראות אותה מודגשת בשרטוט'}</div>
+    </div>
+  );
+}
+
+/* ═══════════════════ Generic question components (Part B) ═══════════════════ */
+function NumericQuestion({title, genFn}){
+  const [data,setData]=useState(()=>genFn());
+  const [inp,setInp]=useState('');
+  const [fb,setFb]=useState(null);
+  const [done,setDone]=useState(false);
+  const reset=()=>{setData(genFn());setInp('');setFb(null);setDone(false);};
+  const check=()=>{
+    const v=parseFloat(inp);
+    if(!isNaN(v)&&Math.abs(v-data.answer)<1e-6){setFb('ok');setDone(true);}
+    else setFb('err');
+  };
+  return (
+    <div className="step-card">
+      <div className="step-label">{title}</div>
+      {data.visual&&<div className="quad-wrap">{data.visual}</div>}
+      {data.given&&<div className="given-box">{data.given}</div>}
+      {data.formula&&<div className="formula-box">{data.formula}</div>}
+      {!done?<>
+        <div className="ans-row">
+          <span>{data.askLabel||'תשובה ='}</span>
+          <input value={inp} onChange={e=>{setInp(e.target.value);setFb(null);}}
+            onKeyDown={e=>e.key==='Enter'&&check()}/>
+          {data.unit&&<span>{data.unit}</span>}
+          <button className="btn bg" onClick={check}>✓ בדוק</button>
+        </div>
+        <Fb fb={fb}/>
+      </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ נכון!</div>}
+      <div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>
+  );
+}
+
+function EquationSideQuestion({title, genFn}){
+  const [data,setData]=useState(()=>genFn());
+  const [phase,setPhase]=useState(0);
+  const [eqText,setEqText]=useState('');
+  const [ansInp,setAnsInp]=useState('');
+  const [fb,setFb]=useState(null);
+  const reset=()=>{setData(genFn());setPhase(0);setEqText('');setAnsInp('');setFb(null);};
+  const checkEq=()=>{
+    if(checkEquation(eqText, data.answer, data.requiredNums)){
+      setFb('ok'); setTimeout(()=>{setPhase(1);setFb(null);},600);
+    } else setFb('err');
+  };
+  const checkAns=()=>{
+    const v=parseFloat(ansInp);
+    if(!isNaN(v)&&Math.abs(v-data.answer)<1e-6){setFb('ok');setPhase(2);}
+    else setFb('err');
+  };
+  return (
+    <div className="step-card">
+      <div className="step-label">{title}</div>
+      {data.visual&&<div className="quad-wrap">{data.visual}</div>}
+      {data.given&&<div className="given-box">{data.given}</div>}
+      {data.formula&&<div className="formula-box">{data.formula}</div>}
+      {phase===0&&<>
+        <p className="hint">כתוב משוואה עם ? במקום הגודל המבוקש (למשל: 40=?*5)</p>
+        <div className="ans-row">
+          <input value={eqText} onChange={e=>{setEqText(e.target.value);setFb(null);}}
+            onKeyDown={e=>e.key==='Enter'&&checkEq()} style={{width:180,direction:'ltr'}}/>
+          <button className="btn bg" onClick={checkEq}>✓ בדוק</button>
+        </div>
+        <Fb fb={fb}/>
+      </>}
+      {phase===1&&<>
+        <div className="step-card done" style={{marginTop:0}}><div style={{color:'#16a34a',fontWeight:700,textAlign:'center'}}>✓ המשוואה נכתבה</div></div>
+        <div className="ans-row">
+          <span>{data.askLabel||'תשובה ='}</span>
+          <input value={ansInp} onChange={e=>{setAnsInp(e.target.value);setFb(null);}}
+            onKeyDown={e=>e.key==='Enter'&&checkAns()}/>
+          {data.unit&&<span>{data.unit}</span>}
+          <button className="btn bg" onClick={checkAns}>✓ בדוק</button>
+        </div>
+        <Fb fb={fb}/>
+      </>}
+      {phase===2&&<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ נכון!</div>}
+      <div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>
+  );
+}
+
+function ReasonedAngleQuestion({title, genFn, reasonOptions}){
+  const [data,setData]=useState(()=>genFn());
+  const [idx,setIdx]=useState(0);
+  const [subPhase,setSubPhase]=useState('reason');
+  const [reasonChoice,setReasonChoice]=useState(null);
+  const [valInp,setValInp]=useState('');
+  const [fb,setFb]=useState(null);
+  const reset=()=>{setData(genFn());setIdx(0);setSubPhase('reason');setReasonChoice(null);setValInp('');setFb(null);};
+  const target=data.targets[idx];
+  const allDone = idx>=data.targets.length;
+  const checkReason=()=>{
+    if(reasonChoice===target.reason){setFb('ok');setTimeout(()=>{setSubPhase('value');setFb(null);},450);}
+    else setFb('err');
+  };
+  const checkVal=()=>{
+    const v=parseFloat(valInp);
+    if(!isNaN(v)&&Math.abs(v-target.value)<1e-6){
+      setFb('ok');
+      setTimeout(()=>{
+        setIdx(i=>i+1); setReasonChoice(null); setValInp(''); setSubPhase('reason'); setFb(null);
+      },550);
+    } else setFb('err');
+  };
+  return (
+    <div className="step-card">
+      <div className="step-label">{title}</div>
+      {data.visual&&<div className="quad-wrap">{data.visual}</div>}
+      {data.given&&<div className="given-box">{data.given}</div>}
+      {!allDone&&<>
+        <p className="hint">מצא את {target.name} (שלב {idx+1} מתוך {data.targets.length})</p>
+        {subPhase==='reason'?<>
+          <div className="choice-row">
+            {reasonOptions.map(r=>(
+              <button key={r.key} className={`choice-btn ${reasonChoice===r.key?'active':''}`}
+                onClick={()=>{setReasonChoice(r.key);setFb(null);}}>{r.label}</button>
+            ))}
+          </div>
+          <div className="center"><button className="btn bg" disabled={!reasonChoice} onClick={checkReason}>✓ בדוק</button></div>
+        </>:<div className="ans-row">
+          <span>{target.name} =</span>
+          <input value={valInp} onChange={e=>{setValInp(e.target.value);setFb(null);}}
+            onKeyDown={e=>e.key==='Enter'&&checkVal()}/>
+          <span>°</span>
+          <button className="btn bg" onClick={checkVal}>✓ בדוק</button>
+        </div>}
+        <Fb fb={fb}/>
+      </>}
+      {allDone&&<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ כל הזוויות נמצאו!</div>}
+      <div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>
+  );
+}
+
+/* ═══════════════════ SQUARE ═══════════════════ */
+const SQ_VERTS={A:{x:200,y:60},B:{x:200,y:160},C:{x:100,y:160},D:{x:100,y:60}};
+const SQ_ORDER=['A','B','C','D'];
+function SquareShape({highlight,onPart,angleLabels={},sideLabels={}}){
+  return <QuadBase verts={SQ_VERTS} order={SQ_ORDER} highlight={highlight} onPart={onPart}
+    sideLabels={sideLabels} angleLabels={angleLabels}
+    ticks={{AB:1,BC:1,CD:1,DA:1}} parallelArrows={{AB:1,CD:1,BC:2,DA:2}}
+    rightAngleAt={['A','B','C','D']} diagonals={[['A','C'],['B','D']]}/>;
+}
+const SQUARE_PROPS=[
+  {id:'sides',label:'צלעות שוות',kind:'side',ids:['AB','BC','CD','DA'],mark:'tick',def:'כל 4 הצלעות שוות באורכן.'},
+  {id:'angles',label:'זוויות ישרות',kind:'angle',ids:['A','B','C','D'],mark:'right',def:'כל 4 הזוויות הן זוויות ישרות (90°).'},
+  {id:'deq',label:'אלכסונים שווים',kind:'diag',ids:['AC','BD'],mark:'diagEqual',def:'שני האלכסונים שווים באורכם — לכן מסומן קו קטן אחד באמצע כל אלכסון.'},
+  {id:'dperp',label:'אלכסונים ניצבים',kind:'diag',ids:['AC','BD'],mark:'diagPerp',def:'האלכסונים ניצבים זה לזה — שימו לב לסימן הזווית הישרה בנקודת המפגש שלהם.'},
+  {id:'dbis',label:'אלכסונים חוצים זה את זה',kind:'diag',ids:['AC','BD'],mark:'diagBisect',def:'כל אלכסון מתחלק לשני חצאים שווים בנקודת המפגש — לכן שני החצאים של אותו אלכסון מסומנים באותו מספר קווים קטנים.'},
+];
+function genSquareArea(){
+  const a=randInt(2,20);
+  return {a, answer:a*a, formula:'S = a²', askLabel:'S =', unit:'',
+    given:`צלע a = ${a}`,
+    visual:<SquareShape sideLabels={{AB:a}}/>};
+}
+function genSquarePerimeter(){
+  const a=randInt(2,20);
+  return {a, answer:4*a, formula:'P = 4a', askLabel:'P =',
+    given:`צלע a = ${a}`,
+    visual:<SquareShape sideLabels={{AB:a}}/>};
+}
+function genSquareSide(){
+  const a=randInt(2,20); const S=a*a;
+  return {a, answer:a, formula:'a² = S', askLabel:'a =',
+    given:`שטח S = ${S} (הוצא שורש כדי למצוא את הצלע)`,
+    visual:<SquareShape/>};
+}
+function Ch1Square(){
+  return <div className="content">
+    <PropertyExplorer verts={SQ_VERTS} order={SQ_ORDER} diagonals={[['A','C'],['B','D']]} properties={SQUARE_PROPS}/>
+    <div className="card">
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="q-grid">
+        <NumericQuestion title="שטח" genFn={genSquareArea}/>
+        <NumericQuestion title="היקף" genFn={genSquarePerimeter}/>
+        <NumericQuestion title="צלע (נתון שטח)" genFn={genSquareSide}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ═══════════════════ RECTANGLE ═══════════════════ */
+const RC_VERTS={A:{x:220,y:70},B:{x:220,y:170},C:{x:80,y:170},D:{x:80,y:70}};
+const RC_ORDER=['A','B','C','D'];
+function RectShape({highlight,onPart,angleLabels={},sideLabels={}}){
+  return <QuadBase verts={RC_VERTS} order={RC_ORDER} highlight={highlight} onPart={onPart}
+    sideLabels={sideLabels} angleLabels={angleLabels}
+    ticks={{AB:1,CD:1,BC:2,DA:2}} parallelArrows={{AB:1,CD:1,BC:2,DA:2}}
+    rightAngleAt={['A','B','C','D']} diagonals={[['A','C'],['B','D']]}/>;
+}
+const RECT_PROPS=[
+  {id:'seq',label:'צלעות נגדיות שוות',kind:'side',ids:['AB','CD','BC','DA'],mark:'tick',groups:[['AB','CD'],['BC','DA']],def:'צלעות נגדיות שוות זו לזו (AB=CD, BC=DA) — כל זוג מסומן במספר קווים משלו.'},
+  {id:'spar',label:'צלעות נגדיות מקבילות',kind:'side',ids:['AB','CD','BC','DA'],mark:'arrow',groups:[['AB','CD'],['BC','DA']],def:'צלעות נגדיות מקבילות זו לזו — כל זוג מסומן בחיצים משלו.'},
+  {id:'angles',label:'זוויות ישרות',kind:'angle',ids:['A','B','C','D'],mark:'right',def:'כל 4 הזוויות הן זוויות ישרות (90°).'},
+  {id:'deq',label:'אלכסונים שווים',kind:'diag',ids:['AC','BD'],mark:'diagEqual',def:'שני האלכסונים שווים באורכם.'},
+  {id:'dbis',label:'אלכסונים חוצים זה את זה',kind:'diag',ids:['AC','BD'],mark:'diagBisect',def:'האלכסונים חוצים זה את זה (לא בהכרח בניצב) — לכן שני החצאים של אותו אלכסון מסומנים באותו מספר קווים קטנים.'},
+];
+function genRectPair(){
+  let l=randInt(2,20), w=randInt(2,20);
+  if(l===w){ w = w<20? w+1 : w-1; }
+  return [l,w];
+}
+function genRectArea(){
+  const [l,w]=genRectPair();
+  return {l,w, answer:l*w, formula:'S = l·w', askLabel:'S =',
+    given:`אורך l = ${l}, רוחב w = ${w}`,
+    visual:<RectShape sideLabels={{DA:l,AB:w}}/>};
+}
+function genRectPerimeter(){
+  const [l,w]=genRectPair();
+  return {l,w, answer:2*(l+w), formula:'P = 2(l+w)', askLabel:'P =',
+    given:`אורך l = ${l}, רוחב w = ${w}`,
+    visual:<RectShape sideLabels={{DA:l,AB:w}}/>};
+}
+function genRectSide(){
+  const [l,w]=genRectPair(); const S=l*w;
+  return {l,w, answer:w, requiredNums:[S,l], formula:'S = l·w', askLabel:'w =',
+    given:`שטח S = ${S}, אורך l = ${l}`,
+    visual:<RectShape sideLabels={{DA:l}}/>};
+}
+function Ch2Rectangle(){
+  return <div className="content">
+    <PropertyExplorer verts={RC_VERTS} order={RC_ORDER} diagonals={[['A','C'],['B','D']]} properties={RECT_PROPS}/>
+    <div className="card">
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="q-grid">
+        <NumericQuestion title="שטח" genFn={genRectArea}/>
+        <NumericQuestion title="היקף" genFn={genRectPerimeter}/>
+        <EquationSideQuestion title="צלע (רוחב, נתון שטח ואורך)" genFn={genRectSide}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ═══════════════════ RHOMBUS ═══════════════════ */
+const RH_VERTS={A:{x:150,y:40},B:{x:230,y:130},C:{x:150,y:220},D:{x:70,y:130}};
+const RH_ORDER=['A','B','C','D'];
+function RhombusShape({highlight,onPart,angleLabels={},sideLabels={}}){
+  return <QuadBase verts={RH_VERTS} order={RH_ORDER} highlight={highlight} onPart={onPart}
+    sideLabels={sideLabels} angleLabels={angleLabels}
+    ticks={{AB:1,BC:1,CD:1,DA:1}} parallelArrows={{AB:1,CD:1,BC:2,DA:2}}
+    rightAngleAt={[]} diagonals={[['A','C'],['B','D']]}/>;
+}
+const RHOMBUS_PROPS=[
+  {id:'sides',label:'צלעות שוות',kind:'side',ids:['AB','BC','CD','DA'],mark:'tick',def:'כל 4 הצלעות שוות באורכן.'},
+  {id:'oeq',label:'זוויות נגדיות שוות',kind:'angle',ids:['A','B','C','D'],mark:'arc',def:'זוויות נגדיות שוות זו לזו (A=C, B=D).'},
+  {id:'asup',label:'זוויות סמוכות משלימות',kind:'angle',ids:['A','B'],mark:'arc',def:'זוויות סמוכות משלימות זו את זו ל-180°.'},
+  {id:'dperp',label:'אלכסונים ניצבים',kind:'diag',ids:['AC','BD'],mark:'diagPerp',def:'האלכסונים ניצבים זה לזה — שימו לב לסימן הזווית הישרה בנקודת המפגש שלהם.'},
+  {id:'dbis',label:'אלכסונים חוצים זה את זה',kind:'diag',ids:['AC','BD'],mark:'diagBisect',def:'כל אלכסון מתחלק לשני חצאים שווים בנקודת המפגש — לכן שני החצאים של אותו אלכסון מסומנים באותו מספר קווים קטנים.'},
+];
+function genRhombusArea(){
+  let d1=randInt(2,20); if(d1%2!==0) d1++;
+  const d2=randInt(2,20);
+  return {d1,d2, answer:(d1*d2)/2, formula:'S = (d₁·d₂)/2', askLabel:'S =',
+    given:`אלכסון d₁ = ${d1}, אלכסון d₂ = ${d2}`,
+    visual:<RhombusShape/>};
+}
+function genRhombusPerimeter(){
+  const a=randInt(2,20);
+  return {a, answer:4*a, formula:'P = 4a', askLabel:'P =',
+    given:`צלע a = ${a}`,
+    visual:<RhombusShape sideLabels={{AB:a}}/>};
+}
+function genRhombusSide(){
+  const [p,q,side]=pickTriple(20);
+  return {p,q, answer:side, formula:'a² = p² + q²', askLabel:'a =',
+    given:`חצי אלכסון אחד = ${p}, חצי אלכסון שני = ${q} (משולש ישר-זווית עם האלכסונים)`,
+    visual:<RhombusShape/>};
+}
+function genRhombusAngle(){
+  const A=pick(ANGLES_NO90);
+  return {A, given:`זווית A = ${A}°`, visual:<RhombusShape angleLabels={{A:A+'°'}}/>,
+    targets:[
+      {vertex:'C', name:'זווית C', value:A, reason:'opposite'},
+      {vertex:'B', name:'זווית B', value:180-A, reason:'adjacent'},
+      {vertex:'D', name:'זווית D', value:180-A, reason:'adjacent'},
+    ]};
+}
+const OPP_ADJ_REASONS=[
+  {key:'opposite', label:'זווית נגדית (שווה לנתונה)'},
+  {key:'adjacent', label:'זווית סמוכה (משלימה ל-180°)'},
+];
+function Ch3Rhombus(){
+  return <div className="content">
+    <PropertyExplorer verts={RH_VERTS} order={RH_ORDER} diagonals={[['A','C'],['B','D']]} properties={RHOMBUS_PROPS}/>
+    <div className="card">
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="q-grid">
+        <ReasonedAngleQuestion title="זווית" genFn={genRhombusAngle} reasonOptions={OPP_ADJ_REASONS}/>
+        <NumericQuestion title="שטח" genFn={genRhombusArea}/>
+        <NumericQuestion title="היקף" genFn={genRhombusPerimeter}/>
+        <NumericQuestion title="צלע (פיתגורס)" genFn={genRhombusSide}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ═══════════════════ PARALLELOGRAM ═══════════════════ */
+const PG_VERTS={A:{x:230,y:70},B:{x:190,y:170},C:{x:70,y:170},D:{x:110,y:70}};
+const PG_ORDER=['A','B','C','D'];
+function ParallelogramShape({highlight,onPart,angleLabels={},sideLabels={}}){
+  return <QuadBase verts={PG_VERTS} order={PG_ORDER} highlight={highlight} onPart={onPart}
+    sideLabels={sideLabels} angleLabels={angleLabels}
+    ticks={{AB:1,CD:1,BC:2,DA:2}} parallelArrows={{AB:1,CD:1,BC:2,DA:2}}
+    rightAngleAt={[]} diagonals={[['A','C'],['B','D']]}/>;
+}
+const PARA_PROPS=[
+  {id:'seq',label:'צלעות נגדיות שוות',kind:'side',ids:['AB','CD','BC','DA'],mark:'tick',groups:[['AB','CD'],['BC','DA']],def:'צלעות נגדיות שוות זו לזו — כל זוג מסומן במספר קווים משלו.'},
+  {id:'spar',label:'צלעות נגדיות מקבילות',kind:'side',ids:['AB','CD','BC','DA'],mark:'arrow',groups:[['AB','CD'],['BC','DA']],def:'צלעות נגדיות מקבילות זו לזו — כל זוג מסומן בחיצים משלו.'},
+  {id:'oeq',label:'זוויות נגדיות שוות',kind:'angle',ids:['A','B','C','D'],mark:'arc',def:'זוויות נגדיות שוות זו לזו.'},
+  {id:'asup',label:'זוויות סמוכות משלימות',kind:'angle',ids:['A','B'],mark:'arc',def:'זוויות סמוכות משלימות זו את זו ל-180°.'},
+  {id:'dbis',label:'אלכסונים חוצים זה את זה',kind:'diag',ids:['AC','BD'],mark:'diagBisect',def:'האלכסונים חוצים זה את זה — לכן שני החצאים של אותו אלכסון מסומנים באותו מספר קווים קטנים.'},
+];
+function genParaArea(){
+  const b=randInt(2,20), h=randInt(2,20);
+  return {b,h, answer:b*h, formula:'S = b·h', askLabel:'S =',
+    given:`בסיס b = ${b}, גובה h = ${h}`,
+    visual:<ParallelogramShape sideLabels={{BC:b}}/>};
+}
+function genParaPerimeter(){
+  let a=randInt(2,20), b=randInt(2,20);
+  if(a===b){ b = b<20? b+1 : b-1; }
+  return {a,b, answer:2*(a+b), formula:'P = 2(a+b)', askLabel:'P =',
+    given:`צלע a = ${a}, צלע b = ${b}`,
+    visual:<ParallelogramShape sideLabels={{AB:a,BC:b}}/>};
+}
+function genParaSide(){
+  const b=randInt(2,20), h=randInt(2,20); const S=b*h;
+  return {b,h, answer:b, requiredNums:[S,h], formula:'S = b·h', askLabel:'b =',
+    given:`שטח S = ${S}, גובה h = ${h}`,
+    visual:<ParallelogramShape/>};
+}
+function genParaAngle(){
+  const A=pick(ANGLES_NO90);
+  return {A, given:`זווית A = ${A}°`, visual:<ParallelogramShape angleLabels={{A:A+'°'}}/>,
+    targets:[
+      {vertex:'C', name:'זווית C', value:A, reason:'opposite'},
+      {vertex:'B', name:'זווית B', value:180-A, reason:'adjacent'},
+      {vertex:'D', name:'זווית D', value:180-A, reason:'adjacent'},
+    ]};
+}
+function Ch4Parallelogram(){
+  return <div className="content">
+    <PropertyExplorer verts={PG_VERTS} order={PG_ORDER} diagonals={[['A','C'],['B','D']]} properties={PARA_PROPS}/>
+    <div className="card">
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="q-grid">
+        <ReasonedAngleQuestion title="זווית" genFn={genParaAngle} reasonOptions={OPP_ADJ_REASONS}/>
+        <NumericQuestion title="שטח" genFn={genParaArea}/>
+        <NumericQuestion title="היקף" genFn={genParaPerimeter}/>
+        <EquationSideQuestion title="צלע (בסיס, נתון שטח וגובה)" genFn={genParaSide}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ═══════════════════ TRAPEZOID (3 variants) ═══════════════════ */
+const TG_VERTS={A:{x:180,y:70},B:{x:240,y:180},C:{x:60,y:180},D:{x:120,y:70}};
+const TI_VERTS={A:{x:190,y:70},B:{x:230,y:180},C:{x:70,y:180},D:{x:110,y:70}};
+const TR_VERTS={A:{x:190,y:70},B:{x:210,y:180},C:{x:90,y:180},D:{x:90,y:70}};
+const T_ORDER=['A','B','C','D'];
+
+function TrapGeneralShape({highlight,onPart,angleLabels={},sideLabels={}}){
+  return <QuadBase verts={TG_VERTS} order={T_ORDER} highlight={highlight} onPart={onPart}
+    sideLabels={sideLabels} angleLabels={angleLabels}
+    ticks={{}} parallelArrows={{BC:1,DA:1}} rightAngleAt={[]} diagonals={[]}/>;
+}
+function TrapIsoShape({highlight,onPart,angleLabels={},sideLabels={}}){
+  return <QuadBase verts={TI_VERTS} order={T_ORDER} highlight={highlight} onPart={onPart}
+    sideLabels={sideLabels} angleLabels={angleLabels}
+    ticks={{AB:1,CD:1}} parallelArrows={{BC:1,DA:1}} rightAngleAt={[]} diagonals={[['A','C'],['B','D']]}/>;
+}
+function TrapRightShape({highlight,onPart,angleLabels={},sideLabels={}}){
+  return <QuadBase verts={TR_VERTS} order={T_ORDER} highlight={highlight} onPart={onPart}
+    sideLabels={sideLabels} angleLabels={angleLabels}
+    ticks={{}} parallelArrows={{BC:1,DA:1}} rightAngleAt={['C','D']} diagonals={[]}/>;
+}
+
+const TRAP_GEN_PROPS=[
+  {id:'par',label:'זוג צלעות מקביל',kind:'side',ids:['BC','DA'],mark:'arrow',def:'רק זוג אחד של צלעות מקביל — אלה הבסיסים של הטרפז.'},
+  {id:'cosup',label:'זוויות חד-צדדיות משלימות',kind:'angle',ids:['A','B'],mark:'arc',def:'זוויות הנמצאות על אותה שוק, בין שני הבסיסים, משלימות זו את זו ל-180°.'},
+];
+const TRAP_ISO_PROPS=[
+  ...TRAP_GEN_PROPS,
+  {id:'legs',label:'שוקיים שוות',kind:'side',ids:['AB','CD'],mark:'tick',def:'שתי השוקיים שוות באורכן.'},
+  {id:'base-ang',label:'זוויות בסיס שוות',kind:'angle',ids:['D','A'],mark:'arc',def:'זוויות הבסיס (משני צידי אותו בסיס) שוות זו לזו.'},
+  {id:'deq',label:'אלכסונים שווים',kind:'diag',ids:['AC','BD'],mark:'diagEqual',def:'שני האלכסונים שווים באורכם.'},
+];
+const TRAP_RIGHT_PROPS=[
+  ...TRAP_GEN_PROPS,
+  {id:'perp',label:'שוק ניצבה = גובה',kind:'angle',ids:['C','D'],mark:'right',def:'שוק אחת (CD) ניצבה לבסיסים — היא בעצם הגובה של הטרפז, ולכן הזוויות לידה (C ו-D) ישרות.'},
+];
+
+/* ---- General ---- */
+function genTrapGenPair(){
+  let b1=randInt(2,20), b2=randInt(2,20);
+  if(b1===b2) b2 = b2<20? b2+1 : b2-1;
+  return b1<b2?[b1,b2]:[b2,b1];
+}
+function genTrapGenBasesEven(){
+  const b1=randInt(2,18);
+  const maxDelta=20-b1;
+  const maxEvenDelta=maxDelta-(maxDelta%2);
+  const opts=[]; for(let d=2; d<=maxEvenDelta; d+=2) opts.push(d);
+  const delta=opts.length?pick(opts):2;
+  return [b1, b1+delta];
+}
+function genTrapGenArea(){
+  const [b1,b2]=genTrapGenBasesEven();
+  const h=randInt(2,20);
+  return {b1,b2,h, answer:((b1+b2)/2)*h, formula:'S = ((b₁+b₂)/2)·h', askLabel:'S =',
+    given:`בסיס עליון b₁ = ${b1}, בסיס תחתון b₂ = ${b2}, גובה h = ${h}`,
+    visual:<TrapGeneralShape sideLabels={{DA:b1,BC:b2}}/>};
+}
+function genTrapGenPerimeter(){
+  const [b1,b2]=genTrapGenPair(); const l1=randInt(2,20), l2=randInt(2,20);
+  return {b1,b2,l1,l2, answer:b1+b2+l1+l2, formula:'P = b₁+b₂+l₁+l₂', askLabel:'P =',
+    given:`b₁=${b1}, b₂=${b2}, שוק1=${l1}, שוק2=${l2}`,
+    visual:<TrapGeneralShape sideLabels={{DA:b1,BC:b2,AB:l1,CD:l2}}/>};
+}
+function genTrapGenSide(){
+  const [b1,b2]=genTrapGenBasesEven();
+  const h=randInt(2,20); const S=((b1+b2)/2)*h;
+  return {b1,b2,h, answer:b2, requiredNums:[b1,h,S], formula:'S = ((b₁+b₂)/2)·h', askLabel:'b₂ =',
+    given:`שטח S = ${S}, גובה h = ${h}, בסיס עליון b₁ = ${b1}`,
+    visual:<TrapGeneralShape sideLabels={{DA:b1}}/>};
+}
+function genTrapGenAngle(){
+  let a1,a2,a3,a4;
+  for(let i=0;i<200;i++){
+    a1=pick(ANGLES); a2=pick(ANGLES); a3=pick(ANGLES);
+    a4=360-a1-a2-a3;
+    if(a4>10&&a4<170) break;
+  }
+  const hidden=3;
+  const vals=[a1,a2,a3,a4];
+  return {vals, answer:a4,
+    given:`זווית A=${a1}°, זווית B=${a2}°, זווית C=${a3}°`,
+    formula:'סכום זוויות מרובע = 360°', askLabel:'זווית D =',
+    visual:<TrapGeneralShape angleLabels={{A:a1+'°',B:a2+'°',C:a3+'°',D:'?'}}/>};
+}
+function ChTrapGeneral(){
+  return <div className="content">
+    <PropertyExplorer verts={TG_VERTS} order={T_ORDER} diagonals={[]} properties={TRAP_GEN_PROPS}/>
+    <div className="card">
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="q-grid">
+        <NumericQuestion title="זווית (הרביעית)" genFn={genTrapGenAngle}/>
+        <NumericQuestion title="שטח" genFn={genTrapGenArea}/>
+        <NumericQuestion title="היקף" genFn={genTrapGenPerimeter}/>
+        <EquationSideQuestion title="בסיס שני (נתון שטח, גובה ובסיס אחד)" genFn={genTrapGenSide}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ---- Isosceles ---- */
+function genTrapIsoBase(){
+  const [k,h,s]=pickTriple(9);
+  const b1=randInt(2, Math.max(2,20-2*k));
+  const b2=b1+2*k;
+  return {k,h,s,b1,b2};
+}
+function genTrapIsoArea(){
+  const {h,s,b1,b2}=genTrapIsoBase();
+  return {b1,b2,h,s, answer:((b1+b2)/2)*h, formula:'S = ((b₁+b₂)/2)·h', askLabel:'S =',
+    given:`בסיס עליון b₁ = ${b1}, בסיס תחתון b₂ = ${b2}, גובה h = ${h}`,
+    visual:<TrapIsoShape sideLabels={{DA:b1,BC:b2}}/>};
+}
+function genTrapIsoPerimeter(){
+  const {h,s,b1,b2}=genTrapIsoBase();
+  return {b1,b2,s, answer:b1+b2+2*s, formula:'P = b₁+b₂+2·שוק', askLabel:'P =',
+    given:`b₁=${b1}, b₂=${b2}, שוק = ${s}`,
+    visual:<TrapIsoShape sideLabels={{DA:b1,BC:b2,AB:s,CD:s}}/>};
+}
+function genTrapIsoSide(){
+  const {h,s,b1,b2}=genTrapIsoBase();
+  return {b1,b2,s, answer:h, formula:'שוק² = גובה² + ((b₂-b₁)/2)²', askLabel:'h =',
+    given:`b₁=${b1}, b₂=${b2}, שוק = ${s} (השתמש בפיתגורס)`,
+    visual:<TrapIsoShape sideLabels={{DA:b1,BC:b2,AB:s,CD:s}}/>};
+}
+function genTrapIsoAngle(){
+  const A=pick(ANGLES_NO90);
+  return {A, given:`זווית בסיס A = ${A}°`, visual:<TrapIsoShape angleLabels={{A:A+'°'}}/>,
+    targets:[
+      {vertex:'D', name:'זווית D', value:A, reason:'baseEqual'},
+      {vertex:'B', name:'זווית B', value:180-A, reason:'coInterior'},
+      {vertex:'C', name:'זווית C', value:180-A, reason:'coInterior'},
+    ]};
+}
+const BASE_COINT_REASONS=[
+  {key:'baseEqual', label:'זווית בסיס (שווה לנתונה)'},
+  {key:'coInterior', label:'זווית חד-צדדית (משלימה ל-180°)'},
+];
+function ChTrapIso(){
+  return <div className="content">
+    <PropertyExplorer verts={TI_VERTS} order={T_ORDER} diagonals={[['A','C'],['B','D']]} properties={TRAP_ISO_PROPS}/>
+    <div className="card">
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="q-grid">
+        <ReasonedAngleQuestion title="זווית" genFn={genTrapIsoAngle} reasonOptions={BASE_COINT_REASONS}/>
+        <NumericQuestion title="שטח (פיתגורס לגובה)" genFn={genTrapIsoArea}/>
+        <NumericQuestion title="היקף" genFn={genTrapIsoPerimeter}/>
+        <NumericQuestion title="גובה (פיתגורס)" genFn={genTrapIsoSide}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ---- Right ---- */
+function genTrapRightBase(){
+  const [k,h,s]=pickTriple(14);
+  const b1=randInt(2, Math.max(2,20-k));
+  const b2=b1+k;
+  return {k,h,s,b1,b2};
+}
+function genTrapRightArea(){
+  const {h,s,b1,b2}=genTrapRightBase();
+  return {b1,b2,h,s, answer:((b1+b2)/2)*h, formula:'S = ((b₁+b₂)/2)·h', askLabel:'S =',
+    given:`בסיס עליון b₁ = ${b1}, בסיס תחתון b₂ = ${b2}, שוק ניצבה (גובה) h = ${h}`,
+    visual:<TrapRightShape sideLabels={{DA:b1,BC:b2,CD:h}}/>};
+}
+function genTrapRightPerimeter(){
+  const {h,s,b1,b2}=genTrapRightBase();
+  return {b1,b2,h,s, answer:b1+b2+h+s, formula:'שוק אלכסונית² = (b₂-b₁)² + h²',askLabel:'P =',
+    given:`b₁=${b1}, b₂=${b2}, שוק ניצבה h=${h} (מצא את השוק האלכסונית בעזרת פיתגורס לפני שתחשב היקף)`,
+    visual:<TrapRightShape sideLabels={{DA:b1,BC:b2,CD:h}}/>};
+}
+function genTrapRightSide(){
+  const {h,s,b1,b2}=genTrapRightBase();
+  const S=((b1+b2)/2)*h;
+  return {b1,b2,h, answer:b2, requiredNums:[b1,h,S], formula:'S = ((b₁+b₂)/2)·h', askLabel:'b₂ =',
+    given:`שטח S = ${S}, שוק ניצבה h = ${h}, בסיס עליון b₁ = ${b1}`,
+    visual:<TrapRightShape sideLabels={{DA:b1,CD:h}}/>};
+}
+function genTrapRightAngle(){
+  const given=pick([60,120,150,30,45]);
+  return {given, answer:180-given, formula:'זוויות חד-צדדיות בין הבסיסים משלימות ל-180°', askLabel:'הזווית השלישית =',
+    given:`שתי הזוויות הישרות (90°) ידועות; הזווית הנוספת = ${given}°`,
+    visual:<TrapRightShape angleLabels={{A:given+'°',B:'?'}}/>};
+}
+function ChTrapRight(){
+  return <div className="content">
+    <PropertyExplorer verts={TR_VERTS} order={T_ORDER} diagonals={[]} properties={TRAP_RIGHT_PROPS}/>
+    <div className="card">
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="q-grid">
+        <NumericQuestion title="זווית (השלישית)" genFn={genTrapRightAngle}/>
+        <NumericQuestion title="שטח" genFn={genTrapRightArea}/>
+        <NumericQuestion title="היקף (פיתגורס לשוק האלכסונית)" genFn={genTrapRightPerimeter}/>
+        <EquationSideQuestion title="בסיס שני (נתון שטח ושוק ניצבה)" genFn={genTrapRightSide}/>
+      </div>
+    </div>
+  </div>;
+}
+
+function Ch5Trapezoid(){
+  const [variant,setVariant]=useState('general');
+  return <div className="content">
+    <div className="sub-tabs">
+      <button className={`sub-tab ${variant==='general'?'active':''}`} onClick={()=>setVariant('general')}>כללי</button>
+      <button className={`sub-tab ${variant==='iso'?'active':''}`} onClick={()=>setVariant('iso')}>שווה שוקיים</button>
+      <button className={`sub-tab ${variant==='right'?'active':''}`} onClick={()=>setVariant('right')}>ישר זווית</button>
+    </div>
+    {variant==='general'&&<ChTrapGeneral key="g"/>}
+    {variant==='iso'&&<ChTrapIso key="i"/>}
+    {variant==='right'&&<ChTrapRight key="r"/>}
+  </div>;
+}
+
+/* ═══════════════════ KITE ═══════════════════ */
+const KT_VERTS={T:{x:150,y:40},R:{x:210,y:120},B:{x:150,y:230},L:{x:90,y:120}};
+const KT_ORDER=['T','R','B','L'];
+function KiteShape({highlight,onPart,angleLabels={},sideLabels={}}){
+  return <QuadBase verts={KT_VERTS} order={KT_ORDER} highlight={highlight} onPart={onPart}
+    sideLabels={sideLabels} angleLabels={angleLabels}
+    ticks={{TR:1,LT:1,RB:2,BL:2}} parallelArrows={{}} rightAngleAt={[]}
+    diagonals={[['T','B'],['L','R']]}/>;
+}
+const KITE_PROPS=[
+  {id:'sides',label:'צלעות שוות (סמוכות)',kind:'side',ids:['TR','RB','BL','LT'],mark:'tick',groups:[['TR','LT'],['RB','BL']],def:'יש שני זוגות של צלעות שוות, אך הן סמוכות זו לזו (לא נגדיות כמו במקבילית) — כל זוג מסומן במספר קווים משלו.'},
+  {id:'dperpbis',label:'אלכסון ראשי ניצב וחוצה',kind:'diag',ids:['TB','LR'],mark:'kiteDiag',def:'האלכסון הראשי (TB) ניצב לאלכסון השני (שימו לב לסימן הזווית הישרה) וחוצה אותו לשני חלקים שווים (מסומנים בקווים קטנים תואמים).'},
+  {id:'angeq',label:'זוג זוויות שוות',kind:'angle',ids:['R','L'],mark:'arc',def:'הזוויות שבין הצלעות הלא-שוות (R ו-L) שוות זו לזו.'},
+];
+function genKiteArea(){
+  let d1=randInt(2,20); if(d1%2!==0 && d1<20) d1++;
+  const d2=randInt(2,20);
+  return {d1,d2, answer:(d1*d2)/2, formula:'S = (d₁·d₂)/2', askLabel:'S =',
+    given:`אלכסון ראשי d₁ = ${d1}, אלכסון משני d₂ = ${d2}`,
+    visual:<KiteShape/>};
+}
+function genKitePerimeter(){
+  let a=randInt(2,20), b=randInt(2,20);
+  if(a===b) b = b<20? b+1 : b-1;
+  if(a>b) [a,b]=[b,a];
+  return {a,b, answer:2*(a+b), formula:'P = 2(a+b)', askLabel:'P =',
+    given:`צלע קצרה a = ${a}, צלע ארוכה b = ${b}`,
+    visual:<KiteShape sideLabels={{TR:a,LT:a,RB:b,BL:b}}/>};
+}
+function genKiteSide(){
+  let d1=randInt(2,20); if(d1%2!==0 && d1<20) d1++;
+  const d2=randInt(2,20); const S=(d1*d2)/2;
+  return {d1, answer:d2, formula:'S = (d₁·d₂)/2', askLabel:'d₂ =',
+    given:`שטח S = ${S}, אלכסון d₁ = ${d1}`,
+    visual:<KiteShape/>};
+}
+function genKiteAngle(){
+  let a1,a2,a3,a4;
+  for(let i=0;i<200;i++){
+    a1=pick(ANGLES); a2=pick(ANGLES); a3=pick(ANGLES);
+    a4=360-a1-a2-a3;
+    if(a4>10&&a4<170) break;
+  }
+  return {answer:a4,
+    given:`שלוש זוויות: ${a1}°, ${a2}°, ${a3}°`,
+    formula:'סכום זוויות מרובע = 360°', askLabel:'הזווית הרביעית =',
+    visual:<KiteShape angleLabels={{T:a1+'°',R:a2+'°',B:a3+'°',L:'?'}}/>};
+}
+function Ch6Kite(){
+  return <div className="content">
+    <PropertyExplorer verts={KT_VERTS} order={KT_ORDER} diagonals={[['T','B'],['L','R']]} properties={KITE_PROPS}/>
+    <div className="card">
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="q-grid">
+        <NumericQuestion title="זווית (הרביעית)" genFn={genKiteAngle}/>
+        <NumericQuestion title="שטח" genFn={genKiteArea}/>
+        <NumericQuestion title="היקף" genFn={genKitePerimeter}/>
+        <NumericQuestion title="אלכסון שני (נתון שטח ואלכסון אחד)" genFn={genKiteSide}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ═══════════════════ App root ═══════════════════ */
+function App(){
+  const [ch,setCh]=useState(1);
+  const labels=['ריבוע','מלבן','מעוין','מקבילית','טרפז','דלתון'];
+  return (
+    <div>
+      <div className="hdr">
+        <div className="hdr-title">📐 מרובעים — כיתות ז׳-ח׳</div>
+        <div className="ch-btns">
+          {labels.map((l,i)=><button key={i} className={`ch-btn ${ch===i+1?'active':''}`} onClick={()=>setCh(i+1)}>{i+1}. {l}</button>)}
+        </div>
+      </div>
+      {ch===1?<Ch1Square key="c1"/>
+        :ch===2?<Ch2Rectangle key="c2"/>
+        :ch===3?<Ch3Rhombus key="c3"/>
+        :ch===4?<Ch4Parallelogram key="c4"/>
+        :ch===5?<Ch5Trapezoid key="c5"/>
+        :<Ch6Kite key="c6"/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

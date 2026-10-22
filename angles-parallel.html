@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>זוויות וישרים מקבילים</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f0fdfa;color:#1e293b;min-height:100vh;direction:rtl}
+
+  .hdr{background:linear-gradient(135deg,#134e4a,#0d9488);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .hdr h1{margin:0;font-size:1.2rem}
+  .ch-nav{display:flex;gap:6px;flex-wrap:wrap}
+  .ch-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.83rem;transition:.15s}
+  .ch-btn:hover{background:rgba(255,255,255,.28)}
+  .ch-btn.active{background:#fff;color:#134e4a;font-weight:700}
+
+  .content{max-width:640px;margin:20px auto;padding:0 16px 60px}
+  .card{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(19,78,74,.08);margin-bottom:16px}
+  .card-t{font-size:1.15rem;font-weight:700;color:#0f766e;margin-bottom:12px}
+
+  .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  .tab{background:#ccfbf1;border:1px solid #5eead4;color:#0f766e;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.88rem}
+  .tab.active{background:#0d9488;color:#fff;border-color:#0d9488;font-weight:700}
+  .sub-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .sub-tab{background:#f0fdfa;border:1px solid #99f6e4;color:#0f766e;padding:6px 12px;border-radius:7px;cursor:pointer;font-size:.82rem}
+  .sub-tab.active{background:#14b8a6;color:#fff;border-color:#14b8a6;font-weight:700}
+
+  .step-card{background:#fff;border:1px solid #99f6e4;border-radius:12px;padding:16px;margin-bottom:14px}
+  .step-done{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:8px;color:#166534;font-size:.9rem}
+  .hint{text-align:center;font-size:.9rem;color:#64748b;margin:10px 0}
+  .def-box{text-align:center;color:#0f766e;font-size:.92rem;background:#f0fdfa;border-radius:8px;padding:12px;margin-top:10px;line-height:1.6}
+  .formula-box{font-size:1.1rem;font-weight:700;text-align:center;background:#f0fdfa;border:1px dashed #5eead4;border-radius:10px;padding:12px;margin-top:10px;color:#0f766e;direction:ltr}
+  .given-box{background:#f0fdfa;border-radius:8px;padding:10px 14px;font-size:.95rem;color:#0f766e;margin-bottom:10px;font-weight:600;text-align:center}
+  .info-box{background:#fef9c3;border-radius:8px;padding:10px 14px;font-size:.86rem;color:#713f12;margin-bottom:10px}
+
+  .svg-wrap{display:flex;justify-content:center;margin:10px 0}
+  .ans-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0;flex-wrap:wrap;direction:ltr}
+  .ans-row input{padding:8px 10px;border:2px solid #5eead4;border-radius:8px;font-size:1rem;text-align:center;direction:ltr}
+  .ans-row input:focus{outline:none;border-color:#0d9488}
+  .choice-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+  .choice-btn{padding:8px 16px;border:2px solid #99f6e4;border-radius:8px;background:#fff;color:#0f766e;font-size:.88rem;cursor:pointer;font-weight:600;transition:.15s}
+  .choice-btn:hover{border-color:#0d9488}
+  .choice-btn.active{background:#0d9488;border-color:#0d9488;color:#fff}
+
+  .btn{background:#ccfbf1;border:1px solid #5eead4;color:#0f766e;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700;transition:.12s}
+  .btn:hover{background:#99f6e4}
+  .btn:disabled{opacity:.4;cursor:default}
+  .bp{background:#0d9488;color:#fff;border-color:#0d9488}
+  .bp:hover{background:#0f766e}
+  .bg{background:#16a34a;color:#fff;border-color:#16a34a}
+  .bg:hover{background:#15803d}
+
+  .fb{margin:8px 0;font-weight:700;text-align:center}
+  .fb.ok{color:#16a34a}
+  .fb.err{color:#dc2626}
+  .banner{background:#f0fdf4;border:2px solid #86efac;color:#166534;border-radius:12px;padding:18px;text-align:center;font-size:1.05rem;font-weight:700}
+  .banner button{display:block;margin:12px auto 0}
+
+  /* ── Equation solver (mirrored operation boxes, same mechanic as equation-solver.html) ── */
+  .eqs-hint{text-align:center;font-size:.85rem;color:#64748b;margin:8px 0}
+  .eqs-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;direction:ltr;row-gap:6px;overflow-x:auto;padding:2px 2px 4px}
+  .eqs-gl{grid-column:1;justify-self:center}
+  .eqs-gm{grid-column:2;justify-self:center}
+  .eqs-gr{grid-column:3;justify-self:center}
+  .eqs-sign{font-size:1.5rem;color:#0d9488;padding:0 12px;font-weight:300}
+  .eqs-side{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:2px;padding:8px 10px;border-radius:10px;min-width:60px}
+  .eqs-tp{display:inline-flex;align-items:center;border-radius:8px;padding:6px 8px}
+  .eqs-ts{font-size:1.3rem;color:#94a3b8;font-weight:300;padding:0 2px;line-height:1}
+  .eqs-tv{font-size:1.6rem;font-weight:700;color:#134e4a;line-height:1}
+  .eqs-tvx{font-size:1.6rem;font-weight:700;color:#0d9488;line-height:1}
+  .eqs-tf{display:inline-flex;flex-direction:column;align-items:center;font-weight:700;color:#134e4a;margin:0 1px}
+  .eqs-tf .eqs-fn{border-bottom:2px solid #134e4a;padding:0 2px;font-size:.85rem;line-height:1.3}
+  .eqs-tf .eqs-fd{padding:0 2px;font-size:.85rem;line-height:1.3}
+  .eqs-box{display:flex;align-items:center;gap:4px;background:#f0fdfa;border:2px solid #99f6e4;border-radius:10px;padding:5px 7px}
+  .eqs-btns{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+  .eqs-op{width:22px;height:22px;border-radius:5px;border:1px solid #5eead4;background:#fff;color:#0f766e;font-size:.8rem;font-weight:700;cursor:pointer;padding:0}
+  .eqs-op:hover{background:#ccfbf1}
+  .eqs-op.active{background:#0d9488;color:#fff;border-color:#0d9488}
+  .eqs-val{width:30px;padding:3px 1px;border:2px solid #5eead4;border-radius:5px;text-align:center;font-size:.8rem;direction:ltr}
+  .eqs-val:focus{outline:none;border-color:#0d9488}
+  .eqs-x{width:22px;height:22px;border-radius:5px;border:1px solid #5eead4;background:#fff;color:#0f766e;font-size:.78rem;font-weight:700;font-style:italic;cursor:pointer;padding:0}
+  .eqs-x:hover{background:#ccfbf1}
+  .eqs-x.active{background:#0f766e;color:#fff;border-color:#0f766e}
+  .eqs-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const {useState} = React;
+
+/* ═══════════════════ generic helpers ═══════════════════ */
+function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pick(arr){return arr[randInt(0,arr.length-1)];}
+function Fb({fb}){if(!fb)return null;return fb==='ok'?<div className="fb ok">✓ נכון!</div>:<div className="fb err">✗ לא נכון, נסו שוב</div>;}
+
+/* free-text linear-equation check: "2x+30=180" style */
+function parseLinearExpr(str){
+  let s=String(str).replace(/\s+/g,'').replace(/[()]/g,'');
+  if(s==='')return{coeff:0,c:0};
+  if(s[0]!=='+'&&s[0]!=='-')s='+'+s;
+  const tokens=s.match(/[+-][^+-]+/g);
+  if(!tokens)return null;
+  let coeff=0,c=0;
+  for(const tok of tokens){
+    const sign=tok[0]==='-'?-1:1;
+    const body=tok.slice(1);
+    if(body==='')return null;
+    if(/x$/i.test(body)){
+      const numPart=body.slice(0,-1);
+      const val=numPart===''?1:parseFloat(numPart);
+      if(isNaN(val))return null;
+      coeff+=sign*val;
+    } else {
+      const val=parseFloat(body);
+      if(isNaN(val))return null;
+      c+=sign*val;
+    }
+  }
+  return{coeff,c};
+}
+function checkLinearEquation(text,targetL,targetR){
+  const raw=String(text).trim();
+  if((raw.match(/=/g)||[]).length!==1)return false;
+  const [lhsStr,rhsStr]=raw.split('=');
+  const L=parseLinearExpr(lhsStr),R=parseLinearExpr(rhsStr);
+  if(!L||!R)return false;
+  const dCoeff=L.coeff-R.coeff, dC=L.c-R.c;
+  const tCoeff=targetL.coeff-targetR.coeff, tC=targetL.c-targetR.c;
+  const sameOrder=Math.abs(dCoeff-tCoeff)<1e-9&&Math.abs(dC-tC)<1e-9;
+  const revOrder=Math.abs(dCoeff+tCoeff)<1e-9&&Math.abs(dC+tC)<1e-9;
+  return sameOrder||revOrder;
+}
+function fmtExpr(e){
+  let s='';
+  if(e.a===1) s='x';
+  else if(e.a===-1) s='-x';
+  else s=e.a+'x';
+  if(e.b>0) s+=' + '+e.b;
+  else if(e.b<0) s+=' - '+(-e.b);
+  return s;
+}
+
+/* ═══════════════════ SVG helpers ═══════════════════ */
+function arcPath(cx,cy,r,startDeg,endDeg){
+  const s=startDeg*Math.PI/180, e=endDeg*Math.PI/180;
+  const sx=cx+r*Math.cos(s), sy=cy-r*Math.sin(s);
+  const ex=cx+r*Math.cos(e), ey=cy-r*Math.sin(e);
+  const large=(endDeg-startDeg)>180?1:0;
+  return `M${sx},${sy} A${r},${r} 0 ${large} 0 ${ex},${ey}`;
+}
+function labelPos(cx,cy,r,midDeg){
+  const m=midDeg*Math.PI/180;
+  return {x:cx+r*Math.cos(m), y:cy-r*Math.sin(m)};
+}
+/* A label centered on a fixed point (textAnchor="middle") always has half its width reaching
+   back toward the vertex — fine for a single digit, but a wide algebraic expression then
+   overlaps the arc, worse the narrower the angle (and pushing the radius out for long text
+   just drags the whole label away from a narrow arc instead of fixing the overlap). The
+   reliable fix is to anchor the text on the edge closest to the vertex, so the whole label
+   extends outward, away from the arc, regardless of its width. */
+function labelAnchorFor(midDeg){
+  const rad=midDeg*Math.PI/180;
+  const c=Math.cos(rad), s=Math.sin(rad);
+  const anchor=c>0.35?'start':c<-0.35?'end':'middle';
+  const baseline=s>0.35?'auto':s<-0.35?'hanging':'middle';
+  return {anchor,baseline};
+}
+
+/* Two crossing lines → 4 angles. 0=top,1=right,2=bottom,3=left */
+function TwoLinesSVG({highlight,onClick,selected,labels,showValues,onlyIndices}){
+  const W=300,H=220,cx=W/2,cy=H/2,len=120,ang1=25;
+  const r1=ang1*Math.PI/180;
+  const pts=[
+    {x1:cx-len*Math.cos(r1),y1:cy+len*Math.sin(r1),x2:cx+len*Math.cos(r1),y2:cy-len*Math.sin(r1)},
+    {x1:cx-len*Math.cos(r1),y1:cy-len*Math.sin(r1),x2:cx+len*Math.cos(r1),y2:cy+len*Math.sin(r1)}
+  ];
+  const angRanges=[
+    {start:ang1, end:180-ang1},
+    {start:-(ang1), end:ang1},
+    {start:-(180-ang1), end:-ang1},
+    {start:180-ang1, end:180+ang1}
+  ];
+  const arcR=30, labelR=45;
+  const idxList=onlyIndices||[0,1,2,3];
+  return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(300,W),height:'auto',direction:'ltr'}}>
+    <line x1={pts[0].x1} y1={pts[0].y1} x2={pts[0].x2} y2={pts[0].y2} stroke="#0d9488" strokeWidth={2.5}/>
+    <line x1={pts[1].x1} y1={pts[1].y1} x2={pts[1].x2} y2={pts[1].y2} stroke="#dc2626" strokeWidth={2.5}/>
+    {idxList.map(i=>{
+      const ar=angRanges[i];
+      const mid=(ar.start+ar.end)/2;
+      const text=labels?labels[i]:showValues?(showValues[i]!=null?showValues[i]+'°':'?'):String(i+1);
+      const lp=labelPos(cx,cy,labelR,mid);
+      const {anchor,baseline}=labelAnchorFor(mid);
+      const isHL=highlight&&highlight.includes(i);
+      const isSel=selected&&selected.includes(i);
+      const col=isSel?'#16a34a':isHL?'#0d9488':'#6b7280';
+      return <g key={i} onClick={()=>onClick&&onClick(i)} style={{cursor:onClick?'pointer':'default'}}>
+        <path d={arcPath(cx,cy,arcR,ar.start,ar.end)} fill="none" stroke={col} strokeWidth={isHL||isSel?3:1.5}/>
+        <text x={lp.x} y={lp.y} textAnchor={anchor} dominantBaseline={baseline} fontSize={labels?13:14} fontWeight="700" fill={col}>{text}</text>
+      </g>;
+    })}
+  </svg>;
+}
+
+/* Two parallel horizontal lines + transversal → 8 angles (0-3 top, 4-7 bottom) */
+const POS_NAMES=['מעלה-ימין','מעלה-שמאל','מטה-שמאל','מטה-ימין'];
+function ParallelLinesSVG({highlight,onClick,selected,showValues,labels,showPositions}){
+  const W=320,H=showPositions?320:280,y1=showPositions?110:90,y2=showPositions?210:190,margin=20,tx1=100,tx2=220,ty1=showPositions?55:40,ty2=showPositions?265:240;
+  const slope=(ty2-ty1)/(tx2-tx1);
+  const ix1=tx1+(y1-ty1)/slope;
+  const ix2=tx1+(y2-ty1)/slope;
+  const transAngle=Math.atan2(ty2-ty1,tx2-tx1)*180/Math.PI;
+  const arcR=22, lblR=showPositions?42:38;
+  const angDefs=[
+    {cx:ix1,cy:y1,start:0,end:180-transAngle},
+    {cx:ix1,cy:y1,start:180-transAngle,end:180},
+    {cx:ix1,cy:y1,start:180,end:360-transAngle},
+    {cx:ix1,cy:y1,start:360-transAngle,end:360},
+    {cx:ix2,cy:y2,start:0,end:180-transAngle},
+    {cx:ix2,cy:y2,start:180-transAngle,end:180},
+    {cx:ix2,cy:y2,start:180,end:360-transAngle},
+    {cx:ix2,cy:y2,start:360-transAngle,end:360},
+  ];
+  return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(320,W),height:'auto',direction:'ltr'}}>
+    <line x1={margin} y1={y1} x2={W-margin} y2={y1} stroke="#0d9488" strokeWidth={2.5}/>
+    <line x1={margin} y1={y2} x2={W-margin} y2={y2} stroke="#0d9488" strokeWidth={2.5}/>
+    <text x={W-margin-15} y={y1-8} fontSize="12" fill="#0d9488" fontWeight="700">≫</text>
+    <text x={W-margin-15} y={y2-8} fontSize="12" fill="#0d9488" fontWeight="700">≫</text>
+    <line x1={tx1-30} y1={ty1-15} x2={tx2+30} y2={ty2+15} stroke="#dc2626" strokeWidth={2.5}/>
+    {angDefs.map((ad,i)=>{
+      const mid=(ad.start+ad.end)/2;
+      const isHL=highlight&&highlight.includes(i);
+      const isSel=selected&&selected.includes(i);
+      const col=isSel?'#16a34a':isHL?'#0d9488':'#6b7280';
+      const sw=isHL||isSel?3:1.5;
+      const label=labels?labels[i]:(showValues?(showValues[i]!=null?showValues[i]+'°':'?'):(i+1));
+      const lp=labelPos(ad.cx,ad.cy,lblR,mid);
+      const {anchor,baseline}=labelAnchorFor(mid);
+      return <g key={i} onClick={()=>onClick&&onClick(i)} style={{cursor:onClick?'pointer':'default'}}>
+        <path d={arcPath(ad.cx,ad.cy,arcR,ad.start,ad.end)} fill="none" stroke={col} strokeWidth={sw}/>
+        <text x={lp.x} y={lp.y} textAnchor={anchor} dominantBaseline={showPositions?'middle':baseline} fontSize={labels?11:13} fontWeight="700" fill={col}>
+          <tspan x={lp.x} dy={showPositions?'-0.35em':'0'}>{label}</tspan>
+          {showPositions&&<tspan x={lp.x} dy="1.15em" fontSize="8.5" fontWeight="400" fill="#94a3b8">{POS_NAMES[i%4]}</tspan>}
+        </text>
+      </g>;
+    })}
+  </svg>;
+}
+
+/* ═══════════════════ Equation solver: mirrored operation boxes ═══════════════════ */
+function eqGcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){let t=b;b=a%b;a=t;}return a||1;}
+function eqSimplifyFrac(num,den){if(num===0)return[0,1];if(den<0){num=-num;den=-den;}const g=eqGcd(Math.abs(num),den);return[num/g,den/g];}
+function eqAddFracs(n1,d1,n2,d2){return eqSimplifyFrac(n1*d2+n2*d1,d1*d2);}
+let _eqUid=0;const eqUid=()=>`et${++_eqUid}`;
+function eqMkTerm(type,num,den=1){const[n,d]=eqSimplifyFrac(num,den);return{id:eqUid(),type,num:n,den:d};}
+function eqDoOperate(eq,opType,k,isX){
+  const type=isX?'x':'const';
+  function applySide(terms){
+    if(opType==='+')return[...terms,eqMkTerm(type,k)];
+    if(opType==='−')return[...terms,eqMkTerm(type,-k)];
+    if(opType==='×')return terms.map(t=>eqMkTerm(t.type,t.num*k,t.den));
+    if(opType==='÷')return terms.map(t=>{const[n,d]=eqSimplifyFrac(t.num,t.den*Math.abs(k));return eqMkTerm(t.type,k<0?-n:n,d);});
+    return terms;
+  }
+  return{left:applySide(eq.left),right:applySide(eq.right)};
+}
+function eqDoSimplify(terms){
+  let xn=0,xd=1,cn=0,cd=1;
+  for(const t of terms){if(t.type==='x')[xn,xd]=eqAddFracs(xn,xd,t.num,t.den);else[cn,cd]=eqAddFracs(cn,cd,t.num,t.den);}
+  const r=[];
+  if(xn!==0)r.push(eqMkTerm('x',xn,xd));
+  if(cn!==0)r.push(eqMkTerm('const',cn,cd));
+  return r.length?r:[eqMkTerm('const',0)];
+}
+function eqCanSimp(terms){return terms.filter(t=>t.type==='x').length>1||terms.filter(t=>t.type==='const').length>1;}
+function eqCheckSolved(eq){
+  const isX=t=>t.type==='x'&&t.num===1&&t.den===1;
+  const isC=t=>t.type==='const'&&t.den===1;
+  if(eq.left.length===1&&isX(eq.left[0])&&eq.right.length===1&&isC(eq.right[0]))return eq.right[0].num;
+  if(eq.right.length===1&&isX(eq.right[0])&&eq.left.length===1&&isC(eq.left[0]))return eq.left[0].num;
+  return null;
+}
+function EqTermPill({term,index}){
+  const{type,num,den}=term;
+  const isNeg=num<0;const abs=Math.abs(num);
+  const body=()=>{
+    if(type==='const'){
+      if(den===1)return<span className="eqs-tv">{abs}</span>;
+      return<span className="eqs-tf"><span className="eqs-fn">{abs}</span><span className="eqs-fd">{den}</span></span>;
+    }
+    const showC=!(abs===den);
+    const coef=showC?(den===1?<span className="eqs-tv">{abs}</span>:<span className="eqs-tf"><span className="eqs-fn">{abs}</span><span className="eqs-fd">{den}</span></span>):null;
+    return<>{coef}<span className="eqs-tvx">x</span></>;
+  };
+  return(
+    <span className="eqs-tp">
+      {index>0&&<span className="eqs-ts">{isNeg?'−':'+'}</span>}
+      {index===0&&isNeg&&<span className="eqs-ts">−</span>}
+      {body()}
+    </span>
+  );
+}
+const EQS_OPS=['+','−','×','÷'];
+function EqOpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX}){
+  const allowX=opType==='+'||opType==='−';
+  return(
+    <div className="eqs-box">
+      <div className="eqs-btns">
+        {EQS_OPS.map(op=><button key={op} className={`eqs-op ${opType===op?'active':''}`} onClick={()=>onOpType(op)}>{op}</button>)}
+      </div>
+      <input className="eqs-val" value={opVal} onChange={e=>onOpVal(e.target.value)} placeholder="מס׳" inputMode="numeric"/>
+      {allowX&&<button className={`eqs-x ${opIsX?'active':''}`} onClick={onToggleX} title="הוספה/חיסור של כפולת x">x</button>}
+    </div>
+  );
+}
+function EqSolverBox({initial,onSolved}){
+  const[cur,setCur]=useState(initial);
+  const[opType,setOpType]=useState('+');
+  const[opVal,setOpVal]=useState('');
+  const[opIsX,setOpIsX]=useState(false);
+  const[opErr,setOpErr]=useState('');
+  const solved=eqCheckSolved(cur);
+  const canSimpAny=eqCanSimp(cur.left)||eqCanSimp(cur.right);
+  const notifiedRef=React.useRef(false);
+  React.useEffect(()=>{ if(solved!==null&&!notifiedRef.current){notifiedRef.current=true;setTimeout(()=>onSolved(solved),1500);} },[solved]);
+
+  function setOpTypeClean(t){setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);}
+  function setOpValClean(v){setOpVal(v);setOpErr('');}
+  function toggleOpIsX(){setOpIsX(v=>!v);setOpErr('');}
+
+  function applyOp(){
+    const v=opVal.trim();
+    if(!/^-?\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}
+    const k=parseInt(v,10);
+    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}
+    const isX=opIsX&&(opType==='+'||opType==='−');
+    setCur(c=>eqDoOperate(c,opType,k,isX));
+    setOpVal('');setOpErr('');setOpIsX(false);
+  }
+  function handleSimplify(){
+    setCur(c=>({left:eqCanSimp(c.left)?eqDoSimplify(c.left):c.left,right:eqCanSimp(c.right)?eqDoSimplify(c.right):c.right}));
+  }
+  const renderTerms=terms=>terms.map((t,i)=><EqTermPill key={t.id} term={t} index={i}/>);
+
+  return(
+    <div>
+      {solved===null&&<div className="eqs-hint">בצעו את אותה פעולה על שני אגפי המשוואה — ניתן גם להוסיף/לחסר כפולת x</div>}
+      <div className="eqs-grid">
+        {solved===null&&<>
+          <div className="eqs-gl"><EqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+          <div className="eqs-gm"></div>
+          <div className="eqs-gr"><EqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+        </>}
+        <div className="eqs-gl eqs-side">{renderTerms(cur.left)}</div>
+        <span className="eqs-gm eqs-sign">=</span>
+        <div className="eqs-gr eqs-side">{renderTerms(cur.right)}</div>
+      </div>
+      {opErr&&<div className="fb err">{opErr}</div>}
+      {solved===null&&(
+        <div className="eqs-actions">
+          <button className="btn bp" onClick={applyOp}>✓ אישור</button>
+          <button className="btn" disabled={!canSimpAny} onClick={handleSimplify}>פשט ≡</button>
+        </div>
+      )}
+      {solved!==null&&<div className="step-done">✓ x = {solved}</div>}
+    </div>
+  );
+}
+function buildInitialEq(rule,expr1,expr2){
+  if(rule==='equal'){
+    return {
+      left:[eqMkTerm('x',expr1.a),...(expr1.b!==0?[eqMkTerm('const',expr1.b)]:[])],
+      right:[eqMkTerm('x',expr2.a),...(expr2.b!==0?[eqMkTerm('const',expr2.b)]:[])]
+    };
+  }
+  return {
+    left:[eqMkTerm('x',expr1.a),...(expr1.b!==0?[eqMkTerm('const',expr1.b)]:[]),
+          eqMkTerm('x',expr2.a),...(expr2.b!==0?[eqMkTerm('const',expr2.b)]:[])],
+    right:[eqMkTerm('const',180)]
+  };
+}
+
+/* ═══════════════════ Relation config + generators ═══════════════════ */
+const RELATIONS=[
+  {key:'vertical',label:'קודקודיות',diagram:'two',pairs:[[0,2],[1,3]],rule:'equal',
+   def:'זוויות קודקודיות הן שתי זוויות הנמצאות זו מול זו בפינות הנגדיות של נקודת החיתוך (לא צמודות). הן תמיד שוות. בכל חיתוך יש 2 זוגות כאלה.'},
+  {key:'adjacent',label:'צמודות',diagram:'two',pairs:[[0,1],[1,2],[2,3],[3,0]],rule:'sum180',
+   def:'זוויות צמודות הן שתי זוויות הנמצאות זו לצד זו, חולקות קרן משותפת ונוצרות על אותו ישר. סכומן תמיד 180°. בכל חיתוך יש 4 זוגות כאלה.'},
+  {key:'alternate',label:'מתחלפות',diagram:'parallel',pairs:[[2,4],[3,5],[0,6],[1,7]],rule:'equal',
+   def:'זוויות מתחלפות נמצאות בפינות הפוכות (אלכסוניות) בשני החיתוכים — למשל ימינה-למעלה בחיתוך הראשון מול שמאלה-למטה בחיתוך השני. הן תמיד שוות. יש 4 זוגות כאלה.'},
+  {key:'corresponding',label:'מתאימות',diagram:'parallel',pairs:[[0,4],[1,5],[2,6],[3,7]],rule:'equal',
+   def:'זוויות מתאימות נמצאות באותה פינה בדיוק בשני החיתוכים — למשל שמאלה-למטה בחיתוך הראשון עם שמאלה-למטה בחיתוך השני. הן תמיד שוות. יש 4 זוגות כאלה.'},
+  {key:'cointerior',label:'חד-צדדיות',diagram:'parallel',pairs:[[2,5],[3,4]],rule:'sum180',
+   def:'זוויות חד-צדדיות (פנימיות מאותו צד) נמצאות באותו צד של החותך, בין שני הישרים המקבילים. סכומן תמיד 180°. יש 2 זוגות כאלה.'},
+];
+function genRelationNumeric(pairs,rule){
+  const pair=pick(pairs);
+  const a=randInt(20,160);
+  const other=rule==='equal'?a:180-a;
+  const swap=Math.random()<0.5;
+  const givenIdx=swap?pair[1]:pair[0];
+  const askIdx=swap?pair[0]:pair[1];
+  const givenVal=swap?other:a;
+  const askVal=swap?a:other;
+  return {pair,givenIdx,askIdx,givenVal,askVal};
+}
+function genRelationEquation(pairs,rule){
+  const pair=pick(pairs);
+  const x0=randInt(5,20);
+  const a1=pick([2,3]),b1=randInt(-15,15);
+  const val1=a1*x0+b1;
+  /* for the 'equal' rule, a2 must differ from a1 — otherwise val2=val1 forces b2=b1 too,
+     making both sides literally identical (an unsolvable, degenerate equation). */
+  const a2=rule==='equal'?pick([1,2,3].filter(v=>v!==a1)):pick([1,2]);
+  let val2,b2;
+  if(rule==='equal'){val2=val1;b2=val2-a2*x0;}
+  else{val2=180-val1;b2=val2-a2*x0;}
+  return {pair,x0,expr1:{a:a1,b:b1,val:val1},expr2:{a:a2,b:b2,val:val2}};
+}
+function relationTargets(rule,expr1,expr2){
+  if(rule==='equal')return{L:{coeff:expr1.a,c:expr1.b},R:{coeff:expr2.a,c:expr2.b}};
+  return{L:{coeff:expr1.a+expr2.a,c:expr1.b+expr2.b},R:{coeff:0,c:180}};
+}
+
+/* ═══════════════════ Per-relation chapter: explain / numeric / equation ═══════════════════ */
+function RelationExplain({config}){
+  const Diagram=config.diagram==='two'?TwoLinesSVG:ParallelLinesSVG;
+  const examplePair=config.pairs[0];
+  const showPositions=config.key==='alternate'||config.key==='corresponding';
+  return <div className="step-card">
+    <div className="svg-wrap"><Diagram highlight={examplePair} showPositions={showPositions}/></div>
+    <div className="def-box">
+      {config.diagram==='two'
+        ?'כאשר שני ישרים נחתכים, נוצרות סביב נקודת החיתוך 4 זוויות (רבעים).'
+        :'כאשר ישר שלישי (חותך) חותך שני ישרים מקבילים, נוצרים שני חיתוכים — ובכל חיתוך 4 זוויות, ובסך הכל 8 זוויות.'}
+      <br/><br/>{config.def}
+    </div>
+    <div className="formula-box">
+      {config.rule==='equal'?`∠${examplePair[0]+1} = ∠${examplePair[1]+1}`:`∠${examplePair[0]+1} + ∠${examplePair[1]+1} = 180°`}
+    </div>
+  </div>;
+}
+function RelationNumeric({config}){
+  const [data,setData]=useState(()=>genRelationNumeric(config.pairs,config.rule));
+  const [val,setVal]=useState('');
+  const [fb,setFb]=useState(null);
+  const [done,setDone]=useState(false);
+  function reset(){setData(genRelationNumeric(config.pairs,config.rule));setVal('');setFb(null);setDone(false);}
+  function check(){
+    const n=parseInt(val,10);
+    if(n===data.askVal){setFb('ok');setDone(true);}
+    else setFb('err');
+  }
+  const showValues=Array(config.diagram==='two'?4:8).fill(null);
+  showValues[data.givenIdx]=data.givenVal;
+  const Diagram=config.diagram==='two'?TwoLinesSVG:ParallelLinesSVG;
+  return <div className="step-card">
+    <div className="svg-wrap"><Diagram highlight={data.pair} showValues={showValues} onlyIndices={config.diagram==='two'?data.pair:undefined}/></div>
+    <div className="hint">∠{data.givenIdx+1} = {data.givenVal}°. מצאו את ∠{data.askIdx+1}</div>
+    {!done&&<div className="ans-row">
+      <input value={val} onChange={e=>{setVal(e.target.value);setFb(null);}} onKeyDown={e=>e.key==='Enter'&&check()} style={{width:70}}/>
+      <span>°</span>
+      <button className="btn bp" onClick={check}>✓ בדוק</button>
+    </div>}
+    {fb==='err'&&<Fb fb={fb}/>}
+    {done&&<div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function FindAnglesStep({pair,expr1,expr2,x0,onDone}){
+  const [v1,setV1]=useState('');
+  const [v2,setV2]=useState('');
+  const [fb,setFb]=useState(null);
+  function check(){
+    const n1=parseInt(v1,10), n2=parseInt(v2,10);
+    if(n1===expr1.val&&n2===expr2.val){setFb('ok');onDone();}
+    else setFb('err');
+  }
+  return <>
+    <div className="step-done">✓ x = {x0}</div>
+    <div className="hint">הציבו את x למציאת הזוויות</div>
+    <div className="ans-row">
+      <span>∠{pair[0]+1} =</span>
+      <input value={v1} onChange={e=>{setV1(e.target.value);setFb(null);}} onKeyDown={e=>e.key==='Enter'&&check()} style={{width:60}}/>
+      <span>°</span>
+      <span style={{marginRight:14}}>∠{pair[1]+1} =</span>
+      <input value={v2} onChange={e=>{setV2(e.target.value);setFb(null);}} onKeyDown={e=>e.key==='Enter'&&check()} style={{width:60}}/>
+      <span>°</span>
+    </div>
+    <div style={{textAlign:'center'}}><button className="btn bp" onClick={check}>✓ בדוק</button></div>
+    <Fb fb={fb}/>
+  </>;
+}
+function RelationEquation({config}){
+  const [data,setData]=useState(()=>genRelationEquation(config.pairs,config.rule));
+  const [phase,setPhase]=useState('write');
+  const [eqInput,setEqInput]=useState('');
+  const [fb,setFb]=useState(null);
+  function reset(){setData(genRelationEquation(config.pairs,config.rule));setPhase('write');setEqInput('');setFb(null);}
+  const targets=relationTargets(config.rule,data.expr1,data.expr2);
+  function checkWrite(){
+    if(checkLinearEquation(eqInput,targets.L,targets.R)){setFb('ok');setTimeout(()=>{setPhase('solve');setFb(null);},500);}
+    else setFb('err');
+  }
+  const Diagram=config.diagram==='two'?TwoLinesSVG:ParallelLinesSVG;
+  const N=config.diagram==='two'?4:8;
+  const diagramLabels=Array(N).fill(0).map((_,i)=>String(i+1));
+  diagramLabels[data.pair[0]]=`(${fmtExpr(data.expr1)})°`;
+  diagramLabels[data.pair[1]]=`(${fmtExpr(data.expr2)})°`;
+  return <div className="step-card">
+    <div className="svg-wrap"><Diagram highlight={data.pair} labels={diagramLabels}/></div>
+    {phase==='write'&&<>
+      <div className="hint">כתבו משוואה מתאימה למציאת x</div>
+      <div className="ans-row">
+        <input value={eqInput} onChange={e=>{setEqInput(e.target.value);setFb(null);}} onKeyDown={e=>e.key==='Enter'&&checkWrite()} style={{width:180}}/>
+        <button className="btn bp" onClick={checkWrite}>✓ בדוק</button>
+      </div>
+      <Fb fb={fb}/>
+    </>}
+    {phase==='solve'&&<>
+      <div className="step-done">✓ המשוואה נכתבה נכון</div>
+      <div className="hint">פתרו את המשוואה</div>
+      <EqSolverBox key={`${data.expr1.a},${data.expr1.b},${data.expr2.a},${data.expr2.b},${config.rule}`}
+        initial={buildInitialEq(config.rule,data.expr1,data.expr2)}
+        onSolved={()=>setPhase('findAngles')}/>
+    </>}
+    {phase==='findAngles'&&<FindAnglesStep pair={data.pair} expr1={data.expr1} expr2={data.expr2} x0={data.x0} onDone={()=>setPhase('done')}/>}
+    {phase==='done'&&<div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function RelationChapterView({config}){
+  const [tab,setTab]=useState('a');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">{config.label}</div>
+      <div className="tabs">
+        <button className={`tab ${tab==='a'?'active':''}`} onClick={()=>setTab('a')}>א. הסבר</button>
+        <button className={`tab ${tab==='b'?'active':''}`} onClick={()=>setTab('b')}>ב. תרגיל מספרי</button>
+        <button className={`tab ${tab==='c'?'active':''}`} onClick={()=>setTab('c')}>ג. משוואה</button>
+      </div>
+      {tab==='a'&&<RelationExplain config={config}/>}
+      {tab==='b'&&<RelationNumeric key={config.key+'-num'} config={config}/>}
+      {tab==='c'&&<RelationEquation key={config.key+'-eq'} config={config}/>}
+    </div>
+  </div>;
+}
+
+/* ═══════════════════ Chapter 6: "הכל יחד" — two parallels + transversal ═══════════════════ */
+const REL_MAP={
+  '0,4':'מתאימות','1,5':'מתאימות','2,6':'מתאימות','3,7':'מתאימות',
+  '2,4':'מתחלפות','3,5':'מתחלפות','0,6':'מתחלפות','1,7':'מתחלפות',
+  '2,5':'חד-צדדיות','3,4':'חד-צדדיות',
+  '0,1':'צמודות','1,2':'צמודות','2,3':'צמודות','3,0':'צמודות',
+  '4,5':'צמודות','5,6':'צמודות','6,7':'צמודות','7,4':'צמודות',
+  '0,2':'קודקודיות','1,3':'קודקודיות','4,6':'קודקודיות','5,7':'קודקודיות'
+};
+function genCh6Identify(){
+  const key=pick(Object.keys(REL_MAP));
+  const pair=key.split(',').map(Number);
+  return {pair,rel:REL_MAP[key]};
+}
+function Ch6Identify(){
+  const [data,setData]=useState(genCh6Identify);
+  const [choice,setChoice]=useState('');
+  const [fb,setFb]=useState(null);
+  const [done,setDone]=useState(false);
+  function reset(){setData(genCh6Identify());setChoice('');setFb(null);setDone(false);}
+  function check(){
+    if(choice===data.rel){setFb('ok');setDone(true);}
+    else setFb('err');
+  }
+  return <div className="step-card">
+    <div className="svg-wrap"><ParallelLinesSVG highlight={data.pair}/></div>
+    <div className="hint">מה הקשר בין ∠{data.pair[0]+1} ל-∠{data.pair[1]+1}?</div>
+    {!done&&<>
+      <div className="choice-row">
+        {['מתאימות','מתחלפות','חד-צדדיות','צמודות','קודקודיות'].map(c=>
+          <button key={c} className={`choice-btn ${choice===c?'active':''}`} onClick={()=>{setChoice(c);setFb(null);}}>{c}</button>)}
+      </div>
+      <div style={{textAlign:'center'}}><button className="btn bg" disabled={!choice} onClick={check}>✓ בדוק</button></div>
+      <Fb fb={fb}/>
+    </>}
+    {done&&<div className="banner">✅ כל הכבוד! זוויות {data.rel}<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function genCh6Equation(){
+  const relType=pick(['corresponding','alternate','cointerior']);
+  let pairs,rule;
+  if(relType==='corresponding'){pairs=[[0,4],[1,5],[2,6],[3,7]];rule='equal';}
+  else if(relType==='alternate'){pairs=[[2,4],[3,5],[0,6],[1,7]];rule='equal';}
+  else{pairs=[[2,5],[3,4]];rule='sum180';}
+  return {relType,rule,...genRelationEquation(pairs,rule)};
+}
+function Ch6Equation(){
+  const [data,setData]=useState(genCh6Equation);
+  const [phase,setPhase]=useState('write');
+  const [eqInput,setEqInput]=useState('');
+  const [fb,setFb]=useState(null);
+  function reset(){setData(genCh6Equation());setPhase('write');setEqInput('');setFb(null);}
+  const targets=relationTargets(data.rule,data.expr1,data.expr2);
+  function checkWrite(){
+    if(checkLinearEquation(eqInput,targets.L,targets.R)){setFb('ok');setTimeout(()=>{setPhase('solve');setFb(null);},500);}
+    else setFb('err');
+  }
+  const diagramLabels=Array(8).fill(0).map((_,i)=>String(i+1));
+  diagramLabels[data.pair[0]]=`(${fmtExpr(data.expr1)})°`;
+  diagramLabels[data.pair[1]]=`(${fmtExpr(data.expr2)})°`;
+  return <div className="step-card">
+    <div className="svg-wrap"><ParallelLinesSVG highlight={data.pair} labels={diagramLabels}/></div>
+    {phase==='write'&&<>
+      <div className="hint">כתבו משוואה מתאימה למציאת x</div>
+      <div className="ans-row">
+        <input value={eqInput} onChange={e=>{setEqInput(e.target.value);setFb(null);}} onKeyDown={e=>e.key==='Enter'&&checkWrite()} style={{width:180}}/>
+        <button className="btn bp" onClick={checkWrite}>✓ בדוק</button>
+      </div>
+      <Fb fb={fb}/>
+    </>}
+    {phase==='solve'&&<>
+      <div className="step-done">✓ המשוואה נכתבה נכון</div>
+      <div className="hint">פתרו את המשוואה</div>
+      <EqSolverBox key={`${data.expr1.a},${data.expr1.b},${data.expr2.a},${data.expr2.b},${data.rule}`}
+        initial={buildInitialEq(data.rule,data.expr1,data.expr2)}
+        onSolved={()=>setPhase('findAngles')}/>
+    </>}
+    {phase==='findAngles'&&<FindAnglesStep pair={data.pair} expr1={data.expr1} expr2={data.expr2} x0={data.x0} onDone={()=>setPhase('done')}/>}
+    {phase==='done'&&<div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+function Chapter6(){
+  const [sub,setSub]=useState('id');
+  return <div className="content">
+    <div className="card">
+      <div className="card-t">הכל יחד — שני ישרים מקבילים וחותך</div>
+      <div className="sub-tabs">
+        <button className={`sub-tab ${sub==='id'?'active':''}`} onClick={()=>setSub('id')}>זיהוי זוויות מסומנות</button>
+        <button className={`sub-tab ${sub==='eq'?'active':''}`} onClick={()=>setSub('eq')}>מציאת זווית עם נעלם</button>
+      </div>
+      {sub==='id'&&<Ch6Identify key="id"/>}
+      {sub==='eq'&&<Ch6Equation key="eq"/>}
+    </div>
+  </div>;
+}
+
+/* ═══════════════════ App ═══════════════════ */
+function App(){
+  const [chapter,setChapter]=useState(1);
+  const labels=RELATIONS.map((r,i)=>`${i+1}. ${r.label}`).concat(['6. הכל יחד']);
+  return <div>
+    <div className="hdr">
+      <h1>זוויות וישרים מקבילים</h1>
+      <div className="ch-nav">
+        {labels.map((l,i)=><button key={i} className={`ch-btn ${chapter===i+1?'active':''}`} onClick={()=>setChapter(i+1)}>{l}</button>)}
+      </div>
+    </div>
+    {chapter<=5?<RelationChapterView key={'rel'+chapter} config={RELATIONS[chapter-1]}/>:<Chapter6 key="ch6"/>}
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

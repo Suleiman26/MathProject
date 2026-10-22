@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>פונקציה קווית</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0fdfa;min-height:100vh;direction:rtl}
+.hdr{background:linear-gradient(135deg,#134e4a,#0d9488);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.hdr h1{margin:0;font-size:1.2rem}
+.ch-nav{display:flex;gap:6px;flex-wrap:wrap}
+.ch-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.83rem;font-weight:600;transition:.15s}
+.ch-btn:hover{background:rgba(255,255,255,.28)}
+.ch-btn.active{background:#fff;color:#134e4a;font-weight:700}
+.app{max-width:860px;margin:0 auto;padding:16px}
+.def-box{text-align:center;color:#0f766e;font-size:.92rem;background:#f0fdfa;border-radius:8px;padding:12px;line-height:1.7}
+.sec-title{font-weight:700;color:#134e4a;margin-bottom:6px;font-size:1.02rem}
+.card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.1);padding:20px}
+.task-title{font-size:1.1rem;font-weight:700;color:#134e4a;margin-bottom:6px}
+.task-desc{color:#555;font-size:.9rem;margin-bottom:14px;line-height:1.5}
+.svg-wrap{display:flex;justify-content:center;margin-bottom:14px;user-select:none}
+svg{cursor:crosshair}
+.btn{padding:9px 20px;border:none;border-radius:8px;cursor:pointer;font-size:.95rem;font-weight:600;transition:all .2s}
+.btn-primary{background:#0d9488;color:#fff}
+.btn-primary:hover{background:#0f766e}
+.btn-primary:disabled{background:#5eead4;cursor:default}
+.btn-success{background:#22c55e;color:#fff}
+.btn-success:hover{background:#16a34a}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-outline{background:#fff;color:#0d9488;border:2px solid #0d9488}
+.btn-outline:hover{background:#ccfbf1}
+.feedback{margin-top:12px;padding:10px 14px;border-radius:8px;font-size:.95rem;font-weight:600;text-align:center}
+.feedback.ok{background:#dcfce7;color:#166534}
+.feedback.err{background:#fee2e2;color:#991b1b}
+.feedback.info{background:#ccfbf1;color:#0f766e}
+.input-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;direction:ltr}
+.input-row label{font-size:.9rem;color:#374151;min-width:60px;text-align:right;direction:rtl}
+.math-input{width:60px;padding:6px 8px;border:2px solid #d1d5db;border-radius:6px;font-size:1rem;text-align:center;direction:ltr}
+.math-input:focus{outline:none;border-color:#0d9488}
+.formula-box{background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:12px 16px;margin-bottom:12px;direction:ltr;font-size:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.slope-result{font-size:1.1rem;color:#134e4a;font-weight:700;margin-top:8px;text-align:center}
+.points-list{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.point-chip{padding:4px 10px;border-radius:6px;background:#ccfbf1;color:#134e4a;font-size:.9rem;border:2px solid transparent;cursor:pointer;transition:all .2s;direction:ltr}
+.point-chip.selected{background:#0d9488;color:#fff;border-color:#0f766e}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.hint{color:#6b7280;font-size:.85rem;margin-top:6px}
+.solve-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;direction:ltr;row-gap:6px;overflow-x:auto;padding:2px 2px 4px}
+.g-left{grid-column:1;justify-self:center}
+.g-mid{grid-column:2;justify-self:center}
+.g-right{grid-column:3;justify-self:center}
+.eq-sign{font-size:1.8rem;color:#0d9488;padding:0 16px;font-weight:300;flex-shrink:0}
+.side-zone{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:2px;padding:10px 14px;border-radius:12px;min-width:80px}
+.tp{display:inline-flex;align-items:center;gap:0;border-radius:10px;padding:8px 10px}
+.ts{font-size:1.5rem;color:#94a3b8;font-weight:300;padding:0 3px;line-height:1}
+.tv{font-size:2rem;font-weight:700;color:#134e4a;line-height:1}
+.tv-x{font-size:2rem;font-weight:700;color:#0d9488;line-height:1}
+.tf{display:inline-flex;flex-direction:column;align-items:center;font-weight:700;color:#134e4a;margin:0 1px}
+.tf .fn{border-bottom:2px solid #134e4a;padding:0 2px;font-size:1rem;line-height:1.3}
+.tf .fd{padding:0 2px;font-size:1rem;line-height:1.3}
+.op-box{display:flex;align-items:center;gap:4px;background:#f0fdfa;border:2px solid #99f6e4;border-radius:10px;padding:5px 7px}
+.op-btns{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+.op-btn{width:22px;height:22px;border-radius:5px;border:1px solid #5eead4;background:#fff;color:#0f766e;font-size:.8rem;font-weight:700;cursor:pointer;transition:.12s;padding:0;flex-shrink:0}
+.op-btn:hover{background:#ccfbf1}
+.op-btn.active{background:#0d9488;color:#fff;border-color:#0d9488}
+.op-input{width:30px;flex-shrink:0;padding:3px 1px;border:2px solid #5eead4;border-radius:5px;text-align:center;font-size:.8rem;direction:ltr}
+.op-input:focus{outline:none;border-color:#0d9488}
+.op-x-btn{width:22px;height:22px;flex-shrink:0;border-radius:5px;border:1px solid #5eead4;background:#fff;color:#0f766e;font-size:.78rem;font-weight:700;font-style:italic;cursor:pointer;transition:.12s;padding:0}
+.op-x-btn:hover{background:#ccfbf1}
+.op-x-btn.active{background:#0f766e;color:#fff;border-color:#0f766e}
+.hist-label{font-size:.72rem;color:#94a3b8;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;text-align:right}
+.h-row{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid #f1f5f9;direction:ltr}
+.h-row:last-child{border-bottom:none}
+.h-num{min-width:20px;height:20px;background:#ccfbf1;border-radius:50%;font-size:.68rem;font-weight:700;color:#0f766e;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.h-eq{font-size:.96rem;font-weight:600;color:#134e4a;flex:1}
+.h-desc{font-size:.72rem;color:#94a3b8;direction:rtl;text-align:right;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useCallback,useEffect,useMemo}=React;
+
+// ── coordinate system constants ──────────────────────────────────────────────
+const GRID_MIN=-8,GRID_MAX=8,GRID_STEPS=16;
+const SVG_W=400,SVG_H=400,PAD=30;
+const CELL=(SVG_W-2*PAD)/GRID_STEPS; // pixels per unit
+
+function toSvg(x,y){
+  return [PAD+(x-GRID_MIN)*CELL, PAD+(GRID_MAX-y)*CELL];
+}
+function fromSvg(sx,sy){
+  return [(sx-PAD)/CELL+GRID_MIN, GRID_MAX-(sy-PAD)/CELL];
+}
+function snap(v){return Math.round(v);}
+
+// ── SVG coordinate grid ──────────────────────────────────────────────────────
+function Grid({children,onClick,onMouseMove,highlight,hideNumbers,axisNames,hideGrid}){
+  const lines=[];
+  for(let v=GRID_MIN;v<=GRID_MAX;v++){
+    if(hideGrid&&v!==0)continue;
+    const isAxis=(v===0);
+    const [x1,y1]=toSvg(v,GRID_MIN);
+    const [x2,y2]=toSvg(v,GRID_MAX);
+    lines.push(<line key={'v'+v} x1={x1} y1={y1} x2={x2} y2={y2}
+      stroke={isAxis?'#134e4a':'#cbd5e1'} strokeWidth={isAxis?2:.7}/>);
+    const [hx1,hy1]=toSvg(GRID_MIN,v);
+    const [hx2,hy2]=toSvg(GRID_MAX,v);
+    lines.push(<line key={'h'+v} x1={hx1} y1={hy1} x2={hx2} y2={hy2}
+      stroke={isAxis?'#134e4a':'#cbd5e1'} strokeWidth={isAxis?2:.7}/>);
+  }
+  const labels=[];
+  if(!hideNumbers)for(let v=GRID_MIN;v<=GRID_MAX;v++){
+    if(v===0)continue;
+    const [lx]=toSvg(v,0);
+    labels.push(<text key={'lx'+v} x={lx} y={toSvg(0,0)[1]+14} textAnchor="middle"
+      fontSize="9" fill="#64748b" style={{direction:'ltr'}}>{v}</text>);
+    const [,ly]=toSvg(0,v);
+    labels.push(<text key={'ly'+v} x={toSvg(0,0)[0]-10} y={ly+3} textAnchor="middle"
+      fontSize="9" fill="#64748b" style={{direction:'ltr'}}>{v}</text>);
+  }
+  // axis arrow tips
+  const [ax0]=toSvg(GRID_MIN,0);const [ax1]=toSvg(GRID_MAX,0);
+  const [,ay0]=toSvg(0,GRID_MIN);const [,ay1]=toSvg(0,GRID_MAX);
+  const axLabels=axisNames===undefined?['x','y']:axisNames;
+  return(
+    <svg width={SVG_W} height={SVG_H} onClick={onClick} onMouseMove={onMouseMove}>
+      <rect x={0} y={0} width={SVG_W} height={SVG_H} fill="#f0fdfa" rx={8}/>
+      {lines}{labels}
+      {/* axis labels */}
+      {axLabels&&axLabels[0]&&<text x={ax1-4} y={toSvg(0,0)[1]-6} fontSize="12" fill="#134e4a" fontWeight="bold">{axLabels[0]}</text>}
+      {axLabels&&axLabels[1]&&<text x={toSvg(0,0)[0]+6} y={ay1+12} fontSize="12" fill="#134e4a" fontWeight="bold">{axLabels[1]}</text>}
+      {highlight&&<circle cx={highlight[0]} cy={highlight[1]} r={7} fill="#99f6e4" stroke="#0d9488" strokeWidth={2} opacity={.7}/>}
+      {children}
+    </svg>
+  );
+}
+
+function DotPoint({x,y,color='#0d9488',r=6,label,labelPos='top',badge}){
+  const [sx,sy]=toSvg(x,y);
+  const ly=labelPos==='top'?sy-10:sy+16;
+  return(
+    <>
+      <circle cx={sx} cy={sy} r={r} fill={color} stroke="#fff" strokeWidth={2}/>
+      {badge!=null&&<text x={sx} y={sy+4} textAnchor="middle" fontSize="11" fontWeight="bold" fill="#fff" style={{direction:'ltr'}}>{badge}</text>}
+      {label&&<text x={sx+8} y={ly} fontSize="11" fill={color} fontWeight="bold" style={{direction:'ltr'}}>{label}</text>}
+    </>
+  );
+}
+
+function LineSeg({x1,y1,x2,y2,color='#ef4444',width=2.5}){
+  // extend to grid edges
+  if(x1===x2){
+    const [sx]=toSvg(x1,GRID_MIN);
+    return<line x1={sx} y1={toSvg(x1,GRID_MIN)[1]} x2={sx} y2={toSvg(x1,GRID_MAX)[1]} stroke={color} strokeWidth={width}/>;
+  }
+  const slope=(y2-y1)/(x2-x1);
+  const b=y1-slope*x1;
+  let pts=[];
+  // intersect with x=GRID_MIN,GRID_MAX,y=GRID_MIN,GRID_MAX
+  pts.push([GRID_MIN, slope*GRID_MIN+b]);
+  pts.push([GRID_MAX, slope*GRID_MAX+b]);
+  pts.push([(GRID_MIN-b)/slope, GRID_MIN]);
+  pts.push([(GRID_MAX-b)/slope, GRID_MAX]);
+  pts=pts.filter(([px,py])=>px>=GRID_MIN-0.01&&px<=GRID_MAX+0.01&&py>=GRID_MIN-0.01&&py<=GRID_MAX+0.01);
+  if(pts.length<2)return null;
+  const [sx1,sy1]=toSvg(pts[0][0],pts[0][1]);
+  const [sx2,sy2]=toSvg(pts[1][0],pts[1][1]);
+  return<line x1={sx1} y1={sy1} x2={sx2} y2={sy2} stroke={color} strokeWidth={width} strokeLinecap="round"/>;
+}
+
+// ── random helpers ────────────────────────────────────────────────────────────
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function rndNonZero(a,b){let v;do{v=rnd(a,b);}while(v===0);return v;}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+// ── input parsing helpers (accept a plain number OR a "a-b"/"a/b" expression) ─
+function parseDeltaInput(str){
+  const s=String(str).trim().replace(/−/g,'-');
+  if(/^-?\d+$/.test(s))return parseInt(s,10);
+  const m=s.match(/^(-?\d+)\s*-\s*(-?\d+)$/);
+  if(m)return parseInt(m[1],10)-parseInt(m[2],10);
+  return NaN;
+}
+function parseSlopeInput(str){
+  const s=String(str).trim().replace(/−/g,'-').replace(',','.');
+  if(/^-?\d+(\.\d+)?$/.test(s))return parseFloat(s);
+  const m=s.match(/^(-?\d+)\s*\/\s*(-?\d+)$/);
+  if(m)return parseInt(m[1],10)/parseInt(m[2],10);
+  return NaN;
+}
+
+// ── Rearrange-equation mechanic (ported from equation-solver.html's operation-
+//    box method, generalized to 3 term types: y, x, const — apply the same
+//    op to both sides to isolate y) ─────────────────────────────────────────
+let _rqUid=0;const rqUid=()=>`rq${++_rqUid}`;
+function rqGcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){let t=b;b=a%b;a=t;}return a||1;}
+function rqSimpFrac(num,den){if(num===0)return[0,1];if(den<0){num=-num;den=-den;}const g=rqGcd(Math.abs(num),den);return[num/g,den/g];}
+function rqAddFracs(n1,d1,n2,d2){return rqSimpFrac(n1*d2+n2*d1,d1*d2);}
+function rqMkTerm(type,num,den=1){const[n,d]=rqSimpFrac(num,den);return{id:rqUid(),type,num:n,den:d};}
+function rqSideStr(terms){
+  if(!terms.length)return'0';
+  return terms.map((t,i)=>{
+    const abs=Math.abs(t.num);
+    const sign=t.num<0?(i===0?'−':' − '):(i===0?'':' + ');
+    const frac=t.den===1?`${abs}`:`${abs}/${t.den}`;
+    return t.type==='const'?`${sign}${frac}`:`${sign}${abs===t.den?'':frac}${t.type}`;
+  }).join('');
+}
+function rqEqStr(eq){return`${rqSideStr(eq.left)} = ${rqSideStr(eq.right)}`;}
+function rqDoOperate(eq,opType,k,addType){
+  function applySide(terms){
+    if(opType==='+')return[...terms,rqMkTerm(addType,k)];
+    if(opType==='−')return[...terms,rqMkTerm(addType,-k)];
+    if(opType==='×')return terms.map(t=>rqMkTerm(t.type,t.num*k,t.den));
+    if(opType==='÷')return terms.map(t=>{const[n,d]=rqSimpFrac(t.num,t.den*Math.abs(k));return rqMkTerm(t.type,k<0?-n:n,d);});
+    return terms;
+  }
+  return{left:applySide(eq.left),right:applySide(eq.right)};
+}
+function rqOpDesc(opType,k,addType){
+  const q=addType==='x'?`${k}x`:`${k}`;
+  const labels={'+':`הוספת ${q}`,'−':`חיסור ${q}`,'×':`כפל ב-${k}`,'÷':`חילוק ב-${k}`};
+  return `${labels[opType]} משני האגפים`;
+}
+function rqDoSimplify(terms){
+  let yn=0,yd=1,xn=0,xd=1,cn=0,cd=1;
+  for(const t of terms){
+    if(t.type==='y')[yn,yd]=rqAddFracs(yn,yd,t.num,t.den);
+    else if(t.type==='x')[xn,xd]=rqAddFracs(xn,xd,t.num,t.den);
+    else[cn,cd]=rqAddFracs(cn,cd,t.num,t.den);
+  }
+  const r=[];
+  if(yn!==0)r.push(rqMkTerm('y',yn,yd));
+  if(xn!==0)r.push(rqMkTerm('x',xn,xd));
+  if(cn!==0)r.push(rqMkTerm('const',cn,cd));
+  return r.length?r:[rqMkTerm('const',0)];
+}
+function rqCanSimp(terms){
+  return terms.filter(t=>t.type==='y').length>1||terms.filter(t=>t.type==='x').length>1||terms.filter(t=>t.type==='const').length>1;
+}
+function rqCheckSolved(eq){
+  function tryMB(lone,other){
+    if(lone.length!==1)return null;
+    const t=lone[0];
+    if(t.type!=='y'||t.num!==1||t.den!==1)return null;
+    if(other.some(o=>o.type==='y'))return null;
+    const xs=other.filter(o=>o.type==='x'), cs=other.filter(o=>o.type==='const');
+    if(xs.length>1||cs.length>1)return null;
+    const m=xs.length?xs[0].num/xs[0].den:0;
+    const b=cs.length?cs[0].num/cs[0].den:0;
+    return{m,b};
+  }
+  return tryMB(eq.left,eq.right)||tryMB(eq.right,eq.left);
+}
+function RqTermPill({term,index}){
+  const{type,num,den}=term;
+  const isNeg=num<0;const abs=Math.abs(num);
+  const body=()=>{
+    if(type==='const'){
+      if(den===1)return<span className="tv">{abs}</span>;
+      return<span className="tf"><span className="fn">{abs}</span><span className="fd">{den}</span></span>;
+    }
+    const showC=!(abs===den);
+    const coef=showC?(den===1?<span className="tv">{abs}</span>:<span className="tf"><span className="fn">{abs}</span><span className="fd">{den}</span></span>):null;
+    return<>{coef}<span className="tv-x">{type}</span></>;
+  };
+  return(
+    <span className="tp">
+      {index>0&&<span className="ts">{isNeg?'−':'+'}</span>}
+      {index===0&&isNeg&&<span className="ts">−</span>}
+      {body()}
+    </span>
+  );
+}
+const RQ_OPS=['+','−','×','÷'];
+function RqOpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX}){
+  const allowX=opType==='+'||opType==='−';
+  return(
+    <div className="op-box">
+      <div className="op-btns">
+        {RQ_OPS.map(op=><button key={op} className={`op-btn ${opType===op?'active':''}`} onClick={()=>onOpType(op)}>{op}</button>)}
+      </div>
+      <input className="op-input" value={opVal} onChange={e=>onOpVal(e.target.value)} placeholder="מס׳" inputMode="numeric"/>
+      {allowX&&<button className={`op-x-btn ${opIsX?'active':''}`} onClick={onToggleX} title="הוספה/חיסור של כפולת x">x</button>}
+    </div>
+  );
+}
+
+// ── Quadrant helpers ──────────────────────────────────────────────────────────
+const QUAD_INFO=[
+  {id:1,roman:'I',sign:'(+,+)',desc:'שני הערכים חיוביים'},
+  {id:2,roman:'II',sign:'(−,+)',desc:'הערך הראשון שלילי, השני חיובי'},
+  {id:3,roman:'III',sign:'(−,−)',desc:'שני הערכים שליליים'},
+  {id:4,roman:'IV',sign:'(+,−)',desc:'הערך הראשון חיובי, השני שלילי'},
+];
+function quadRect(qid){
+  const [ox,oy]=toSvg(0,0);
+  const left=PAD, right=SVG_W-PAD, top=PAD, bottom=SVG_H-PAD;
+  if(qid===1)return{x:ox,y:top,w:right-ox,h:oy-top};
+  if(qid===2)return{x:left,y:top,w:ox-left,h:oy-top};
+  if(qid===3)return{x:left,y:oy,w:ox-left,h:bottom-oy};
+  return{x:ox,y:oy,w:right-ox,h:bottom-oy};
+}
+function QuadrantsOverlay({active,onClick}){
+  return QUAD_INFO.map(q=>{
+    const r=quadRect(q.id);
+    const isActive=active===q.id;
+    const cx=r.x+r.w/2, cy=r.y+r.h/2;
+    return(
+      <g key={q.id} onClick={()=>onClick&&onClick(q.id)} style={{cursor:onClick?'pointer':'default'}}>
+        <rect x={r.x} y={r.y} width={r.w} height={r.h}
+          fill={isActive?'#0d9488':'transparent'} fillOpacity={isActive?0.13:0}
+          stroke={isActive?'#0d9488':'none'} strokeWidth={2}/>
+        <text x={cx} y={cy} textAnchor="middle" fontSize="22" fontWeight="700"
+          fill={isActive?'#0d9488':'#cbd5e1'}>{q.roman}</text>
+      </g>
+    );
+  });
+}
+function PointGuides({x,y,color='#0d9488'}){
+  const [sx,sy]=toSvg(x,y);
+  const [gx1,gy1]=toSvg(x,0);
+  const [gx2,gy2]=toSvg(0,y);
+  return(
+    <>
+      <line x1={sx} y1={sy} x2={gx1} y2={gy1} stroke={color} strokeWidth={1.5} strokeDasharray="4,3"/>
+      <line x1={sx} y1={sy} x2={gx2} y2={gy2} stroke={color} strokeWidth={1.5} strokeDasharray="4,3"/>
+      <circle cx={gx1} cy={gy1} r={3} fill={color}/>
+      <circle cx={gx2} cy={gy2} r={3} fill={color}/>
+    </>
+  );
+}
+
+function RiseRunGuides({x1,y1,x2,y2,color='#0d9488'}){
+  const [sx1,sy1]=toSvg(x1,y1);
+  const [sx2,sy2]=toSvg(x2,y2);
+  const [scx,scy]=toSvg(x2,y1); // corner point (x2,y1)
+  const dxLabelY=scy+(y2>=y1?16:-8);
+  const dyAnchor=x2>=x1?'start':'end';
+  const dyLabelX=scx+(x2>=x1?8:-8);
+  return(
+    <>
+      <line x1={sx1} y1={sy1} x2={scx} y2={scy} stroke={color} strokeWidth={1.5} strokeDasharray="4,3"/>
+      <line x1={scx} y1={scy} x2={sx2} y2={sy2} stroke={color} strokeWidth={1.5} strokeDasharray="4,3"/>
+      <text x={(sx1+scx)/2} y={dxLabelY} textAnchor="middle" fontSize="11" fontWeight="bold" fill={color} style={{direction:'ltr'}}>Δx = {x2-x1}</text>
+      <text x={dyLabelX} y={(scy+sy2)/2} textAnchor={dyAnchor} dominantBaseline="middle" fontSize="11" fontWeight="bold" fill={color} style={{direction:'ltr'}}>Δy = {y2-y1}</text>
+    </>
+  );
+}
+
+// ── Sub-chapter 0: What is a coordinate system (pure explanation) ────────────
+function Chapter0(){
+  const [activeQuad,setActiveQuad]=useState(null);
+  const quadInfo=QUAD_INFO.find(q=>q.id===activeQuad);
+  const examplePt={x:4,y:3};
+
+  return(
+    <div className="card">
+      <div className="task-title">מערכת הצירים — מושגי יסוד</div>
+
+      <div style={{marginBottom:26}}>
+        <div className="sec-title">1. מה זו מערכת צירים?</div>
+        <div className="def-box">
+          מערכת צירים נבנית משני ישרי מספרים המאונכים זה לזה (נפגשים בזווית ישרה),
+          הנחתכים בנקודה אחת משותפת הנקראת <strong>ראשית הצירים</strong>.
+          נקודת המפגש מסומנת באפס על שני הישרים.
+        </div>
+        <div className="svg-wrap" style={{marginTop:10}}>
+          <Grid axisNames={[null,null]} hideNumbers hideGrid/>
+        </div>
+      </div>
+
+      <div style={{marginBottom:26}}>
+        <div className="sec-title">2. הרביעים ומספורם</div>
+        <div className="def-box">
+          שני הצירים מחלקים את המישור לארבעה אזורים, הנקראים <strong>רביעים</strong>.
+          ממספרים אותם בספרות רומיות I–IV, תוך התקדמות נגד כיוון השעון החל מהרביע הימני-העליון.
+          לחצו על רביע כדי לראות את סימני הערכים בו.
+        </div>
+        <div className="svg-wrap" style={{marginTop:10}}>
+          <Grid axisNames={[null,null]} hideNumbers>
+            <QuadrantsOverlay active={activeQuad} onClick={setActiveQuad}/>
+          </Grid>
+        </div>
+        <div className="def-box" style={{marginTop:8}}>
+          {quadInfo?`רביע ${quadInfo.roman} — סימני הערכים: ${quadInfo.sign} (${quadInfo.desc})`:'לחצו על רביע באיור'}
+        </div>
+      </div>
+
+      <div style={{marginBottom:26}}>
+        <div className="sec-title">3. נקודה — זוג סדור</div>
+        <div className="def-box">
+          כל נקודה במערכת הצירים מתוארת על ידי <strong>זוג סדור</strong> של שני ערכים (a, b):
+          הערך הראשון מציין את המיקום לאורך הציר האופקי, והערך השני את המיקום לאורך הציר האנכי.
+          הסדר חשוב — (a, b) הוא בדרך כלל שונה מ-(b, a).
+        </div>
+        <div className="svg-wrap" style={{marginTop:10}}>
+          <Grid axisNames={[null,null]}>
+            <PointGuides x={examplePt.x} y={examplePt.y}/>
+            <DotPoint x={examplePt.x} y={examplePt.y} r={7} label={`(${examplePt.x}, ${examplePt.y})`}/>
+          </Grid>
+        </div>
+      </div>
+
+      <div>
+        <div className="sec-title">הצירים המקובלים — x ו-y</div>
+        <div className="def-box">
+          במתמטיקה נהוג לתת לשני הצירים הכלליים שמות קבועים:
+          הציר האופקי נקרא <strong dir="ltr">ציר x</strong>, והציר האנכי נקרא <strong dir="ltr">ציר y</strong>.
+          מכאן ואילך נשתמש תמיד בשמות אלה.
+        </div>
+        <div className="svg-wrap" style={{marginTop:10}}>
+          <Grid>
+            <QuadrantsOverlay active={null}/>
+          </Grid>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-chapter 1: Read point from graph ─────────────────────────────────────
+const PT_LABELS=['A','B','C'];
+const PT_COLORS=['#0d9488','#8b5cf6','#f59e0b'];
+
+function Chapter1(){
+  function genPts(){
+    const pts=[];
+    while(pts.length<3){
+      const x=rnd(-6,6),y=rnd(-6,6);
+      if(!pts.some(p=>p.x===x&&p.y===y))pts.push({x,y});
+    }
+    return pts;
+  }
+  const [targets,setTargets]=useState(genPts);
+  const [vals,setVals]=useState([{x:'',y:''},{x:'',y:''},{x:'',y:''}]);
+  const [results,setResults]=useState(null);
+  const [allOk,setAllOk]=useState(false);
+  const [score,setScore]=useState(0);
+
+  function setV(i,k,v){
+    setVals(prev=>{const n=[...prev];n[i]={...n[i],[k]:v};return n;});
+    setResults(null);
+  }
+  function check(){
+    const res=targets.map((t,i)=>{
+      const xi=parseInt(vals[i].x),yi=parseInt(vals[i].y);
+      return xi===t.x&&yi===t.y;
+    });
+    setResults(res);
+    if(res.every(Boolean)){setAllOk(true);setScore(s=>s+1);}
+  }
+  function next(){setTargets(genPts());setVals([{x:'',y:''},{x:'',y:''},{x:'',y:''}]);setResults(null);setAllOk(false);}
+
+  return(
+    <div className="card">
+      <div className="task-title">שלב 1 — קריאת נקודות מהגרף</div>
+      <div className="task-desc">זהה את ערך ה-x וערך ה-y של כל נקודה. ניקוד: {score}</div>
+      <div className="svg-wrap">
+        <Grid>
+          {targets.map((t,i)=>(
+            <DotPoint key={i} x={t.x} y={t.y} color={allOk?'#22c55e':PT_COLORS[i]} r={8} label={PT_LABELS[i]}/>
+          ))}
+        </Grid>
+      </div>
+      {targets.map((t,i)=>(
+        <div key={i} className="formula-box" style={{direction:'ltr',gap:10,marginBottom:8,
+          borderColor:results?(results[i]?'#22c55e':'#ef4444'):'#99f6e4'}}>
+          <span style={{color:PT_COLORS[i],fontWeight:700,minWidth:20}}>{PT_LABELS[i]}:</span>
+          <span>x =</span>
+          <input className="math-input" value={vals[i].x} onChange={e=>setV(i,'x',e.target.value)}
+            style={{width:52,borderColor:results?(results[i]?'#22c55e':'#ef4444'):''}}
+            disabled={allOk}/>
+          <span style={{marginRight:6}}>y =</span>
+          <input className="math-input" value={vals[i].y} onChange={e=>setV(i,'y',e.target.value)}
+            style={{width:52,borderColor:results?(results[i]?'#22c55e':'#ef4444'):''}}
+            disabled={allOk}/>
+          {results&&<span style={{color:results[i]?'#22c55e':'#ef4444',fontWeight:700,fontSize:'1.1rem'}}>
+            {results[i]?'✓':'✗'}</span>}
+        </div>
+      ))}
+      {allOk&&<div className="feedback ok">מצוין! זיהית את כל הנקודות נכון</div>}
+      {results&&!allOk&&<div className="feedback err">יש טעות — בדוק שוב</div>}
+      <div className="actions">
+        {!allOk&&<button className="btn btn-primary" onClick={check}
+          disabled={vals.some(v=>v.x===''||v.y==='')}>בדוק</button>}
+        {allOk&&<button className="btn btn-primary" onClick={next}>הבא ›</button>}
+        {!allOk&&<button className="btn btn-outline" onClick={next}>דלג</button>}
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-chapter 2: Plot a point ───────────────────────────────────────────────
+function Chapter2(){
+  const [target,setTarget]=useState(()=>({x:rnd(-6,6),y:rnd(-6,6)}));
+  const [pending,setPending]=useState(null);
+  const [placed,setPlaced]=useState(null);
+  const [feedback,setFeedback]=useState(null);
+  const [score,setScore]=useState(0);
+  const [hover,setHover]=useState(null);
+
+  function handleClick(e){
+    if(placed)return;
+    const rect=e.currentTarget.getBoundingClientRect();
+    const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);
+    const cx=snap(rx),cy=snap(ry);
+    if(cx<GRID_MIN||cx>GRID_MAX||cy<GRID_MIN||cy>GRID_MAX)return;
+    setPending({x:cx,y:cy});
+  }
+  function confirm(){
+    if(!pending)return;
+    setPlaced(pending);
+    if(pending.x===target.x&&pending.y===target.y){setFeedback('ok');setScore(s=>s+1);}
+    else setFeedback('err');
+  }
+  function handleMove(e){
+    if(placed)return;
+    const rect=e.currentTarget.getBoundingClientRect();
+    const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);
+    const cx=snap(rx),cy=snap(ry);
+    if(cx>=GRID_MIN&&cx<=GRID_MAX&&cy>=GRID_MIN&&cy<=GRID_MAX)setHover(toSvg(cx,cy));
+    else setHover(null);
+  }
+  function next(){
+    let nx,ny;
+    do{nx=rnd(-6,6);ny=rnd(-6,6);}while(nx===target.x&&ny===target.y);
+    setTarget({x:nx,y:ny});setPending(null);setPlaced(null);setFeedback(null);
+  }
+
+  return(
+    <div className="card">
+      <div className="task-title">שלב 2 — סימון נקודה על הגרף</div>
+      <div className="task-desc">סמן את הנקודה <strong dir="ltr">({target.x}, {target.y})</strong> על הגרף. ניקוד: {score}</div>
+      <div className="svg-wrap">
+        <Grid onClick={handleClick} onMouseMove={handleMove} highlight={!placed?hover:null}>
+          {pending&&!placed&&<DotPoint x={pending.x} y={pending.y} color="#f59e0b" r={7} label={`(${pending.x},${pending.y})`}/>}
+          {placed&&<DotPoint x={placed.x} y={placed.y} color={feedback==='ok'?'#22c55e':'#ef4444'} r={7} label={`(${placed.x},${placed.y})`}/>}
+          {feedback==='ok'&&<DotPoint x={target.x} y={target.y} color="#22c55e" r={8}/>}
+        </Grid>
+      </div>
+      {pending&&!placed&&<div className="feedback info">בחרת <span dir="ltr">({pending.x},{pending.y})</span> — לחץ "אשר" לאישור</div>}
+      {feedback==='ok'&&<div className="feedback ok">מצוין! סימנת נכון את <span dir="ltr">({target.x},{target.y})</span></div>}
+      {feedback==='err'&&placed&&<div className="feedback err">לא מדויק. הנקודה הנכונה היא <span dir="ltr">({target.x},{target.y})</span></div>}
+      <div className="actions">
+        {!placed&&<button className="btn btn-primary" disabled={!pending} onClick={confirm}>אשר</button>}
+        {!placed&&<button className="btn btn-outline" onClick={()=>setPending(null)}>נקה</button>}
+        {placed&&<button className="btn btn-primary" onClick={next}>הבא ›</button>}
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-chapter: What is a line, and what is slope (pure explanation) ────────
+function ChapterSlopeIntro(){
+  const lineDemo={x1:-3,y1:-2,x2:4,y2:3};
+  const slopeDemo={x1:1,y1:2,x2:4,y2:8};
+
+  return(
+    <div className="card">
+      <div className="task-title">קו ישר ושיפוע — מושגי יסוד</div>
+
+      <div style={{marginBottom:26}}>
+        <div className="sec-title">1. קו ישר</div>
+        <div className="def-box">
+          כל שתי נקודות שונות במערכת הצירים מגדירות <strong>קו ישר אחד ויחיד</strong> העובר
+          דרכן. אם נדע את מיקומן של שתי נקודות על ישר מסוים, נוכל לשרטט את כל הישר.
+        </div>
+        <div className="svg-wrap" style={{marginTop:10}}>
+          <Grid>
+            <LineSeg x1={lineDemo.x1} y1={lineDemo.y1} x2={lineDemo.x2} y2={lineDemo.y2} color="#94a3b8" width={1.5}/>
+            <DotPoint x={lineDemo.x1} y={lineDemo.y1} r={7} label={`(${lineDemo.x1}, ${lineDemo.y1})`}/>
+            <DotPoint x={lineDemo.x2} y={lineDemo.y2} r={7} label={`(${lineDemo.x2}, ${lineDemo.y2})`} labelPos="bottom"/>
+          </Grid>
+        </div>
+      </div>
+
+      <div style={{marginBottom:26}}>
+        <div className="sec-title">2. מהו שיפוע?</div>
+        <div className="def-box">
+          <strong>השיפוע</strong> מתאר עד כמה הישר "תלול": כמה מתקדמים (או יורדים) בציר ה-y
+          כתוצאה מהתקדמות של יחידה אחת בציר ה-x. שיפוע חיובי — הישר עולה; שיפוע שלילי — הישר יורד.
+        </div>
+        <div className="svg-wrap" style={{marginTop:10}}>
+          <Grid>
+            <LineSeg x1={slopeDemo.x1} y1={slopeDemo.y1} x2={slopeDemo.x2} y2={slopeDemo.y2} color="#94a3b8" width={1.5}/>
+            <RiseRunGuides x1={slopeDemo.x1} y1={slopeDemo.y1} x2={slopeDemo.x2} y2={slopeDemo.y2}/>
+            <DotPoint x={slopeDemo.x1} y={slopeDemo.y1} r={7} label={`(${slopeDemo.x1}, ${slopeDemo.y1})`} labelPos="top"/>
+            <DotPoint x={slopeDemo.x2} y={slopeDemo.y2} r={7} label={`(${slopeDemo.x2}, ${slopeDemo.y2})`} labelPos="top"/>
+          </Grid>
+        </div>
+      </div>
+
+      <div>
+        <div className="sec-title">3. נוסחת השיפוע</div>
+        <div className="def-box">
+          את השיפוע (מסומן באות <strong dir="ltr">m</strong>) מחשבים כך: ההפרש בין ערכי ה-y
+          של שתי נקודות על הישר, חלקי ההפרש בין ערכי ה-x שלהן.
+        </div>
+        <div className="formula-box" style={{direction:'ltr',justifyContent:'center'}}>
+          <span style={{fontSize:'1.1rem',fontWeight:700}}>m =</span>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            <span>y₂ − y₁</span>
+            <div style={{width:60,height:1,background:'#374151'}}/>
+            <span>x₂ − x₁</span>
+          </div>
+        </div>
+        <div className="def-box" style={{marginTop:8}}>
+          לדוגמה, עבור הנקודות <strong dir="ltr">({slopeDemo.x1}, {slopeDemo.y1})</strong> ו-
+          <strong dir="ltr">({slopeDemo.x2}, {slopeDemo.y2})</strong>:
+        </div>
+        <div className="formula-box" style={{direction:'ltr',justifyContent:'center'}}>
+          <span style={{fontSize:'1.1rem',fontWeight:700}}>m =</span>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            <span>{slopeDemo.y2} − {slopeDemo.y1}</span>
+            <div style={{width:70,height:1,background:'#374151'}}/>
+            <span>{slopeDemo.x2} − {slopeDemo.x1}</span>
+          </div>
+          <span>=</span>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            <span>{slopeDemo.y2-slopeDemo.y1}</span>
+            <div style={{width:40,height:1,background:'#374151'}}/>
+            <span>{slopeDemo.x2-slopeDemo.x1}</span>
+          </div>
+          <span>= {(slopeDemo.y2-slopeDemo.y1)/(slopeDemo.x2-slopeDemo.x1)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-chapter 3: Calculate slope from two pairs ────────────────────────────
+function Chapter3(){
+  function genQ(){
+    const x1=rnd(-5,2),x2=x1+rnd(1,4);
+    const m_num=rndNonZero(-4,4); // slope numerator, keep integer or half
+    const m_den=Math.random()<0.4?2:1;
+    const y1=rnd(-4,4);
+    // y2 = y1 + slope*(x2-x1)
+    const dy=m_num*(x2-x1);
+    if(dy%m_den!==0)return genQ(); // ensure integer coords
+    const y2=y1+dy/m_den;
+    if(y2<GRID_MIN||y2>GRID_MAX)return genQ();
+    const slope_n=m_num, slope_d=m_den;
+    return{pts:[{x:x1,y:y1},{x:x2,y:y2}],slope_n,slope_d};
+  }
+  const [q,setQ]=useState(genQ);
+  const [picked,setPicked]=useState([]); // indices, in click order: picked[0]="1", picked[1]="2"
+  const [vals,setVals]=useState({dy:'',dx:'',m:''});
+  const [feedback,setFeedback]=useState(null);
+
+  function togglePt(i){
+    setPicked(prev=>{
+      if(prev.includes(i))return prev.filter(x=>x!==i);
+      if(prev.length>=2)return[i];
+      return[...prev,i];
+    });
+    setFeedback(null);
+    setVals({dy:'',dx:'',m:''});
+  }
+  function setV(k,v){setVals(p=>({...p,[k]:v}));setFeedback(null);}
+  function check(){
+    if(picked.length<2){setFeedback({type:'err',msg:'סמנו קודם איזו נקודה היא 1 ואיזו היא 2'});return;}
+    const p1=q.pts[picked[0]],p2=q.pts[picked[1]];
+    const dy=parseDeltaInput(vals.dy),dx=parseDeltaInput(vals.dx);
+    const m=parseSlopeInput(vals.m);
+    const correctDy=p2.y-p1.y, correctDx=p2.x-p1.x;
+    const correctM=q.slope_n/q.slope_d;
+    if(dy!==correctDy){setFeedback({type:'err',msg:`הפרש ה-y לא נכון. y₂-y₁ = ${p2.y}-${p1.y} = ${correctDy}`});return;}
+    if(dx!==correctDx){setFeedback({type:'err',msg:`הפרש ה-x לא נכון. x₂-x₁ = ${p2.x}-${p1.x} = ${correctDx}`});return;}
+    if(Math.abs(m-correctM)>0.01){
+      const mDisp=q.slope_d===1?q.slope_n:`${q.slope_n}/${q.slope_d}`;
+      setFeedback({type:'err',msg:`השיפוע לא נכון. m = ${correctDy}/${correctDx} = ${mDisp}`});return;
+    }
+    setFeedback({type:'ok',msg:'מצוין! חישבת נכון את השיפוע'});
+  }
+  function next(){setQ(genQ());setPicked([]);setVals({dy:'',dx:'',m:''});setFeedback(null);}
+
+  const hasBoth=picked.length===2;
+  const p1=hasBoth?q.pts[picked[0]]:null, p2=hasBoth?q.pts[picked[1]]:null;
+
+  return(
+    <div className="card">
+      <div className="task-title">שלב 4 — חישוב שיפוע משתי נקודות</div>
+      <div className="task-desc">
+        בגרף מוצגות שתי נקודות. לחצו על אחת הנקודות (או ברשימה למטה) כדי לסמן אותה כנקודה 1,
+        ולאחר מכן על השנייה כדי לסמנה כנקודה 2. אז חשבו את השיפוע.
+      </div>
+      <div className="svg-wrap">
+        <Grid>
+          {hasBoth&&<LineSeg x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} color="#94a3b8" width={1.5}/>}
+          {q.pts.map((p,i)=>{
+            const order=picked.indexOf(i);
+            return(
+              <DotPoint key={i} x={p.x} y={p.y}
+                color={order>=0?'#f59e0b':'#0d9488'} r={order>=0?9:6}
+                badge={order>=0?order+1:null}
+                label={`(${p.x},${p.y})`} labelPos={i===0?'top':'bottom'}/>
+            );
+          })}
+        </Grid>
+      </div>
+      <div className="points-list">
+        {q.pts.map((p,i)=>{
+          const order=picked.indexOf(i);
+          return(
+            <span key={i} className={`point-chip${order>=0?' selected':''}`} onClick={()=>togglePt(i)}>
+              {order>=0?`${order+1}: `:''}({p.x},{p.y})
+            </span>
+          );
+        })}
+      </div>
+      {hasBoth&&
+        <div className="formula-box" style={{direction:'ltr'}}>
+          <span style={{fontSize:'1.1rem',fontWeight:700}}>m =</span>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            <span style={{color:'#6b7280',fontSize:'.85rem'}}>y₂ − y₁</span>
+            <div style={{width:60,height:1,background:'#374151'}}/>
+            <span style={{color:'#6b7280',fontSize:'.85rem'}}>x₂ − x₁</span>
+          </div>
+          <span>=</span>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+            <input className="math-input" value={vals.dy} onChange={e=>setV('dy',e.target.value)} placeholder="Δy" style={{width:50}}/>
+            <div style={{width:50,height:1,background:'#374151'}}/>
+            <input className="math-input" value={vals.dx} onChange={e=>setV('dx',e.target.value)} placeholder="Δx" style={{width:50}}/>
+          </div>
+          <span>=</span>
+          <input className="math-input" value={vals.m} onChange={e=>setV('m',e.target.value)} placeholder="m" style={{width:60}}/>
+        </div>
+      }
+      {!hasBoth&&<div className="hint">סמנו נקודה 1 ונקודה 2</div>}
+      {feedback&&<div className={`feedback ${feedback.type}`}>{feedback.msg}</div>}
+      <div className="actions">
+        <button className="btn btn-primary" onClick={check} disabled={!hasBoth||!vals.dy||!vals.dx||!vals.m}>בדוק</button>
+        {feedback?.type==='ok'&&<button className="btn btn-outline" onClick={next}>הבא ›</button>}
+      </div>
+    </div>
+  );
+}
+
+// ── PointSlopeEditor: substitute + drag to get y = mx + b ───────────────────
+function PointSlopeEditor({m, px, py, b, onSolved}){
+  // Equation after expansion: y + leftC = m*x + rightC
+  // leftC = -py,  rightC = -m*px
+  // Goal: drag leftC chip from left to right → y = m*x + (rightC - leftC) = y = m*x + b
+  const leftC=-py;
+  const rightC=-(m*px);
+  const newRightC=rightC-leftC; // = b
+
+  const [phase,setPhase]=useState('sub');
+  const [inp,setInp]=useState({y1:'',m:'',x1:''});
+  const [subFb,setSubFb]=useState(null);
+  const [moved,setMoved]=useState(false);
+  const [isDrag,setIsDrag]=useState(false);
+  const [ghostPos,setGhostPos]=useState({x:0,y:0});
+  const dropRef=useRef(null);
+  const R=useRef({dragging:false,cb:null});
+  R.current.cb=onSolved;
+
+  useEffect(()=>{
+    function onMove(e){
+      if(!R.current.dragging)return;
+      setGhostPos({x:e.clientX,y:e.clientY});
+    }
+    function onUp(e){
+      if(!R.current.dragging)return;
+      R.current.dragging=false;
+      setIsDrag(false);
+      if(!dropRef.current)return;
+      const rect=dropRef.current.getBoundingClientRect();
+      if(e.clientX>=rect.left&&e.clientX<=rect.right&&
+         e.clientY>=rect.top&&e.clientY<=rect.bottom){
+        setMoved(true);
+        R.current.cb&&R.current.cb();
+      }
+    }
+    window.addEventListener('pointermove',onMove);
+    window.addEventListener('pointerup',onUp);
+    return()=>{
+      window.removeEventListener('pointermove',onMove);
+      window.removeEventListener('pointerup',onUp);
+    };
+  },[]);
+
+  function checkSub(){
+    const y1v=parseInt(inp.y1),mv=parseFloat(inp.m.replace(',','.')),x1v=parseInt(inp.x1);
+    if(y1v!==py){setSubFb({type:'err',msg:`y₁ אמור להיות ${py}`});return;}
+    if(Math.abs(mv-m)>0.01){setSubFb({type:'err',msg:`m אמור להיות ${m}`});return;}
+    if(x1v!==px){setSubFb({type:'err',msg:`x₁ אמור להיות ${px}`});return;}
+    setSubFb({type:'ok',msg:'הצבה נכונה!'});
+    setTimeout(()=>{
+      if(leftC===0){setMoved(true);R.current.cb&&R.current.cb();}
+      else setPhase('drag');
+    },700);
+  }
+
+  function startDrag(e){
+    if(moved)return;
+    R.current.dragging=true;
+    setIsDrag(true);
+    setGhostPos({x:e.clientX,y:e.clientY});
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  // display helpers
+  function cs(c){
+    if(c===0)return '';
+    return c>0?' + '+c:' − '+Math.abs(c);
+  }
+  const chipLabel=leftC>0?'+ '+leftC:'− '+Math.abs(leftC);
+
+  if(phase==='sub'){
+    return(<div>
+      <div className="hint" style={{marginBottom:8}}>
+        הצב את הנתונים בנוסחה:{' '}
+        <span dir="ltr" style={{display:'inline-block'}}>y − y₁ = m · (x − x₁)</span>
+      </div>
+      {/* dir="ltr" as HTML attr forces LTR regardless of RTL context */}
+      <div className="formula-box" dir="ltr" style={{direction:'ltr',flexWrap:'wrap',gap:6,alignItems:'center'}}>
+        <span>y &minus;</span>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+          <input className="math-input" value={inp.y1}
+            onChange={e=>{setInp(p=>({...p,y1:e.target.value}));setSubFb(null);}}
+            style={{width:52}} dir="ltr"/>
+          <span style={{fontSize:'0.7rem',color:'#6b7280'}}>y₁</span>
+        </div>
+        <span>=</span>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+          <input className="math-input" value={inp.m}
+            onChange={e=>{setInp(p=>({...p,m:e.target.value}));setSubFb(null);}}
+            style={{width:52}} dir="ltr"/>
+          <span style={{fontSize:'0.7rem',color:'#6b7280'}}>m</span>
+        </div>
+        <span>&middot; (x &minus;</span>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+          <input className="math-input" value={inp.x1}
+            onChange={e=>{setInp(p=>({...p,x1:e.target.value}));setSubFb(null);}}
+            style={{width:52}} dir="ltr"/>
+          <span style={{fontSize:'0.7rem',color:'#6b7280'}}>x₁</span>
+        </div>
+        <span>)</span>
+      </div>
+      {subFb&&<div className={`feedback ${subFb.type}`}>{subFb.msg}</div>}
+      {subFb?.type!=='ok'&&
+        <button className="btn btn-primary" style={{marginTop:8}} onClick={checkSub}
+          disabled={!inp.y1||!inp.m||!inp.x1}>בדוק הצבה</button>}
+    </div>);
+  }
+
+  // drag phase — expanded: y + leftC = m*x + rightC
+  return(<div>
+    <div className="hint" style={{marginBottom:10}}>
+      פתחנו סוגריים:{' '}
+      <span dir="ltr" style={{display:'inline-block',fontWeight:700}}>
+        y{cs(leftC)} = {m}x{cs(rightC)}
+      </span>
+      <br/>גרור את האיבר הכחול לצד הימין כדי לבודד את y:
+    </div>
+    {/* direction:ltr is critical — without it RTL reverses the sides */}
+    <div dir="ltr" style={{
+      display:'flex',alignItems:'center',justifyContent:'center',
+      direction:'ltr',gap:16,padding:'14px',background:'#f0fdfa',
+      borderRadius:10,border:'1px solid #99f6e4',flexWrap:'wrap'
+    }}>
+      {/* Left side: y + draggable chip */}
+      <div style={{display:'flex',gap:6,alignItems:'center',
+        padding:'8px 14px',background:'#f0fdfa',borderRadius:8,minHeight:46}}>
+        <span style={{fontSize:'1.2rem',fontWeight:700}}>y</span>
+        {!moved&&
+          <span onPointerDown={startDrag} style={{
+            padding:'4px 12px',borderRadius:6,fontSize:'1rem',fontWeight:700,
+            background:isDrag?'#5eead4':'#ccfbf1',
+            border:'2px solid #0d9488',cursor:'grab',
+            userSelect:'none',touchAction:'none',
+            opacity:isDrag?0.4:1,whiteSpace:'nowrap'
+          }}>{chipLabel}</span>}
+      </div>
+
+      <span style={{fontSize:'1.5rem',fontWeight:700,color:'#134e4a'}}>=</span>
+
+      {/* Right side — drop zone */}
+      <div ref={dropRef} style={{
+        display:'flex',gap:6,alignItems:'center',
+        padding:'8px 14px',minHeight:46,
+        background:'#f0fdf4',borderRadius:8,minWidth:90,
+        justifyContent:'center',
+        border:`2px dashed ${isDrag?'#22c55e':'#bbf7d0'}`
+      }}>
+        <span style={{fontSize:'1.2rem',fontWeight:700,whiteSpace:'nowrap'}}>
+          {m}x{cs(moved?newRightC:rightC)}
+        </span>
+        {moved&&<span style={{color:'#22c55e',fontSize:'1.1rem'}}>✓</span>}
+      </div>
+    </div>
+
+    {isDrag&&<div style={{
+      position:'fixed',left:ghostPos.x,top:ghostPos.y,
+      transform:'translate(-50%,-50%)',
+      padding:'4px 12px',borderRadius:6,
+      background:'#0d9488',color:'#fff',
+      fontWeight:700,fontSize:'1rem',
+      pointerEvents:'none',zIndex:9999,whiteSpace:'nowrap'
+    }}>{chipLabel}</div>}
+
+    {!moved&&<div className="hint" style={{marginTop:8,color:'#0d9488'}}>
+      גרור את האיבר הכחול לצד הירוק (ימין)
+    </div>}
+    {moved&&<div className="feedback ok" style={{marginTop:8,direction:'ltr'}}>
+      y = {m}x{cs(newRightC)} ✓
+    </div>}
+  </div>);
+}
+
+// ── Sub-chapter: The line equation y = mx + b (pure explanation) ─────────────
+function ChapterLineEqIntro(){
+  const demo={m:2,b:-3};
+  const dx0=0,dy0=demo.b;
+  const dx1=3,dy1=demo.m*3+demo.b;
+
+  return(
+    <div className="card">
+      <div className="task-title">משוואת הישר y = mx + b — מושגי יסוד</div>
+
+      <div style={{marginBottom:26}}>
+        <div className="sec-title">1. משוואת הישר</div>
+        <div className="def-box">
+          ראינו שקו ישר נקבע לגמרי על ידי שתי נקודות, וגם שיש לו שיפוע קבוע.
+          מתברר שאפשר לתאר כל קו ישר כזה במשוואה אחת קבועה, בצורה:
+        </div>
+        <div className="formula-box" style={{direction:'ltr',justifyContent:'center',fontSize:'1.3rem',fontWeight:700}}>
+          y = mx + b
+        </div>
+        <div className="def-box" style={{marginTop:8}}>
+          כאשר <strong dir="ltr">m</strong> ו-<strong dir="ltr">b</strong> הם שני קבועים (מספרים) הייחודיים לאותו ישר —
+          בדיוק כפי ששתי נקודות קובעות ישר, שני הקבועים האלה קובעים את משוואתו.
+        </div>
+      </div>
+
+      <div style={{marginBottom:26}}>
+        <div className="sec-title">2. m — השיפוע</div>
+        <div className="def-box">
+          כפי שלמדנו, <strong dir="ltr">m</strong> הוא השיפוע של הישר — הוא מתאר את תלילות הישר,
+          כמה מתקדמים ב-y עבור כל יחידת התקדמות ב-x.
+        </div>
+      </div>
+
+      <div style={{marginBottom:26}}>
+        <div className="sec-title">3. b — נקודת החיתוך עם ציר ה-y</div>
+        <div className="def-box">
+          <strong dir="ltr">b</strong> הוא הערך של y בנקודה שבה הישר חותך את ציר ה-y (כלומר, כאשר x = 0).
+          הנקודה הזו היא <strong dir="ltr">(0, b)</strong>, ונקראת <strong>נקודת החיתוך עם ציר ה-y</strong>.
+        </div>
+      </div>
+
+      <div>
+        <div className="sec-title">4. דוגמה</div>
+        <div className="def-box">
+          עבור הישר <strong dir="ltr">y = {demo.m}x {demo.b<0?'−':'+'} {Math.abs(demo.b)}</strong>:
+          השיפוע הוא <strong dir="ltr">m = {demo.m}</strong>, ונקודת החיתוך עם ציר ה-y היא
+          <strong dir="ltr"> (0, {demo.b})</strong>.
+        </div>
+        <div className="svg-wrap" style={{marginTop:10}}>
+          <Grid>
+            <LineSeg x1={dx0} y1={dy0} x2={dx1} y2={dy1} color="#94a3b8" width={1.5}/>
+            <DotPoint x={dx0} y={dy0} r={8} color="#f59e0b" label={`b = (0, ${demo.b})`} labelPos="bottom"/>
+          </Grid>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-chapter: Identify slope & y-intercept from a sorted equation ─────────
+function ChapterIdEq(){
+  function eqStr(m,b){
+    const mPart=m===1?'x':m===-1?'-x':`${m}x`;
+    let s=`y = ${mPart}`;
+    if(b>0)s+=` + ${b}`;
+    else if(b<0)s+=` − ${Math.abs(b)}`;
+    return s;
+  }
+  function genQ(){
+    return{m:rndNonZero(-5,5),b:rnd(-6,6)};
+  }
+  const [q,setQ]=useState(genQ);
+  const [vals,setVals]=useState({m:'',b:''});
+  const [feedback,setFeedback]=useState(null);
+  function setV(k,v){setVals(p=>({...p,[k]:v}));setFeedback(null);}
+  function check(){
+    const mv=parseSlopeInput(vals.m), bv=parseDeltaInput(vals.b);
+    if(mv!==q.m){setFeedback({type:'err',msg:`השיפוע לא נכון. במשוואה y=mx+b, השיפוע הוא המקדם של x: m = ${q.m}`});return;}
+    if(bv!==q.b){setFeedback({type:'err',msg:`נקודת החיתוך לא נכונה. b הוא האיבר החופשי במשוואה: b = ${q.b}`});return;}
+    setFeedback({type:'ok',msg:'מצוין! זיהית נכון את השיפוע ונקודת החיתוך'});
+  }
+  function next(){setQ(genQ());setVals({m:'',b:''});setFeedback(null);}
+  return(
+    <div className="card">
+      <div className="task-title">שלב 6 — זיהוי שיפוע וחיתוך ממשוואה</div>
+      <div className="task-desc">נתונה משוואת ישר. זהו את השיפוע m ואת נקודת החיתוך עם ציר ה-y.</div>
+      <div className="formula-box" style={{direction:'ltr',justifyContent:'center',fontSize:'1.3rem',fontWeight:700}}>
+        {eqStr(q.m,q.b)}
+      </div>
+      <div className="input-row">
+        <label dir="ltr" style={{textAlign:'left',direction:'ltr'}}>m =</label>
+        <input className="math-input" value={vals.m} onChange={e=>setV('m',e.target.value)}/>
+      </div>
+      <div className="input-row">
+        <label dir="ltr" style={{textAlign:'left',direction:'ltr'}}>b =</label>
+        <input className="math-input" value={vals.b} onChange={e=>setV('b',e.target.value)}/>
+      </div>
+      {feedback&&<div className={`feedback ${feedback.type}`}>{feedback.msg}</div>}
+      <div className="actions">
+        <button className="btn btn-primary" onClick={check} disabled={!vals.m||!vals.b}>בדוק</button>
+        {feedback?.type==='ok'&&<button className="btn btn-outline" onClick={next}>הבא ›</button>}
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-chapter: Rearrange an unsorted equation (operation-box method, ported
+//    from equation-solver.html), then identify m and b ──────────────────────
+function ChapterRearrangeIdEq(){
+  function genQ(){
+    const m=rndNonZero(-5,5);
+    const b=rnd(-6,6);
+    function T(type,num){return num===0?null:rqMkTerm(type,num);}
+    function ensure(side){return side.length?side:[rqMkTerm('const',0)];}
+    const variantBuilders=[
+      ()=>({left:ensure([T('y',1),T('x',-m)].filter(Boolean)),right:ensure([T('const',b)].filter(Boolean))}),
+      ()=>({left:ensure([T('x',-m),T('y',1)].filter(Boolean)),right:ensure([T('const',b)].filter(Boolean))}),
+      ()=>({left:ensure([T('y',1)].filter(Boolean)),right:ensure([T('const',b),T('x',m)].filter(Boolean))}),
+      ()=>({left:ensure([T('y',-1)].filter(Boolean)),right:ensure([T('x',-m),T('const',-b)].filter(Boolean))}),
+      ()=>({left:ensure([T('y',2)].filter(Boolean)),right:ensure([T('x',2*m),T('const',2*b)].filter(Boolean))}),
+    ];
+    return{m,b,initial:pick(variantBuilders)()};
+  }
+
+  const [q,setQ]=useState(genQ);
+  const [cur,setCur]=useState(q.initial);
+  const [hist,setHist]=useState([]);
+  const [opType,setOpType]=useState('+');
+  const [opVal,setOpVal]=useState('');
+  const [opIsX,setOpIsX]=useState(false);
+  const [opErr,setOpErr]=useState('');
+  const [vals,setVals]=useState({m:'',b:''});
+  const [feedback,setFeedback]=useState(null);
+
+  const solved=useMemo(()=>rqCheckSolved(cur),[cur]);
+  const canSimpAny=rqCanSimp(cur.left)||rqCanSimp(cur.right);
+
+  function setOpValClean(v){setOpVal(v);setOpErr('');}
+  function setOpTypeClean(t){setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);}
+  function toggleOpIsX(){setOpIsX(v=>!v);setOpErr('');}
+
+  function applyOp(){
+    const v=opVal.trim();
+    if(!/^-?\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}
+    const k=parseInt(v,10);
+    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}
+    const addType=opIsX&&(opType==='+'||opType==='−')?'x':'const';
+    setHist(h=>[...h,{eq:cur,desc:rqOpDesc(opType,k,addType)}]);
+    setCur(c=>rqDoOperate(c,opType,k,addType));
+    setOpVal('');setOpErr('');setOpIsX(false);
+  }
+  function handleSimplify(){
+    setHist(h=>[...h,{eq:cur,desc:'פישוט'}]);
+    setCur(c=>({
+      left:rqCanSimp(c.left)?rqDoSimplify(c.left):c.left,
+      right:rqCanSimp(c.right)?rqDoSimplify(c.right):c.right,
+    }));
+  }
+  function resetEq(){setCur(q.initial);setHist([]);setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);}
+
+  function setV(k,v){setVals(p=>({...p,[k]:v}));setFeedback(null);}
+  function check(){
+    const mv=parseSlopeInput(vals.m), bv=parseDeltaInput(vals.b);
+    if(mv!==q.m){setFeedback({type:'err',msg:`השיפוע לא נכון. m = ${q.m}`});return;}
+    if(bv!==q.b){setFeedback({type:'err',msg:`נקודת החיתוך לא נכונה. b = ${q.b}`});return;}
+    setFeedback({type:'ok',msg:'מצוין! סידרת נכון וזיהית את השיפוע ונקודת החיתוך'});
+  }
+  function next(){
+    const nq=genQ();
+    setQ(nq);setCur(nq.initial);setHist([]);
+    setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);
+    setVals({m:'',b:''});setFeedback(null);
+  }
+
+  const renderTerms=(terms)=>terms.map((t,i)=><RqTermPill key={t.id} term={t} index={i}/>);
+
+  return(
+    <div className="card">
+      <div className="task-title">שלב 7 — סידור משוואה וזיהוי שיפוע וחיתוך</div>
+      <div className="task-desc">
+        המשוואה הבאה אינה בצורה y = mx + b. בצעו את אותה פעולה על שני האגפים (בדיוק כמו בפתרון
+        משוואות) עד שתגיעו לצורה הזו, ואז זהו את השיפוע m ואת נקודת החיתוך עם ציר ה-y.
+      </div>
+
+      <div className="solve-grid">
+        {solved===null&&<>
+          <div className="g-left"><RqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+          <div className="g-mid"></div>
+          <div className="g-right"><RqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+        </>}
+        <div className="g-left side-zone">{renderTerms(cur.left)}</div>
+        <span className="g-mid eq-sign">=</span>
+        <div className="g-right side-zone">{renderTerms(cur.right)}</div>
+      </div>
+
+      {opErr&&<div className="feedback err">{opErr}</div>}
+
+      {solved===null&&
+        <div className="actions">
+          <button className="btn btn-primary" onClick={applyOp}>✓ אישור</button>
+          <button className="btn btn-outline" disabled={!canSimpAny} onClick={handleSimplify}>פשט ≡</button>
+          <button className="btn btn-outline" onClick={resetEq}>התחל מחדש ↺</button>
+        </div>
+      }
+
+      {hist.length>0&&
+        <div style={{marginTop:14}}>
+          <div className="hist-label">שלבי הסידור</div>
+          {[{eq:q.initial,desc:'משוואה מקורית'},...hist].map((s,i)=>(
+            <div className="h-row" key={i}>
+              <span className="h-num">{i+1}</span>
+              <span className="h-eq">{rqEqStr(s.eq)}</span>
+              <span className="h-desc">{s.desc}</span>
+            </div>
+          ))}
+        </div>
+      }
+
+      {solved!==null&&<>
+        <div className="feedback ok" style={{marginBottom:6}}>המשוואה מסודרת! עכשיו זהו את השיפוע ואת נקודת החיתוך.</div>
+        <div className="input-row">
+          <label dir="ltr" style={{textAlign:'left',direction:'ltr'}}>m =</label>
+          <input className="math-input" value={vals.m} onChange={e=>setV('m',e.target.value)}/>
+        </div>
+        <div className="input-row">
+          <label dir="ltr" style={{textAlign:'left',direction:'ltr'}}>b =</label>
+          <input className="math-input" value={vals.b} onChange={e=>setV('b',e.target.value)}/>
+        </div>
+        {feedback&&<div className={`feedback ${feedback.type}`}>{feedback.msg}</div>}
+        <div className="actions">
+          <button className="btn btn-primary" onClick={check} disabled={!vals.m||!vals.b}>בדוק</button>
+          {feedback?.type==='ok'&&<button className="btn btn-outline" onClick={next}>הבא ›</button>}
+        </div>
+      </>}
+    </div>
+  );
+}
+
+// ── Sub-chapter 8: Line equation from slope + point ──────────────────────────
+function Chapter5(){
+  function genQ(){
+    const m_n=rndNonZero(-4,4); // integer slope for clean expansion
+    const b=rnd(-5,5);
+    const px=rnd(-4,4);
+    const py=m_n*px+b;
+    if(py<GRID_MIN+1||py>GRID_MAX-1)return genQ();
+    return{px,py,m_n,b};
+  }
+  const [q,setQ]=useState(genQ);
+  const [step,setStep]=useState(1);
+  const [pt,setPt]=useState(null);
+  const [ptFb,setPtFb]=useState(null);
+  const [hover,setHover]=useState(null);
+
+  function handleClick(e){
+    if(ptFb?.type==='ok')return;
+    const rect=e.currentTarget.getBoundingClientRect();
+    const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);
+    const cx=snap(rx),cy=snap(ry);
+    if(cx<GRID_MIN||cx>GRID_MAX||cy<GRID_MIN||cy>GRID_MAX)return;
+    if(cx===q.px&&cy===q.py)return;
+    setPt({x:cx,y:cy});setPtFb(null);
+  }
+  function handleMove(e){
+    if(ptFb?.type==='ok')return;
+    const rect=e.currentTarget.getBoundingClientRect();
+    const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);
+    const cx=snap(rx),cy=snap(ry);
+    if(cx>=GRID_MIN&&cx<=GRID_MAX&&cy>=GRID_MIN&&cy<=GRID_MAX)setHover(toSvg(cx,cy));
+    else setHover(null);
+  }
+  function checkPt(){
+    if(!pt)return;
+    const onLine=Math.abs(pt.y-(q.m_n*pt.x+q.b))<0.01;
+    if(onLine)setPtFb({type:'ok',msg:`נכון! הנקודה על הישר`});
+    else setPtFb({type:'err',msg:`הנקודה לא נמצאת על הישר`});
+  }
+  function next(){setQ(genQ());setStep(1);setPt(null);setPtFb(null);}
+
+  function cs(c){if(c===0)return '';return c>0?' + '+c:' − '+Math.abs(c);}
+
+  return(
+    <div className="card">
+      <div className="task-title">שלב 8 — משוואת ישר לפי שיפוע ונקודה</div>
+      {step===1&&<>
+        <div className="task-desc">
+          שיפוע: <strong>m = {q.m_n}</strong> &nbsp;|&nbsp; עובר דרך: <strong dir="ltr">({q.px}, {q.py})</strong><br/>
+          <strong>א.</strong> כתוב את משוואת הישר
+        </div>
+        <PointSlopeEditor key={`${q.px},${q.py},${q.m_n}`}
+          m={q.m_n} px={q.px} py={q.py} b={q.b}
+          onSolved={()=>setStep(2)}/>
+      </>}
+      {step===2&&<>
+        <div className="task-desc">
+          משוואת הישר: <strong>y = {q.m_n}x{cs(q.b)}</strong><br/>
+          <strong>ב.</strong> לחץ על נקודה נוספת שנמצאת על הישר.
+        </div>
+        <div className="svg-wrap">
+          <Grid onClick={handleClick} onMouseMove={handleMove} highlight={ptFb?.type!=='ok'?hover:null}>
+            <DotPoint x={q.px} y={q.py} color="#f59e0b" r={8} label={`(${q.px},${q.py})`}/>
+            {ptFb?.type==='ok'&&pt&&<LineSeg x1={q.px} y1={q.py} x2={pt.x} y2={pt.y} color="#22c55e"/>}
+            {pt&&<DotPoint x={pt.x} y={pt.y} color={ptFb?.type==='ok'?'#22c55e':'#0d9488'} r={6}
+              label={`(${pt.x},${pt.y})`} labelPos="bottom"/>}
+          </Grid>
+        </div>
+        {ptFb&&<div className={`feedback ${ptFb.type}`}>{ptFb.msg}</div>}
+        <div className="actions">
+          {ptFb?.type!=='ok'&&<button className="btn btn-primary" onClick={checkPt} disabled={!pt}>בדוק</button>}
+          {ptFb?.type!=='ok'&&<button className="btn btn-outline" onClick={()=>{setPt(null);setPtFb(null);}}>נקה</button>}
+          {ptFb?.type==='ok'&&<button className="btn btn-primary" onClick={next}>הבא ›</button>}
+        </div>
+      </>}
+    </div>
+  );
+}
+
+// ── Sub-chapter 6: Line equation through two points ──────────────────────────
+function Chapter6(){
+  function genQ(){
+    const m_n=rndNonZero(-4,4);
+    const b=rnd(-5,5);
+    const x1=rnd(-5,-1),x2=rnd(1,5);
+    const y1=m_n*x1+b,y2=m_n*x2+b;
+    if(y1<GRID_MIN+1||y1>GRID_MAX-1||y2<GRID_MIN+1||y2>GRID_MAX-1)return genQ();
+    return{x1,y1,x2,y2,m_n,b};
+  }
+  const [q,setQ]=useState(genQ);
+  const [sVals,setSVals]=useState({dy:'',dx:'',m:''});
+  const [sFb,setSFb]=useState(null);
+  const [solved,setSolved]=useState(false);
+
+  function setSV(k,v){setSVals(p=>({...p,[k]:v}));setSFb(null);}
+  function checkSlope(){
+    const dy=parseDeltaInput(sVals.dy),dx=parseDeltaInput(sVals.dx),m=parseSlopeInput(sVals.m);
+    const cDy=q.y2-q.y1,cDx=q.x2-q.x1;
+    if(dy!==cDy){setSFb({type:'err',msg:`הפרש ה-y: ${q.y2}−${q.y1}=${cDy}`});return;}
+    if(dx!==cDx){setSFb({type:'err',msg:`הפרש ה-x: ${q.x2}−${q.x1}=${cDx}`});return;}
+    if(Math.abs(m-q.m_n)>0.01){setSFb({type:'err',msg:`השיפוע: m = ${cDy}/${cDx} = ${q.m_n}`});return;}
+    setSFb({type:'ok',msg:`השיפוע: m = ${q.m_n}`});
+  }
+  function next(){setQ(genQ());setSVals({dy:'',dx:'',m:''});setSFb(null);setSolved(false);}
+
+  function cs(c){if(c===0)return '';return c>0?' + '+c:' − '+Math.abs(c);}
+
+  return(
+    <div className="card">
+      <div className="task-title">שלב 9 — משוואת ישר דרך שתי נקודות</div>
+      <div className="task-desc">נתונות: <strong dir="ltr">A({q.x1},{q.y1})</strong> ו-<strong dir="ltr">B({q.x2},{q.y2})</strong></div>
+      <div className="svg-wrap">
+        <Grid>
+          <DotPoint x={q.x1} y={q.y1} color="#0d9488" r={8} label={`A(${q.x1},${q.y1})`}/>
+          <DotPoint x={q.x2} y={q.y2} color="#8b5cf6" r={8} label={`B(${q.x2},${q.y2})`} labelPos="bottom"/>
+          {solved&&<LineSeg x1={q.x1} y1={q.y1} x2={q.x2} y2={q.y2} color="#22c55e" width={2.5}/>}
+        </Grid>
+      </div>
+
+      <div style={{marginBottom:14}}>
+        <div style={{fontWeight:700,color:'#134e4a',marginBottom:6}}>א. מצא את השיפוע</div>
+        <div className="formula-box" style={{direction:'ltr'}}>
+          <span style={{fontWeight:700}}>m =</span>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            <span style={{fontSize:'.8rem',color:'#6b7280'}}>y₂ − y₁</span>
+            <div style={{width:50,height:1,background:'#374151'}}/>
+            <span style={{fontSize:'.8rem',color:'#6b7280'}}>x₂ − x₁</span>
+          </div>
+          <span>=</span>
+          <input className="math-input" value={sVals.dy} onChange={e=>setSV('dy',e.target.value)}
+            placeholder="Δy" style={{width:50}} disabled={sFb?.type==='ok'}/>
+          <span>/</span>
+          <input className="math-input" value={sVals.dx} onChange={e=>setSV('dx',e.target.value)}
+            placeholder="Δx" style={{width:50}} disabled={sFb?.type==='ok'}/>
+          <span>=</span>
+          <input className="math-input" value={sVals.m} onChange={e=>setSV('m',e.target.value)}
+            placeholder="m" style={{width:60}} disabled={sFb?.type==='ok'}/>
+        </div>
+        {sFb&&<div className={`feedback ${sFb.type}`} style={{marginTop:4}}>{sFb.msg}</div>}
+        {sFb?.type!=='ok'&&
+          <button className="btn btn-primary" style={{marginTop:8}} onClick={checkSlope}
+            disabled={!sVals.dy||!sVals.dx||!sVals.m}>בדוק שיפוע</button>}
+      </div>
+
+      {sFb?.type==='ok'&&<div>
+        <div style={{fontWeight:700,color:'#134e4a',marginBottom:6}}>
+          ב. כתוב את משוואת הישר — השתמש בנקודה <span dir="ltr">A({q.x1},{q.y1})</span>
+        </div>
+        <PointSlopeEditor key={`${q.x1},${q.y1},${q.m_n}`}
+          m={q.m_n} px={q.x1} py={q.y1} b={q.b}
+          onSolved={()=>setSolved(true)}/>
+        {solved&&<>
+          <div className="feedback ok" style={{marginTop:8}}>
+            מצוין! משוואת הישר: y = {q.m_n}x{cs(q.b)}
+          </div>
+          <div className="actions" style={{marginTop:8}}>
+            <button className="btn btn-primary" onClick={next}>הבא ›</button>
+          </div>
+        </>}
+      </div>}
+    </div>
+  );
+}
+
+// ── App shell ─────────────────────────────────────────────────────────────────
+const CHAPTERS=[
+  {label:'0. מערכת הצירים',comp:Chapter0},
+  {label:'1. קריאת נקודות',comp:Chapter1},
+  {label:'2. סימון נקודות',comp:Chapter2},
+  {label:'3. קו ישר ושיפוע',comp:ChapterSlopeIntro},
+  {label:'4. חישוב שיפוע',comp:Chapter3},
+  {label:'5. משוואת y=mx+b',comp:ChapterLineEqIntro},
+  {label:'6. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},
+  {label:'7. סידור וזיהוי',comp:ChapterRearrangeIdEq},
+  {label:'8. ישר מ-m ונקודה',comp:Chapter5},
+  {label:'9. ישר מ-2 נקודות',comp:Chapter6},
+];
+
+function App(){
+  const [ch,setCh]=useState(0);
+  const Comp=CHAPTERS[ch].comp;
+  return(
+    <div>
+      <div className="hdr">
+        <h1>פונקציה קווית — תרגול</h1>
+        <div className="ch-nav">
+          {CHAPTERS.map((c,i)=>(
+            <button key={i} className={`ch-btn${ch===i?' active':''}`} onClick={()=>setCh(i)}>{c.label}</button>
+          ))}
+        </div>
+      </div>
+      <div className="app">
+        <Comp key={ch}/>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

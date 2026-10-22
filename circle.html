@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מעגל — כיתה ח׳</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;min-height:100vh;}
+.hdr{background:linear-gradient(135deg,#0369a1,#0ea5e9);color:#fff;padding:14px 14px 12px;text-align:center;}
+.hdr-title{font-size:22px;font-weight:700;margin-bottom:8px;}
+.ch-btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.ch-btn{padding:5px 10px;border:2px solid rgba(255,255,255,0.4);border-radius:8px;background:transparent;color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;}
+.ch-btn:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.ch-btn.active{background:rgba(255,255,255,0.25);border-color:#fff;color:#fff;}
+.content{max-width:800px;margin:20px auto;padding:0 16px;}
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:14px;}
+.card-t{font-size:17px;font-weight:700;color:#0369a1;margin-bottom:10px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;text-align:center;}
+.btn{padding:7px 18px;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600;transition:background .2s;}
+.btn:disabled{opacity:.4;cursor:default;}
+.bp{background:#0369a1;color:#fff;}.bp:hover:not(:disabled){background:#075985;}
+.bg{background:#16a34a;color:#fff;}.bg:hover:not(:disabled){background:#15803d;}
+.bo{background:#ea580c;color:#fff;}.bo:hover:not(:disabled){background:#c2410c;}
+.fb{margin-top:8px;padding:8px 12px;border-radius:8px;font-size:14px;text-align:center;}
+.fb.ok{background:#dcfce7;color:#166534;}.fb.err{background:#fee2e2;color:#991b1b;}
+input[type=text],input[type=number],input:not([type]){padding:5px 8px;border:2px solid #d1d5db;border-radius:6px;font-size:16px;text-align:center;direction:ltr;width:65px;}
+input:focus{outline:none;border-color:#0369a1;}
+.banner{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;padding:20px;border-radius:12px;text-align:center;font-size:20px;font-weight:700;margin-bottom:14px;}
+.center{text-align:center;}
+.step-card{background:#f8fafc;border:2px solid #e5e7eb;border-radius:10px;padding:14px;margin-top:10px;}
+.step-card.done{border-color:#16a34a;background:#f0fdf4;}
+.step-label{font-size:14px;font-weight:700;color:#0369a1;margin-bottom:8px;}
+.ans-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0;direction:ltr;flex-wrap:wrap;}
+.graph-wrap{display:flex;justify-content:center;margin:10px 0;}
+.hint{font-size:13px;color:#6b7280;text-align:center;margin:6px 0;}
+.choice-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
+.choice-btn{padding:8px 16px;border:2px solid #d1d5db;border-radius:8px;background:#f8fafc;color:#334155;font-size:14px;cursor:pointer;font-weight:600;transition:all .2s;}
+.choice-btn:hover{border-color:#0369a1;color:#0369a1;}
+.choice-btn.active{background:#e0f2fe;border-color:#0369a1;color:#0369a1;}
+.info-box{background:#e0f2fe;border:2px solid #7dd3fc;border-radius:10px;padding:14px;margin-bottom:14px;}
+.info-box h3{color:#0369a1;font-size:15px;margin-bottom:6px;}
+.info-box p{font-size:13px;color:#0c4a6e;line-height:1.6;}
+.formula-box{background:#fefce8;border:2px solid #fde047;border-radius:10px;padding:12px;text-align:center;margin:10px 0;direction:ltr;font-family:'Courier New',monospace;font-size:20px;font-weight:700;color:#854d0e;}
+.eq-row{display:flex;align-items:center;justify-content:center;gap:5px;margin:10px 0;direction:ltr;font-family:'Courier New',monospace;font-size:18px;font-weight:600;flex-wrap:wrap;}
+.elem-info{background:#f0f9ff;border:2px solid #bae6fd;border-radius:8px;padding:10px;margin-top:10px;text-align:center;font-size:14px;color:#0c4a6e;}
+.rad-table{width:100%;border-collapse:collapse;margin:10px 0;direction:ltr;}
+.rad-table th,.rad-table td{border:1px solid #d1d5db;padding:6px 10px;text-align:center;font-size:13px;}
+.rad-table th{background:#e0f2fe;color:#0369a1;font-weight:700;}
+.rad-table tr:nth-child(even) td{background:#f8fafc;}
+@media(max-width:500px){input{width:50px;font-size:14px;}.choice-btn{font-size:12px;padding:6px 10px;}.ch-btn{font-size:10px;padding:4px 8px;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useCallback}=React;
+
+/* ═══ Utilities ═══ */
+function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pick(arr){return arr[randInt(0,arr.length-1)];}
+function gcd(a,b){return b===0?Math.abs(a):gcd(b,a%b);}
+function Fb({fb}){if(!fb)return null;return fb==='ok'?<div className="fb ok">✓ נכון!</div>:<div className="fb err">✗ לא נכון, נסה שוב.</div>;}
+
+/* ═══ SVG Helpers ═══ */
+function pt(cx,cy,r,deg){const a=deg*Math.PI/180;return{x:cx+r*Math.cos(a),y:cy-r*Math.sin(a)};}
+function arcD(cx,cy,r,s,e){const p1=pt(cx,cy,r,s),p2=pt(cx,cy,r,e);const lg=(e-s)>180?1:0;return`M${p1.x},${p1.y} A${r},${r} 0 ${lg} 0 ${p2.x},${p2.y}`;}
+function secD(cx,cy,r,s,e){const p1=pt(cx,cy,r,s),p2=pt(cx,cy,r,e);const lg=(e-s)>180?1:0;return`M${cx},${cy} L${p1.x},${p1.y} A${r},${r} 0 ${lg} 0 ${p2.x},${p2.y} Z`;}
+function fmtFrac(n,d){if(d===1)return n===1?'π':n+'π';if(n===1)return'π/'+d;return n+'π/'+d;}
+
+/* ═══ Chapter 1: Introduction ═══ */
+const defs={
+  'מרכז':'נקודה המרוחקת מרחק שווה מכל נקודות המעגל. מסומנת O.',
+  'רדיוס':'קטע מהמרכז לנקודה על המעגל. אורכו מסומן r.',
+  'קוטר':'קטע העובר דרך המרכז ומחבר שתי נקודות על המעגל. d = 2r.',
+  'מיתר':'קטע המחבר שתי נקודות על המעגל (לא חייב לעבור דרך המרכז).',
+  'משיק':'ישר הנוגע למעגל בנקודה אחת בלבד, בזווית ישרה לרדיוס.',
+  'קשת':'חלק מקו המעגל (ההיקף) בין שתי נקודות.',
+  'גזרה':'שטח הכלוא בין שני רדיוסים וקשת — כמו פרוסת פיצה.',
+};
+
+function ExplorerSVG({sel}){
+  const W=320,H=280,cx=160,cy=140,r=80;
+  const c=n=>sel===n?'#0369a1':'#cbd5e1';
+  const sw=n=>sel===n?3:1.5;
+  const pR=pt(cx,cy,r,35),pD1=pt(cx,cy,r,180),pD2=pt(cx,cy,r,0);
+  const pC1=pt(cx,cy,r,120),pC2=pt(cx,cy,r,210),pT=pt(cx,cy,r,90);
+  return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(320,W),height:'auto',direction:'ltr'}}>
+    <path d={secD(cx,cy,r,250,310)} fill={sel==='גזרה'?'rgba(3,105,161,0.2)':'rgba(203,213,225,0.15)'} stroke={c('גזרה')} strokeWidth={sw('גזרה')}/>
+    {sel==='גזרה'&&<><line x1={cx} y1={cy} x2={pt(cx,cy,r,250).x} y2={pt(cx,cy,r,250).y} stroke="#0369a1" strokeWidth={2}/><line x1={cx} y1={cy} x2={pt(cx,cy,r,310).x} y2={pt(cx,cy,r,310).y} stroke="#0369a1" strokeWidth={2}/></>}
+    <path d={arcD(cx,cy,r+3,50,120)} fill="none" stroke={sel==='קשת'?'#ea580c':'#cbd5e1'} strokeWidth={sel==='קשת'?5:2}/>
+    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
+    <line x1={pT.x-60} y1={pT.y} x2={pT.x+60} y2={pT.y} stroke={c('משיק')} strokeWidth={sw('משיק')}/>
+    {sel==='משיק'&&<><circle cx={pT.x} cy={pT.y} r={3} fill="#0369a1"/><line x1={cx} y1={cy} x2={pT.x} y2={pT.y} stroke="#0369a1" strokeWidth={1} strokeDasharray="4,3"/></>}
+    <line x1={pC1.x} y1={pC1.y} x2={pC2.x} y2={pC2.y} stroke={c('מיתר')} strokeWidth={sw('מיתר')}/>
+    <line x1={pD1.x} y1={pD1.y} x2={pD2.x} y2={pD2.y} stroke={c('קוטר')} strokeWidth={sw('קוטר')}/>
+    {sel==='קוטר'&&<text x={cx} y={cy-8} textAnchor="middle" fontSize="14" fontWeight="700" fill="#0369a1">d</text>}
+    <line x1={cx} y1={cy} x2={pR.x} y2={pR.y} stroke={c('רדיוס')} strokeWidth={sw('רדיוס')}/>
+    {sel==='רדיוס'&&<text x={(cx+pR.x)/2+10} y={(cy+pR.y)/2-6} fontSize="14" fontWeight="700" fill="#0369a1">r</text>}
+    <circle cx={cx} cy={cy} r={sel==='מרכז'?6:3} fill={c('מרכז')}/>
+    <text x={cx+10} y={cy+5} fontSize="14" fontWeight="700" fill="#334155">O</text>
+  </svg>;
+}
+
+function genCh1(){
+  const type=pick(['identify','identify','radDiam']);
+  if(type==='identify'){
+    const elems=['רדיוס','קוטר','מיתר','משיק'];
+    const labels=['א','ב','ג','ד'];
+    const sh=[...labels];for(let i=3;i>0;i--){const j=randInt(0,i);[sh[i],sh[j]]=[sh[j],sh[i]];}
+    const mapping=elems.map((e,i)=>({name:e,label:sh[i]}));
+    const target=pick(elems);
+    return{type,mapping,target};
+  }
+  const isRtoD=Math.random()>0.5;
+  const r=randInt(2,20);
+  return{type,isRtoD,r,d:r*2};
+}
+
+function IdentifySVG({mapping}){
+  const W=320,H=280,cx=160,cy=140,r=80;
+  const positions=[
+    {x1:cx,y1:cy,x2:pt(cx,cy,r,35).x,y2:pt(cx,cy,r,35).y,lx:(cx+pt(cx,cy,r,35).x)/2+12,ly:(cy+pt(cx,cy,r,35).y)/2-10},
+    {x1:pt(cx,cy,r,180).x,y1:pt(cx,cy,r,180).y,x2:pt(cx,cy,r,0).x,y2:pt(cx,cy,r,0).y,lx:cx,ly:cy-12},
+    {x1:pt(cx,cy,r,120).x,y1:pt(cx,cy,r,120).y,x2:pt(cx,cy,r,210).x,y2:pt(cx,cy,r,210).y,lx:(pt(cx,cy,r,120).x+pt(cx,cy,r,210).x)/2-15,ly:(pt(cx,cy,r,120).y+pt(cx,cy,r,210).y)/2},
+    {x1:pt(cx,cy,r,90).x-50,y1:pt(cx,cy,r,90).y,x2:pt(cx,cy,r,90).x+50,y2:pt(cx,cy,r,90).y,lx:pt(cx,cy,r,90).x+55,ly:pt(cx,cy,r,90).y+5}
+  ];
+  const cols=['#dc2626','#16a34a','#ea580c','#7c3aed'];
+  return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(320,W),height:'auto',direction:'ltr'}}>
+    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
+    <circle cx={cx} cy={cy} r={3} fill="#334155"/>
+    <text x={cx+10} y={cy+5} fontSize="13" fontWeight="700" fill="#334155">O</text>
+    {mapping.map((m,i)=><g key={i}>
+      <line x1={positions[i].x1} y1={positions[i].y1} x2={positions[i].x2} y2={positions[i].y2} stroke={cols[i]} strokeWidth={2.5}/>
+      <text x={positions[i].lx} y={positions[i].ly} fontSize="16" fontWeight="700" fill={cols[i]} textAnchor="middle">{m.label}</text>
+    </g>)}
+  </svg>;
+}
+
+function Ch1(){
+  const [sel,setSel]=useState(null);
+  const [ex,setEx]=useState(()=>genCh1());
+  const [fb,setFb]=useState(null);
+  const [ans,setAns]=useState('');
+  const [done,setDone]=useState(false);
+  const [showInfo,setShowInfo]=useState(true);
+
+  const check=()=>{
+    if(ex.type==='identify'){
+      const correct=ex.mapping.find(m=>m.name===ex.target);
+      if(ans===correct.label){setFb('ok');setDone(true);}else setFb('err');
+    } else {
+      const expected=ex.isRtoD?ex.d:ex.r;
+      if(parseInt(ans)===expected){setFb('ok');setDone(true);}else setFb('err');
+    }
+  };
+  const reset=()=>{setEx(genCh1());setFb(null);setAns('');setDone(false);};
+
+  return <div className="content">
+    {showInfo&&<div className="info-box">
+      <h3>📐 היכרות עם המעגל</h3>
+      <p>לחצו על הכפתורים למטה כדי לגלות את חלקי המעגל. לאחר מכן פתרו תרגילים.</p>
+      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+    </div>}
+
+    <div className="card">
+      <div className="card-t">סייר במעגל</div>
+      <div className="graph-wrap"><ExplorerSVG sel={sel}/></div>
+      <div className="choice-row">
+        {Object.keys(defs).map(k=><button key={k} className={`choice-btn ${sel===k?'active':''}`} onClick={()=>setSel(k)} style={{fontSize:12}}>{k}</button>)}
+      </div>
+      {sel&&<div className="elem-info"><strong>{sel}:</strong> {defs[sel]}</div>}
+    </div>
+
+    <div className="card">
+      <div className="card-t">{ex.type==='identify'?'זיהוי אלמנטים':'רדיוס וקוטר'}</div>
+      {ex.type==='identify'?<>
+        <div className="graph-wrap"><IdentifySVG mapping={ex.mapping}/></div>
+        <p className="hint">איזה קו הוא <strong>{ex.target}</strong>?</p>
+        <div className="choice-row">
+          {ex.mapping.map(m=><button key={m.label} className={`choice-btn ${ans===m.label?'active':''} ${done&&m.name===ex.target?'correct':''}`}
+            onClick={()=>{if(!done){setAns(m.label);setFb(null);}}} disabled={done}>{m.label}</button>)}
+        </div>
+        {!done&&<div className="center"><button className="btn bg" disabled={!ans} onClick={check}>✓ בדוק</button></div>}
+      </>:<>
+        <div className="graph-wrap">
+          <svg viewBox="0 0 280 200" style={{width:280,height:'auto',direction:'ltr'}}>
+            <circle cx={140} cy={100} r={70} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
+            <circle cx={140} cy={100} r={3} fill="#334155"/>
+            <text x={148} y={105} fontSize="13" fontWeight="700" fill="#334155">O</text>
+            {ex.isRtoD?<>
+              <line x1={140} y1={100} x2={210} y2={100} stroke="#dc2626" strokeWidth={2.5}/>
+              <text x={175} y={92} fontSize="14" fontWeight="700" fill="#dc2626">r = {ex.r}</text>
+            </>:<>
+              <line x1={70} y1={100} x2={210} y2={100} stroke="#16a34a" strokeWidth={2.5}/>
+              <text x={140} y={88} fontSize="14" fontWeight="700" fill="#16a34a" textAnchor="middle">d = {ex.d}</text>
+            </>}
+          </svg>
+        </div>
+        <p className="hint">{ex.isRtoD?`הרדיוס הוא ${ex.r} ס"מ. מה הקוטר?`:`הקוטר הוא ${ex.d} ס"מ. מה הרדיוס?`}</p>
+        <div className="ans-row">
+          <span style={{fontSize:16,fontWeight:600}}>{ex.isRtoD?'d':'r'} =</span>
+          <input value={ans} onChange={e=>{setAns(e.target.value);setFb(null);}} disabled={done} onKeyDown={e=>e.key==='Enter'&&!done&&check()}/>
+          <span>ס"מ</span>
+          {!done&&<button className="btn bg" onClick={check}>✓ בדוק</button>}
+        </div>
+      </>}
+      <Fb fb={fb}/>
+      {done&&<div className="fb ok" style={{fontWeight:700}}>✓ נכון!</div>}
+    </div>
+    {done?<div className="banner">✅ כל הכבוד!<div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div></div>
+      :<div className="center"><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══ Chapter 2: Circumference ═══ */
+function CircleSVG({r,rVal,label,arcHighlight,sectorAngle,sectorColor,showDiam,dVal,extra}){
+  const W=300,H=260,cx=150,cy=130,sr=80;
+  return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(300,W),height:'auto',direction:'ltr'}}>
+    {sectorAngle&&<path d={secD(cx,cy,sr,0,sectorAngle)} fill={sectorColor||'rgba(3,105,161,0.15)'} stroke="none"/>}
+    {arcHighlight&&<path d={arcD(cx,cy,sr+2,arcHighlight[0],arcHighlight[1])} fill="none" stroke="#ea580c" strokeWidth={5}/>}
+    <circle cx={cx} cy={cy} r={sr} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
+    <circle cx={cx} cy={cy} r={3} fill="#334155"/>
+    <text x={cx+8} y={cy+5} fontSize="13" fontWeight="700" fill="#334155">O</text>
+    <line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#dc2626" strokeWidth={2}/>
+    <text x={cx+sr/2} y={cy-8} fontSize="14" fontWeight="700" fill="#dc2626" textAnchor="middle">{rVal!=null?'r = '+rVal:'r'}</text>
+    {showDiam&&<><line x1={cx-sr} y1={cy} x2={cx+sr} y2={cy} stroke="#16a34a" strokeWidth={2}/>
+      <text x={cx} y={cy+20} fontSize="14" fontWeight="700" fill="#16a34a" textAnchor="middle">{dVal!=null?'d = '+dVal:'d'}</text></>}
+    {sectorAngle&&<>
+      <line x1={cx} y1={cy} x2={pt(cx,cy,sr,sectorAngle).x} y2={pt(cx,cy,sr,sectorAngle).y} stroke="#dc2626" strokeWidth={2}/>
+      {label&&<text x={cx+25} y={cy-15} fontSize="13" fontWeight="700" fill="#ea580c">{label}</text>}
+    </>}
+    {extra}
+  </svg>;
+}
+
+function genCh2(){
+  const sub=pick(['calc','findR','numerical']);
+  const r=randInt(2,15);
+  return{sub,r,d:2*r,circCoeff:2*r};
+}
+
+function Ch2(){
+  const [ex,setEx]=useState(()=>genCh2());
+  const [fb,setFb]=useState(null);
+  const [phase,setPhase]=useState(0);
+  const [a1,setA1]=useState('');
+  const [a2,setA2]=useState('');
+  const [showInfo,setShowInfo]=useState(true);
+
+  const reset=()=>{const e=genCh2();setEx(e);setFb(null);setPhase(0);setA1('');setA2('');};
+  const advance=()=>{setPhase(p=>p+1);setFb(null);setA1('');setA2('');};
+
+  const totalSteps=ex.sub==='calc'?1:2;
+  const allDone=phase>=totalSteps;
+
+  const checkStep=()=>{
+    if(ex.sub==='calc'){
+      if(parseInt(a1)===ex.circCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');
+    } else if(ex.sub==='findR'){
+      if(phase===0){if(parseInt(a1)===ex.circCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(parseInt(a1)===ex.r){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    } else {
+      const expected=parseFloat((2*3.14*ex.r).toFixed(1));
+      const val=parseFloat(a1);
+      if(!isNaN(val)&&Math.abs(val-expected)<=0.1){setFb('ok');setTimeout(advance,600);}else setFb('err');
+    }
+  };
+
+  return <div className="content">
+    {showInfo&&<div className="info-box">
+      <h3>📏 היקף המעגל</h3>
+      <p>היקף המעגל הוא אורך קו המעגל. הנוסחה:</p>
+      <div className="formula-box">C = 2πr = πd</div>
+      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+    </div>}
+
+    <div className="card">
+      <div className="card-t">{ex.sub==='calc'?'חישוב היקף':ex.sub==='findR'?'מציאת רדיוס מהיקף':'חישוב מספרי'}</div>
+      <div className="graph-wrap"><CircleSVG rVal={ex.sub==='findR'?null:ex.r} showDiam={ex.sub==='calc'}/></div>
+
+      {ex.sub==='calc'&&<>
+        <p className="hint">r = {ex.r}. חשב את היקף המעגל:</p>
+        <div className="eq-row"><span>C = 2π·{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} disabled={allDone} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&!allDone&&checkStep()}/> <span>π</span></div>
+      </>}
+
+      {ex.sub==='findR'&&<>
+        <p className="hint">היקף המעגל הוא {ex.circCoeff}π. מצא את הרדיוס.</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.circCoeff}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — כתוב משוואה</div>
+          <div className="eq-row">2πr = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> π</div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r = {ex.r}</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — פתור</div>
+          <div className="ans-row"><span>r =</span><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
+      </>}
+
+      {ex.sub==='numerical'&&<>
+        <p className="hint">r = {ex.r}. חשב את ההיקף לפי π ≈ 3.14</p>
+        <div className="eq-row"><span>C = 2×3.14×{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} disabled={allDone} style={{width:70}} onKeyDown={e=>e.key==='Enter'&&!allDone&&checkStep()}/></div>
+      </>}
+
+      {!allDone&&<div className="center" style={{marginTop:8}}><button className="btn bg" onClick={checkStep}>✓ בדוק</button></div>}
+      <Fb fb={fb}/>
+    </div>
+    {allDone?<div className="banner">✅ כל הכבוד!<div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div></div>
+      :<div className="center"><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══ Chapter 3: Area ═══ */
+function genCh3(){
+  const sub=pick(['calc','findR','sector']);
+  if(sub==='sector'){
+    const angles=[30,45,60,90,120,150,180];
+    for(let i=0;i<200;i++){const angle=pick(angles);const r=randInt(2,12);const c=(angle*r*r)/360;if(Number.isInteger(c))return{sub,r,angle,fullArea:r*r,sectorArea:c};}
+  }
+  const r=randInt(2,12);
+  return{sub,r,area:r*r};
+}
+
+function Ch3(){
+  const [ex,setEx]=useState(()=>genCh3());
+  const [fb,setFb]=useState(null);
+  const [phase,setPhase]=useState(0);
+  const [a1,setA1]=useState('');
+  const [showInfo,setShowInfo]=useState(true);
+
+  const totalSteps=ex.sub==='calc'?1:ex.sub==='findR'?3:2;
+  const allDone=phase>=totalSteps;
+  const reset=()=>{setEx(genCh3());setFb(null);setPhase(0);setA1('');};
+  const advance=()=>{setPhase(p=>p+1);setFb(null);setA1('');};
+
+  const checkStep=()=>{
+    const v=parseInt(a1);
+    if(ex.sub==='calc'){
+      if(v===ex.area){setFb('ok');setTimeout(advance,600);}else setFb('err');
+    } else if(ex.sub==='findR'){
+      if(phase===0){if(v===ex.area){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else if(phase===1){if(v===ex.area){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(v===ex.r){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    } else {
+      if(phase===0){if(v===ex.fullArea){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(v===ex.sectorArea){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    }
+  };
+
+  return <div className="content">
+    {showInfo&&<div className="info-box">
+      <h3>📐 שטח המעגל</h3>
+      <p>שטח המעגל הוא השטח הכלוא בתוכו.</p>
+      <div className="formula-box">S = πr²</div>
+      <p style={{marginTop:6}}>שטח גזרה = (θ/360°) · πr²</p>
+      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+    </div>}
+
+    <div className="card">
+      <div className="card-t">{ex.sub==='calc'?'חישוב שטח':ex.sub==='findR'?'מציאת רדיוס משטח':'שטח גזרה'}</div>
+      <div className="graph-wrap"><CircleSVG rVal={ex.sub==='findR'?'?':ex.r} sectorAngle={ex.sub==='sector'?ex.angle:null} label={ex.sub==='sector'?ex.angle+'°':null}/></div>
+
+      {ex.sub==='calc'&&<>
+        <p className="hint">r = {ex.r}. חשב את שטח המעגל:</p>
+        <div className="eq-row"><span>S = π·{ex.r}² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} disabled={allDone} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&!allDone&&checkStep()}/> <span>π</span></div>
+      </>}
+
+      {ex.sub==='findR'&&<>
+        <p className="hint">שטח המעגל הוא {ex.area}π. מצא את הרדיוס.</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ πr² = {ex.area}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — כתוב משוואה</div>
+          <div className="eq-row">πr² = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> π</div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r² = {ex.area}</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — חלק ב-π</div>
+          <div className="eq-row">r² = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
+        {phase>2&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r = {ex.r}</div></div>}
+        {phase===2&&<div className="step-card"><div className="step-label">שלב 3 — הוצא שורש</div>
+          <div className="eq-row">r = √{ex.area} = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
+      </>}
+
+      {ex.sub==='sector'&&<>
+        <p className="hint">r = {ex.r}, θ = {ex.angle}°. חשב את שטח הגזרה.</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ πr² = {ex.fullArea}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — שטח המעגל השלם</div>
+          <div className="eq-row"><span>S = π·{ex.r}² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ ({ex.angle}/360)·{ex.fullArea}π = {ex.sectorArea}π</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — שטח הגזרה</div>
+          <div className="eq-row"><span>({ex.angle}/360)·{ex.fullArea}π =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+      </>}
+
+      {!allDone&&<div className="center" style={{marginTop:8}}><button className="btn bg" onClick={checkStep}>✓ בדוק</button></div>}
+      <Fb fb={fb}/>
+    </div>
+    {allDone?<div className="banner">✅ כל הכבוד!<div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div></div>
+      :<div className="center"><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══ Chapter 4: Arc ═══ */
+function genCh4(){
+  const sub=pick(['arcLen','findAngle','sectorPerim']);
+  const angles=[30,45,60,90,120,150,180];
+  for(let i=0;i<200;i++){
+    const angle=pick(angles);const r=randInt(2,15);
+    const arcCoeff=(angle*r)/180;
+    if(Number.isInteger(arcCoeff))return{sub,r,angle,arcCoeff,fullCircCoeff:2*r};
+  }
+  return{sub:sub,r:6,angle:90,arcCoeff:3,fullCircCoeff:12};
+}
+
+function Ch4(){
+  const [ex,setEx]=useState(()=>genCh4());
+  const [fb,setFb]=useState(null);
+  const [phase,setPhase]=useState(0);
+  const [a1,setA1]=useState('');
+  const [a2,setA2]=useState('');
+  const [showInfo,setShowInfo]=useState(true);
+
+  const totalSteps=ex.sub==='sectorPerim'?3:2;
+  const allDone=phase>=totalSteps;
+  const reset=()=>{setEx(genCh4());setFb(null);setPhase(0);setA1('');setA2('');};
+  const advance=()=>{setPhase(p=>p+1);setFb(null);setA1('');setA2('');};
+
+  const checkStep=()=>{
+    const v=parseInt(a1);
+    if(ex.sub==='arcLen'){
+      if(phase===0){if(v===ex.fullCircCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(v===ex.arcCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    } else if(ex.sub==='findAngle'){
+      if(phase===0){if(v===ex.fullCircCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(v===ex.angle){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    } else {
+      if(phase===0){if(v===ex.fullCircCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else if(phase===1){if(v===ex.arcCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(v===ex.arcCoeff&&parseInt(a2)===2*ex.r){setFb('ok');setTimeout(advance,600);}
+        else if(v===ex.arcCoeff+2*ex.r||parseInt(a2)===ex.arcCoeff+2*ex.r){setFb('err');}
+        else setFb('err');}
+    }
+  };
+
+  // For sector perimeter step 3, check both values
+  const checkPerim=()=>{
+    const vArc=parseInt(a1),vR=parseInt(a2);
+    if(vArc===ex.arcCoeff&&vR===2*ex.r){setFb('ok');setTimeout(advance,600);}else setFb('err');
+  };
+
+  return <div className="content">
+    {showInfo&&<div className="info-box">
+      <h3>🌙 קשת</h3>
+      <p>קשת היא חלק מהיקף המעגל.</p>
+      <div className="formula-box">L = (θ/360°) · 2πr</div>
+      <p style={{marginTop:6}}>היקף גזרה = אורך קשת + 2r</p>
+      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+    </div>}
+
+    <div className="card">
+      <div className="card-t">{ex.sub==='arcLen'?'אורך קשת':ex.sub==='findAngle'?'מציאת זווית מקשת':'היקף גזרה'}</div>
+      <div className="graph-wrap"><CircleSVG rVal={ex.r} arcHighlight={[0,ex.angle]} sectorAngle={ex.sub==='sectorPerim'?ex.angle:null} label={ex.angle+'°'}/></div>
+
+      {ex.sub==='arcLen'&&<>
+        <p className="hint">r = {ex.r}, θ = {ex.angle}°. חשב את אורך הקשת.</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.fullCircCoeff}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — היקף המעגל</div>
+          <div className="eq-row"><span>2π·{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ L = ({ex.angle}/360)·{ex.fullCircCoeff}π = {ex.arcCoeff}π</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — אורך הקשת</div>
+          <div className="eq-row"><span>({ex.angle}/360)·{ex.fullCircCoeff}π =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+      </>}
+
+      {ex.sub==='findAngle'&&<>
+        <p className="hint">אורך הקשת הוא {ex.arcCoeff}π, r = {ex.r}. מצא את הזווית המרכזית.</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.fullCircCoeff}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — היקף המעגל</div>
+          <div className="eq-row"><span>2π·{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ θ = {ex.angle}°</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — פתור</div>
+          <p className="hint">(θ/360)·{ex.fullCircCoeff}π = {ex.arcCoeff}π</p>
+          <div className="ans-row"><span>θ =</span><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/><span>°</span></div></div>}
+      </>}
+
+      {ex.sub==='sectorPerim'&&<>
+        <p className="hint">r = {ex.r}, θ = {ex.angle}°. חשב את היקף הגזרה.</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.fullCircCoeff}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — היקף המעגל</div>
+          <div className="eq-row"><span>2π·{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ L = {ex.arcCoeff}π</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — אורך קשת</div>
+          <div className="eq-row"><span>({ex.angle}/360)·{ex.fullCircCoeff}π =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+        {phase>2&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ P = {ex.arcCoeff}π + {2*ex.r}</div></div>}
+        {phase===2&&<div className="step-card"><div className="step-label">שלב 3 — היקף גזרה = קשת + 2r</div>
+          <div className="ans-row"><span>P =</span><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:45}}/><span>π +</span>
+            <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} style={{width:45}}/></div></div>}
+      </>}
+
+      {!allDone&&<div className="center" style={{marginTop:8}}><button className="btn bg" onClick={phase===2&&ex.sub==='sectorPerim'?checkPerim:checkStep}>✓ בדוק</button></div>}
+      <Fb fb={fb}/>
+    </div>
+    {allDone?<div className="banner">✅ כל הכבוד!<div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div></div>
+      :<div className="center"><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══ Chapter 5: Combined ═══ */
+function genCh5(){
+  const sub=pick(['circToArea','sectorToR','annulus']);
+  if(sub==='circToArea'){const r=randInt(2,15);return{sub,r,circCoeff:2*r,area:r*r};}
+  if(sub==='sectorToR'){
+    const angles=[30,45,60,90,120,150,180];
+    for(let i=0;i<200;i++){const angle=pick(angles);const r=randInt(2,10);const sa=(angle*r*r)/360;if(Number.isInteger(sa))return{sub,r,angle,sectorArea:sa,rSquared:r*r,mult:360/angle};}
+    return{sub,r:6,angle:90,sectorArea:9,rSquared:36,mult:4};
+  }
+  const R=randInt(6,15),r=randInt(2,R-2);
+  return{sub,R,r,bigArea:R*R,smallArea:r*r,annulusArea:R*R-r*r};
+}
+
+function Ch5(){
+  const [ex,setEx]=useState(()=>genCh5());
+  const [fb,setFb]=useState(null);
+  const [phase,setPhase]=useState(0);
+  const [a1,setA1]=useState('');
+  const [showInfo,setShowInfo]=useState(true);
+
+  const totalSteps=ex.sub==='circToArea'?2:3;
+  const allDone=phase>=totalSteps;
+  const reset=()=>{setEx(genCh5());setFb(null);setPhase(0);setA1('');};
+  const advance=()=>{setPhase(p=>p+1);setFb(null);setA1('');};
+
+  const checkStep=()=>{
+    const v=parseInt(a1);
+    if(ex.sub==='circToArea'){
+      if(phase===0){if(v===ex.r){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(v===ex.area){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    } else if(ex.sub==='sectorToR'){
+      if(phase===0){if(v===ex.rSquared){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else if(phase===1){if(v===ex.rSquared){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(v===ex.r){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    } else {
+      if(phase===0){if(v===ex.bigArea){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else if(phase===1){if(v===ex.smallArea){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(v===ex.annulusArea){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    }
+  };
+
+  function AnnulusSVG(){
+    const W=300,H=260,cx=150,cy=130;
+    const sr1=80,sr2=Math.round(80*ex.r/ex.R);
+    return <svg viewBox={`0 0 ${W} ${H}`} style={{width:280,height:'auto',direction:'ltr'}}>
+      <circle cx={cx} cy={cy} r={sr1} fill="rgba(3,105,161,0.15)" stroke="#2563eb" strokeWidth={2.5}/>
+      <circle cx={cx} cy={cy} r={sr2} fill="#fff" stroke="#0369a1" strokeWidth={2}/>
+      <circle cx={cx} cy={cy} r={3} fill="#334155"/>
+      <text x={cx+8} y={cy+5} fontSize="13" fontWeight="700" fill="#334155">O</text>
+      <line x1={cx} y1={cy} x2={cx+sr1} y2={cy} stroke="#dc2626" strokeWidth={2}/>
+      <text x={cx+sr1/2} y={cy-8} fontSize="12" fontWeight="700" fill="#dc2626" textAnchor="middle">R = {ex.R}</text>
+      <line x1={cx} y1={cy} x2={cx} y2={cy-sr2} stroke="#ea580c" strokeWidth={2}/>
+      <text x={cx+12} y={cy-sr2/2} fontSize="12" fontWeight="700" fill="#ea580c">r = {ex.r}</text>
+    </svg>;
+  }
+
+  return <div className="content">
+    {showInfo&&<div className="info-box">
+      <h3>🧩 הכל יחד</h3>
+      <p>תרגילים משולבים — שימוש בכמה נוסחאות יחד.</p>
+      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+    </div>}
+
+    <div className="card">
+      <div className="card-t">{ex.sub==='circToArea'?'מהיקף לשטח':ex.sub==='sectorToR'?'מגזרה לרדיוס':'שטח טבעת'}</div>
+
+      {ex.sub==='circToArea'&&<>
+        <div className="graph-wrap"><CircleSVG rVal="?"/></div>
+        <p className="hint">היקף המעגל הוא {ex.circCoeff}π. מצא את שטחו.</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.circCoeff}π → r = {ex.r}</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — מצא r מהיקף</div>
+          <p className="hint">2πr = {ex.circCoeff}π</p>
+          <div className="ans-row"><span>r =</span><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ S = π · {ex.r}² = {ex.area}π</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — חשב שטח</div>
+          <div className="eq-row"><span>S = π·{ex.r}² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+      </>}
+
+      {ex.sub==='sectorToR'&&<>
+        <div className="graph-wrap"><CircleSVG rVal="?" sectorAngle={ex.angle} label={ex.angle+'°'}/></div>
+        <p className="hint">שטח גזרה = {ex.sectorArea}π, θ = {ex.angle}°. מצא את הרדיוס.</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ πr² = {ex.rSquared}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — מצא πr²</div>
+          <p className="hint">({ex.angle}/360)·πr² = {ex.sectorArea}π</p>
+          <p className="hint">הכפל ב-{ex.mult}:</p>
+          <div className="eq-row"><span>πr² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r² = {ex.rSquared}</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — חלק ב-π</div>
+          <div className="eq-row"><span>r² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
+        {phase>2&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r = {ex.r}</div></div>}
+        {phase===2&&<div className="step-card"><div className="step-label">שלב 3 — הוצא שורש</div>
+          <div className="eq-row"><span>r = √{ex.rSquared} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
+      </>}
+
+      {ex.sub==='annulus'&&<>
+        <div className="graph-wrap"><AnnulusSVG/></div>
+        <p className="hint">R = {ex.R}, r = {ex.r}. חשב את שטח הטבעת (השטח בין שני המעגלים).</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ S₁ = π·{ex.R}² = {ex.bigArea}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — שטח המעגל הגדול</div>
+          <div className="eq-row"><span>S₁ = π·{ex.R}² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ S₂ = π·{ex.r}² = {ex.smallArea}π</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — שטח המעגל הקטן</div>
+          <div className="eq-row"><span>S₂ = π·{ex.r}² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+        {phase>2&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ S = {ex.bigArea}π − {ex.smallArea}π = {ex.annulusArea}π</div></div>}
+        {phase===2&&<div className="step-card"><div className="step-label">שלב 3 — שטח הטבעת</div>
+          <div className="eq-row"><span>{ex.bigArea}π − {ex.smallArea}π =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
+      </>}
+
+      {!allDone&&<div className="center" style={{marginTop:8}}><button className="btn bg" onClick={checkStep}>✓ בדוק</button></div>}
+      <Fb fb={fb}/>
+    </div>
+    {allDone?<div className="banner">✅ כל הכבוד!<div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div></div>
+      :<div className="center"><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══ Chapter 6: Radians ═══ */
+const radVals=[
+  {deg:30,num:1,den:6},{deg:45,num:1,den:4},{deg:60,num:1,den:3},
+  {deg:90,num:1,den:2},{deg:120,num:2,den:3},{deg:150,num:5,den:6},
+  {deg:180,num:1,den:1},{deg:270,num:3,den:2},{deg:360,num:2,den:1}
+];
+
+function genCh6(){
+  const sub=pick(['degToRad','radToDeg','arcRad']);
+  if(sub==='arcRad'){
+    for(let i=0;i<200;i++){
+      const rv=pick(radVals.slice(0,7));
+      const r=randInt(2,12);
+      const coeff=(r*rv.num)/rv.den;
+      if(Number.isInteger(coeff))return{sub,...rv,r,arcCoeff:coeff};
+    }
+    return{sub,deg:90,num:1,den:2,r:6,arcCoeff:3};
+  }
+  const rv=pick(radVals.slice(0,7));
+  return{sub,...rv};
+}
+
+function Ch6(){
+  const [ex,setEx]=useState(()=>genCh6());
+  const [fb,setFb]=useState(null);
+  const [phase,setPhase]=useState(0);
+  const [a1,setA1]=useState('');
+  const [a2,setA2]=useState('');
+  const [showInfo,setShowInfo]=useState(true);
+
+  const totalSteps=ex.sub==='arcRad'?1:2;
+  const allDone=phase>=totalSteps;
+  const reset=()=>{setEx(genCh6());setFb(null);setPhase(0);setA1('');setA2('');};
+  const advance=()=>{setPhase(p=>p+1);setFb(null);setA1('');setA2('');};
+
+  const checkStep=()=>{
+    if(ex.sub==='degToRad'){
+      if(phase===0){if(parseInt(a1)===ex.deg){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{
+        const n=parseInt(a1),d=parseInt(a2);
+        if(!isNaN(n)&&!isNaN(d)&&d>0&&n*ex.den===d*ex.num){setFb('ok');setTimeout(advance,600);}else setFb('err');
+      }
+    } else if(ex.sub==='radToDeg'){
+      if(phase===0){if(parseInt(a1)===ex.num&&parseInt(a2)===ex.den){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+      else{if(parseInt(a1)===ex.deg){setFb('ok');setTimeout(advance,600);}else setFb('err');}
+    } else {
+      if(parseInt(a1)===ex.arcCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');
+    }
+  };
+
+  return <div className="content">
+    {showInfo&&<div className="info-box">
+      <h3>🔄 רדיאנים</h3>
+      <p>רדיאן הוא זווית שבה אורך הקשת שווה לרדיוס. 2π רדיאנים = 360°.</p>
+      <div className="formula-box" style={{fontSize:16}}>rad = deg · π/180 &nbsp;|&nbsp; deg = rad · 180/π</div>
+      <p style={{marginTop:6}}>אורך קשת ברדיאנים: <strong style={{direction:'ltr',display:'inline'}}>L = r · θ</strong></p>
+      <table className="rad-table" style={{marginTop:10}}>
+        <thead><tr><th>מעלות</th><th>0°</th><th>30°</th><th>45°</th><th>60°</th><th>90°</th><th>180°</th><th>360°</th></tr></thead>
+        <tbody><tr><td><strong>רדיאנים</strong></td><td>0</td><td>π/6</td><td>π/4</td><td>π/3</td><td>π/2</td><td>π</td><td>2π</td></tr></tbody>
+      </table>
+      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+    </div>}
+
+    <div className="card">
+      <div className="card-t">{ex.sub==='degToRad'?'מעלות → רדיאנים':ex.sub==='radToDeg'?'רדיאנים → מעלות':'אורך קשת ברדיאנים'}</div>
+
+      {ex.sub==='degToRad'&&<>
+        <p className="hint" style={{fontSize:16}}>המר {ex.deg}° לרדיאנים</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.deg} · π/180</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — כתוב נוסחה</div>
+          <div className="eq-row"><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:50}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> · π/180</div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {fmtFrac(ex.num,ex.den)}</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — פשט</div>
+          <div className="ans-row"><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:40}} placeholder="מונה"/>
+            <span style={{fontSize:18}}>π /</span>
+            <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} style={{width:40}} placeholder="מכנה" onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div>
+          <p className="hint">(למשל: π/3 → מונה=1, מכנה=3)</p></div>}
+      </>}
+
+      {ex.sub==='radToDeg'&&<>
+        <p className="hint" style={{fontSize:16}}>המר {fmtFrac(ex.num,ex.den)} רדיאנים למעלות</p>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ ({ex.num}/{ex.den}) · 180</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — הצב בנוסחה</div>
+          <div className="eq-row">(<input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:35}}/>/<input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} style={{width:35}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/>) · 180</div></div>}
+        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.deg}°</div></div>}
+        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — חשב</div>
+          <div className="ans-row"><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/><span>°</span></div></div>}
+      </>}
+
+      {ex.sub==='arcRad'&&<>
+        <div className="graph-wrap"><CircleSVG rVal={ex.r} arcHighlight={[0,ex.deg]} label={fmtFrac(ex.num,ex.den)+' rad'}/></div>
+        <p className="hint">r = {ex.r}, θ = {fmtFrac(ex.num,ex.den)} rad. חשב אורך קשת.</p>
+        <div className="formula-box" style={{fontSize:16}}>L = r · θ = {ex.r} · {fmtFrac(ex.num,ex.den)}</div>
+        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ L = {ex.arcCoeff}π</div></div>}
+        {phase===0&&<div className="step-card"><div className="step-label">חשב</div>
+          <div className="eq-row">L = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> π</div></div>}
+      </>}
+
+      {!allDone&&<div className="center" style={{marginTop:8}}><button className="btn bg" onClick={checkStep}>✓ בדוק</button></div>}
+      <Fb fb={fb}/>
+    </div>
+    {allDone?<div className="banner">✅ כל הכבוד!<div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div></div>
+      :<div className="center"><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══ App ═══ */
+function App(){
+  const [ch,setCh]=useState(0);
+  const chs=[
+    {name:'1. היכרות',comp:Ch1},{name:'2. היקף',comp:Ch2},{name:'3. שטח',comp:Ch3},
+    {name:'4. קשת',comp:Ch4},{name:'5. הכל יחד',comp:Ch5},{name:'6. רדיאנים',comp:Ch6}
+  ];
+  const Comp=chs[ch].comp;
+  return <>
+    <div className="hdr">
+      <div className="hdr-title">מעגל</div>
+      <div className="ch-btns">
+        {chs.map((c,i)=><button key={i} className={`ch-btn ${ch===i?'active':''}`} onClick={()=>setCh(i)}>{c.name}</button>)}
+      </div>
+    </div>
+    <Comp key={ch}/>
+  </>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
