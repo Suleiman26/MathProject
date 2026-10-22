@@ -1,0 +1,392 @@
+<title>פרויקט מתמטיקה חט״ב</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Secular+One&display=swap">
+<style>
+:root{--bg:#F2F4F8;--surface:#FFFFFF;--ink:#101A33;--muted:#566079;--line:#D8DDE9;--accent:#2446D6;--accent-soft:#E3E9FF;--on-accent:#FFFFFF;--ok:#17794F;--ok-soft:#DCF2E6;--warn:#8F5400;--warn-soft:#FBEACB;--gap:#B3261E;--gap-soft:#FBE2E0;--grid:#DCE2F0;--margin:#E3A3A0;
+  --f-display:'Secular One','Heebo',system-ui,sans-serif;
+  --f-body:'Heebo',system-ui,-apple-system,'Segoe UI','Arial Hebrew',Arial,sans-serif;
+  --f-mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --gutter-l:max(16px,env(safe-area-inset-left,0px));
+  --gutter-r:max(16px,env(safe-area-inset-right,0px));
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0D1324;--surface:#151D33;--ink:#E7EBF7;--muted:#9AA6C2;--line:#27324F;--accent:#8DA2FF;--accent-soft:#1F2A55;--on-accent:#0D1324;--ok:#5ED19A;--ok-soft:#14352A;--warn:#F2B552;--warn-soft:#3A2B10;--gap:#FF8A80;--gap-soft:#3F1D1B;--grid:#1B2540;--margin:#6E3A3A;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0D1324;--surface:#151D33;--ink:#E7EBF7;--muted:#9AA6C2;--line:#27324F;--accent:#8DA2FF;--accent-soft:#1F2A55;--on-accent:#0D1324;--ok:#5ED19A;--ok-soft:#14352A;--warn:#F2B552;--warn-soft:#3A2B10;--gap:#FF8A80;--gap-soft:#3F1D1B;--grid:#1B2540;--margin:#6E3A3A;color-scheme:dark}
+
+*{box-sizing:border-box}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{font-family:var(--f-body);font-size:16px;line-height:1.6;background:var(--bg);color:var(--ink);
+  padding-block:0;padding-inline:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+.page{min-height:100%}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,h4,p,ol,ul{margin:0}
+.band{padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
+.inner{max-width:1080px;margin-inline:auto;position:relative}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
+  padding-top:10px;padding-bottom:10px}
+.nav .inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 24px}
+.brand{font-family:var(--f-display);font-size:1.05rem}
+.nav ul{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:4px 18px}
+.nav a{color:var(--ink);text-decoration:none;font-size:.92rem;padding:4px 0;border-bottom:2px solid transparent}
+.nav a:hover{border-bottom-color:var(--accent)}
+
+/* hero: school grid notebook */
+.hero{padding-top:52px;padding-bottom:40px;border-bottom:1px solid var(--line);overflow:hidden;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;background-position:0 -1px}
+.hero .inner::before{content:"";position:absolute;top:-52px;bottom:-40px;inset-inline-start:-12px;width:2px;background:var(--margin)}
+.kicker{font-size:.88rem;color:var(--muted);letter-spacing:.02em;margin-bottom:10px}
+.hero h1{font-family:var(--f-display);font-weight:400;font-size:clamp(2.1rem,6.4vw,3.6rem);line-height:1.1;text-wrap:balance;margin-bottom:14px}
+.hero .lede{max-width:56ch;color:var(--muted);font-size:1.05rem;margin-bottom:26px}
+.strip-head{margin-bottom:8px}
+.strip{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));gap:4px}
+.cell{display:block;height:30px;border-radius:4px;border:1.5px solid var(--warn);background:var(--warn-soft)}
+.cell.ok{background:var(--ok);border-color:var(--ok)}
+.cell:hover{outline:2px solid var(--ink);outline-offset:1px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:10px;font-size:.88rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-inline-end:7px;vertical-align:-1px;border:1.5px solid var(--warn);background:var(--warn-soft)}
+.legend .l-ok::before{background:var(--ok);border-color:var(--ok)}
+.updated{margin-top:18px;font-size:.85rem;color:var(--muted)}
+
+/* sections */
+.sec{padding-top:56px;padding-bottom:60px;scroll-margin-top:60px}
+.sec.alt{background:var(--surface);border-block:1px solid var(--line)}
+.sec h2{font-family:var(--f-display);font-weight:400;font-size:clamp(1.6rem,4.2vw,2.3rem);line-height:1.2;text-wrap:balance;margin-bottom:8px}
+.lede{color:var(--muted);max-width:64ch;margin-bottom:26px}
+
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:12px 28px;margin-bottom:14px}
+.fgroup{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.flabel{font-size:.85rem;color:var(--muted);margin-inline-end:2px}
+.chip{font:inherit;font-size:.9rem;padding:5px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.result{font-size:.88rem;color:var(--muted);margin-bottom:6px}
+#empty{padding:22px 0;color:var(--muted)}
+
+/* module rows */
+.list{border-top:1px solid var(--line)}
+.mod{border-bottom:1px solid var(--line)}
+.mod summary{list-style:none;cursor:pointer;display:grid;align-items:center;gap:8px 14px;padding:14px 4px;
+  grid-template-columns:86px minmax(0,1fr) auto auto 14px}
+.mod summary::-webkit-details-marker{display:none}
+.mod summary:hover{background:var(--accent-soft)}
+.st{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.8rem;padding:2px 10px;border-radius:999px;white-space:nowrap}
+.st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st-ready{background:var(--ok-soft);color:var(--ok)}
+.st-refine{background:var(--warn-soft);color:var(--warn)}
+.nm{min-width:0}
+.name{font-weight:600}
+.cnt{font-size:.85rem;color:var(--muted);margin-inline-start:6px}
+.meta{font-size:.88rem;color:var(--muted);white-space:nowrap}
+.copy{font:inherit;font-size:.82rem;padding:4px 11px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--accent);cursor:pointer;white-space:nowrap}
+.copy:hover{border-color:var(--accent)}
+.chev{width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);justify-self:center;margin-top:-3px}
+.mod[open] .chev{transform:rotate(-135deg);margin-top:3px}
+.mod-body{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px 44px;padding:6px 4px 24px}
+.mod-body h4{font-size:.82rem;font-weight:500;color:var(--muted);margin-bottom:8px}
+.subs{padding-inline-start:1.5em}
+.subs li{padding:2px 0}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.note{color:var(--muted)}
+.alert{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:.92rem}
+.cmd{font-family:var(--f-mono);font-size:.8rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px;overflow-x:auto;white-space:nowrap;text-align:left}
+.tag{display:inline-block;font-size:.72rem;line-height:1.5;padding:0 8px;border-radius:999px;margin-inline-start:6px;vertical-align:middle;white-space:nowrap}
+.tag-check{background:var(--warn-soft);color:var(--warn)}
+.tag-extra{background:var(--accent-soft);color:var(--accent)}
+.tag-later{background:var(--line);color:var(--muted)}
+.tag-gap{background:var(--gap-soft);color:var(--gap)}
+.tag-next{background:var(--accent);color:var(--on-accent)}
+
+/* principles */
+.prs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px 36px}
+.pr h4{font-size:1rem;margin-bottom:4px}
+.pr p{color:var(--muted);font-size:.95rem}
+
+/* coverage chart */
+.cover{margin-bottom:12px;max-width:760px}
+.cover h3{font-size:1.05rem;margin-bottom:12px}
+.bars{list-style:none;padding:0}
+.bars li{display:grid;grid-template-columns:minmax(110px,210px) minmax(0,1fr) 84px;gap:14px;align-items:center;margin-bottom:10px}
+.bl{font-size:.92rem}
+.track{height:16px;background:var(--line);border-radius:4px;display:block;overflow:hidden}
+.track.empty{background:transparent;border:1.5px dashed var(--gap)}
+.fill{display:block;height:100%;background:var(--accent);border-start-end-radius:4px;border-end-end-radius:4px}
+.bv{font-size:.88rem;color:var(--muted);white-space:nowrap}
+.bv.gapv{color:var(--gap);font-weight:600}
+.callout{border:1px solid var(--line);border-inline-start:4px solid var(--warn);border-radius:8px;padding:12px 16px;margin:26px 0 4px;max-width:78ch;background:var(--bg)}
+.callout strong{display:block;margin-bottom:2px}
+
+/* gaps */
+.group{margin-top:38px}
+.group h3{font-size:1.1rem;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.gcount{font-size:.8rem;background:var(--line);color:var(--muted);border-radius:999px;padding:0 9px}
+.gap-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.3fr);gap:8px 36px;padding:16px 0;border-top:1px solid var(--line)}
+.gh{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px 0}
+.gh h4{font-size:1rem}
+.gh .tag{margin-inline-start:8px;margin-top:3px}
+.gb p{margin-bottom:6px}
+.gb .proj{color:var(--ink)}
+.src{font-size:.88rem;color:var(--muted)}
+
+/* now */
+.now-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:36px 56px}
+.col{display:flex;flex-direction:column;gap:30px;min-width:0}
+.panel{border-top:2px solid var(--ink);padding-top:14px}
+.panel h3{font-family:var(--f-display);font-weight:400;font-size:1.3rem;margin-bottom:6px}
+.panel>p{color:var(--muted);margin-bottom:12px}
+.queue{padding-inline-start:2.3em}
+.queue li{padding:7px 8px;border-bottom:1px dashed var(--line)}
+.queue li::marker{color:var(--muted);font-variant-numeric:tabular-nums}
+.queue li.first{background:var(--accent-soft);border-radius:8px;border-bottom:0;margin-bottom:6px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.queue li.first .copy{margin-inline-start:auto}
+.qn{font-weight:500}
+.qg{font-size:.82rem;color:var(--muted);font-weight:400;margin-inline-start:6px}
+.open-list,.plain-ol{padding-inline-start:1.5em}
+.open-list li,.plain-ol li{padding:4px 0}
+.open-list b{font-weight:600}
+.small{font-size:.88rem;color:var(--muted);margin-top:10px}
+
+.foot{padding-top:28px;padding-bottom:calc(36px + env(safe-area-inset-bottom,0px));font-size:.85rem;color:var(--muted);border-top:1px solid var(--line)}
+
+@media (max-width:820px){
+  .now-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:700px){
+  .mod summary{grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"nm nm chev" "st meta copy"}
+  .mod summary .nm{grid-area:nm}
+  .mod summary .chev{grid-area:chev}
+  .mod summary .st{grid-area:st}
+  .mod summary .meta{grid-area:meta;white-space:normal}
+  .mod summary .copy{grid-area:copy}
+  .mod-body{grid-template-columns:minmax(0,1fr)}
+  .gap-row{grid-template-columns:minmax(0,1fr)}
+  .bars li{grid-template-columns:minmax(96px,128px) minmax(0,1fr) 70px;gap:10px}
+  .sec{padding-top:44px;padding-bottom:48px}
+  .hero{padding-top:40px}
+  .cell{height:26px}
+}
+</style>
+
+<div class="page" dir="rtl" lang="he">
+
+<header class="nav band">
+  <div class="inner">
+    <span class="brand">פרויקט מתמטיקה חט״ב</span>
+    <nav aria-label="ניווט בעמוד"><ul>
+      <li><a href="#modules">המודולים</a></li>
+      <li><a href="#gaps">מה חסר</a></li>
+      <li><a href="#now">עכשיו</a></li>
+      <li><a href="#principles">איך זה בנוי</a></li>
+    </ul></nav>
+  </div>
+</header>
+
+<section class="hero band" aria-labelledby="t">
+  <div class="inner">
+    <p class="kicker">פרויקט תרגול לכיתות ז׳ עד ט׳</p>
+    <h1 id="t">פרויקט מתמטיקה חט״ב</h1>
+    <p class="lede">18 מודולי תרגול אינטראקטיביים שנבנו ב-Claude Code. בכל שלב התלמיד פותר בעצמו, והמודול מאשר או דוחה, בלי להציג את התשובה.</p>
+    <p class="strip-head"><strong>5 מתוך 18</strong> מודולים עברו ליטוש סופי. נשארו 13.</p>
+    <div class="strip" role="group" aria-label="מצב הליטוש של כל מודול"><a class="cell ok" href="#m-equation-solver" title="פתרון משוואה בנעלם אחד, מוכן" aria-label="פתרון משוואה בנעלם אחד, מוכן"></a><a class="cell ok" href="#m-angles-parallel" title="זוויות וישרים מקבילים, מוכן" aria-label="זוויות וישרים מקבילים, מוכן"></a><a class="cell ok" href="#m-directed-numbers" title="מספרים מכוונים, מוכן" aria-label="מספרים מכוונים, מוכן"></a><a class="cell ok" href="#m-linear-function" title="פונקציה קווית, מוכן" aria-label="פונקציה קווית, מוכן"></a><a class="cell ok" href="#m-ratio-percent" title="יחס, פרופורציה ואחוזים, מוכן" aria-label="יחס, פרופורציה ואחוזים, מוכן"></a><a class="cell wip" href="#m-triangles" title="משולשים, בתהליך" aria-label="משולשים, בתהליך"></a><a class="cell wip" href="#m-quadrilaterals" title="מרובעים, בתהליך" aria-label="מרובעים, בתהליך"></a><a class="cell wip" href="#m-equations-advanced" title="משוואות מתקדמות, בתהליך" aria-label="משוואות מתקדמות, בתהליך"></a><a class="cell wip" href="#m-inequalities" title="אי-שוויונות, בתהליך" aria-label="אי-שוויונות, בתהליך"></a><a class="cell wip" href="#m-parabola-practice" title="פונקציה ריבועית (פרבולה), בתהליך" aria-label="פונקציה ריבועית (פרבולה), בתהליך"></a><a class="cell wip" href="#m-circle" title="מעגל, בתהליך" aria-label="מעגל, בתהליך"></a><a class="cell wip" href="#m-pythagoras" title="משפט פיתגורס, בתהליך" aria-label="משפט פיתגורס, בתהליך"></a><a class="cell wip" href="#m-similar-triangles" title="דמיון משולשים, בתהליך" aria-label="דמיון משולשים, בתהליך"></a><a class="cell wip" href="#m-powers-roots" title="חזקות ושורשים, בתהליך" aria-label="חזקות ושורשים, בתהליך"></a><a class="cell wip" href="#m-quadratic-solver" title="פתרון משוואה ריבועית, בתהליך" aria-label="פתרון משוואה ריבועית, בתהליך"></a><a class="cell wip" href="#m-systems" title="מערכת משוואות, בתהליך" aria-label="מערכת משוואות, בתהליך"></a><a class="cell wip" href="#m-intersection" title="חיתוך בין פונקציות, בתהליך" aria-label="חיתוך בין פונקציות, בתהליך"></a><a class="cell wip" href="#m-solids3d" title="גיאומטריה מרחבית, בתהליך" aria-label="גיאומטריה מרחבית, בתהליך"></a></div>
+    <div class="legend"><span class="l-ok">מוכן (5)</span><span>בתהליך (13)</span></div>
+    <p class="updated">עודכן ב-22.10.2026</p>
+  </div>
+</section>
+
+<section class="sec band" id="modules" aria-labelledby="h-modules">
+  <div class="inner">
+    <h2 id="h-modules">המודולים</h2>
+    <p class="lede">לפי כיתות, בסדר הליטוש שקבענו. לחיצה על שורה פותחת את תתי-הפרקים. הכפתור "העתק פקודה" מעתיק את הפקודה שפותחת את הקובץ בטרמינל.</p>
+
+    <div class="filters" role="group" aria-label="סינון מודולים">
+      <div class="fgroup"><span class="flabel">כיתה</span><button class="chip" type="button" data-group="grade" data-value="all" aria-pressed="true">הכל</button><button class="chip" type="button" data-group="grade" data-value="7" aria-pressed="false">ז׳</button><button class="chip" type="button" data-group="grade" data-value="8" aria-pressed="false">ח׳</button><button class="chip" type="button" data-group="grade" data-value="9" aria-pressed="false">ט׳</button></div>
+      <div class="fgroup"><span class="flabel">תחום</span><button class="chip" type="button" data-group="domain" data-value="all" aria-pressed="true">הכל</button><button class="chip" type="button" data-group="domain" data-value="algebra" aria-pressed="false">אלגברה</button><button class="chip" type="button" data-group="domain" data-value="geometry" aria-pressed="false">גיאומטריה</button><button class="chip" type="button" data-group="domain" data-value="numeric" aria-pressed="false">תחום מספרי</button></div>
+      <div class="fgroup"><span class="flabel">סטטוס</span><button class="chip" type="button" data-group="status" data-value="all" aria-pressed="true">הכל</button><button class="chip" type="button" data-group="status" data-value="ready" aria-pressed="false">מוכן</button><button class="chip" type="button" data-group="status" data-value="refine" aria-pressed="false">בתהליך</button></div>
+    </div>
+    <p class="result" id="count" aria-live="polite">מוצגים 18 מתוך 18</p>
+    <div class="list"><details class="mod" id="m-equation-solver" data-lo="7" data-hi="7" data-domain="algebra" data-status="ready"><summary><span class="st st-ready">מוכן</span><span class="nm"><span class="name">פתרון משוואה בנעלם אחד</span> <span class="cnt">4 פעולות</span></span><span class="meta">כיתה ז׳ · אלגברה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/equation-solver.html" aria-label="העתק פקודה לפתיחת פתרון משוואה בנעלם אחד">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>פעולות</h4><ol class="subs"><li>העברת איבר מצד לצד עם החלפת סימן</li><li>כפל המשוואה במספר</li><li>חילוק המשוואה במספר</li><li>פישוט צד (איחוד איברים דומים)</li></ol></div><div class="side"><p class="note">התלמיד מקבל משוואה ומגיע ל-x = מספר בעצמו, שלב אחר שלב, עם היסטוריית פתרון.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/equation-solver.html</code></div></div></div></div></details><details class="mod" id="m-angles-parallel" data-lo="7" data-hi="7" data-domain="geometry" data-status="ready"><summary><span class="st st-ready">מוכן</span><span class="nm"><span class="name">זוויות וישרים מקבילים</span> <span class="cnt">5 תתי-פרקים</span></span><span class="meta">כיתה ז׳ · גיאומטריה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/angles-parallel.html" aria-label="העתק פקודה לפתיחת זוויות וישרים מקבילים">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>זוויות צמודות וקודקודיות</li><li>זוויות מתאימות, מתחלפות וחד-צדדיות</li><li>הוכחה שישרים מקבילים</li><li>משולש וזוויות, כולל זווית חיצונית</li><li>תרגילים משולבים</li></ol></div><div class="side"><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/angles-parallel.html</code></div></div></div></div></details><details class="mod" id="m-directed-numbers" data-lo="7" data-hi="7" data-domain="numeric" data-status="ready"><summary><span class="st st-ready">מוכן</span><span class="nm"><span class="name">מספרים מכוונים</span> <span class="cnt">4 תתי-פרקים</span></span><span class="meta">כיתה ז׳ · תחום מספרי</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/directed-numbers.html" aria-label="העתק פקודה לפתיחת מספרים מכוונים">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>חיבור על ציר המספרים</li><li>חיסור, בהמרה לחיבור הנגדי</li><li>כפל, כקפיצות על הציר</li><li>חילוק</li></ol></div><div class="side"><p class="note">כל הפעולות מוצגות על ציר מספרים ויזואלי.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/directed-numbers.html</code></div></div></div></div></details><details class="mod" id="m-linear-function" data-lo="7" data-hi="9" data-domain="algebra" data-status="ready"><summary><span class="st st-ready">מוכן</span><span class="nm"><span class="name">פונקציה קווית</span> <span class="cnt">6 תתי-פרקים</span></span><span class="meta">כיתות ז׳–ט׳ · אלגברה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/linear-function.html" aria-label="העתק פקודה לפתיחת פונקציה קווית">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>קריאת נקודות מגרף</li><li>סימון נקודות על מערכת צירים</li><li>חישוב שיפוע מזוג נקודות</li><li>מציאת שיפוע מגרף של ישר</li><li>שרטוט ישר לפי שיפוע ונקודה</li><li>שרטוט ישר דרך שתי נקודות</li></ol></div><div class="side"><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/linear-function.html</code></div></div></div></div></details><details class="mod" id="m-ratio-percent" data-lo="7" data-hi="8" data-domain="numeric" data-status="ready"><summary><span class="st st-ready">מוכן</span><span class="nm"><span class="name">יחס, פרופורציה ואחוזים</span> <span class="cnt">5 תתי-פרקים</span></span><span class="meta">כיתות ז׳–ח׳ · תחום מספרי</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/ratio-percent.html" aria-label="העתק פקודה לפתיחת יחס, פרופורציה ואחוזים">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>יחס</li><li>פרופורציה</li><li>המרה בין שבר, עשרוני ואחוז</li><li>חישובי אחוזים</li><li>עלייה וירידה באחוזים</li></ol></div><div class="side"><p class="note">המחשה במגוון אובייקטים: עוגה, כוס מים, פיצה, סרגל, כסף.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/ratio-percent.html</code></div></div></div></div></details><details class="mod" id="m-triangles" data-lo="7" data-hi="8" data-domain="geometry" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">משולשים</span> <span class="cnt">5 תתי-פרקים</span></span><span class="meta">כיתות ז׳–ח׳ · גיאומטריה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/triangles.html" aria-label="העתק פקודה לפתיחת משולשים">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>סכום זוויות משולש וזווית חיצונית</li><li>משולש שווה שוקיים</li><li>חפיפת משולשים</li><li>סוגי משולשים</li><li>תרגילים משולבים</li></ol></div><div class="side"><p class="note">בלי הוכחות. ציורים אינטראקטיביים.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/triangles.html</code></div></div></div></div></details><details class="mod" id="m-quadrilaterals" data-lo="7" data-hi="8" data-domain="geometry" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">מרובעים</span> <span class="cnt">6 תתי-פרקים</span></span><span class="meta">כיתות ז׳–ח׳ · גיאומטריה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/quadrilaterals.html" aria-label="העתק פקודה לפתיחת מרובעים">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>ריבוע</li><li>מלבן</li><li>מעוין</li><li>מקבילית</li><li>טרפז (כללי, שווה שוקיים, ישר זווית)</li><li>דלתון</li></ol></div><div class="side"><p class="note">בכל תת-פרק מוצגות התכונות, ואחר כך ארבעה סוגי שאלות: זווית, שטח, היקף וצלע חסרה.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/quadrilaterals.html</code></div></div></div></div></details><details class="mod" id="m-equations-advanced" data-lo="8" data-hi="9" data-domain="algebra" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">משוואות מתקדמות</span> <span class="cnt">5 תתי-פרקים</span></span><span class="meta">כיתות ח׳–ט׳ · אלגברה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/equations-advanced.html" aria-label="העתק פקודה לפתיחת משוואות מתקדמות">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>נעלם במכנה, משוואה לינארית</li><li>נעלם במכנה, משוואה ריבועית</li><li>נוסחאות כפל מקוצר</li><li>גורם משותף</li><li>הכל יחד <span class="tag tag-check">לא אושר שנבנה</span></li></ol></div><div class="side"><p class="note">שברים מוצגים אנכית. תת-פרק 5: הפרומפט נכתב, ולא אושר שנבנה.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/equations-advanced.html</code></div></div></div></div></details><details class="mod" id="m-inequalities" data-lo="8" data-hi="9" data-domain="algebra" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">אי-שוויונות</span> <span class="cnt">3 תתי-פרקים</span></span><span class="meta">כיתות ח׳–ט׳ · אלגברה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/inequalities.html" aria-label="העתק פקודה לפתיחת אי-שוויונות">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>אי-שוויון פשוט והצגה על ציר</li><li>קריאת תחום מציר המספרים</li><li>מערכת אי-שוויונות</li></ol></div><div class="side"><p class="note">בלי היפוך סימן (כפל וחילוק במספר שלילי) בשלב זה.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/inequalities.html</code></div></div></div></div></details><details class="mod" id="m-parabola-practice" data-lo="8" data-hi="9" data-domain="algebra" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">פונקציה ריבועית (פרבולה)</span> <span class="cnt">10 תתי-פרקים</span></span><span class="meta">כיתות ח׳–ט׳ · אלגברה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/parabola-practice.html" aria-label="העתק פקודה לפתיחת פונקציה ריבועית (פרבולה)">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>השפעת המקדמים a, b, c על הגרף</li><li>ציר הסימטריה</li><li>קודקוד מתוך גרף</li><li>קודקוד מתוך משוואה (x = −b / 2a)</li><li>שרטוט לפי קודקוד ונקודה נוספת</li><li>חיתוך עם ציר y ושרטוט</li><li>חיתוך עם ציר x (שורשים)</li><li>תחומי עלייה וירידה</li><li>תחומי חיוביות ושליליות</li><li>חקירה מלאה של פונקציה ריבועית</li></ol></div><div class="side"><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/parabola-practice.html</code></div></div></div></div></details><details class="mod" id="m-circle" data-lo="8" data-hi="8" data-domain="geometry" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">מעגל</span> <span class="cnt">6 תתי-פרקים</span></span><span class="meta">כיתה ח׳ · גיאומטריה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/circle.html" aria-label="העתק פקודה לפתיחת מעגל">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>היכרות עם המעגל</li><li>היקף המעגל</li><li>שטח המעגל</li><li>קשת וגזרה</li><li>תרגילים משולבים</li><li>רדיאנים <span class="tag tag-extra">אקסטרה</span></li></ol></div><div class="side"><p class="note">רדיאנים אינם חלק מתכנית חט״ב, ולכן נוספו כפרק אקסטרה.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/circle.html</code></div></div></div></div></details><details class="mod" id="m-pythagoras" data-lo="8" data-hi="9" data-domain="geometry" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">משפט פיתגורס</span> <span class="cnt">2 תתי-פרקים</span></span><span class="meta">כיתות ח׳–ט׳ · גיאומטריה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/pythagoras.html" aria-label="העתק פקודה לפתיחת משפט פיתגורס">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>מציאת צלע חסרה במשולש ישר זווית</li><li>יישום במרובעים: ריבוע, מלבן וטרפז ישר זווית</li></ol></div><div class="side"><p class="note">התלמיד מזהה את היתר, כותב משוואה, מציב, פותר בגרירה ומוציא שורש. התשובות לא חייבות להיות שלמות.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/pythagoras.html</code></div></div></div></div></details><details class="mod" id="m-similar-triangles" data-lo="8" data-hi="9" data-domain="geometry" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">דמיון משולשים</span> <span class="cnt">4 תתי-פרקים</span></span><span class="meta">כיתות ח׳–ט׳ · גיאומטריה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/similar-triangles.html" aria-label="העתק פקודה לפתיחת דמיון משולשים">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>זיהוי דמיון (שתי זוויות שוות, או שני זוגות צלעות פרופורציונליות)</li><li>יחס דמיון ומציאת צלע חסרה</li><li>משולשים דומים בתוך צורות</li><li>תרגילים משולבים <span class="tag tag-later">נדחה</span></li></ol></div><div class="side"><p class="note">תת-פרק 4 נדחה, וההוכחות נדחו.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/similar-triangles.html</code></div></div></div></div></details><details class="mod" id="m-powers-roots" data-lo="8" data-hi="9" data-domain="numeric" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">חזקות ושורשים</span> <span class="cnt">5 תתי-פרקים</span></span><span class="meta">כיתות ח׳–ט׳ · תחום מספרי</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/powers-roots.html" aria-label="העתק פקודה לפתיחת חזקות ושורשים">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>הבנת חזקות (ויזואלי)</li><li>חוקי חזקות, מספרי</li><li>חוקי חזקות, פרמטרי</li><li>שורשים ריבועיים</li><li>הכל יחד</li></ol></div><div class="side"><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/powers-roots.html</code></div></div></div></div></details><details class="mod" id="m-quadratic-solver" data-lo="9" data-hi="9" data-domain="algebra" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">פתרון משוואה ריבועית</span> <span class="cnt">3 שלבים</span></span><span class="meta">כיתה ט׳ · אלגברה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/quadratic-solver.html" aria-label="העתק פקודה לפתיחת פתרון משוואה ריבועית">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>שלבים</h4><ol class="subs"><li>סידור המשוואה לצורה ax² + bx + c = 0</li><li>זיהוי המקדמים a, b, c</li><li>נוסחת השורשים: הצבה, דיסקרימיננטה ושני פתרונות</li></ol></div><div class="side"><p class="note">מקרים מיוחדים: דיסקרימיננטה שלילית, דיסקרימיננטה אפס, a = 0.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/quadratic-solver.html</code></div></div></div></div></details><details class="mod" id="m-systems" data-lo="9" data-hi="9" data-domain="algebra" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">מערכת משוואות</span> <span class="cnt">3 רמות</span></span><span class="meta">כיתה ט׳ · אלגברה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/systems.html" aria-label="העתק פקודה לפתיחת מערכת משוואות">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>רמות</h4><ol class="subs"><li>קל: מקדמים קטנים, ובסוף משוואה לינארית</li><li>בינוני: נדרש כפל לפני חיבור או חיסור</li><li>קשה: כפל של שתי המשוואות, חילוק משוואות, ואפשר משוואה ריבועית</li></ol></div><div class="side"><p class="note">בכל רמה: פעולה על משוואה אחת, פעולה על שתי המשוואות, סידור בגרירה, ופתרון והצבה למציאת הנעלם השני.</p><p class="alert">נבדק: הקובץ לא נמצא בתיקיית mathproject ולא בגיטהאב. צריך לאתר אותו או לבנות אותו מחדש.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/systems.html</code></div></div></div></div></details><details class="mod" id="m-intersection" data-lo="9" data-hi="9" data-domain="algebra" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">חיתוך בין פונקציות</span><span class="tag tag-extra">אקסטרה</span> <span class="cnt">2 תתי-פרקים</span></span><span class="meta">כיתה ט׳ · אלגברה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/intersection.html" aria-label="העתק פקודה לפתיחת חיתוך בין פונקציות">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>חיתוך בין שני ישרים</li><li>חיתוך בין ישר לפרבולה</li></ol></div><div class="side"><p class="note">הנושא נוסף כאקסטרה לסוף.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/intersection.html</code></div></div></div></div></details><details class="mod" id="m-solids3d" data-lo="9" data-hi="9" data-domain="geometry" data-status="refine"><summary><span class="st st-refine">בתהליך</span><span class="nm"><span class="name">גיאומטריה מרחבית</span> <span class="cnt">7 תתי-פרקים</span></span><span class="meta">כיתה ט׳ · גיאומטריה</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/solids3d.html" aria-label="העתק פקודה לפתיחת גיאומטריה מרחבית">העתק פקודה</button><span class="chev" aria-hidden="true"></span></summary><div class="mod-body"><div><h4>תתי-פרקים</h4><ol class="subs"><li>קובייה</li><li>תיבה</li><li>גליל</li><li>קונוס</li><li>פירמידה</li><li>כדור</li><li>שאלות משולבות</li></ol></div><div class="side"><p class="note">רמה מוגברת: נפח, שטח פנים, אלכסון מרחבי, וגוף בתוך גוף.</p><div><h4>פקודה לטרמינל</h4><div class="cmd" dir="ltr"><code>open /Users/slimanabutaleb/Desktop/mathproject/solids3d.html</code></div></div></div></div></details></div>
+    <p id="empty" hidden>אין מודולים שמתאימים לסינון הזה.</p>
+  </div>
+</section>
+
+<section class="sec alt band" id="gaps" aria-labelledby="h-gaps">
+  <div class="inner">
+    <h2 id="h-gaps">מה חסר, ומאיפה זה בא</h2>
+    <p class="lede">השוואה בין מה שבנינו לבין מה שמופיע במסמכי הפיקוח על הוראת המתמטיקה באתר משרד החינוך. כל שורה מצביעה על המסמך שממנו היא נלקחה.</p>
+
+    <div class="cover">
+      <h3>מודולים לפי תחום</h3>
+      <ul class="bars" aria-label="מספר המודולים בכל תחום"><li><span class="bl">אלגברה</span><span class="track"><span class="fill" style="width:100.0%"></span></span><span class="bv">8 מודולים</span></li><li><span class="bl">גיאומטריה</span><span class="track"><span class="fill" style="width:87.5%"></span></span><span class="bv">7 מודולים</span></li><li><span class="bl">תחום מספרי</span><span class="track"><span class="fill" style="width:37.5%"></span></span><span class="bv">3 מודולים</span></li><li class="zero"><span class="bl">אי-ודאות: סטטיסטיקה והסתברות</span><span class="track empty"></span><span class="bv gapv">0, חסר</span></li></ul>
+    </div>
+
+    <div class="callout">
+      <strong>על המקורות</strong>
+      <p>תכנית הלימודים לחט״ב מתעדכנת, והגרסה המעודכנת נכנסת לתוקף בשנת תשפ״ז. לא הצלחתי לפתוח את הנוסח המלא של התכנית. הרשימה מבוססת על קטעים מפריסות הוראה ומסמכי עדכון, ולכן היא אינה סופית. כמה סעיפים נשענים על מסמך מ-2011, ואלה מסומנים "לבדוק".</p>
+    </div>
+
+    <div class="group"><h3>חסר לגמרי <span class="gcount">4</span></h3><article class="gap-row"><div class="gh"><h4>סטטיסטיקה</h4><span class="tag tag-gap">חסר</span></div><div class="gb"><p>בתכנית המעודכנת זה תחום נפרד, אי-ודאות, ולא חלק מהתחום המספרי. הדגש הוא על ניתוח, פירוש והסקה מנתונים. בפריסות מופיעים איסוף וארגון נתונים בטבלאות, ברשימות ובדיאגרמות.</p><p class="proj"><strong>בפרויקט:</strong> לא נבנה. הורדנו אותו מהתכנון בתחילת הדרך.</p><p class="src">מקורות: <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/curriculum/updating/curriculum_updating.pdf" target="_blank" rel="noopener noreferrer">עדכון תוכנית הלימודים לחט״ב</a> · <a href="https://pop.education.gov.il/maagal_hashana/summer-preparatory/mathematics-8/" target="_blank" rel="noopener noreferrer">חומרי קיץ לבוגרי כיתה ח׳</a> · <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/tashpaz/prisa_9B.pdf" target="_blank" rel="noopener noreferrer">פריסת הוראה כיתה ט׳ תשפ״ז</a></p></div></article><article class="gap-row"><div class="gh"><h4>הסתברות</h4><span class="tag tag-gap">חסר</span></div><div class="gb"><p>מופיעה בפריסה של כיתה ח׳ בשני חלקים (בסיס והמשך), ובפריסה של כיתה ז׳ בהקשר של שכיחות.</p><p class="proj"><strong>בפרויקט:</strong> לא נבנה. הורדנו אותה מהתכנון בתחילת הדרך.</p><p class="src">מקורות: <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/tashpaz/prisa_8.pdf" target="_blank" rel="noopener noreferrer">פריסת הוראה כיתה ח׳ תשפ״ז</a> · <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/tashpaz/prisa7_2026.pdf" target="_blank" rel="noopener noreferrer">פריסת הוראה כיתה ז׳ תשפ״ז</a></p></div></article><article class="gap-row"><div class="gh"><h4>שאלות מילוליות</h4><span class="tag tag-gap">חסר</span></div><div class="gb"><p>הפיקוח מדגיש לשלב שאלות מילוליות בהוראה, למשל במשוואות לינאריות, במערכות משוואות, באחוזים, בתנועה ובשטחים. בפריסה של כיתה ח׳ יש יחידה ייעודית לפתרון שאלות מילוליות.</p><p class="proj"><strong>בפרויקט:</strong> אין מודול ייעודי.</p><p class="src">מקורות: <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/tashpaz/prisa_8.pdf" target="_blank" rel="noopener noreferrer">פריסת הוראה כיתה ח׳ תשפ״ז</a> · <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativa-Elyona/tashpav/mafmar-tashpav.pdf" target="_blank" rel="noopener noreferrer">מפמ״ר תשפ״ו: עקרונות התוכנית</a> · <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/tashpav/amat.pdf" target="_blank" rel="noopener noreferrer">תוכנית ייעודית לעתודה מדעית-טכנולוגית</a></p></div></article><article class="gap-row"><div class="gh"><h4>אוריינות מתמטית וקריאת נתונים</h4><span class="tag tag-gap">חסר</span></div><div class="gb"><p>שאלות מהקשר יומיומי שבהן צריך לקרוא ולנתח נתונים המוצגים בדרכים שונות, כמו טבלאות ודיאגרמות. יש אוסף שאלות אוריינות לכיתה ט׳ ברמה רגילה.</p><p class="proj"><strong>בפרויקט:</strong> אין מודול. הנושא מתחבר לסטטיסטיקה.</p><p class="src">מקורות: <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/tashpaz/prisa_9B.pdf" target="_blank" rel="noopener noreferrer">פריסת הוראה כיתה ט׳ תשפ״ז</a> · <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/tashpah/orianut9A-3th.pdf" target="_blank" rel="noopener noreferrer">שאלות אוריינות לכיתה ט׳</a> · <a href="https://pop.education.gov.il/tchumey_daat/matmatika/chativat-beynayim/teaching-mathematics/question-files/" target="_blank" rel="noopener noreferrer">מקבצי שאלות לחט״ב</a></p></div></article></div><div class="group"><h3>נדחה בכוונה <span class="gcount">3</span></h3><article class="gap-row"><div class="gh"><h4>הוכחות גיאומטריות</h4><span class="tag tag-later">נדחה</span></div><div class="gb"><p>בחומרי המפמ״ר יש הצדקה של חפיפת משולשים, והתכנית המעודכנת מדגישה נימוק והצדקה.</p><p class="proj"><strong>בפרויקט:</strong> החלטנו להשאיר את שאלות ההוכחה לשלב מאוחר. המודולים של משולשים ושל דמיון נבנו בלי הוכחות.</p><p class="src">מקורות: <a href="https://pop.education.gov.il/maagal_hashana/summer-preparatory/mathematics-8/" target="_blank" rel="noopener noreferrer">חומרי קיץ לבוגרי כיתה ח׳</a> · <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/curriculum/updating/curriculum_updating.pdf" target="_blank" rel="noopener noreferrer">עדכון תוכנית הלימודים לחט״ב</a></p></div></article><article class="gap-row"><div class="gh"><h4>דמיון משולשים: תרגילים משולבים</h4><span class="tag tag-later">נדחה</span></div><div class="gb"><p>תת-פרק 4 שהוצא מהמודול: דמיון בשילוב פיתגורס ויחס שטחים. יחסי שטחים מופיעים בתוכנית הייעודית לעתודה מדעית-טכנולוגית.</p><p class="proj"><strong>בפרויקט:</strong> מחוץ למודול כרגע. ביקשת לשמור על בסיס פשוט.</p><p class="src">מקורות: <a href="https://meyda.education.gov.il/files/Pop/0files/matmatika/Chativat-Beynayim/tashpav/amat.pdf" target="_blank" rel="noopener noreferrer">תוכנית ייעודית לעתודה מדעית-טכנולוגית</a></p></div></article><article class="gap-row"><div class="gh"><h4>משוואות מתקדמות: הכל יחד</h4><span class="tag tag-later">נדחה</span></div><div class="gb"><p>שילוב של נעלם במכנה, כפל מקוצר וגורם משותף במשוואה אחת.</p><p class="proj"><strong>בפרויקט:</strong> הפרומפט נכתב. לא אושר שנבנה.</p><p class="src">מקור: החלטה בתוך הפרויקט, אין מקור חיצוני.</p></div></article></div><div class="group"><h3>לבדוק מול התכנית <span class="gcount">4</span></h3><article class="gap-row"><div class="gh"><h4>ביטויים אלגבריים וחוקיות</h4><span class="tag tag-check">לבדוק</span></div><div class="gb"><p>מופיעים ברשימת הנושאים של תכנית 2011. לא אימתתי מול התכנית המעודכנת.</p><p class="proj"><strong>בפרויקט:</strong> אין מודול ייעודי לפישוט ביטויים ולפתיחת סוגריים.</p><p class="src">מקורות: <a href="https://stwww1.weizmann.ac.il/math-rehovot/wp-content/uploads/sites/6/2016/09/principles-openning-gr1.-7-8-2011.pdf" target="_blank" rel="noopener noreferrer">עקרונות התכנית החדשה, 2011</a></p></div></article><article class="gap-row"><div class="gh"><h4>שברים ועשרוניים</h4><span class="tag tag-check">לבדוק</span></div><div class="gb"><p>לא מצאתי מקור ישיר לפעולות חשבון בשברים בתכנית. כדאי לבדוק מול התכנית לפני שמחליטים.</p><p class="proj"><strong>בפרויקט:</strong> יש המרה בין שבר, עשרוני ואחוז בתוך מודול האחוזים. אין פעולות חשבון בשברים.</p><p class="src">מקור: החלטה בתוך הפרויקט, אין מקור חיצוני.</p></div></article><article class="gap-row"><div class="gh"><h4>הזזות של פרבולה</h4><span class="tag tag-check">לבדוק</span></div><div class="gb"><p>מסמך התכנית ל-4 יח״ל מציין שטרנספורמציות של פונקציה ריבועית נלמדות כבר בחטיבת הביניים.</p><p class="proj"><strong>בפרויקט:</strong> לפי הפרומפט שכתבנו, מודול הפרבולה לא כולל צורת קודקוד כמו y = a(x−p)² + q.</p><p class="src">מקורות: <a href="https://meyda.education.gov.il/files/Mazkirut_Pedagogit/matematika/mat_4u.pdf" target="_blank" rel="noopener noreferrer">תכנית 4 יח״ל לכיתות י׳–יב׳</a></p></div></article><article class="gap-row"><div class="gh"><h4>שיטות ספירה וקבוצות</h4><span class="tag tag-check">לבדוק</span></div><div class="gb"><p>מופיעות ברשימת הנושאים של תכנית 2011. לא אימתתי אם נשארו בתכנית המעודכנת.</p><p class="proj"><strong>בפרויקט:</strong> אין מודול.</p><p class="src">מקורות: <a href="https://stwww1.weizmann.ac.il/math-rehovot/wp-content/uploads/sites/6/2016/09/principles-openning-gr1.-7-8-2011.pdf" target="_blank" rel="noopener noreferrer">עקרונות התכנית החדשה, 2011</a></p></div></article></div>
+  </div>
+</section>
+
+<section class="sec band" id="now" aria-labelledby="h-now">
+  <div class="inner">
+    <h2 id="h-now">מה עובדים עליו עכשיו</h2>
+    <p class="lede">אנחנו בשלב הליטוש: עוברים על המודולים אחד אחד, מתקנים ומחדדים. אחרי זה בונים את החסר, ובסוף הופכים הכול לאפליקציה אחת.</p>
+
+    <div class="now-grid">
+      <div class="col">
+        <div class="panel">
+          <h3>ליטוש, מודול אחרי מודול</h3>
+          <p>5 מודולים הסתיימו. התור הוא הסדר שקבענו לפי כיתות.</p>
+          <ol class="queue" start="6"><li class="first"><span class="qn">משולשים <span class="qg">כיתות ז׳–ח׳</span></span> <span class="tag tag-next">הבא בתור</span><button class="copy" type="button" data-cmd="open /Users/slimanabutaleb/Desktop/mathproject/triangles.html" aria-label="העתק פקודה לפתיחת משולשים">העתק פקודה</button></li><li><span class="qn">מרובעים <span class="qg">כיתות ז׳–ח׳</span></span></li><li><span class="qn">משוואות מתקדמות <span class="qg">כיתות ח׳–ט׳</span></span></li><li><span class="qn">אי-שוויונות <span class="qg">כיתות ח׳–ט׳</span></span></li><li><span class="qn">פונקציה ריבועית (פרבולה) <span class="qg">כיתות ח׳–ט׳</span></span></li><li><span class="qn">מעגל <span class="qg">כיתה ח׳</span></span></li><li><span class="qn">משפט פיתגורס <span class="qg">כיתות ח׳–ט׳</span></span></li><li><span class="qn">דמיון משולשים <span class="qg">כיתות ח׳–ט׳</span></span></li><li><span class="qn">חזקות ושורשים <span class="qg">כיתות ח׳–ט׳</span></span></li><li><span class="qn">פתרון משוואה ריבועית <span class="qg">כיתה ט׳</span></span></li><li><span class="qn">מערכת משוואות <span class="qg">כיתה ט׳</span></span></li><li><span class="qn">חיתוך בין פונקציות <span class="qg">כיתה ט׳</span></span></li><li><span class="qn">גיאומטריה מרחבית <span class="qg">כיתה ט׳</span></span></li></ol>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="panel">
+          <h3>פתוח לבירור</h3>
+          <ul class="open-list">
+            <li><b>systems.html</b> אינו בתיקיית mathproject ואינו בגיטהאב (17 מתוך 18 מודולים). צריך לאתר אותו או לבנות מחדש.</li>
+            <li><b>משוואות מתקדמות, תת-פרק 5</b>: הפרומפט נכתב, ולא אושר שנבנה.</li>
+            <li><b>דמיון משולשים, תת-פרק 4</b> נדחה בכוונה.</li>
+            <li><b>אתר חי</b>: הפרויקט עלה ל-Vercel מהריפו Suleiman26/MathProject. נשארה הגדרה של Deployment Protection כדי שיהיה פתוח לתלמידים.</li>
+          </ul>
+        </div>
+
+        <div class="panel">
+          <h3>הבא: למלא את מה שחסר</h3>
+          <ol class="plain-ol">
+            <li>שאלות מילוליות: משוואות, מערכות, אחוזים, תנועה</li>
+            <li>סטטיסטיקה והסתברות</li>
+            <li>הוכחות גיאומטריות</li>
+          </ol>
+          <p class="small">הסדר הוא הצעה, לא החלטה.</p>
+        </div>
+
+        <div class="panel">
+          <h3>אחר כך: אפליקציה אחת</h3>
+          <p>מסך אחד עם כל המודולים, שלבי התקדמות בסגנון משחק, והעלאה ל-App Store.</p>
+          <ol class="plain-ol">
+            <li>להתקין: Node.js, Xcode (כ-15GB), וחשבון Apple Developer (99$ לשנה). ההתקנה בתהליך, לפי מה שדווח.</li>
+            <li>לפתוח ב-Claude Code פרויקט Expo חדש</li>
+            <li>להעביר את המודולים למסכי React Native</li>
+            <li>לעצב שלבים והתקדמות כמו במשחק</li>
+            <li>לבנות בענן עם EAS Build ולהעלות</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec alt band" id="principles" aria-labelledby="h-pr">
+  <div class="inner">
+    <h2 id="h-pr">איך כל מודול בנוי</h2>
+    <p class="lede">עקרונות שחוזרים בכל המודולים, ושכדאי לשמור עליהם גם בחדשים.</p>
+    <div class="prs"><div class="pr"><h4>התלמיד פותר, המודול לא מראה תשובות</h4><p>בכל שלב מזינים תשובה ומקבלים ✓ או ✗. אין כפתור הצגת פתרון, ואפשר לנסות שוב.</p></div><div class="pr"><h4>מעבר לשלב הבא רק אחרי תשובה נכונה</h4><p>גם בתוך תרגיל: קודם הגורם המשותף, ורק אחר כך המשך הפתרון.</p></div><div class="pr"><h4>שברים מוצגים אנכית</h4><p>המונה מעל קו והמכנה מתחתיו, ולא בצורה a/b.</p></div><div class="pr"><h4>תרגילים אקראיים שנבנים מהפתרון אחורה</h4><p>כך התשובות יוצאות שלמות. היוצא מן הכלל הוא פיתגורס, שמקבל גם תשובות עשרוניות.</p></div><div class="pr"><h4>אין הוכחות פורמליות בשלב הזה</h4><p>חפיפה ודמיון נבנו בלי הוכחות. שאלות ההוכחה מחכות לשלב מאוחר.</p></div><div class="pr"><h4>קובץ HTML אחד לכל מודול</h4><p>React דרך CDN, בלי build. כל קובץ נפתח בדפדפן ישירות מהתיקייה.</p></div></div>
+  </div>
+</section>
+
+<footer class="foot band">
+  <div class="inner">הנתונים נלקחו משיחת העבודה. רשימת הקבצים נבדקה מול התיקייה ומול הריפו, ושאר התוכן לא נבדק מול הקבצים. עודכן ב-22.10.2026.</div>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var state={grade:'all',domain:'all',status:'all'};
+  var mods=[].slice.call(document.querySelectorAll('.mod'));
+  var countEl=document.getElementById('count');
+  var emptyEl=document.getElementById('empty');
+  var chips=[].slice.call(document.querySelectorAll('.chip'));
+
+  function apply(){
+    var shown=0;
+    mods.forEach(function(el){
+      var lo=+el.getAttribute('data-lo'), hi=+el.getAttribute('data-hi');
+      var ok=true;
+      if(state.grade!=='all'){var g=+state.grade; ok=ok&&(lo<=g&&g<=hi);}
+      if(state.domain!=='all'){ok=ok&&el.getAttribute('data-domain')===state.domain;}
+      if(state.status!=='all'){ok=ok&&el.getAttribute('data-status')===state.status;}
+      el.hidden=!ok;
+      if(ok)shown++;
+    });
+    countEl.textContent='מוצגים '+shown+' מתוך '+mods.length;
+    emptyEl.hidden=shown!==0;
+  }
+  function setChips(){
+    chips.forEach(function(b){
+      b.setAttribute('aria-pressed',String(state[b.getAttribute('data-group')]===b.getAttribute('data-value')));
+    });
+  }
+  chips.forEach(function(b){
+    b.addEventListener('click',function(){
+      state[b.getAttribute('data-group')]=b.getAttribute('data-value');
+      setChips();apply();
+    });
+  });
+  function resetFilters(){state={grade:'all',domain:'all',status:'all'};setChips();apply();}
+
+  function openFromHash(){
+    var id=location.hash.replace('#','');
+    if(!id||id.indexOf('m-')!==0)return;
+    var el=document.getElementById(id);
+    if(!el)return;
+    if(el.hidden)resetFilters();
+    el.open=true;
+  }
+  [].slice.call(document.querySelectorAll('.cell')).forEach(function(a){
+    a.addEventListener('click',function(){
+      var el=document.getElementById(a.getAttribute('href').slice(1));
+      if(el){ if(el.hidden)resetFilters(); el.open=true; }
+    });
+  });
+  window.addEventListener('hashchange',openFromHash);
+  openFromHash();
+
+  function fallbackCopy(text,btn){
+    var done=false;
+    try{
+      var ta=document.createElement('textarea');
+      ta.value=text;ta.setAttribute('readonly','');
+      ta.style.position='fixed';ta.style.opacity='0';
+      document.body.appendChild(ta);ta.select();
+      done=document.execCommand('copy');
+      document.body.removeChild(ta);
+    }catch(e){done=false;}
+    if(done){flash(btn,'הועתק');return;}
+    var det=btn.closest('.mod');
+    if(det){
+      det.open=true;
+      var code=det.querySelector('.cmd code');
+      if(code){var r=document.createRange();r.selectNodeContents(code);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
+    }
+    flash(btn,'סמן והעתק');
+  }
+  function flash(btn,text){
+    var old=btn.getAttribute('data-label')||btn.textContent;
+    btn.setAttribute('data-label',old);
+    btn.textContent=text;
+    clearTimeout(btn._t);
+    btn._t=setTimeout(function(){btn.textContent=old;},1700);
+  }
+  [].slice.call(document.querySelectorAll('.copy')).forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.preventDefault();e.stopPropagation();
+      var text=btn.getAttribute('data-cmd');
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){flash(btn,'הועתק');},function(){fallbackCopy(text,btn);});
+      }else{fallbackCopy(text,btn);}
+    });
+  });
+  apply();
+})();
+</script>
