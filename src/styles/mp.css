@@ -526,6 +526,27 @@ input::placeholder { color: var(--ink-3); font-weight: 400; opacity: 1; }
 :is(.g-left, .slv-left, .eqs-gl) > :is(.op-box, .eqs-box, .slv-opbox) {
   width: min(280px, 100%);
 }
+/* Each side of the equation stays on ONE line. The sides were locked to
+   half the width each, so a longer side wrapped ("4x +14" over "−4x").
+   Now each side takes the room it needs, and long sides get a bit smaller. */
+:is(.solve-grid, .slv-grid, .eqs-grid) {
+  grid-template-columns: auto auto auto; justify-content: center; column-gap: 4px;
+}
+:is(.side-zone, .slv-zone, .eqs-side) { flex-wrap: nowrap; }
+@media (max-width: 480px) {
+  :is(.side-zone, .slv-zone, .eqs-side) { padding-inline: 2px; gap: 0; }
+  :is(.solve-grid, .slv-grid, .eqs-grid) :is(.eq-sign, .slv-eqsign, .eqs-sign) { padding: 0 4px; }
+}
+@media (max-width: 640px) {
+/* both sides follow the longer side, so the equation looks even */
+:is(.solve-grid, .slv-grid, .eqs-grid):has(> :is(.side-zone, .slv-zone, .eqs-side) > :nth-child(3)) > :is(.side-zone, .slv-zone, .eqs-side) { zoom: .88; }
+:is(.solve-grid, .slv-grid, .eqs-grid):has(> :is(.side-zone, .slv-zone, .eqs-side) > :nth-child(4)) > :is(.side-zone, .slv-zone, .eqs-side) { zoom: .7; }
+:is(.solve-grid, .slv-grid, .eqs-grid):has(> :is(.side-zone, .slv-zone, .eqs-side) > :nth-child(5)) > :is(.side-zone, .slv-zone, .eqs-side) { zoom: .6; }
+}
+/* 6+ terms (only when "simplify" is skipped many times): wrap neatly instead of tiny text */
+:is(.solve-grid, .slv-grid, .eqs-grid):has(> * > :nth-child(6)) { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+:is(.side-zone, .slv-zone, .eqs-side):has(> :nth-child(6)) { flex-wrap: wrap; }
+
 :is(.g-left, .slv-left, .eqs-gl):has(> :is(.op-box, .eqs-box, .slv-opbox))::after {
   content: ""; display: block; width: min(240px, 78%); height: 18px; margin-top: 4px;
   /* two thin arrows: down-left and down-right */

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { mpData } from "@/lib/mp-data";
 import { iconSvg } from "@/lib/icons";
-import { HERO, GRADES, TOPICS } from "./catalog";
+import { HERO, GRADES, TOPICS, CATEGORIES } from "./catalog";
 
 const KEY = "mp:grade";
 const Go = () => (
@@ -34,7 +34,7 @@ function fromDb(d) {
 }
 
 export default function Home() {
-  const [data, setData] = useState({ grades: GRADES, sections: [{ id: "all", topics: TOPICS }] });
+  const [data, setData] = useState({ grades: GRADES, sections: CATEGORIES.map((c) => ({ ...c, topics: TOPICS.filter((t) => t.cat === c.id) })) });
   const [grade, setGrade] = useState("all");
 
   useEffect(() => {
