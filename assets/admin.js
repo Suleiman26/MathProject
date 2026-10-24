@@ -449,7 +449,7 @@
             : '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + Math.max(0, h - gap) + '" fill="' + p.color + '"/>';
         });
         s += "</g>";
-        if (i % every === 0 || i === n - 1) s += '<text class="ax" x="' + (x + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + esc(d.label) + "</text>";
+        if (i % every === 0 || (i === n - 1 && (n - 1) % every >= every * 0.6)) s += '<text class="ax" x="' + (x + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + esc(d.label) + "</text>";
         s += '<rect class="hit" data-i="' + i + '" x="' + (P.l + slot * i) + '" y="' + P.t + '" width="' + slot + '" height="' + ih + '"/>';
       });
       s += '<line x1="' + P.l + '" x2="' + (W - P.r) + '" y1="' + (P.t + ih) + '" y2="' + (P.t + ih) + '" stroke="var(--line-strong)"/>';
