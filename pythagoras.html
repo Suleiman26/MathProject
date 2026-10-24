@@ -1,13 +1,20 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-topic="indigo">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>משפט פיתגורס — כיתות ח׳-ט׳</title>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta name="theme-color" content="#f5f5f2">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone@8.0.7/babel.min.js"></script>
 <style>
+@layer mp-base, legacy, mp, page;
+@layer legacy {
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;min-height:100vh;}
 .hdr{background:linear-gradient(135deg,#4338ca,#6366f1);color:#fff;padding:14px 14px 12px;text-align:center;}
@@ -36,10 +43,20 @@ select:focus,input:focus{outline:none;border-color:#4338ca;}
 .drag:hover{background:#c7d2fe;transform:scale(1.08);}
 .banner{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;padding:20px;border-radius:12px;text-align:center;font-size:22px;font-weight:700;}
 @media(max-width:720px){.main{flex-direction:column;}.tri-box{position:static;flex:none;width:100%;}}
+}
 </style>
+<link rel="stylesheet" href="assets/mp.css?v=1">
+<style id="mp-page">
+@layer page {
+  /* the triangle panel stays visible below the top bar */
+  .tri-box { top: 72px; }
+}
+</style>
+<script src="assets/mp.js?v=1" defer></script>
+
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div class="mp-boot" aria-hidden="true"><span></span></div></div>
 <script type="text/babel">
 const {useState, useMemo} = React;
 

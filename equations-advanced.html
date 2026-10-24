@@ -1,13 +1,20 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-topic="indigo">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>משוואות מתקדמות — כיתות ח׳-ט׳</title>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta name="theme-color" content="#f5f5f2">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone@8.0.7/babel.min.js"></script>
 <style>
+@layer mp-base, legacy, mp, page;
+@layer legacy {
 * { box-sizing: border-box; }
 body {
   margin: 0; padding: 0;
@@ -105,10 +112,18 @@ body {
 .warn-box { background:#fff8e1; border:1.5px solid #ffca28; border-radius:9px; padding:10px 16px; font-size:14px; color:#6d4c41; margin-top:10px; direction:rtl; }
 .success-banner { background:#e8f5e9; border:1.5px solid #66bb6a; border-radius:9px; padding:12px 16px; font-size:16px; color:#2e7d32; font-weight:bold; text-align:center; margin-top:10px; direction:rtl; }
 .info-box { background:#e3f2fd; border:1.5px solid #90caf9; border-radius:9px; padding:10px 16px; font-size:14px; color:#1565c0; margin:10px 0; direction:rtl; }
+}
 </style>
+<link rel="stylesheet" href="assets/mp.css?v=1">
+<style id="mp-page">
+@layer page {
+}
+</style>
+<script src="assets/mp.js?v=1" defer></script>
+
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div class="mp-boot" aria-hidden="true"><span></span></div></div>
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 

@@ -1,34 +1,243 @@
 <!doctype html>
-<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="he" dir="rtl" data-mp-home>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>מתמטיקה חט״ב – תרגול</title>
+<meta name="theme-color" content="#f5f5f2">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/mp.css?v=1">
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f7fb;color:#1a2233}
-main{max-width:860px;margin:0 auto;padding:24px 16px}
-h1{margin:0 0 4px}p.s{margin:0 0 20px;color:#556}
-.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
-a{display:block;background:#fff;border:1px solid #dde3ee;border-radius:12px;padding:16px;text-decoration:none;color:inherit;font-weight:600}
-a:hover{border-color:#4a6cf7;box-shadow:0 2px 8px #4a6cf722}
-a small{display:block;font-weight:400;color:#667;margin-top:4px}
-@media(prefers-color-scheme:dark){body{background:#12151c;color:#e8ecf4}a{background:#1c212c;border-color:#2c3446}p.s,a small{color:#9aa4b8}}
-</style></head><body><main>
-<h1>מתמטיקה לחטיבת הביניים</h1><p class="s">בחרו נושא ותתחילו לתרגל – שלב אחר שלב.</p>
-<div class="g">
-<a href="equation-solver.html">משוואות<small>כיתה ז׳–ח׳</small></a>
-<a href="equations-advanced.html">משוואות מתקדמות<small>כיתה ח׳–ט׳</small></a>
-<a href="inequalities.html">אי־שוויונות<small>כיתה ח׳–ט׳</small></a>
-<a href="quadratic-solver.html">משוואות ריבועיות<small>כיתה ט׳</small></a>
-<a href="linear-function.html">פונקציה לינארית<small>כיתה ח׳–ט׳</small></a>
-<a href="parabola-practice.html">פרבולה<small>כיתה ט׳</small></a>
-<a href="intersection.html">נקודות חיתוך<small>כיתה ט׳</small></a>
-<a href="directed-numbers.html">מספרים מכוונים<small>כיתה ז׳</small></a>
-<a href="ratio-percent.html">יחס ואחוזים<small>כיתה ז׳</small></a>
-<a href="powers-roots.html">חזקות ושורשים<small>כיתה ח׳–ט׳</small></a>
-<a href="angles-parallel.html">זוויות ומקבילים<small>כיתה ז׳</small></a>
-<a href="triangles.html">משולשים<small>כיתה ז׳–ח׳</small></a>
-<a href="quadrilaterals.html">מרובעים<small>כיתה ח׳</small></a>
-<a href="pythagoras.html">פיתגורס<small>כיתה ח׳</small></a>
-<a href="similar-triangles.html">דמיון משולשים<small>כיתה ט׳</small></a>
-<a href="circle.html">מעגל<small>כיתה ט׳</small></a>
-<a href="solids3d.html">גופים<small>כיתה ז׳–ט׳</small></a>
-</div>
-<p style="margin-top:24px"><a href="project-hub.html">מצב הפרויקט: מה נעשה, מה חסר ומה בעבודה</a></p></main></body></html>
+@layer page {
+  body {
+    min-height: 100vh; margin: 0;
+    background:
+      radial-gradient(900px 420px at 50% -160px, rgb(20 184 166 / .16), transparent 70%) no-repeat,
+      var(--bg);
+  }
+  /* faint graph paper behind the title */
+  body::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 420px; z-index: -1; pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgb(28 27 25 / .05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(28 27 25 / .05) 1px, transparent 1px);
+    background-size: 28px 28px;
+    -webkit-mask-image: radial-gradient(70% 100% at 50% 0%, #000 0%, transparent 75%);
+            mask-image: radial-gradient(70% 100% at 50% 0%, #000 0%, transparent 75%);
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 56px 16px 64px; position: relative; }
+
+  .hero { text-align: center; margin-bottom: 28px; }
+  .mark {
+    width: 52px; height: 52px; margin: 0 auto 18px; display: block;
+    border-radius: 15px; box-shadow: var(--sh-3);
+    animation: mp-rise 420ms var(--ease-out) backwards;
+  }
+  h1 {
+    margin: 0 0 10px;
+    font-size: clamp(1.9rem, 1.3rem + 2.6vw, 2.9rem);
+    line-height: 1.1; font-weight: 700; letter-spacing: -.02em;
+    animation: mp-rise 420ms 40ms var(--ease-out) backwards;
+  }
+  p.s {
+    margin: 0; color: var(--ink-2); font-size: 1.08rem;
+    animation: mp-rise 420ms 80ms var(--ease-out) backwards;
+  }
+
+  /* grade filter */
+  .filters {
+    display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;
+    margin: 26px 0 26px;
+    animation: mp-rise 420ms 120ms var(--ease-out) backwards;
+  }
+  .filters { padding: 4px; border-radius: var(--r-pill); background: rgb(28 27 25 / .045); width: fit-content; margin-inline: auto; }
+  .filters button {
+    border: 0; background: transparent; color: var(--ink-2);
+    height: 36px; padding: 0 16px; border-radius: var(--r-pill);
+    font-size: .92rem; font-weight: 500;
+  }
+  .filters button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--sh-1), 0 0 0 1px rgb(28 27 25 / .06); }
+  @media (hover: hover) and (pointer: fine) { .filters button[aria-pressed="false"]:hover { color: var(--ink); } }
+
+  /* topic cards */
+  .g { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .topic {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px 14px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-1);
+    color: inherit; text-decoration: none;
+    transition: transform 200ms var(--ease-out), box-shadow 200ms ease, border-color 200ms ease;
+    animation: mp-rise 360ms var(--ease-out) backwards;
+    animation-delay: calc(var(--i, 0) * 28ms + 140ms);
+  }
+  .topic[hidden] { display: none; }
+  .ic {
+    flex: none; width: 46px; height: 46px; border-radius: 13px;
+    display: grid; place-items: center;
+    background: var(--a-50); color: var(--a-700);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-200) 60%, transparent);
+  }
+  .ic svg { width: 26px; height: 26px; overflow: visible; direction: ltr; unicode-bidi: isolate; }
+  .ic text { font-family: var(--font); font-weight: 600; fill: currentColor; }
+  .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .nm { font-weight: 600; font-size: 1.04rem; line-height: 1.25; }
+  .tx small { color: var(--ink-3); font-size: .85rem; font-weight: 400; }
+  .go { flex: none; width: 18px; height: 18px; color: var(--ink-3); transition: transform 200ms var(--ease-out), color 200ms ease; }
+  @media (hover: hover) and (pointer: fine) {
+    .topic:hover { transform: translateY(-2px); box-shadow: var(--sh-3); border-color: color-mix(in srgb, var(--a-300) 70%, var(--line)); }
+    .topic:hover .go { color: var(--a-700); transform: translateX(-3px); }
+  }
+  .topic:active { transform: scale(.98); transition-duration: 100ms; }
+  .topic:focus-visible { outline: 2px solid var(--a-500); outline-offset: 2px; }
+
+  .foot { margin-top: 40px; text-align: center; }
+  .foot a {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: var(--r-pill);
+    color: var(--ink-3); font-size: .88rem; text-decoration: none;
+    border: 1px dashed var(--line-strong);
+    transition: color 200ms ease, border-color 200ms ease, background-color 200ms ease;
+  }
+  @media (hover: hover) and (pointer: fine) { .foot a:hover { color: var(--ink); border-color: var(--ink-3); background: var(--surface); } }
+
+  @media (max-width: 640px) {
+    main { padding-top: 40px; }
+    .g { grid-template-columns: 1fr; gap: 10px; }
+  }
+}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#1c1b19"/><path d="M13 35l6-3 7 14 10-28h15" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="46" cy="40" r="5" fill="#14b8a6"/></svg>
+    <h1>מתמטיקה לחטיבת הביניים</h1><p class="s">בחרו נושא ותתחילו לתרגל – שלב אחר שלב.</p>
+  </header>
+
+  <nav class="filters" aria-label="סינון לפי כיתה">
+    <button type="button" data-g="all" aria-pressed="true">הכל</button>
+    <button type="button" data-g="7" aria-pressed="false">כיתה ז׳</button>
+    <button type="button" data-g="8" aria-pressed="false">כיתה ח׳</button>
+    <button type="button" data-g="9" aria-pressed="false">כיתה ט׳</button>
+  </nav>
+
+  <div class="g">
+    <a class="topic" style="--i:0" data-topic="teal" data-g="7 8" href="equation-solver.html">
+      <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="17" text-anchor="middle" font-size="15">x=</text></svg></span>
+      <span class="tx"><span class="nm">משוואות</span><small>כיתה ז׳–ח׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:1" data-topic="indigo" data-g="8 9" href="equations-advanced.html">
+      <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="10" text-anchor="middle" font-size="10">1</text><path d="M6 12.5h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><text x="12" y="22" text-anchor="middle" font-size="10">x</text></svg></span>
+      <span class="tx"><span class="nm">משוואות מתקדמות</span><small>כיתה ח׳–ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:2" data-topic="pink" data-g="8 9" href="inequalities.html">
+      <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="17" text-anchor="middle" font-size="15">x&lt;</text></svg></span>
+      <span class="tx"><span class="nm">אי־שוויונות</span><small>כיתה ח׳–ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:3" data-topic="blue" data-g="9" href="quadratic-solver.html">
+      <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="11" y="18" text-anchor="middle" font-size="16">x</text><text x="18" y="10" text-anchor="middle" font-size="9">2</text></svg></span>
+      <span class="tx"><span class="nm">משוואות ריבועיות</span><small>כיתה ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:4" data-topic="teal" data-g="8 9" href="linear-function.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V4M4 20h16" opacity=".45"/><path d="M6 17L19 6"/><circle cx="10" cy="13.6" r="1.6" fill="currentColor" stroke="none"/></svg></span>
+      <span class="tx"><span class="nm">פונקציה לינארית</span><small>כיתה ח׳–ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:5" data-topic="indigo" data-g="9" href="parabola-practice.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 20h18" opacity=".45"/><path d="M5 5c2 9 4.5 12 7 12s5-3 7-12"/><circle cx="12" cy="17" r="1.6" fill="currentColor" stroke="none"/></svg></span>
+      <span class="tx"><span class="nm">פרבולה</span><small>כיתה ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:6" data-topic="blue" data-g="9" href="intersection.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 18L20 6"/><path d="M4 7c3 8 6 11 9 10s5-5 7-9" opacity=".55"/><circle cx="14.2" cy="9.9" r="1.9" fill="currentColor" stroke="none"/></svg></span>
+      <span class="tx"><span class="nm">נקודות חיתוך</span><small>כיתה ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:7" data-topic="teal" data-g="7" href="directed-numbers.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 15h18"/><path d="M6 13v4M12 12v6M18 13v4" opacity=".55"/><text x="12" y="9" text-anchor="middle" font-size="9" stroke="none">±</text></svg></span>
+      <span class="tx"><span class="nm">מספרים מכוונים</span><small>כיתה ז׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:8" data-topic="teal" data-g="7" href="ratio-percent.html">
+      <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-size="16">%</text></svg></span>
+      <span class="tx"><span class="nm">יחס ואחוזים</span><small>כיתה ז׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:9" data-topic="violet" data-g="8 9" href="powers-roots.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l2.5-1.5L9 19l4-14h8"/><text x="17" y="17" text-anchor="middle" font-size="9" stroke="none" fill="currentColor">x</text></svg></span>
+      <span class="tx"><span class="nm">חזקות ושורשים</span><small>כיתה ח׳–ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:10" data-topic="teal" data-g="7" href="angles-parallel.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 8h18M3 16h18" opacity=".55"/><path d="M8 21L16 3"/></svg></span>
+      <span class="tx"><span class="nm">זוויות ומקבילים</span><small>כיתה ז׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:11" data-topic="sky" data-g="7 8" href="triangles.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L21 19H3z"/></svg></span>
+      <span class="tx"><span class="nm">משולשים</span><small>כיתה ז׳–ח׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:12" data-topic="cyan" data-g="8" href="quadrilaterals.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h14l-4 14H3z"/></svg></span>
+      <span class="tx"><span class="nm">מרובעים</span><small>כיתה ח׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:13" data-topic="indigo" data-g="8" href="pythagoras.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V5l15 15z"/><path d="M4 16h4v4" stroke-width="1.4" opacity=".6"/></svg></span>
+      <span class="tx"><span class="nm">פיתגורס</span><small>כיתה ח׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:14" data-topic="orange" data-g="9" href="similar-triangles.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 20L8 11l5.5 9z" opacity=".55"/><path d="M11 20l5.5-15L22 20z"/></svg></span>
+      <span class="tx"><span class="nm">דמיון משולשים</span><small>כיתה ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:15" data-topic="sky" data-g="9" href="circle.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 12l6-6" opacity=".6"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg></span>
+      <span class="tx"><span class="nm">מעגל</span><small>כיתה ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <a class="topic" style="--i:16" data-topic="teal" data-g="7 8 9" href="solids3d.html">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9" opacity=".6"/></svg></span>
+      <span class="tx"><span class="nm">גופים</span><small>כיתה ז׳–ט׳</small></span>
+      <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+  </div>
+
+  <p class="foot"><a href="project-hub.html">מצב הפרויקט: מה נעשה, מה חסר ומה בעבודה</a></p>
+</main>
+
+<script>
+/* grade filter — remembers the student's choice on this device */
+(function () {
+  var KEY = "mp:grade";
+  var buttons = document.querySelectorAll(".filters button");
+  var cards = document.querySelectorAll(".topic");
+  function apply(g) {
+    buttons.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.g === g ? "true" : "false"); });
+    cards.forEach(function (c) { c.hidden = g !== "all" && c.dataset.g.split(" ").indexOf(g) < 0; });
+  }
+  var saved = "all";
+  try { saved = localStorage.getItem(KEY) || "all"; } catch (e) {}
+  apply(saved);
+  buttons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      apply(b.dataset.g);
+      try { localStorage.setItem(KEY, b.dataset.g); } catch (e) {}
+    });
+  });
+})();
+</script>
+</body>
+</html>

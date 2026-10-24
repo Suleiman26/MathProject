@@ -1,13 +1,20 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-topic="blue">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>חיתוך בין פונקציות — כיתה ט׳</title>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta name="theme-color" content="#f5f5f2">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone@8.0.7/babel.min.js"></script>
 <style>
+@layer mp-base, legacy, mp, page;
+@layer legacy {
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;min-height:100vh;}
 .hdr{background:linear-gradient(135deg,#b91c1c,#ef4444);color:#fff;padding:14px 14px 12px;text-align:center;}
@@ -64,10 +71,18 @@ input:focus{outline:none;border-color:#b91c1c;}
 .eq-choice.active{background:#dbeafe;border-color:#2563eb;color:#2563eb;}
 
 @media(max-width:500px){.eq-box{font-size:16px;}input{width:50px;font-size:14px;}.term-chip{font-size:15px;padding:4px 8px;}}
+}
 </style>
+<link rel="stylesheet" href="assets/mp.css?v=1">
+<style id="mp-page">
+@layer page {
+}
+</style>
+<script src="assets/mp.js?v=1" defer></script>
+
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div class="mp-boot" aria-hidden="true"><span></span></div></div>
 <script type="text/babel">
 const {useState,useRef,useEffect,useCallback}=React;
 function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
