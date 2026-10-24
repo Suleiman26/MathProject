@@ -153,12 +153,55 @@
     setTimeout(function () { layer.remove(); }, longest + 100);
   }
 
+  /* ── Anonymous answer stats (only when the database is connected) ────── */
+  // Sends: page, chapter, step, correct/wrong/solved, phone or not, and a
+  // random device number. Never names, emails or anything typed.
+  function clean(s, max) { return (s || "").replace(/\s+/g, " ").trim().slice(0, max) || null; }
+  function textOf(sel, root) { var el = (root || doc).querySelector(sel); return el ? el.textContent : ""; }
+  function chapterOf() {
+    var main = textOf(".ch-btn.active, .nav-btn.active, .ph.active");
+    var sub = textOf("#root .sub-tab.active, #root .sub-tab-btn.active, #root .sub-btn.active, #root .tab.active");
+    return clean([main, sub].filter(Boolean).join(" › "), 150);
+  }
+  function stepOf(el) {
+    var box = el && el.closest && el.closest(".step-card, .card, .eq-card, .step-item, .section, .tri-box");
+    var label = box ? textOf(".step-label, .card-t, .phase-title, .section-title, .task-title, .card-title", box) : "";
+    return clean(label, 190);
+  }
+  var track = (function () {
+    var D = window.MPData;
+    if (!D || !D.ready) return function () {};
+    var dev = null;
+    try { dev = localStorage.getItem("mp:device"); } catch (e) {}
+    if (!dev || dev.length < 8) {
+      dev = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : "d" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      try { localStorage.setItem("mp:device", dev); } catch (e) {}
+    }
+    var page = (location.pathname.split("/").pop() || "index.html").slice(0, 80);
+    var mobile = !!(window.matchMedia && matchMedia("(pointer: coarse)").matches);
+    var queue = [], timer = null;
+    function flush(leaving) {
+      clearTimeout(timer); timer = null;
+      if (!queue.length) return;
+      D.insert("events", queue.splice(0), { keepalive: !!leaving });
+    }
+    window.addEventListener("pagehide", function () { flush(true); });
+    doc.addEventListener("visibilitychange", function () { if (doc.visibilityState === "hidden") flush(true); });
+    return function (kind, el) {
+      queue.push({ device: dev, page: page, chapter: chapterOf(), step: kind === "view" ? null : stepOf(el), kind: kind, mobile: mobile });
+      if (queue.length >= 20) flush(false);
+      else if (!timer) timer = setTimeout(function () { flush(false); }, 2500);
+    };
+  })();
+
   /* ── Watching the exercise for feedback ──────────────────────────────── */
   var lastAction = -1e9;
   function userActed() { lastAction = performance.now(); }
   ["pointerdown", "pointerup", "keydown"].forEach(function (t) { doc.addEventListener(t, userActed, true); });
 
   var pendingTap = null;
+  var pendingCheck = null;
+  var CHECK = /בדוק|בדיקה|אשר|אישור|✓/;
   var found = null;   // {kind, el} strongest feedback seen in this batch
   var RANK = { ok: 1, bad: 2, win: 3 };
 
@@ -203,8 +246,10 @@
     }
     if (found) {
       if (pendingTap) { clearTimeout(pendingTap); pendingTap = null; }
+      pendingCheck = null;
       play(found.kind);
       animate(found.el, found.kind);
+      track(found.kind, found.el);
     }
   }
 
@@ -228,7 +273,25 @@
       try { t.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduceMotion ? "auto" : "smooth" }); } catch (err) {}
     }
     if (pendingTap) clearTimeout(pendingTap);
-    pendingTap = setTimeout(function () { pendingTap = null; play(name); }, 40);
+    // a "check" button gets its own sound (correct / wrong), so its tap waits and usually never plays
+    var isCheck = t.matches("button") && CHECK.test(t.textContent || "");
+    pendingTap = setTimeout(function () { pendingTap = null; play(name); }, isCheck ? 220 : 40);
+    if (t.matches(".ch-btn, .nav-btn")) setTimeout(function () { track("view"); }, 300);
+    // A "check" press that changes nothing while a wrong-answer message is
+    // still showing = the same wrong answer again. Say so (and count it).
+    if (isCheck) {
+      var mine = pendingCheck = { btn: t };
+      setTimeout(function () {
+        if (pendingCheck !== mine) return;
+        pendingCheck = null;
+        var box = t.closest(".step-card, .card, .eq-card, .section, .tri-box, .history") || doc.getElementById("root");
+        var bad = box && box.querySelector(SEL.bad);
+        if (bad && bad.offsetParent !== null && visibleText(bad)) {
+          if (pendingTap) { clearTimeout(pendingTap); pendingTap = null; }
+          play("bad"); animate(bad, "bad"); track("bad", bad);
+        }
+      }, 160);
+    }
   }, true);
 
   /* ── Top bar ─────────────────────────────────────────────────────────── */
@@ -273,6 +336,7 @@
   function start() {
     if (!doc.documentElement.hasAttribute("data-mp-home")) topbar();
     watch();
+    if (doc.getElementById("root")) setTimeout(function () { track("view"); }, 1800);
   }
   if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", start);
   else start();

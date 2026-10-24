@@ -24,6 +24,9 @@ proves it, byte for byte.
 | `templates/module-template.html` | Starting point for a new topic |
 | `tools/upgrade-page.py` | Plugs an old-style page into the design system |
 | `tools/verify-logic.py` | Proves the math and text were not changed |
+| `admin.html` + `assets/admin.*` | The admin (same design language). Database: `supabase/README.md` |
+| `assets/config.js`, `assets/mp-data.js` | Connection settings and the tiny database client |
+| `assets/icons.js` | Topic icons shared by the home page and the admin |
 
 ## How the styling layers work
 

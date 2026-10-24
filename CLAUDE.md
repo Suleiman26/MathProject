@@ -18,6 +18,14 @@ Partners: Sulaiman (math content) and Abed (design system and infrastructure).
 - New topic: start from `templates/module-template.html` and use the class vocabulary.
 - Older page: `python3 tools/upgrade-page.py <file> <topic-color>`.
 
+## Admin and database
+- `admin.html`: management area (PIN, dashboard, content order, analytics, students, sales, settings). Code in `assets/admin.js` and `assets/admin.css`.
+- Data lives in Sulaiman's Supabase project. It is **not connected yet**: `assets/config.js` is empty, so the admin shows labelled sample data and no stats are sent. How to connect: `supabase/README.md`.
+- Database changes go in a new file in `supabase/migrations/`. Every admin action is a database function that checks the PIN session. Never put a secret key in the site.
+- `assets/mp.js` sends anonymous answer stats (page, chapter, step, correct/wrong/solved) when connected. It only watches the page; it never changes the exercise.
+- Local test copy: `supabase start` (Docker), ports 564xx. On localhost the site uses it automatically.
+- Accounts: everything for this project is on Sulaiman's accounts (Vercel team `math-project`, Supabase). Never create services on Abed's own accounts for it.
+
 ## Check before finishing
 - `python3 tools/verify-logic.py` must say "math and text untouched".
 - Look at changed pages on desktop and at phone width (375px).

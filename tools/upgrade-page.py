@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ASSET_VERSION = "1"
+ASSET_VERSION = "2"
 
 # Each page keeps the colour family it was built with, so colours the math
 # code sets inline (graphs, highlights) still match the page.
@@ -64,6 +64,8 @@ SHELL = f"""<link rel="stylesheet" href="assets/mp.css?v={ASSET_VERSION}">
 @layer page {{
 }}
 </style>
+<script src="assets/config.js?v=1" defer></script>
+<script src="assets/mp-data.js?v=1" defer></script>
 <script src="assets/mp.js?v={ASSET_VERSION}" defer></script>
 """
 

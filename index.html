@@ -96,6 +96,19 @@
   .topic:active { transform: scale(.98); transition-duration: 100ms; }
   .topic:focus-visible { outline: 2px solid var(--a-500); outline-offset: 2px; }
 
+  /* sections (when the content order comes from the admin) */
+  .sec + .sec { margin-top: 26px; }
+  .sec-h { display: flex; align-items: center; gap: 8px; margin: 0 4px 12px; font-size: .9rem; font-weight: 600; color: var(--ink-2); }
+  .sec-h i { width: 8px; height: 8px; border-radius: 3px; background: var(--a-500); }
+  .sec-h span { color: var(--ink-3); font-weight: 400; }
+  .sec[hidden] { display: none; }
+  .topic.soon { cursor: default; background: var(--surface-2); box-shadow: none; }
+  .topic.soon .ic { filter: grayscale(.6); opacity: .7; }
+  .topic.soon .nm { color: var(--ink-2); }
+  .soon-b { flex: none; padding: 3px 9px; border-radius: 999px; background: var(--surface-3); color: var(--ink-3); font-size: .75rem; font-weight: 600; }
+  @media (hover: hover) and (pointer: fine) { .topic.soon:hover { transform: none; box-shadow: none; border-color: var(--line); } }
+  .topic.soon:active { transform: none; }
+
   .foot { margin-top: 40px; text-align: center; }
   .foot a {
     display: inline-flex; align-items: center; gap: 8px;
@@ -120,6 +133,7 @@
     <h1>מתמטיקה לחטיבת הביניים</h1><p class="s">בחרו נושא ותתחילו לתרגל – שלב אחר שלב.</p>
   </header>
 
+  <div id="catalog">
   <nav class="filters" aria-label="סינון לפי כיתה">
     <button type="button" data-g="all" aria-pressed="true">הכל</button>
     <button type="button" data-g="7" aria-pressed="false">כיתה ז׳</button>
@@ -214,29 +228,92 @@
       <svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
     </a>
   </div>
+  </div>
 
   <p class="foot"><a href="project-hub.html">מצב הפרויקט: מה נעשה, מה חסר ומה בעבודה</a></p>
 </main>
 
+<script src="assets/config.js?v=1"></script>
+<script src="assets/mp-data.js?v=1"></script>
+<script src="assets/icons.js?v=1"></script>
 <script>
-/* grade filter — remembers the student's choice on this device */
+/* Home page
+   1. Grade filter (remembers the student's choice on this device).
+   2. When the database is connected, the order of grades, categories and
+      topics comes from the admin. If it can't be reached, the page keeps the
+      built-in list above, exactly as it is. */
 (function () {
+  var root = document.getElementById("catalog");
   var KEY = "mp:grade";
-  var buttons = document.querySelectorAll(".filters button");
-  var cards = document.querySelectorAll(".topic");
-  function apply(g) {
-    buttons.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.g === g ? "true" : "false"); });
-    cards.forEach(function (c) { c.hidden = g !== "all" && c.dataset.g.split(" ").indexOf(g) < 0; });
-  }
-  var saved = "all";
-  try { saved = localStorage.getItem(KEY) || "all"; } catch (e) {}
-  apply(saved);
-  buttons.forEach(function (b) {
-    b.addEventListener("click", function () {
-      apply(b.dataset.g);
-      try { localStorage.setItem(KEY, b.dataset.g); } catch (e) {}
+
+  function wireFilter() {
+    var buttons = root.querySelectorAll(".filters button");
+    var cards = root.querySelectorAll(".topic");
+    var secs = root.querySelectorAll(".sec");
+    function apply(g) {
+      if (!root.querySelector('.filters button[data-g="' + g + '"]')) g = "all";
+      buttons.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.g === g ? "true" : "false"); });
+      cards.forEach(function (c) { c.hidden = g !== "all" && c.dataset.g.split(" ").indexOf(g) < 0; });
+      secs.forEach(function (s) { s.hidden = !s.querySelector(".topic:not([hidden])"); });
+    }
+    var saved = "all";
+    try { saved = localStorage.getItem(KEY) || "all"; } catch (e) {}
+    apply(saved);
+    buttons.forEach(function (b) {
+      b.addEventListener("click", function () {
+        apply(b.dataset.g);
+        try { localStorage.setItem(KEY, b.dataset.g); } catch (e) {}
+      });
     });
-  });
+  }
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  var GO = '<svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
+
+  function render(data) {
+    var gradeName = {};
+    data.grades.forEach(function (g) { gradeName[g.id] = g.name.replace(/^כיתה\s*/, ""); });
+    var order = data.grades.map(function (g) { return g.id; });
+    function gradesLabel(ids) {
+      var list = order.filter(function (id) { return ids.indexOf(id) >= 0; });
+      if (!list.length) return "";
+      return "כיתה " + (list.length > 2 ? gradeName[list[0]] + "–" + gradeName[list[list.length - 1]] : list.map(function (id) { return gradeName[id]; }).join("–"));
+    }
+    var i = 0;
+    var html = '<nav class="filters" aria-label="סינון לפי כיתה"><button type="button" data-g="all" aria-pressed="true">הכל</button>' +
+      data.grades.map(function (g) { return '<button type="button" data-g="' + esc(g.id) + '" aria-pressed="false">' + esc(g.name) + "</button>"; }).join("") + "</nav>";
+    data.categories.forEach(function (c) {
+      var topics = data.topics.filter(function (t) { return t.category_id === c.id; });
+      if (!topics.length) return;
+      html += '<section class="sec" data-topic="' + esc(c.color) + '"><h2 class="sec-h"><i></i>' + esc(c.name) + "<span>· " + topics.length + '</span></h2><div class="g">' +
+        topics.map(function (t) {
+          var inner = '<span class="ic">' + window.MP_ICON(t.icon) + '</span><span class="tx"><span class="nm">' + esc(t.name) + "</span><small>" + esc(gradesLabel(t.grade_ids || [])) + "</small></span>";
+          var attrs = ' style="--i:' + (i++) + '" data-topic="' + esc(t.color) + '" data-g="' + esc((t.grade_ids || []).join(" ")) + '"';
+          return t.page ? '<a class="topic"' + attrs + ' href="' + esc(t.page) + '">' + inner + GO + "</a>"
+                        : '<div class="topic soon"' + attrs + ' aria-disabled="true">' + inner + '<span class="soon-b">בקרוב</span></div>';
+        }).join("") + "</div></section>";
+    });
+    root.innerHTML = html;
+    wireFilter();
+  }
+
+  wireFilter();
+  var D = window.MPData;
+  if (!D || !D.ready) return;
+  var cached = null;
+  try { cached = JSON.parse(localStorage.getItem("mp:catalog")); } catch (e) {}
+  if (cached) render(cached);
+  Promise.all([
+    D.select("grades", "select=id,name&order=position"),
+    D.select("categories", "select=id,name,color&order=position"),
+    D.select("topics", "select=id,name,page,grade_ids,icon,color,category_id,status&order=position")
+  ]).then(function (r) {
+    var data = { grades: r[0], categories: r[1], topics: r[2] };
+    if (!data.topics.length) return;
+    var json = JSON.stringify(data);
+    if (!cached || JSON.stringify(cached) !== json) render(data);
+    try { localStorage.setItem("mp:catalog", json); } catch (e) {}
+  }).catch(function () {});
 })();
 </script>
 </body>

@@ -1,0 +1,6 @@
+# Not part of the public website: never uploaded to Vercel
+supabase/
+tools/
+templates/
+*.md
+.claude/
