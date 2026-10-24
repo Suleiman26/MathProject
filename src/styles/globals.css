@@ -1,0 +1,6 @@
+/* Layer order for the whole app: the topics' own CSS (legacy) sits under the
+   design system (mp), and one-page fixes (page) win over both. */
+@layer mp-base, legacy, mp, page;
+
+/* the Rubik font loaded by next/font */
+:root { --font: var(--font-rubik), "Rubik", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }

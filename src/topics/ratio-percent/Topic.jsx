@@ -1,0 +1,1187 @@
+'use client';
+/* eslint-disable */
+// Topic code by Sulaiman, copied unchanged from public/classic/ratio-percent.html
+// (tools/verify-logic.py proves it). Added: these lines + the export at the end.
+// Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
+import React from 'react';
+import ReactDOM from 'react-dom';
+// ===== BEGIN ORIGINAL =====
+
+const {useState, useEffect, useRef, useCallback, useMemo} = React;
+
+/* ═══════ Utilities ═══════ */
+function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pick(arr){return arr[randInt(0,arr.length-1)];}
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;}
+function round2(n){return Math.round(n*100)/100;}
+
+/* ═══════ Equation solving (operation-box method, ported from
+   equation-solver.html) — used to solve the equation obtained by
+   cross-multiplying a proportion, to find x ═══════ */
+let _pqUid=0;const pqUid=()=>`pq${++_pqUid}`;
+function pqSimpFrac(num,den){if(num===0)return[0,1];if(den<0){num=-num;den=-den;}const g=gcd(Math.abs(num),den)||1;return[num/g,den/g];}
+function pqMkTerm(type,num,den=1){const[n,d]=pqSimpFrac(num,den);return{id:pqUid(),type,num:n,den:d};}
+function pqDoOperate(eq,opType,k,isX){
+  const type=isX?'x':'const';
+  function applySide(terms){
+    if(opType==='+')return[...terms,pqMkTerm(type,k)];
+    if(opType==='−')return[...terms,pqMkTerm(type,-k)];
+    if(opType==='×')return terms.map(t=>pqMkTerm(t.type,t.num*k,t.den));
+    if(opType==='÷')return terms.map(t=>{const[n,d]=pqSimpFrac(t.num,t.den*Math.abs(k));return pqMkTerm(t.type,k<0?-n:n,d);});
+    return terms;
+  }
+  return{left:applySide(eq.left),right:applySide(eq.right)};
+}
+function pqDoSimplify(terms){
+  let xn=0,xd=1,cn=0,cd=1;
+  for(const t of terms){
+    if(t.type==='x'){const[n,d]=pqSimpFrac(xn*t.den+t.num*xd,xd*t.den);xn=n;xd=d;}
+    else{const[n,d]=pqSimpFrac(cn*t.den+t.num*cd,cd*t.den);cn=n;cd=d;}
+  }
+  const r=[];
+  if(xn!==0)r.push(pqMkTerm('x',xn,xd));
+  if(cn!==0)r.push(pqMkTerm('const',cn,cd));
+  return r.length?r:[pqMkTerm('const',0)];
+}
+function pqCanSimp(terms){return terms.filter(t=>t.type==='x').length>1||terms.filter(t=>t.type==='const').length>1;}
+function pqCheckSolved(eq){
+  const isX1=t=>t.type==='x'&&t.num===1&&t.den===1;
+  const isC=t=>t.type==='const'&&t.den===1;
+  if(eq.left.length===1&&isX1(eq.left[0])&&eq.right.length===1&&isC(eq.right[0]))return eq.right[0].num;
+  if(eq.right.length===1&&isX1(eq.right[0])&&eq.left.length===1&&isC(eq.left[0]))return eq.left[0].num;
+  return null;
+}
+function PqTermPill({term,index}){
+  const{type,num,den}=term;
+  const isNeg=num<0;const abs=Math.abs(num);
+  const pillFracStyle={fontSize:16,fontWeight:700,color:'inherit',margin:'0 2px'};
+  const body=()=>{
+    if(type==='const'){
+      if(den===1)return<span className="tv">{abs}</span>;
+      return<Frac n={abs} d={den} style={{...pillFracStyle,color:'#134e4a'}}/>;
+    }
+    const showC=!(abs===den);
+    return<>{showC&&(den===1?<span className="tv">{abs}</span>:<Frac n={abs} d={den} style={{...pillFracStyle,color:'#134e4a'}}/>)}<span className="tv-x">x</span></>;
+  };
+  return<span className="tp">{index>0&&<span className="ts">{isNeg?'−':'+'}</span>}{index===0&&isNeg&&<span className="ts">−</span>}{body()}</span>;
+}
+const PQ_OPS=['+','−','×','÷'];
+function PqOpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX}){
+  const allowX=opType==='+'||opType==='−';
+  return<div className="op-box">
+    <div className="op-btns">{PQ_OPS.map(op=><button key={op} className={`op-btn ${opType===op?'active':''}`} onClick={()=>onOpType(op)}>{op}</button>)}</div>
+    <input className="op-input" value={opVal} onChange={e=>onOpVal(e.target.value)} placeholder="מס׳" inputMode="numeric"/>
+    {allowX&&<button className={`op-x-btn ${opIsX?'active':''}`} onClick={onToggleX} title="הוספה/חיסור של כפולת x">x</button>}
+  </div>;
+}
+
+/* ═══════ Visualizations ═══════ */
+
+/* Pie/Cake */
+function PieVis({total, filled, color1='#f59e0b', color2='#e5e7eb'}){
+  const slices = [];
+  for(let i=0;i<total;i++){
+    const a1 = (i/total)*360 - 90;
+    const a2 = ((i+1)/total)*360 - 90;
+    const r = 70, cx=80, cy=80;
+    const x1=cx+r*Math.cos(a1*Math.PI/180), y1=cy+r*Math.sin(a1*Math.PI/180);
+    const x2=cx+r*Math.cos(a2*Math.PI/180), y2=cy+r*Math.sin(a2*Math.PI/180);
+    const large = (a2-a1)>180?1:0;
+    slices.push(<path key={i} d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`}
+      fill={i<filled?color1:color2} stroke="#fff" strokeWidth="2"/>);
+  }
+  return <svg viewBox="0 0 160 160" style={{width:140,height:140}}>{slices}</svg>;
+}
+
+/* Bar */
+function BarVis({total, filled, color1='#3b82f6', color2='#e5e7eb'}){
+  const w = 280, h = 36, sw = w/total;
+  return <svg viewBox={`0 0 ${w} ${h+20}`} style={{width:Math.min(280,w),height:56}}>
+    {Array.from({length:total},(_,i)=>
+      <rect key={i} x={i*sw} y={0} width={sw-2} height={h} rx={3}
+        fill={i<filled?color1:color2} stroke="#fff" strokeWidth={1}/>
+    )}
+    <text x={w/2} y={h+16} textAnchor="middle" fontSize="12" fill="#64748b">
+      {filled}/{total}
+    </text>
+  </svg>;
+}
+
+/* People */
+function PeopleVis({total, filled, color1='#8b5cf6'}){
+  const perRow = Math.min(total, 10);
+  const rows = Math.ceil(total/perRow);
+  const w = perRow*28, h = rows*36;
+  return <svg viewBox={`0 0 ${w} ${h}`} style={{width:Math.min(280,w),height:h}}>
+    {Array.from({length:total},(_,i)=>{
+      const col=i%perRow, row=Math.floor(i/perRow);
+      const x=col*28+14, y=row*36+10;
+      const c = i<filled?color1:'#d1d5db';
+      return <g key={i}>
+        <circle cx={x} cy={y} r={7} fill={c}/>
+        <line x1={x} y1={y+8} x2={x} y2={y+20} stroke={c} strokeWidth={2.5} strokeLinecap="round"/>
+        <line x1={x-5} y1={y+13} x2={x+5} y2={y+13} stroke={c} strokeWidth={2} strokeLinecap="round"/>
+      </g>;
+    })}
+  </svg>;
+}
+
+/* Glass */
+function GlassVis({pct, color='#3b82f6'}){
+  const gh=100, gw=50, fillH=gh*(pct/100);
+  return <svg viewBox="0 0 70 130" style={{width:70,height:130}}>
+    <rect x={10} y={10} width={gw} height={gh} rx={4} fill="#f1f5f9" stroke="#94a3b8" strokeWidth={2}/>
+    <rect x={10} y={10+gh-fillH} width={gw} height={fillH} rx={fillH>=gh?4:0} fill={color} opacity={0.6}/>
+    <text x={35} y={gh+25} textAnchor="middle" fontSize="13" fontWeight="700" fill="#334155">{pct}%</text>
+  </svg>;
+}
+
+/* Price Tag */
+function PriceTag({original, final: finalP, label, finalLabel}){
+  return <div style={{display:'flex',gap:16,justifyContent:'center',alignItems:'center',flexWrap:'wrap'}}>
+    <div style={{background:'#fef3c7',border:'2px solid #f59e0b',borderRadius:10,padding:'10px 16px',textAlign:'center'}}>
+      <div style={{fontSize:12,color:'#92400e'}}>{label||'מחיר מקורי'}</div>
+      <div style={{fontSize:22,fontWeight:700,color:'#92400e'}}>{original}₪</div>
+    </div>
+    <div style={{fontSize:24}}>→</div>
+    <div style={{background:'#dcfce7',border:'2px solid #16a34a',borderRadius:10,padding:'10px 16px',textAlign:'center'}}>
+      <div style={{fontSize:12,color:'#166534'}}>{finalLabel||'מחיר סופי'}</div>
+      <div style={{fontSize:22,fontWeight:700,color:'#166534'}}>{finalP != null ? finalP+'₪' : '?'}</div>
+    </div>
+  </div>;
+}
+
+/* Before/After bars */
+function BeforeAfterBar({before, after, maxVal}){
+  const mx = maxVal || Math.max(before, after||before)*1.3;
+  const w1 = (before/mx)*240, w2 = after!=null?(after/mx)*240:0;
+  return <svg viewBox="0 0 300 70" style={{width:300,height:70}}>
+    <rect x={40} y={5} width={w1} height={24} rx={4} fill="#3b82f6"/>
+    <text x={35} y={21} textAnchor="end" fontSize="12" fill="#334155">לפני</text>
+    <text x={44+w1} y={21} fontSize="12" fill="#1e40af" fontWeight="700">{before}</text>
+    <rect x={40} y={38} width={w2||0} height={24} rx={4} fill="#f97316"/>
+    <text x={35} y={54} textAnchor="end" fontSize="12" fill="#334155">אחרי</text>
+    {after!=null && <text x={44+w2} y={54} fontSize="12" fill="#c2410c" fontWeight="700">{after}</text>}
+  </svg>;
+}
+
+/* Fraction display */
+function Frac({n,d,style}){
+  return <span className="frac" style={style}>
+    <span className="frac-num">{n}</span>
+    <span className="frac-den">{d}</span>
+  </span>;
+}
+
+/* Cross-multiplication diagram: tl/bl = tr/br, with diagonal arrows tl→br and bl→tr */
+function CrossMultDiagram({tl,tr,bl,br}){
+  const w=180,h=110,x1=36,x2=w-36,y1=30,y2=h-26;
+  return <svg viewBox={`0 0 ${w} ${h}`} style={{width:w,height:h,display:'block',margin:'0 auto'}}>
+    <defs>
+      <marker id="cmArrow" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+        <path d="M0,0 L5,2.5 L0,5 Z" fill="#0f766e"/>
+      </marker>
+    </defs>
+    <line x1={x1+8} y1={y1+4} x2={x2-8} y2={y2-10} stroke="#0f766e" strokeWidth="2" markerEnd="url(#cmArrow)"/>
+    <line x1={x1+8} y1={y2-4} x2={x2-8} y2={y1+10} stroke="#0f766e" strokeWidth="2" markerEnd="url(#cmArrow)"/>
+    <text x={x1} y={y1} textAnchor="middle" fontSize="20" fontWeight="700" fill="#134e4a">{tl}</text>
+    <text x={x2} y={y1} textAnchor="middle" fontSize="20" fontWeight="700" fill="#134e4a">{tr}</text>
+    <text x={x1} y={y2} textAnchor="middle" fontSize="20" fontWeight="700" fill="#134e4a">{bl}</text>
+    <text x={x2} y={y2} textAnchor="middle" fontSize="20" fontWeight="700" fill="#134e4a">{br}</text>
+  </svg>;
+}
+
+/* Feedback */
+function Fb({fb}){
+  if(!fb) return null;
+  return fb==='ok'?<div className="fb ok">✓ נכון!</div>:<div className="fb err">✗ לא נכון, נסה שוב.</div>;
+}
+
+/* ═══════ Chapter 1: Ratio ═══════ */
+function genRatio(){
+  const contexts = [
+    {type:'pie',label1:'שוקולד',label2:'וניל',color1:'#92400e',color2:'#fef3c7'},
+    {type:'pie',label1:'תות',label2:'מנגו',color1:'#dc2626',color2:'#fdba74'},
+    {type:'bar',label1:'אדום',label2:'כחול',color1:'#ef4444',color2:'#3b82f6'},
+    {type:'people',label1:'בנים',label2:'בנות',color1:'#3b82f6'},
+    {type:'bar',label1:'תפוחים',label2:'תפוזים',color1:'#16a34a',color2:'#f97316'},
+  ];
+  const ctx = pick(contexts);
+  // generate ratio that can be simplified
+  const simpleRatios = [[2,3],[3,4],[1,2],[1,3],[2,5],[3,5],[1,4],[3,7],[2,7],[4,5]];
+  const [sa,sb] = pick(simpleRatios);
+  const mult = randInt(2,4);
+  const a = sa*mult, b = sb*mult;
+  const total = a+b;
+  // step 3: scaled question
+  const scaleMult = pick([2,3,4,5,6]);
+  const scaledTotal = total * scaleMult;
+  const scaledA = a * scaleMult;
+  return {ctx, a, b, total, simA:sa, simB:sb, scaledTotal, scaledA, g:gcd(a,b)};
+}
+
+function Ch1(){
+  const [ex, setEx] = useState(()=>genRatio());
+  const [step, setStep] = useState(1);
+  const [r1,setR1]=useState('');const [r2,setR2]=useState('');
+  const [s1,setS1]=useState('');const [s2,setS2]=useState('');
+  const [ans3,setAns3]=useState('');
+  const [fb,setFb]=useState(null);
+
+  const check1=()=>{
+    const v1=parseInt(r1),v2=parseInt(r2);
+    if(v1===ex.a&&v2===ex.b){setFb('ok');setTimeout(()=>{setStep(2);setFb(null);},600);}
+    else setFb('err');
+  };
+  const check2=()=>{
+    const v1=parseInt(s1),v2=parseInt(s2);
+    if(v1===ex.simA&&v2===ex.simB){setFb('ok');setTimeout(()=>{setStep(3);setFb(null);},600);}
+    else setFb('err');
+  };
+  const check3=()=>{
+    const v=parseInt(ans3);
+    if(v===ex.scaledA){setFb('ok');setStep(4);}
+    else setFb('err');
+  };
+  const reset=()=>{const e=genRatio();setEx(e);setStep(1);setR1('');setR2('');setS1('');setS2('');setAns3('');setFb(null);};
+
+  const vis = ex.ctx.type==='pie'?<PieVis total={ex.total} filled={ex.a} color1={ex.ctx.color1} color2={ex.ctx.color2}/>
+    :ex.ctx.type==='bar'?<BarVis total={ex.total} filled={ex.a} color1={ex.ctx.color1} color2={ex.ctx.color2}/>
+    :<PeopleVis total={ex.total} filled={ex.a} color1={ex.ctx.color1}/>;
+
+  return <div className="content">
+    <div className="info">
+      <b>יחס</b> מבטא את היחס בין שתי כמויות. למשל 2:3 אומר שעל כל 2 מהראשון יש 3 מהשני.
+    </div>
+    <div className="card">
+      <div className="card-t">יחס</div>
+      <div className="vis-wrap">{vis}</div>
+      <p className="q-text">
+        מתוך <b>{ex.total}</b> — <b style={{color:ex.ctx.color1||'#0f766e'}}>{ex.a} {ex.ctx.label1}</b> ו-<b>{ex.b} {ex.ctx.label2}</b>
+      </p>
+
+      {/* Step 1 */}
+      <div className={`step-card ${step>1?'done':''}`}>
+        <div className="step-label">שלב א׳ — מה היחס בין {ex.ctx.label1} ל{ex.ctx.label2}?</div>
+        {step===1?<>
+          <div className="ans-row">
+            <input type="text" value={r1} onChange={e=>{setR1(e.target.value);setFb(null);}} placeholder="?" style={{width:55}}/>
+            <span style={{fontSize:22,fontWeight:700}}>:</span>
+            <input type="text" value={r2} onChange={e=>{setR2(e.target.value);setFb(null);}} placeholder="?" style={{width:55}}
+              onKeyDown={e=>e.key==='Enter'&&check1()}/>
+            <button className="btn bg" onClick={check1}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ {ex.a} : {ex.b}</div>}
+      </div>
+
+      {/* Step 2 */}
+      {step>=2 && <div className={`step-card ${step>2?'done':''}`}>
+        <div className="step-label">שלב ב׳ — פשט את היחס למספרים הקטנים ביותר</div>
+        {step===2?<>
+          <div className="ans-row">
+            <input type="text" value={s1} onChange={e=>{setS1(e.target.value);setFb(null);}} placeholder="?" style={{width:55}}/>
+            <span style={{fontSize:22,fontWeight:700}}>:</span>
+            <input type="text" value={s2} onChange={e=>{setS2(e.target.value);setFb(null);}} placeholder="?" style={{width:55}}
+              onKeyDown={e=>e.key==='Enter'&&check2()}/>
+            <button className="btn bg" onClick={check2}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ {ex.simA} : {ex.simB}</div>}
+      </div>}
+
+      {/* Step 3 */}
+      {step>=3 && <div className={`step-card ${step>3?'done':''}`}>
+        <div className="step-label">שלב ג׳ — אם יש {ex.scaledTotal} סה״כ, כמה יהיו {ex.ctx.label1}?</div>
+        {step===3?<>
+          <div className="ans-row">
+            <input type="text" value={ans3} onChange={e=>{setAns3(e.target.value);setFb(null);}} placeholder="?"
+              onKeyDown={e=>e.key==='Enter'&&check3()} style={{width:70}}/>
+            <button className="btn bg" onClick={check3}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ {ex.scaledA}</div>}
+      </div>}
+    </div>
+
+    {step===4?<div className="banner">
+      ✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════ Chapter 2: Proportion ═══════ */
+function genProportion(){
+  const contexts = [
+    {q:'מים שוקלות',unit1:'כוסות',unit2:'גרם',vis:'glass',tail:c=>`כמה גרם ישקלו ${c} כוסות?`},
+    {q:'נסיעה לוקחת',unit1:'ק"מ',unit2:'דקות',vis:'bar',tail:c=>`כמה דקות ייקחו ${c} ק"מ?`},
+    {q:'דורשות',unit1:'עוגות',unit2:'ביצים',vis:'pie',tail:c=>`כמה ביצים יידרשו ל-${c} עוגות?`},
+    {q:'עולות',unit1:'חולצות',unit2:'₪',vis:'people',tail:c=>`כמה יעלו ${c} חולצות?`},
+    {q:'מכילים',unit1:'בקבוקים',unit2:'ליטר',vis:'glass',tail:c=>`כמה ליטר יכילו ${c} בקבוקים?`},
+  ];
+  const ctx = pick(contexts);
+  const a = randInt(2,6);
+  const b = a * pick([5,10,15,20,25,30,50]);
+  const c = randInt(a+1, 12);
+  // make sure c != a
+  const d = (b/a)*c;
+  return {ctx, a, b, c, d: Math.round(d)};
+}
+
+function Ch2(){
+  const [ex,setEx]=useState(()=>genProportion());
+  const [step,setStep]=useState(1);
+  const [p1,setP1]=useState('');const [p2,setP2]=useState('');
+  const [p3,setP3]=useState('');const [p4,setP4]=useState('');
+  const [fb,setFb]=useState(null);
+
+  // step 2: equation-solving state (operation-box method)
+  const [crossed,setCrossed]=useState(false);
+  const [cur,setCur]=useState(null);
+  const [opType,setOpType]=useState('+');
+  const [opVal,setOpVal]=useState('');
+  const [opIsX,setOpIsX]=useState(false);
+  const [opErr,setOpErr]=useState('');
+
+  const solved = useMemo(()=>cur?pqCheckSolved(cur):null,[cur]);
+  const canSimpAny = cur?(pqCanSimp(cur.left)||pqCanSimp(cur.right)):false;
+
+  const check1=()=>{
+    const v1=parseInt(p1),v2=parseInt(p2),v3=parseInt(p3);
+    const v4=p4.trim().toLowerCase();
+    // accept a/b=c/x (matching units across the "=") or a/c=b/x (matching same-type units within each fraction)
+    const valid = v1===ex.a&&((v2===ex.b&&v3===ex.c)||(v2===ex.c&&v3===ex.b))&&v4==='x';
+    if(valid){
+      setFb('ok');
+      setTimeout(()=>{
+        setStep(2);setFb(null);
+      },600);
+    } else setFb('err');
+  };
+  const doCrossMultiply=()=>{
+    setCur({left:[pqMkTerm('x',ex.a)],right:[pqMkTerm('const',ex.b*ex.c)]});
+    setCrossed(true);
+  };
+  const setOpValClean=v=>{setOpVal(v);setOpErr('');};
+  const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};
+  const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};
+  const applyOp=()=>{
+    const v=opVal.trim();
+    if(!/^-?\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}
+    const k=parseInt(v,10);
+    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}
+    const isX=opIsX&&(opType==='+'||opType==='−');
+    setCur(c=>pqDoOperate(c,opType,k,isX));
+    setOpVal('');setOpErr('');setOpIsX(false);
+  };
+  const handleSimplify=()=>{
+    setCur(c=>({left:pqCanSimp(c.left)?pqDoSimplify(c.left):c.left,right:pqCanSimp(c.right)?pqDoSimplify(c.right):c.right}));
+  };
+  const finish=()=>setStep(3);
+  const reset=()=>{
+    const e=genProportion();setEx(e);setStep(1);
+    setP1('');setP2('');setP3('');setP4('');setFb(null);
+    setCrossed(false);setCur(null);setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);
+  };
+
+  const renderTerms=terms=>terms.map((t,i)=><PqTermPill key={t.id} term={t} index={i}/>);
+
+  return <div className="content">
+    <div className="info">
+      <b>פרופורציה</b> היא שוויון בין שני יחסים: <span style={{direction:'ltr',display:'inline-block'}}><Frac n="a" d="b"/> = <Frac n="c" d="d"/></span>
+    </div>
+    <div className="example-box">
+      <div className="ex-title">לדוגמה:</div>
+      <div style={{textAlign:'center'}}>3 חוברות עולות 12 ₪. כמה יעלו 5 חוברות?</div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מה כל שבר מייצג — ומה שלא ידוע מסמנים ב-x:</div>
+      <div className="ex-eq" style={{fontSize:14,color:'#5eaba3'}}>
+        <Frac n="כמות" d="מחיר" style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/>&nbsp;=&nbsp;<Frac n="כמות" d="מחיר" style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/>
+      </div>
+      <div className="ex-eq"><Frac n={3} d={12}/>&nbsp;=&nbsp;<Frac n={5} d="x"/></div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:6}}>הכפלה בהצלבה:</div>
+      <CrossMultDiagram tl={3} tr={5} bl={12} br="x"/>
+      <div className="ex-eq">3 · x = 12 · 5 = 60</div>
+      <div className="ex-eq">x = <Frac n={60} d={3}/> = 20</div>
+      <div style={{textAlign:'center',fontWeight:700,color:'#0f766e'}}>5 חוברות יעלו 20 ₪</div>
+    </div>
+    <div className="card">
+      <div className="card-t">פרופורציה</div>
+      <p className="q-text">
+        אם <b>{ex.a}</b> {ex.ctx.unit1} {ex.ctx.q} <b>{ex.b}</b> {ex.ctx.unit2},<br/>
+        {ex.ctx.tail(ex.c)}
+      </p>
+      <div className="vis-wrap">
+        {ex.ctx.vis==='glass'?<div style={{display:'flex',gap:20,alignItems:'flex-end'}}>
+          <div style={{textAlign:'center'}}><GlassVis pct={100} color="#3b82f6"/><div style={{fontSize:12,marginTop:4}}>{ex.a} {ex.ctx.unit1} = {ex.b}</div></div>
+          <div style={{textAlign:'center'}}><GlassVis pct={0} color="#f97316"/><div style={{fontSize:12,marginTop:4}}>{ex.c} {ex.ctx.unit1} = x</div></div>
+        </div>
+        :<BarVis total={ex.c} filled={ex.a} color1="#3b82f6" color2="#f97316"/>}
+      </div>
+
+      {/* Step 1 */}
+      <div className={`step-card ${step>1?'done':''}`}>
+        <div className="step-label">שלב א׳ — כתוב את הפרופורציה</div>
+        {step===1?<>
+          <div className="ans-row" style={{fontSize:20}}>
+            <Frac n={<input type="text" value={p1} onChange={e=>{setP1(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}/>}
+                  d={<input type="text" value={p2} onChange={e=>{setP2(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}/>}/>
+            <span style={{fontSize:24,margin:'0 6px'}}>=</span>
+            <Frac n={<input type="text" value={p3} onChange={e=>{setP3(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}/>}
+                  d={<input type="text" value={p4} onChange={e=>{setP4(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}
+                    onKeyDown={e=>e.key==='Enter'&&check1()}/>}/>
+            <button className="btn bg" onClick={check1} style={{marginRight:8}}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ <Frac n={ex.a} d={ex.b} style={{color:'#16a34a'}}/> = <Frac n={ex.c} d="x" style={{color:'#16a34a'}}/>
+        </div>}
+      </div>
+
+      {/* Step 2 */}
+      {step>=2 && <div className={`step-card ${step>2?'done':''}`}>
+        <div className="step-label">שלב ב׳ — פתרו את המשוואה כדי למצוא את x</div>
+        {step===2?<>
+          {!crossed?<>
+            <div className="ans-row" style={{fontSize:22}}>
+              <Frac n={ex.a} d={ex.b}/>&nbsp;=&nbsp;<Frac n={ex.c} d="x"/>
+            </div>
+            <div className="center" style={{marginTop:10}}>
+              <button className="btn bg" onClick={doCrossMultiply}>✕ בצע הכפלה בהצלבה</button>
+            </div>
+          </>:<>
+            <div className="solve-grid">
+              {solved===null&&<>
+                <div className="g-left"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+                <div className="g-mid"></div>
+                <div className="g-right"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+              </>}
+              <div className="g-left side-zone">{renderTerms(cur.left)}</div>
+              <span className="g-mid eq-sign">=</span>
+              <div className="g-right side-zone">{renderTerms(cur.right)}</div>
+            </div>
+            {opErr&&<div className="fb err">{opErr}</div>}
+            {solved===null?
+              <div className="ans-row">
+                <button className="btn bg" onClick={applyOp}>✓ אישור</button>
+                <button className="btn" style={{background:'#e5e7eb',color:'#374151'}} disabled={!canSimpAny} onClick={handleSimplify}>פשט</button>
+              </div>
+            :<>
+              <div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {solved}</div>
+              <div className="center" style={{marginTop:8}}><button className="btn bg" onClick={finish}>המשך ›</button></div>
+            </>}
+          </>}
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {ex.d} {ex.ctx.unit2}</div>}
+      </div>}
+    </div>
+
+    {step===3?<div className="banner">
+      ✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════ Chapter 3: Fraction ↔ Decimal ↔ Percent ═══════ */
+function pow10MultiplierFor(d){
+  let target=10;
+  while(target%d!==0){target*=10;if(target>100000)return null;}
+  return {target,mult:target/d};
+}
+/* decimal → fraction: any 1-3 digit decimal whose digit-string is reducible
+   against its power-of-10 denominator (gcd>1) — guarantees at least one
+   division step, and gives full variety (not just ÷5) instead of a small
+   curated list */
+function genDecToFracEx(){
+  for(let tries=0;tries<300;tries++){
+    const digits = pick([1,2,3]);
+    const target = Math.pow(10,digits);
+    const numerator = randInt(1,target-1);
+    const g = gcd(numerator,target);
+    if(g<=1) continue; // coprime — no reduction possible, skip
+    const decStr = '0.'+String(numerator).padStart(digits,'0');
+    return {n:numerator/g,d:target/g,dec:parseFloat(decStr),decStr,
+      unreducedNum:numerator,unreducedDen:target,digits,type:0};
+  }
+  return {n:3,d:4,dec:0.75,decStr:'0.75',unreducedNum:75,unreducedDen:100,digits:2,type:0};
+}
+function genFracToDecEx(){
+  // any reduced fraction n/d with d=2^a·5^b (a,b in 0..3, d>1, d≤1000) — 15
+  // distinct denominators instead of the old fixed list of 7
+  for(let tries=0;tries<300;tries++){
+    const a=randInt(0,3), b=randInt(0,3);
+    if(a===0&&b===0) continue;
+    const d=Math.pow(2,a)*Math.pow(5,b);
+    const n=randInt(1,d-1);
+    if(gcd(n,d)!==1) continue;
+    const {target,mult} = pow10MultiplierFor(d);
+    const digits = Math.round(Math.log10(target));
+    const unreducedNum = n*mult, unreducedDen = target;
+    const decStr = '0.'+String(unreducedNum).padStart(digits,'0');
+    return {n,d,dec:parseFloat(decStr),decStr,unreducedNum,unreducedDen,digits,type:1};
+  }
+  return {n:3,d:4,dec:0.75,decStr:'0.75',unreducedNum:75,unreducedDen:100,digits:2,type:1};
+}
+function genDecFracEx(forceType){
+  const type = forceType!=null?forceType:randInt(0,1); // 0=decimal→fraction, 1=fraction→decimal
+  return type===0?genDecToFracEx():genFracToDecEx();
+}
+
+function Ch3(){
+  const [part,setPart]=useState(0); // 0 = decimal→fraction sub-chapter, 1 = fraction→decimal sub-chapter
+  const [ex,setEx]=useState(()=>genDecFracEx(0));
+  const [phase,setPhase]=useState('write');
+  const [fb,setFb]=useState(null);
+  const [hintMsg,setHintMsg]=useState(null);
+
+  // type 0: decimal → fraction
+  const [fn,setFn]=useState('');const [fd,setFd]=useState('');
+  const [curN,setCurN]=useState(null);const [curD,setCurD]=useState(null);
+  const [divVal,setDivVal]=useState('');
+
+  // type 1: fraction → decimal
+  const [multVal,setMultVal]=useState('');
+  const [usedMult,setUsedMult]=useState(null);
+  const [eqN,setEqN]=useState(null);const [eqD,setEqD]=useState(null);
+  const [decAns,setDecAns]=useState('');
+
+  const resetState=(e)=>{
+    setEx(e);setPhase(e.type===0?'write':'mult');
+    setFb(null);setHintMsg(null);
+    setFn('');setFd('');setCurN(null);setCurD(null);setDivVal('');
+    setMultVal('');setUsedMult(null);setEqN(null);setEqD(null);setDecAns('');
+  };
+  const reset=()=>resetState(genDecFracEx(part));
+  const switchPart=(p)=>{setPart(p);resetState(genDecFracEx(p));};
+
+  // ── type 0 handlers ──
+  const checkWrite=()=>{
+    const vn=parseInt(fn),vd=parseInt(fd);
+    if(vn===ex.unreducedNum&&vd===ex.unreducedDen){
+      setFb('ok');
+      setTimeout(()=>{
+        setCurN(vn);setCurD(vd);
+        // some decimals (e.g. 0.1 → 1/10) are already fully reduced — nothing to divide by
+        setPhase(gcd(vn,vd)>1?'reduce':'done');
+        setFb(null);
+      },600);
+    } else setFb('err');
+  };
+  const applyDivide=()=>{
+    const k=parseInt(divVal);
+    if(!k||k<2||curN%k!==0||curD%k!==0){setFb('err');return;}
+    const newN=curN/k,newD=curD/k;
+    setCurN(newN);setCurD(newD);setDivVal('');setFb(null);
+    if(gcd(newN,newD)>1) setHintMsg('יפה! השבר צומצם — ניתן לצמצם עוד.');
+    else{setHintMsg(null);setPhase('done');}
+  };
+
+  // ── type 1 handlers ──
+  const checkMult=()=>{
+    const k=parseInt(multVal);
+    if(!k||k<1){setFb('err');return;}
+    const val=ex.d*k;
+    const isPow10 = Number.isInteger(val)&&val>=10&&/^10*$/.test(String(val));
+    if(!isPow10){setFb('err');return;}
+    setFb('ok');
+    setEqN(ex.n*k);setEqD(val);setUsedMult(k);
+    setTimeout(()=>{setPhase('decimal');setFb(null);},600);
+  };
+  const checkDec=()=>{
+    const v=parseFloat((decAns||'').trim().replace(',','.'));
+    if(!isNaN(v)&&Math.abs(v-ex.dec)<1e-9){setFb('ok');setPhase('done');}
+    else setFb('err');
+  };
+
+  const done = phase==='done';
+
+  return <div className="content">
+    <div className="sub-tabs">
+      <button className={`sub-tab-btn ${part===0?'active':''}`} onClick={()=>switchPart(0)}>עשרוני → שבר</button>
+      <button className={`sub-tab-btn ${part===1?'active':''}`} onClick={()=>switchPart(1)}>שבר → עשרוני</button>
+    </div>
+
+    {part===0?<>
+      <div className="info">
+        <b>עשרוני → שבר:</b> כותבים את הספרות שאחרי הנקודה כמונה, וכפולת 10 מתאימה כמכנה, ואז מצמצמים.
+      </div>
+      <div className="example-box">
+        <div className="ex-title">לדוגמה:</div>
+        <div className="ex-eq">0.75</div>
+        <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>כותבים כשבר (2 ספרות → מכנה 100):</div>
+        <div className="ex-eq"><Frac n={75} d={100}/></div>
+        <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מצמצמים שוב ושוב עד שלא ניתן יותר:</div>
+        <div className="ex-eq" style={{display:'flex',alignItems:'center',justifyContent:'center',flexWrap:'wrap',gap:8}}>
+          <Frac n={75} d={100}/><span>(÷5)</span><Frac n={15} d={20}/><span>(÷5)</span><Frac n={3} d={4}/>
+        </div>
+      </div>
+    </>:<>
+      <div className="info">
+        <b>שבר → עשרוני:</b> מוצאים מכפיל שהופך את המכנה לכפולת 10, מכפילים בו את המונה והמכנה, וכותבים כעשרוני.
+      </div>
+      <div className="example-box">
+        <div className="ex-title">לדוגמה:</div>
+        <div className="ex-eq"><Frac n={3} d={4}/></div>
+        <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מוצאים מכפיל שהופך את המכנה לכפולת 10 <span dir="ltr">(4 × 25 = 100)</span>:</div>
+        <div className="ex-eq" style={{display:'flex',alignItems:'center',justifyContent:'center',flexWrap:'wrap',gap:8}}>
+          <Frac n="3 · 25" d="4 · 25"/><span>=</span><Frac n={75} d={100}/>
+        </div>
+        <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>כותבים כעשרוני:</div>
+        <div className="ex-eq" style={{display:'flex',alignItems:'center',justifyContent:'center',flexWrap:'wrap',gap:8}}>
+          <Frac n={75} d={100}/><span>= 0.75</span>
+        </div>
+      </div>
+    </>}
+
+    {ex.type===0?<div className="card">
+      <div className="card-t">המרת עשרוני לשבר</div>
+      {ex.d<=30&&<div className="vis-wrap"><PieVis total={ex.d} filled={ex.n} color1="#14b8a6"/></div>}
+      <div className="eq-box" style={{fontSize:24}}>{ex.decStr}</div>
+
+      <div className={`step-card ${phase!=='write'?'done':''}`}>
+        <div className="step-label">כתבו את המספר כשבר (המכנה הוא כפולת 10 המתאימה):</div>
+        {phase==='write'?<>
+          <div className="ans-row" style={{fontSize:20}}>
+            <Frac n={<input type="text" value={fn} onChange={e=>{setFn(e.target.value);setFb(null);}} placeholder="?" style={{width:55,fontSize:16}}/>}
+                  d={<input type="text" value={fd} onChange={e=>{setFd(e.target.value);setFb(null);}} placeholder="?" style={{width:55,fontSize:16}}
+                    onKeyDown={e=>e.key==='Enter'&&checkWrite()}/>}/>
+            <button className="btn bg" onClick={checkWrite} style={{marginRight:8}}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ <Frac n={ex.unreducedNum} d={ex.unreducedDen} style={{color:'#16a34a'}}/>
+        </div>}
+      </div>
+
+      {(phase==='reduce'||phase==='done') && <div className={`step-card ${phase==='done'?'done':''}`}>
+        <div className="step-label">צמצמו את השבר עד שלא ניתן לצמצם יותר:</div>
+        {phase==='reduce'?<>
+          <div className="ans-row" style={{fontSize:20}}>
+            <Frac n={curN} d={curD}/>
+            <span>÷</span>
+            <input type="text" value={divVal} onChange={e=>{setDivVal(e.target.value);setFb(null);setHintMsg(null);}}
+              placeholder="?" style={{width:55}} onKeyDown={e=>e.key==='Enter'&&applyDivide()}/>
+            <button className="btn bg" onClick={applyDivide}>✓ צמצם</button>
+          </div>
+          {hintMsg&&<div className="fb ok">{hintMsg}</div>}
+          {fb==='err'&&<div className="fb err">אי אפשר לצמצם בזה — נסו מספר אחר.</div>}
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ <Frac n={ex.n} d={ex.d} style={{color:'#16a34a'}}/> — לא ניתן לצמצם יותר
+        </div>}
+      </div>}
+    </div>
+    :<div className="card">
+      <div className="card-t">המרת שבר לעשרוני</div>
+      {ex.d<=30&&<div className="vis-wrap"><PieVis total={ex.d} filled={ex.n} color1="#14b8a6"/></div>}
+      <div className="eq-box" style={{fontSize:24}}><Frac n={ex.n} d={ex.d}/></div>
+
+      <div className={`step-card ${phase!=='mult'?'done':''}`}>
+        <div className="step-label">מצאו מכפיל שהופך את המכנה לכפולת 10 (10, 100, 1000...):</div>
+        {phase==='mult'?<>
+          <p style={{fontSize:13,color:'#64748b',textAlign:'center',marginBottom:6}}>
+            רמז: אם קשה למצוא את המכפיל ישירות, נסו לחלק את <span dir="ltr">10, 100, 1000</span> במכנה —
+            החילוק שנותן מספר שלם הוא המכפיל המתאים.
+          </p>
+          <div className="ans-row" style={{fontSize:18}}>
+            <Frac n={ex.n} d={ex.d}/>
+            <span>×</span>
+            <input type="text" value={multVal} onChange={e=>{setMultVal(e.target.value);setFb(null);}}
+              placeholder="?" style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkMult()}/>
+            <button className="btn bg" onClick={checkMult}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ <Frac n={ex.n} d={ex.d} style={{color:'#16a34a'}}/> × {usedMult} = <Frac n={eqN} d={eqD} style={{color:'#16a34a'}}/>
+        </div>}
+      </div>
+
+      {(phase==='decimal'||phase==='done') && <div className={`step-card ${phase==='done'?'done':''}`}>
+        <div className="step-label">כתבו את המספר כעשרוני:</div>
+        {phase==='decimal'?<>
+          <div className="ans-row" style={{fontSize:20}}>
+            <Frac n={eqN} d={eqD}/>
+            <span>=</span>
+            <input type="text" value={decAns} onChange={e=>{setDecAns(e.target.value);setFb(null);}}
+              placeholder="0.XX" style={{width:100}} onKeyDown={e=>e.key==='Enter'&&checkDec()}/>
+            <button className="btn bg" onClick={checkDec}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ {ex.decStr}</div>}
+      </div>}
+    </div>}
+
+    {done?<div className="banner">
+      ✅ כל הכבוד! &nbsp; <Frac n={ex.n} d={ex.d}/> = {ex.decStr}
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════ Chapter 4: Percent Calculations ═══════ */
+function genPctCalc(){
+  const type = randInt(0,2);
+  // part must divide out to an exact integer (whole·pct/100) so the
+  // cross-multiplied equation always solves to a whole number via the
+  // operation-box mechanic — retry until an exact combo is found
+  let pct,whole,part;
+  for(let tries=0;tries<200;tries++){
+    pct = pick([10,15,20,25,30,40,50,60,75,80]);
+    whole = pick([40,50,60,80,100,120,150,200,240,250,300,400,500]);
+    part = whole*pct/100;
+    if(Number.isInteger(part)) break;
+  }
+  if(!Number.isInteger(part)){pct=20;whole=50;part=10;}
+
+  if(type===0){
+    // X% of Y = ?
+    const contexts = [
+      `כמה זה ${pct}% מ-${whole}?`,
+      `${pct}% מתוך ${whole} תלמידים — כמה תלמידים?`,
+      `${pct}% הנחה על פריט ב-${whole}₪ — כמה ההנחה?`,
+    ];
+    return {type,pct,whole,part,ans:part,q:pick(contexts)};
+  } else if(type===1){
+    // X is what % of Y?
+    const contexts = [
+      `${part} הם כמה אחוז מ-${whole}?`,
+      `מתוך ${whole} תלמידים, ${part} קיבלו ציון מעולה. כמה אחוז?`,
+    ];
+    return {type,pct,whole,part,ans:pct,q:pick(contexts)};
+  } else {
+    // X% of ? = Y
+    const q = `${pct}% מהכיתה הם ${part} תלמידים. כמה תלמידים בכיתה?`;
+    return {type,pct,whole,part,ans:whole,q};
+  }
+}
+
+function Ch4(){
+  const [ex,setEx]=useState(()=>genPctCalc());
+  const [step,setStep]=useState(1);
+  const [p1,setP1]=useState('');const [p2,setP2]=useState('');
+  const [p3,setP3]=useState('');const [p4,setP4]=useState('');
+  const [fb,setFb]=useState(null);
+
+  // step 2: equation-solving state (operation-box method, same as Ch2)
+  const [crossed,setCrossed]=useState(false);
+  const [cur,setCur]=useState(null);
+  const [opType,setOpType]=useState('+');
+  const [opVal,setOpVal]=useState('');
+  const [opIsX,setOpIsX]=useState(false);
+  const [opErr,setOpErr]=useState('');
+
+  const solved = useMemo(()=>cur?pqCheckSolved(cur):null,[cur]);
+  const canSimpAny = cur?(pqCanSimp(cur.left)||pqCanSimp(cur.right)):false;
+
+  // which slot holds the unknown, and the canonical display values
+  const n1Disp = ex.type===0?'x':ex.part;
+  const d1Disp = ex.type===2?'x':ex.whole;
+  const n2Disp = ex.type===1?'x':ex.pct;
+  const d2Disp = 100;
+
+  const check1=()=>{
+    const match=(v,expected)=>expected==='x'?v.trim().toLowerCase()==='x':parseInt(v)===expected;
+    const valid = match(p1,n1Disp)&&match(p2,d1Disp)&&match(p3,n2Disp)&&match(p4,d2Disp);
+    if(valid){
+      setFb('ok');
+      setTimeout(()=>{setStep(2);setFb(null);},600);
+    } else setFb('err');
+  };
+  const doCrossMultiply=()=>{
+    let leftCoef,rightConst;
+    if(ex.type===0){leftCoef=100;rightConst=ex.whole*ex.pct;}
+    else if(ex.type===1){leftCoef=ex.whole;rightConst=ex.part*100;}
+    else{leftCoef=ex.pct;rightConst=ex.part*100;}
+    setCur({left:[pqMkTerm('x',leftCoef)],right:[pqMkTerm('const',rightConst)]});
+    setCrossed(true);
+  };
+  const setOpValClean=v=>{setOpVal(v);setOpErr('');};
+  const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};
+  const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};
+  const applyOp=()=>{
+    const v=opVal.trim();
+    if(!/^-?\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}
+    const k=parseInt(v,10);
+    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}
+    const isX=opIsX&&(opType==='+'||opType==='−');
+    setCur(c=>pqDoOperate(c,opType,k,isX));
+    setOpVal('');setOpErr('');setOpIsX(false);
+  };
+  const handleSimplify=()=>{
+    setCur(c=>({left:pqCanSimp(c.left)?pqDoSimplify(c.left):c.left,right:pqCanSimp(c.right)?pqDoSimplify(c.right):c.right}));
+  };
+  const finish=()=>setStep(3);
+  const reset=()=>{
+    const e=genPctCalc();setEx(e);setStep(1);
+    setP1('');setP2('');setP3('');setP4('');setFb(null);
+    setCrossed(false);setCur(null);setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);
+  };
+
+  const renderTerms=terms=>terms.map((t,i)=><PqTermPill key={t.id} term={t} index={i}/>);
+
+  return <div className="content">
+    <div className="info">
+      <b>חישובי אחוזים</b> מבוססים על היחס הקבוע <span style={{direction:'ltr',display:'inline-block'}}><Frac n="חלק" d="שלם" style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/> = <Frac n="אחוז" d="100" style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/></span> —
+      מסמנים את הגודל הלא-ידוע ב-x, כותבים את השוויון, ופותרים אותו כמו כל משוואה.
+    </div>
+    <div className="example-box">
+      <div className="ex-title">לדוגמה:</div>
+      <div style={{textAlign:'center'}}>כמה זה 20% מ-50?</div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מסמנים את החלק הלא-ידוע ב-x וכותבים שוויון שברים:</div>
+      <div className="ex-eq" style={{fontSize:14,color:'#5eaba3'}}>
+        <Frac n="חלק" d="שלם" style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/>&nbsp;=&nbsp;<Frac n="אחוז" d={100} style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/>
+      </div>
+      <div className="ex-eq"><Frac n="x" d={50}/>&nbsp;=&nbsp;<Frac n={20} d={100}/></div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:6}}>הכפלה בהצלבה:</div>
+      <CrossMultDiagram tl="x" tr={20} bl={50} br={100}/>
+      <div className="ex-eq">x · 100 = 50 · 20 = 1000</div>
+      <div className="ex-eq">x = <Frac n={1000} d={100}/> = 10</div>
+      <div style={{textAlign:'center',fontWeight:700,color:'#0f766e'}}>התשובה: 20% מתוך 50 שווים <span dir="ltr">10</span></div>
+    </div>
+    <div className="card">
+      <div className="card-t">חישובי אחוזים</div>
+      <div className="vis-wrap"><BarVis total={20} filled={Math.round(ex.pct/5)} color1="#f59e0b" color2="#e5e7eb"/></div>
+      <p className="q-text">{ex.q}</p>
+
+      {/* Step 1 */}
+      <div className={`step-card ${step>1?'done':''}`}>
+        <div className="step-label">שלב א׳ — סמנו את הלא-ידוע ב-x וכתבו את שוויון השברים</div>
+        {step===1?<>
+          <div className="ans-row" style={{fontSize:20}}>
+            <Frac n={<input type="text" value={p1} onChange={e=>{setP1(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}/>}
+                  d={<input type="text" value={p2} onChange={e=>{setP2(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}/>}/>
+            <span style={{fontSize:24,margin:'0 6px'}}>=</span>
+            <Frac n={<input type="text" value={p3} onChange={e=>{setP3(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}/>}
+                  d={<input type="text" value={p4} onChange={e=>{setP4(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}
+                    onKeyDown={e=>e.key==='Enter'&&check1()}/>}/>
+            <button className="btn bg" onClick={check1} style={{marginRight:8}}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ <Frac n={n1Disp} d={d1Disp} style={{color:'#16a34a'}}/> = <Frac n={n2Disp} d={d2Disp} style={{color:'#16a34a'}}/>
+        </div>}
+      </div>
+
+      {/* Step 2 */}
+      {step>=2 && <div className={`step-card ${step>2?'done':''}`}>
+        <div className="step-label">שלב ב׳ — פתרו את המשוואה כדי למצוא את x</div>
+        {step===2?<>
+          {!crossed?<>
+            <div className="ans-row" style={{fontSize:22}}>
+              <Frac n={n1Disp} d={d1Disp}/>&nbsp;=&nbsp;<Frac n={n2Disp} d={d2Disp}/>
+            </div>
+            <div className="center" style={{marginTop:10}}>
+              <button className="btn bg" onClick={doCrossMultiply}>✕ בצע הכפלה בהצלבה</button>
+            </div>
+          </>:<>
+            <div className="solve-grid">
+              {solved===null&&<>
+                <div className="g-left"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+                <div className="g-mid"></div>
+                <div className="g-right"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+              </>}
+              <div className="g-left side-zone">{renderTerms(cur.left)}</div>
+              <span className="g-mid eq-sign">=</span>
+              <div className="g-right side-zone">{renderTerms(cur.right)}</div>
+            </div>
+            {opErr&&<div className="fb err">{opErr}</div>}
+            {solved===null?
+              <div className="ans-row">
+                <button className="btn bg" onClick={applyOp}>✓ אישור</button>
+                <button className="btn" style={{background:'#e5e7eb',color:'#374151'}} disabled={!canSimpAny} onClick={handleSimplify}>פשט</button>
+              </div>
+            :<>
+              <div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {solved}</div>
+              <div className="center" style={{marginTop:8}}><button className="btn bg" onClick={finish}>המשך ›</button></div>
+            </>}
+          </>}
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {ex.ans}</div>}
+      </div>}
+    </div>
+
+    {step===3?<div className="banner">
+      ✅ כל הכבוד! התשובה: {ex.ans}
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════ Chapter 5: Percent Increase/Decrease ═══════ */
+// picks (pct, original) so that original·pct/100 is always an exact integer —
+// avoids the rounding-drift dead-ends found earlier (#30, #36): with an exact
+// diff, final/actualPct/the solved x all come out clean with no Math.round
+function genExactPctPair(){
+  const pcts = [10,15,20,25,30,40,50];
+  let pct,original,diff;
+  for(let tries=0;tries<200;tries++){
+    pct = pick(pcts);
+    original = pick([40,50,60,80,100,120,150,200,240,250,300,400,500]);
+    diff = original*pct/100;
+    if(Number.isInteger(diff)) break;
+  }
+  if(!Number.isInteger(diff)){pct=10;original=200;diff=20;}
+  return {pct,original,diff};
+}
+function genPctChange(){
+  const type = randInt(0,3);
+  if(type===0){
+    // increase: price * (1+p/100)
+    const {pct,original,diff} = genExactPctPair();
+    const mult = round2(1+pct/100);
+    const contexts = [
+      {q:`מחיר של ${original}₪ עלה ב-${pct}%. כמה הוא עכשיו?`,label:'מחיר מקורי',finalLabel:'מחיר סופי'},
+      {q:`שכר של ${original}₪ עלה ב-${pct}%. כמה הוא עכשיו?`,label:'שכר מקורי',finalLabel:'שכר סופי'},
+    ];
+    const ctx = pick(contexts);
+    return {type,pct,original,final:original+diff,mult,q:ctx.q,label:ctx.label,finalLabel:ctx.finalLabel};
+  } else if(type===1){
+    // decrease: price * (1-p/100)
+    const {pct,original,diff} = genExactPctPair();
+    const mult = round2(1-pct/100);
+    const contexts = [
+      {q:`הנחה של ${pct}% על פריט ב-${original}₪ — כמה משלמים?`,label:'מחיר מקורי'},
+      {q:`מחיר של ${original}₪ ירד ב-${pct}%. כמה הוא עכשיו?`,label:'מחיר מקורי'},
+    ];
+    const ctx = pick(contexts);
+    return {type,pct,original,final:original-diff,mult,q:ctx.q,label:ctx.label};
+  } else if(type===2){
+    // find percent change
+    const {pct,original,diff} = genExactPctPair();
+    const isUp = randInt(0,1);
+    const final_ = isUp?original+diff:original-diff;
+    const dir = isUp?'עלה':'ירד';
+    return {type,pct,original,final:final_,diff,dir,
+      q:`מחיר ${dir} מ-${original}₪ ל-${final_}₪ — בכמה אחוז?`};
+  } else {
+    // find original: x · mult = final
+    const {pct,original,diff} = genExactPctPair();
+    const isUp = randInt(0,1);
+    const mult = round2(isUp?1+pct/100:1-pct/100);
+    const final_ = isUp?original+diff:original-diff;
+    const dir = isUp?'עלייה':'הנחה';
+    return {type,pct,original,final:final_,mult,isUp,
+      q:`אחרי ${dir} של ${pct}% המחיר הוא ${final_}₪ — מה היה המחיר המקורי?`};
+  }
+}
+
+function Ch5(){
+  const [ex,setEx]=useState(()=>genPctChange());
+  const [step,setStep]=useState(1);
+  const [a1,setA1]=useState('');const [a2,setA2]=useState('');const [a3,setA3]=useState('');
+  const [fb,setFb]=useState(null);
+
+  // type 3 only (find original): equation-solving state (operation-box
+  // method, same as Ch2/Ch4) — used after clearing the decimal multiplier
+  const [crossed,setCrossed]=useState(false);
+  const [cur,setCur]=useState(null);
+  const [opType,setOpType]=useState('+');
+  const [opVal,setOpVal]=useState('');
+  const [opIsX,setOpIsX]=useState(false);
+  const [opErr,setOpErr]=useState('');
+
+  const solved = useMemo(()=>cur?pqCheckSolved(cur):null,[cur]);
+  const canSimpAny = cur?(pqCanSimp(cur.left)||pqCanSimp(cur.right)):false;
+
+  const checkStep1=()=>{
+    let correct = false;
+    if(ex.type===0||ex.type===1){
+      // expect: original · mult = ?
+      const v1=parseFloat(a1), v2=parseFloat(a2);
+      if((v1===ex.original&&v2===ex.mult)||(v2===ex.original&&v1===ex.mult)) correct=true;
+    } else if(ex.type===2){
+      // expect: diff/original · 100 or (final-original)/original · 100
+      const v1=parseInt(a1),v2=parseInt(a2),v3=parseInt(a3);
+      if(v1===ex.diff&&v2===ex.original&&v3===100) correct=true;
+      if(v1===ex.diff&&v2===ex.original) correct=true;
+    } else {
+      // find original: x · mult = final
+      const v1=parseFloat(a1),v2=parseFloat(a2);
+      if((v1===ex.mult&&v2===ex.final)||(v2===ex.mult&&v1===ex.final)) correct=true;
+    }
+    if(correct){setFb('ok');setTimeout(()=>{setStep(2);setFb(null);},600);}
+    else setFb('err');
+  };
+  const checkStep2=()=>{
+    const v=parseFloat(a3||a1);
+    let ans;
+    if(ex.type===0||ex.type===1) ans=ex.final;
+    else ans=ex.pct;
+    if(v===ans){setFb('ok');setStep(3);}
+    else setFb('err');
+  };
+  const clearDecimal=()=>{
+    const leftCoef = ex.isUp?100+ex.pct:100-ex.pct;
+    setCur({left:[pqMkTerm('x',leftCoef)],right:[pqMkTerm('const',ex.final*100)]});
+    setCrossed(true);
+  };
+  const setOpValClean=v=>{setOpVal(v);setOpErr('');};
+  const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};
+  const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};
+  const applyOp=()=>{
+    const v=opVal.trim();
+    if(!/^-?\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}
+    const k=parseInt(v,10);
+    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}
+    const isX=opIsX&&(opType==='+'||opType==='−');
+    setCur(c=>pqDoOperate(c,opType,k,isX));
+    setOpVal('');setOpErr('');setOpIsX(false);
+  };
+  const handleSimplify=()=>{
+    setCur(c=>({left:pqCanSimp(c.left)?pqDoSimplify(c.left):c.left,right:pqCanSimp(c.right)?pqDoSimplify(c.right):c.right}));
+  };
+  const finish=()=>setStep(3);
+  const reset=()=>{
+    const e=genPctChange();setEx(e);setStep(1);setA1('');setA2('');setA3('');setFb(null);
+    setCrossed(false);setCur(null);setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);
+  };
+
+  const renderTerms=terms=>terms.map((t,i)=><PqTermPill key={t.id} term={t} index={i}/>);
+
+  return <div className="content">
+    <div className="info">
+      <b>עלייה/ירידה באחוזים</b> — במקום לחשב את האחוז בנפרד ואז לחבר או להחסיר, אפשר להכפיל
+      ישירות במכפיל: עלייה של X% — מכפיל <span style={{direction:'ltr',display:'inline-block'}}>1 + <Frac n="X" d={100} style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/></span>.
+      ירידה של X% — מכפיל <span style={{direction:'ltr',display:'inline-block'}}>1 − <Frac n="X" d={100} style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/></span>.
+    </div>
+    <div className="example-box">
+      <div className="ex-title">לדוגמה:</div>
+      <div style={{textAlign:'center'}}>מחיר של 200₪ עלה ב-10%. כמה הוא עכשיו?</div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מחשבים את המכפיל:</div>
+      <div className="ex-eq">1 + <Frac n={10} d={100}/> = 1.1</div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מכפילים במחיר המקורי:</div>
+      <div className="ex-eq">200 · 1.1 = 220</div>
+      <div style={{textAlign:'center',fontWeight:700,color:'#0f766e'}}>המחיר עכשיו הוא <span dir="ltr">220 ₪</span></div>
+    </div>
+    {ex.type===3 && <div className="example-box">
+      <div className="ex-title">מציאת המחיר המקורי:</div>
+      <div style={{textAlign:'center'}}>לאחר עלייה של 15%, המחיר הוא 230 ₪. מה היה המחיר המקורי?</div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מסמנים את המחיר המקורי ב-x וכותבים את הנוסחה:</div>
+      <div className="ex-eq">x · 1.15 = 230</div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:6}}>כדי להיפטר מהעשרוני, מכפילים את שני האגפים ב-100:</div>
+      <div className="ex-eq">x · 115 = 23000</div>
+      <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מחלקים ב-115:</div>
+      <div className="ex-eq">x = <Frac n={23000} d={115}/> = 200</div>
+      <div style={{textAlign:'center',fontWeight:700,color:'#0f766e'}}>המחיר המקורי היה <span dir="ltr">200 ₪</span></div>
+    </div>}
+    <div className="card">
+      <div className="card-t">עלייה וירידה באחוזים</div>
+      {(ex.type===0||ex.type===1)?
+        <div className="vis-wrap"><PriceTag original={ex.original} final={step>=3?ex.final:null} label={ex.label} finalLabel={ex.finalLabel}/></div>
+        :ex.type===2?
+        <div className="vis-wrap"><BeforeAfterBar before={ex.original} after={ex.final}/></div>
+        :<div className="vis-wrap"><PriceTag original={step>2?ex.original:'?'} final={ex.final} label="מחיר מקורי"/></div>
+      }
+      <p className="q-text">{ex.q}</p>
+
+      <div className={`step-card ${step>1?'done':''}`}>
+        <div className="step-label">שלב א׳ — כתוב את הנוסחה{ex.type===3?' (סמנו את המחיר המקורי ב-x)':''}</div>
+        {step===1?<>
+          {(ex.type===0||ex.type===1)?<div className="ans-row" style={{fontSize:18}}>
+            <input type="text" value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:70}}/>
+            <span>·</span>
+            <input type="text" value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:70}}
+              onKeyDown={e=>e.key==='Enter'&&checkStep1()}/>
+            <span>=</span><span>?</span>
+            <button className="btn bg" onClick={checkStep1}>✓ בדוק</button>
+          </div>
+          :ex.type===2?<div className="ans-row" style={{fontSize:16}}>
+            <Frac n={<input type="text" value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:15}}/>}
+                  d={<input type="text" value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:15}}/>}/>
+            <span>· 100 = ?</span>
+            <button className="btn bg" onClick={checkStep1}>✓ בדוק</button>
+          </div>
+          :<div className="ans-row" style={{fontSize:18}}>
+            <span>x</span><span>·</span>
+            <input type="text" value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מכפיל" style={{width:70}}/>
+            <span>=</span>
+            <input type="text" value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="סופי" style={{width:70}}
+              onKeyDown={e=>e.key==='Enter'&&checkStep1()}/>
+            <button className="btn bg" onClick={checkStep1}>✓ בדוק</button>
+          </div>}
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>
+          {ex.type===3?<>✓ x · {ex.mult} = {ex.final}</>:'✓ שלב הושלם'}
+        </div>}
+      </div>
+
+      {step>=2 && ex.type!==3 && <div className={`step-card ${step>2?'done':''}`}>
+        <div className="step-label">שלב ב׳ — מצא את התשובה</div>
+        {step===2?<>
+          <div className="ans-row">
+            <input type="text" value={a3} onChange={e=>{setA3(e.target.value);setFb(null);}} placeholder="?"
+              onKeyDown={e=>e.key==='Enter'&&checkStep2()} style={{width:80}}/>
+            {ex.type===2?<span>%</span>:<span>₪</span>}
+            <button className="btn bg" onClick={checkStep2}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ {ex.type===0||ex.type===1?ex.final+'₪':ex.pct+'%'}
+        </div>}
+      </div>}
+
+      {/* type 3 only: solve x·mult=final via the operation-box mechanic,
+          after an explicit ×100 step to clear the decimal multiplier */}
+      {step>=2 && ex.type===3 && <div className={`step-card ${step>2?'done':''}`}>
+        <div className="step-label">שלב ב׳ — פתרו את המשוואה כדי למצוא את x (המחיר המקורי)</div>
+        {step===2?<>
+          {!crossed?<>
+            <div className="ans-row" style={{fontSize:20}}>x · {ex.mult} = {ex.final}</div>
+            <p style={{fontSize:13,color:'#64748b',textAlign:'center',margin:'6px 0'}}>
+              כדי להימנע ממספר עשרוני, מכפילים את שני האגפים ב-100:
+            </p>
+            <div className="center" style={{marginTop:6}}>
+              <button className="btn bg" onClick={clearDecimal}>✕ הכפילו ב-100</button>
+            </div>
+          </>:<>
+            <div className="solve-grid">
+              {solved===null&&<>
+                <div className="g-left"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+                <div className="g-mid"></div>
+                <div className="g-right"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
+              </>}
+              <div className="g-left side-zone">{renderTerms(cur.left)}</div>
+              <span className="g-mid eq-sign">=</span>
+              <div className="g-right side-zone">{renderTerms(cur.right)}</div>
+            </div>
+            {opErr&&<div className="fb err">{opErr}</div>}
+            {solved===null?
+              <div className="ans-row">
+                <button className="btn bg" onClick={applyOp}>✓ אישור</button>
+                <button className="btn" style={{background:'#e5e7eb',color:'#374151'}} disabled={!canSimpAny} onClick={handleSimplify}>פשט</button>
+              </div>
+            :<>
+              <div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {solved}</div>
+              <div className="center" style={{marginTop:8}}><button className="btn bg" onClick={finish}>המשך ›</button></div>
+            </>}
+          </>}
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {ex.original}₪</div>}
+      </div>}
+    </div>
+
+    {step===3?<div className="banner">
+      ✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════ Main App ═══════ */
+function App(){
+  const [ch, setCh] = useState(1);
+  const labels = ['יחס','פרופורציה','המרות','חישובי %','עלייה/ירידה'];
+  return <div>
+    <div className="hdr">
+      <div className="hdr-title">יחס, פרופורציה ואחוזים</div>
+      <div className="ch-btns">
+        {labels.map((l,i)=>
+          <button key={i} className={`ch-btn ${ch===i+1?'active':''}`}
+            onClick={()=>setCh(i+1)}>{i+1}. {l}</button>
+        )}
+      </div>
+    </div>
+    {ch===1?<Ch1 key="c1"/>:ch===2?<Ch2 key="c2"/>:ch===3?<Ch3 key="c3"/>:ch===4?<Ch4 key="c4"/>:<Ch5 key="c5"/>}
+  </div>;
+}
+
+
+// ===== END ORIGINAL =====
+export default App;

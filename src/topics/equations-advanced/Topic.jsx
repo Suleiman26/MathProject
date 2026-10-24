@@ -1,0 +1,3038 @@
+'use client';
+/* eslint-disable */
+// Topic code by Sulaiman, copied unchanged from public/classic/equations-advanced.html
+// (tools/verify-logic.py proves it). Added: these lines + the export at the end.
+// Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
+import React from 'react';
+import ReactDOM from 'react-dom';
+// ===== BEGIN ORIGINAL =====
+
+const { useState, useEffect, useRef } = React;
+
+// ─── Fraction component ───────────────────────
+function Frac({ num, den, big }) {
+  const sz = big ? { fontSize: '1.15em' } : {};
+  return (
+    <span className="frac" style={sz}>
+      <span className="num">{num}</span>
+      <span className="den">{den}</span>
+    </span>
+  );
+}
+
+// ─── Math helpers ─────────────────────────────
+function gcd(a, b) { a=Math.abs(a); b=Math.abs(b); while(b){[a,b]=[b,a%b];} return a; }
+function rand(min, max) { return Math.floor(Math.random()*(max-min+1))+min; }
+function randNonZero(min, max) { let v; do{v=rand(min,max);}while(v===0); return v; }
+function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+// ─── Expr helpers ─────────────────────────────
+function coeffStr(c, varStr, first) {
+  // returns string for c*varStr term
+  if (c === 0) return '';
+  if (varStr === '') {
+    if (first) return String(c);
+    return c > 0 ? `+ ${c}` : `− ${Math.abs(c)}`;
+  }
+  const cStr = Math.abs(c)===1 ? '' : String(Math.abs(c));
+  if (first) return (c < 0 ? '−' : '') + cStr + varStr;
+  return (c > 0 ? '+ ' : '− ') + cStr + varStr;
+}
+function expandedStr(x2, x1, x0) {
+  const parts = [];
+  if (x2!==0) parts.push(coeffStr(x2,'x²',true));
+  if (x1!==0) parts.push(coeffStr(x1,'x',parts.length===0));
+  if (x0!==0) parts.push(coeffStr(x0,'',parts.length===0));
+  return parts.join(' ') || '0';
+}
+
+// ─── Section 1 generator ─────────────────────────────────
+function makeLinearEq(level) {
+  if (level === 1) {
+    // x/a + b = c  →  ×a  →  x + ba = ca
+    let a, b, c, x;
+    do { a=pick([2,3,4,5,6]); b=rand(-5,5); c=rand(-8,8); x=a*(c-b); }
+    while (x===0||Math.abs(x)>30);
+    const lhsTerms=[{coeff:1,power:1}];
+    if(b*a!==0) lhsTerms.push({coeff:b*a,power:0});
+    const rhsTerms=c*a!==0?[{coeff:c*a,power:0}]:[{coeff:0,power:0}];
+    return { level:1, display:{type:'xOverA_plus_b_eq_c',a,b,c},
+      solution:x, lcmVal:a, lhsTerms, rhsTerms, lhsC:b*a, rhsC:c*a };
+  }
+  if (level === 2) {
+    // (ax+b)/d = c  →  ×d  →  ax+b = cd
+    let a,b,d,c,x; let tries=0;
+    while(true) {
+      tries++; if(tries>300){a=1;b=1;d=2;c=3;x=c*2-1;break;}
+      a=pick([1,1,2,2,3]); d=pick([2,3,4,5,6]); c=rand(-6,6); b=rand(-8,8);
+      if(a===0)a=1;
+      const num=c*d-b; if(num%a!==0) continue;
+      x=num/a; if(x===0||Math.abs(x)>20) continue;
+      break;
+    }
+    const lhsTerms=[{coeff:a,power:1}];
+    if(b!==0) lhsTerms.push({coeff:b,power:0});
+    const rhsTerms=c*d!==0?[{coeff:c*d,power:0}]:[{coeff:0,power:0}];
+    return { level:2, display:{type:'axPlusB_overD_eq_c',a,b,d,c},
+      solution:x, lcmVal:d, lhsTerms, rhsTerms, lhsX:a, lhsC:b, rhsC:c*d };
+  }
+  // level 3: a/(x+p) + b = c  →  ×(x+p)  →  bx+(a+bp) = cx+cp
+  let a,b,c,p,x; let tries=0;
+  while(true) {
+    tries++; if(tries>400){return makeLinearEq(2);}
+    a=randNonZero(-6,6); b=rand(-4,4); c=rand(-6,6);
+    if(c===b) continue;
+    const diff=c-b; if(a%diff!==0) continue;
+    p=rand(-5,5); x=a/diff-p;
+    if(!Number.isInteger(x)||x===0||x+p===0) continue;
+    if(Math.abs(x)>15) continue;
+    break;
+  }
+  const lhsX=b, lhsC=a+b*p, rhsX=c, rhsC=c*p;
+  const lhsTerms=[], rhsTerms=[];
+  if(lhsX!==0) lhsTerms.push({coeff:lhsX,power:1});
+  if(lhsC!==0) lhsTerms.push({coeff:lhsC,power:0});
+  if(rhsX!==0) rhsTerms.push({coeff:rhsX,power:1});
+  if(rhsC!==0) rhsTerms.push({coeff:rhsC,power:0});
+  return { level:3, display:{type:'a_over_xPlusP_plus_b_eq_c',a,b,c,p},
+    solution:x, lcmVal:null,
+    lhsTerms:lhsTerms.length?lhsTerms:[{coeff:0,power:0}],
+    rhsTerms:rhsTerms.length?rhsTerms:[{coeff:0,power:0}],
+    lhsX, lhsC, rhsX, rhsC };
+}
+
+// ─── Section 1 interactive-solver helpers ─────
+function checkLCDStr(inp, p) {
+  const s = inp.replace(/\s/g,'').replace(/^\(|\)$/g,'');
+  const exp = p>=0 ? `x+${p}` : `x-${Math.abs(p)}`;
+  return s===exp || (p===0 && s==='x');
+}
+
+function termTxt(coeff, power, isFirst) {
+  if(power===0){
+    if(isFirst) return String(coeff);
+    return coeff>0 ? `+${coeff}` : String(coeff);
+  }
+  const varStr = power===2 ? 'x²' : 'x';
+  const abs=Math.abs(coeff), cPart=abs===1?'':String(abs);
+  if(isFirst) return (coeff<0?'−':'')+cPart+varStr;
+  return (coeff>0?'+ ':'− ')+cPart+varStr;
+}
+
+function doCollect(terms) {
+  const x2Sum=terms.reduce((s,t)=>t.power===2?s+t.coeff:s, 0);
+  const xSum =terms.reduce((s,t)=>t.power===1?s+t.coeff:s, 0);
+  const cSum =terms.reduce((s,t)=>t.power===0?s+t.coeff:s, 0);
+  const res=[];
+  if(x2Sum!==0) res.push({coeff:x2Sum,power:2});
+  if(xSum !==0) res.push({coeff:xSum, power:1});
+  if(cSum !==0) res.push({coeff:cSum, power:0});
+  return res;
+}
+
+// Parse quadratic expression e.g. "x²+3x-5", "2x²-6x", "-7" → {x2C,xC,kC}
+function parseExpr2(s) {
+  s=(s||'').replace(/\s/g,'').replace(/−/g,'-').replace(/x\^2/gi,'Q').replace(/x²/g,'Q');
+  if(!s) return null;
+  if(s[0]!=='-'&&s[0]!=='+') s='+'+s;
+  const tokens=s.match(/[+\-][^+\-]*/g)||[];
+  let x2C=0,xC=0,kC=0;
+  for(const tok of tokens){
+    const sign=tok[0]==='-'?-1:1, rest=tok.slice(1);
+    if(rest==='Q'){x2C+=sign;}
+    else if(rest.endsWith('Q')){const n=parseInt(rest.slice(0,-1)||'1');if(!isNaN(n))x2C+=sign*n;}
+    else if(rest==='x'){xC+=sign;}
+    else if(rest.endsWith('x')){const n=parseInt(rest.slice(0,-1)||'1');if(!isNaN(n))xC+=sign*n;}
+    else{const n=parseInt(rest);if(!isNaN(n))kC+=sign*n;}
+  }
+  return {x2C,xC,kC};
+}
+function parseExprToTerms2(s) {
+  s=(s||'').replace(/\s/g,'').replace(/−/g,'-').replace(/x\^2/gi,'Q').replace(/x²/g,'Q');
+  if(!s) return null;
+  if(s[0]!=='-'&&s[0]!=='+') s='+'+s;
+  const tokens=s.match(/[+\-][^+\-]*/g)||[];
+  const terms=[];
+  for(const tok of tokens){
+    const sign=tok[0]==='-'?-1:1, rest=tok.slice(1);
+    if(rest==='Q') terms.push({coeff:sign,power:2});
+    else if(rest.endsWith('Q')){const n=parseInt(rest.slice(0,-1)||'1');if(!isNaN(n))terms.push({coeff:sign*n,power:2});}
+    else if(rest==='x') terms.push({coeff:sign,power:1});
+    else if(rest.endsWith('x')){const n=parseInt(rest.slice(0,-1)||'1');if(!isNaN(n))terms.push({coeff:sign*n,power:1});}
+    else{const n=parseInt(rest);if(!isNaN(n))terms.push({coeff:sign*n,power:0});}
+  }
+  return terms.length?terms:null;
+}
+function checkLCDQuad(inp, p, q) {
+  const s=inp.replace(/\s/g,'');
+  const fmt=(v)=>v>=0?`(x-${v})`:`(x+${Math.abs(v)})`;
+  const d1=fmt(p),d2=fmt(q);
+  return s===d1+d2||s===d2+d1;
+}
+
+function parseTerm(s) {
+  if (!s) return null;
+  const t = s.trim().replace(/\s/g,'');
+  if (!t) return null;
+  if (t==='x'||t==='+x') return {coeff:1,power:1};
+  if (t==='-x') return {coeff:-1,power:1};
+  const mx = t.match(/^([+-]?\d+)x$/);
+  if (mx) { const c=parseInt(mx[1]); return isNaN(c)?null:{coeff:c,power:1}; }
+  const mn = t.match(/^([+-]?\d+)$/);
+  if (mn) { const c=parseInt(mn[1]); return isNaN(c)?null:{coeff:c,power:0}; }
+  return null;
+}
+
+function TermChip({ coeff, power, isFirst, onMouseDown, dimmed }) {
+  return (
+    <span onMouseDown={onMouseDown} title="גרור לצד השני"
+      style={{display:'inline-flex',alignItems:'center',padding:'8px 18px',
+        fontSize:20,fontWeight:'bold',direction:'ltr',whiteSpace:'nowrap',
+        background:dimmed?'#f0f0f0':'#e8eaf6',
+        border:`2.5px solid ${dimmed?'#ccc':'#9fa8da'}`,
+        borderRadius:10,cursor:'grab',userSelect:'none',
+        WebkitUserSelect:'none',MozUserSelect:'none',
+        transition:'all 0.12s',opacity:dimmed?0.3:1}}>
+      {termTxt(coeff, power, isFirst)}
+    </span>);
+}
+
+function makeQuadEq(level) {
+  if (level === 1) {
+    let r1,r2;
+    do { r1=randNonZero(-6,6); r2=randNonZero(-6,6); } while(r1===r2||Math.abs(r1+r2)>10||Math.abs(r1*r2)>18);
+    const b=r1+r2, a=r1*r2;
+    // x + a/x = b  →  ×x  →  x²+a = bx
+    const lhsT=[{coeff:1,power:2}];
+    if(a!==0) lhsT.push({coeff:a,power:0});
+    const rhsT=b!==0?[{coeff:b,power:1}]:[{coeff:0,power:0}];
+    return { level:1, display:{type:'x_plus_a_over_x_eq_b',a,b},
+      solutions:[r1,r2].sort((x,y)=>x-y), forbiddenX:[0],
+      lcmStr:'x', lcmLevel:'var',
+      lhsTerms:lhsT, rhsTerms:rhsT,
+      lhsExp:{x2C:1,xC:0,kC:a}, rhsExp:{x2C:0,xC:b,kC:0},
+      quadA:1, quadB:-b, quadC:a };
+  }
+  if (level === 2) {
+    // Form: kx + a/(x+p) = b  →  LCD=(x+p)
+    // After ×(x+p): kx²+kpx+a = bx+bp
+    // Build from k,p,r1,r2: b=k(r1+r2+p), a=k(r1+p)(r2+p)
+    let k,p,r1,r2,a,b; let tries=0;
+    while(true) {
+      tries++; if(tries>500) return makeQuadEq(1);
+      k=pick([2,3,4,5]); p=randNonZero(-4,4);
+      r1=randNonZero(-5,5); r2=randNonZero(-5,5);
+      if(r1===r2||r1===-p||r2===-p) continue;
+      b=k*(r1+r2+p); a=k*(r1+p)*(r2+p);
+      if(b===0||Math.abs(b)>24||Math.abs(a)>30) continue;
+      break;
+    }
+    const lhsT=[{coeff:k,power:2}];
+    if(k*p!==0) lhsT.push({coeff:k*p,power:1});
+    if(a!==0) lhsT.push({coeff:a,power:0});
+    const rhsT=[];
+    if(b!==0) rhsT.push({coeff:b,power:1});
+    if(b*p!==0) rhsT.push({coeff:b*p,power:0});
+    if(!rhsT.length) rhsT.push({coeff:0,power:0});
+    const pStr=p>=0?`x+${p}`:`x-${Math.abs(p)}`;
+    return { level:2, display:{type:'kx_plus_a_over_xPlusP_eq_b',k,a,p,b},
+      solutions:[r1,r2].sort((x,y)=>x-y), forbiddenX:[-p],
+      lcmStr:pStr, lcmLevel:'var',
+      lhsTerms:lhsT, rhsTerms:rhsT,
+      lhsExp:{x2C:k,xC:k*p,kC:a}, rhsExp:{x2C:0,xC:b,kC:b*p},
+      quadA:k, quadB:k*p-b, quadC:a-b*p };
+  }
+  // level 3: a/(x-p) + b/(x-q) = c
+  let tries=0;
+  while(tries<400){
+    tries++;
+    const p3=randNonZero(-4,4); let q3; do{q3=randNonZero(-4,4);}while(q3===p3);
+    const a3=randNonZero(-3,3), b3=randNonZero(-3,3), c3=randNonZero(-2,2);
+    const A=c3, B=-(c3*(p3+q3)+a3+b3), C3=c3*p3*q3+a3*q3+b3*p3;
+    const disc=B*B-4*A*C3; if(disc<0) continue;
+    const sqd=Math.round(Math.sqrt(disc)); if(sqd*sqd!==disc) continue;
+    const r1f=(-B+sqd)/(2*A), r2f=(-B-sqd)/(2*A);
+    if(!Number.isInteger(r1f)||!Number.isInteger(r2f)) continue;
+    const r1=r1f, r2=r2f;
+    if(r1===p3||r1===q3||r2===p3||r2===q3||Math.abs(r1)>12||Math.abs(r2)>12) continue;
+    // LHS after mult: a3(x-q3)+b3(x-p3) = (a3+b3)x - (a3q3+b3p3)
+    const lhsXC=a3+b3, lhsKC=-(a3*q3+b3*p3);
+    const lhsT=[]; if(lhsXC!==0) lhsT.push({coeff:lhsXC,power:1}); if(lhsKC!==0) lhsT.push({coeff:lhsKC,power:0});
+    if(!lhsT.length) lhsT.push({coeff:0,power:0});
+    // RHS after mult: c3(x-p3)(x-q3) = c3x²-c3(p3+q3)x+c3p3q3
+    const rhsX2C=c3, rhsXC=-c3*(p3+q3), rhsKC=c3*p3*q3;
+    const rhsT=[]; if(rhsX2C!==0) rhsT.push({coeff:rhsX2C,power:2}); if(rhsXC!==0) rhsT.push({coeff:rhsXC,power:1}); if(rhsKC!==0) rhsT.push({coeff:rhsKC,power:0});
+    if(!rhsT.length) rhsT.push({coeff:0,power:0});
+    return { level:3, display:{type:'a_over_xMinusP_plus_b_over_xMinusQ_eq_c',a:a3,b:b3,p:p3,q:q3,c:c3},
+      solutions:[r1,r2].sort((x,y)=>x-y), forbiddenX:[p3,q3],
+      lcmStr: `(x${p3>=0?'-'+p3:'+'+Math.abs(p3)})(x${q3>=0?'-'+q3:'+'+Math.abs(q3)})`,
+      lcmLevel:'var2', p3, q3,
+      lhsTerms:lhsT, rhsTerms:rhsT,
+      lhsExp:{x2C:0,xC:lhsXC,kC:lhsKC}, rhsExp:{x2C:rhsX2C,xC:rhsXC,kC:rhsKC},
+      quadA:A, quadB:B, quadC:C3 };
+  }
+  return makeQuadEq(2);
+}
+
+// ─── Section 1 & 2 renderers ──────────────────
+function renderLinearEq(display) {
+  const {type,a,b,c,p,d} = display;
+  if (type==='xOverA_plus_b_eq_c') return (
+    <span style={{display:'inline-flex',alignItems:'center',gap:8,direction:'ltr',fontSize:22,fontWeight:'bold'}}>
+      <Frac num="x" den={String(a)} big/><span style={{color:'#555'}}>{b>=0?'+':''}{b}</span><span style={{color:'#c62828'}}>=</span><span>{c}</span>
+    </span>);
+  if (type==='axPlusB_overD_eq_c') return (
+    <span style={{display:'inline-flex',alignItems:'center',gap:8,direction:'ltr',fontSize:22,fontWeight:'bold'}}>
+      <Frac num={<span>{a===1?'':a}x {b>=0?'+ '+b:'− '+Math.abs(b)}</span>} den={String(d)} big/><span style={{color:'#c62828'}}>=</span><span>{c}</span>
+    </span>);
+  if (type==='a_over_xPlusP_plus_b_eq_c') {
+    const denStr = p>=0?`x + ${p}`:`x − ${Math.abs(p)}`;
+    return (
+      <span style={{display:'inline-flex',alignItems:'center',gap:8,direction:'ltr',fontSize:22,fontWeight:'bold'}}>
+        <Frac num={String(a)} den={denStr} big/>
+        {b!==0&&<span style={{color:'#555'}}>{b>0?'+':''}{b}</span>}
+        <span style={{color:'#c62828'}}>=</span><span>{c}</span>
+      </span>);
+  }
+  return null;
+}
+
+function renderQuadEq(display) {
+  const {type} = display;
+  if (type==='x_plus_a_over_x_eq_b') {
+    const {a,b}=display; return (
+    <span style={{display:'inline-flex',alignItems:'center',gap:8,direction:'ltr',fontSize:22,fontWeight:'bold'}}>
+      <span>x</span><span style={{color:'#555'}}>+</span><Frac num={String(a)} den="x" big/><span style={{color:'#c62828'}}>=</span><span>{b}</span>
+    </span>);}
+  if (type==='ax_plus_b_over_x_eq_c') {
+    const {a,b,c}=display; return (
+    <span style={{display:'inline-flex',alignItems:'center',gap:8,direction:'ltr',fontSize:22,fontWeight:'bold'}}>
+      <span>{a}x</span><span style={{color:'#555'}}>+</span><Frac num={String(b)} den="x" big/><span style={{color:'#c62828'}}>=</span><span>{c}</span>
+    </span>);}
+  if (type==='kx_plus_a_over_xPlusP_eq_b') {
+    const {k,a,p,b}=display;
+    const denStr=p>=0?`x + ${p}`:`x − ${Math.abs(p)}`;
+    const aSign=a>=0?'+':'−';
+    return (
+    <span style={{display:'inline-flex',alignItems:'center',gap:8,direction:'ltr',fontSize:22,fontWeight:'bold'}}>
+      <span>{k}x</span><span style={{color:'#555'}}>{aSign}</span>
+      <Frac num={String(Math.abs(a))} den={denStr} big/><span style={{color:'#c62828'}}>=</span><span>{b}</span>
+    </span>);}
+  if (type==='a_over_xMinusP_plus_b_over_xMinusQ_eq_c') {
+    const {a,b,p,q,c}=display;
+    const d1=p>0?`x − ${p}`:`x + ${Math.abs(p)}`;
+    const d2=q>0?`x − ${q}`:`x + ${Math.abs(q)}`;
+    const bSign=b>=0?'+':'−';
+    return (
+    <span style={{display:'inline-flex',alignItems:'center',gap:8,direction:'ltr',fontSize:22,fontWeight:'bold'}}>
+      <Frac num={String(a)} den={d1} big/><span style={{color:'#555'}}>{bSign}</span>
+      <Frac num={String(Math.abs(b))} den={d2} big/><span style={{color:'#c62828'}}>=</span><span>{c}</span>
+    </span>);}
+  return null;
+}
+
+// Parse expression into {xC, kC} totals (for validation)
+function parseExpr(s) {
+  s = (s||'').replace(/\s/g,'').replace(/−/g,'-').replace(/\+\-/g,'-').replace(/\-\+/g,'-');
+  if(!s) return null;
+  if(s[0]!=='-' && s[0]!=='+') s='+'+s;
+  const tokens = s.match(/[+\-][^+\-]*/g)||[];
+  let xC=0, kC=0;
+  for(const tok of tokens) {
+    const sign=tok[0]==='-'?-1:1;
+    const rest=tok.slice(1);
+    if(rest==='x') { xC+=sign; continue; }
+    if(rest.endsWith('x')) { const n=parseInt(rest.slice(0,-1)||'1'); if(!isNaN(n)) xC+=sign*n; }
+    else { const n=parseInt(rest); if(!isNaN(n)) kC+=sign*n; }
+  }
+  return {xC, kC};
+}
+
+// Parse expression into array of individual terms [{coeff, power}, ...]
+function parseExprToTerms(s) {
+  s = (s||'').replace(/\s/g,'').replace(/−/g,'-').replace(/\+\-/g,'-').replace(/\-\+/g,'-');
+  if(!s) return null;
+  if(s[0]!=='-' && s[0]!=='+') s='+'+s;
+  const tokens = s.match(/[+\-][^+\-]*/g)||[];
+  const terms = [];
+  for(const tok of tokens) {
+    const sign=tok[0]==='-'?-1:1;
+    const rest=tok.slice(1);
+    if(rest==='x') { terms.push({coeff:sign, power:1}); }
+    else if(rest.endsWith('x')) { const n=parseInt(rest.slice(0,-1)||'1'); if(!isNaN(n)) terms.push({coeff:sign*n, power:1}); }
+    else { const n=parseInt(rest); if(!isNaN(n)) terms.push({coeff:sign*n, power:0}); }
+  }
+  return terms.length ? terms : null;
+}
+
+// ─── Section 1 ────────────────────────────────
+function Section1() {
+  const [level, setLevel] = useState(2);
+  const [eq, setEq] = useState(() => makeLinearEq(2));
+  const [phase, setPhase] = useState(0);
+  const [lcmInp, setLcmInp] = useState('');
+  const [lhsExpr, setLhsExpr] = useState('');
+  const [rhsExpr, setRhsExpr] = useState('');
+  const [left, setLeft] = useState([]);
+  const [right, setRight] = useState([]);
+  const [canSolve, setCanSolve] = useState(false);
+  const [solInp, setSolInp] = useState('');
+  const [fb, setFb] = useState('');
+  const [ghost, setGhost] = useState(null);
+  const [overSide, setOverSide] = useState(null);
+  const [draggingInfo, setDraggingInfo] = useState(null);
+  const dragRef = useRef(null);
+  const leftRef = useRef([]);
+  const rightRef = useRef([]);
+  const leftZoneRef = useRef(null);
+  const rightZoneRef = useRef(null);
+  leftRef.current = left;
+  rightRef.current = right;
+
+  useEffect(() => {
+    function onMouseMove(e) {
+      const dr = dragRef.current;
+      if (!dr) return;
+      const dx = e.clientX - dr.startX, dy = e.clientY - dr.startY;
+      if (!dr.active && Math.sqrt(dx*dx+dy*dy) > 8) {
+        dr.active = true;
+        setDraggingInfo({side:dr.side, idx:dr.idx});
+        document.body.style.userSelect = 'none';
+        document.body.style.WebkitUserSelect = 'none';
+      }
+      if (!dr.active) return;
+      setGhost({x:e.clientX, y:e.clientY, coeff:dr.coeff, power:dr.power});
+      let over = null;
+      const lz=leftZoneRef.current, rz=rightZoneRef.current;
+      if(lz){const r=lz.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)over='left';}
+      if(rz&&!over){const r=rz.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)over='right';}
+      setOverSide(over);
+    }
+    function onMouseUp(e) {
+      const dr = dragRef.current;
+      if (!dr) return;
+      if (dr.active) {
+        const {side, idx} = dr;
+        const lz=leftZoneRef.current, rz=rightZoneRef.current;
+        let dropped = null;
+        if(lz){const r=lz.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)dropped='left';}
+        if(rz&&!dropped){const r=rz.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)dropped='right';}
+        if (dropped && dropped !== side) {
+          const terms = side==='left' ? leftRef.current : rightRef.current;
+          const t = terms[idx];
+          if (t) {
+            if(side==='left'){ setLeft(l=>l.filter((_,i)=>i!==idx)); setRight(r=>[...r,{coeff:-t.coeff,power:t.power}]); }
+            else { setRight(r=>r.filter((_,i)=>i!==idx)); setLeft(l=>[...l,{coeff:-t.coeff,power:t.power}]); }
+            setCanSolve(false);
+          }
+        }
+      }
+      document.body.style.userSelect = '';
+      document.body.style.WebkitUserSelect = '';
+      dragRef.current = null;
+      setGhost(null); setOverSide(null); setDraggingInfo(null);
+    }
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => { document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); };
+  }, []);
+
+  function reset(l) {
+    const lv=l||level; const e=makeLinearEq(lv);
+    setEq(e); setPhase(0); setLcmInp('');
+    setLhsExpr(''); setRhsExpr('');
+    setLeft([]); setRight([]); setCanSolve(false); setSolInp(''); setFb('');
+    dragRef.current=null; setGhost(null); setOverSide(null); setDraggingInfo(null);
+  }
+
+  function checkLCD() {
+    if(eq.level===3){
+      if(checkLCDStr(lcmInp, eq.display.p)){ setPhase(1); setFb(''); }
+      else setFb('✗ לא נכון. כתוב למשל: x+3 או x-2');
+    } else {
+      const v=parseInt(lcmInp);
+      if(v===eq.lcmVal){ setPhase(1); setFb(''); }
+      else setFb('✗ לא נכון — נסה שוב');
+    }
+  }
+
+  function checkSimp() {
+    const lhs = parseExpr(lhsExpr);
+    const rhs = parseExpr(rhsExpr);
+    if(!lhs||!rhs){ setFb('✗ כתוב ביטוי בכל צד'); return; }
+    const expLhsX = (eq.lhsTerms||[]).filter(t=>t.power===1).reduce((s,t)=>s+t.coeff,0);
+    const expLhsC = (eq.lhsTerms||[]).filter(t=>t.power===0).reduce((s,t)=>s+t.coeff,0);
+    const expRhsX = (eq.rhsTerms||[]).filter(t=>t.power===1).reduce((s,t)=>s+t.coeff,0);
+    const expRhsC = (eq.rhsTerms||[]).filter(t=>t.power===0).reduce((s,t)=>s+t.coeff,0);
+    if(lhs.xC!==expLhsX || lhs.kC!==expLhsC){ setFb('✗ צד שמאל שגוי — נסה שוב'); return; }
+    if(rhs.xC!==expRhsX || rhs.kC!==expRhsC){ setFb('✗ צד ימין שגוי — נסה שוב'); return; }
+    // Load exactly what the student wrote — no pre-simplification
+    const lTerms = parseExprToTerms(lhsExpr);
+    const rTerms = parseExprToTerms(rhsExpr);
+    setLeft(lTerms || (eq.lhsTerms||[]).map(t=>({...t})));
+    setRight(rTerms || (eq.rhsTerms||[]).map(t=>({...t})));
+    setPhase(2); setFb('');
+  }
+
+  function collect() {
+    const newL=doCollect(left), newR=doCollect(right);
+    const safeL=newL.length?newL:[{coeff:0,power:0}];
+    const safeR=newR.length?newR:[{coeff:0,power:0}];
+    setLeft(safeL); setRight(safeR);
+    const lx=newL.filter(t=>t.power===1), lc=newL.filter(t=>t.power===0);
+    const rx=newR.filter(t=>t.power===1), rc=newR.filter(t=>t.power===0);
+    setCanSolve(
+      (lx.length===1&&lc.length===0&&rx.length===0&&rc.length===1)||
+      (rx.length===1&&rc.length===0&&lx.length===0&&lc.length===1));
+    setFb('');
+  }
+
+  function checkSol() {
+    if(parseFloat(solInp)===eq.solution){ setPhase(99); setFb(''); }
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  const {display, level:lv} = eq;
+
+  function MultDisplay() {
+    if(lv===1){
+      const {a,b,c}=display;
+      return (
+        <div className="eq-row" style={{fontSize:17,gap:10,direction:'ltr',flexWrap:'wrap',justifyContent:'center'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+            <Frac num="x" den={String(a)}/><span style={{color:'#aaa',fontSize:13}}>·{a}</span>
+          </span>
+          {b!==0&&<><span style={{color:'#555'}}>+</span><span style={{color:'#555'}}>{b}·{a}</span></>}
+          <span style={{color:'#c62828'}}>=</span>
+          <span style={{color:'#555'}}>{c}·{a}</span>
+        </div>);
+    }
+    if(lv===2){
+      const {a,b,d,c}=display;
+      const numEl=<span>{a===1?'':a}x {b>=0?'+ '+Math.abs(b):'− '+Math.abs(b)}</span>;
+      return (
+        <div className="eq-row" style={{fontSize:17,gap:10,direction:'ltr',flexWrap:'wrap',justifyContent:'center'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+            <Frac num={numEl} den={String(d)}/><span style={{color:'#aaa',fontSize:13}}>·{d}</span>
+          </span>
+          <span style={{color:'#c62828'}}>=</span>
+          <span style={{color:'#555'}}>{c}·{d}</span>
+        </div>);
+    }
+    const {a,b,c,p}=display;
+    const pStr=p>=0?`x+${p}`:`x-${Math.abs(p)}`;
+    return (
+      <div className="eq-row" style={{fontSize:16,gap:8,direction:'ltr',flexWrap:'wrap',justifyContent:'center'}}>
+        <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
+          <Frac num={String(a)} den={pStr}/><span style={{color:'#aaa',fontSize:12}}>·({pStr})</span>
+        </span>
+        {b!==0&&<><span style={{color:'#555'}}>+</span><span style={{color:'#555'}}>{b}·({pStr})</span></>}
+        <span style={{color:'#c62828'}}>=</span>
+        <span style={{color:'#555'}}>{c}·({pStr})</span>
+      </div>);
+  }
+
+  const leftVis  = left.filter(t=>t.coeff!==0);
+  const rightVis = right.filter(t=>t.coeff!==0);
+
+  return (
+    <div className="section-wrapper">
+      <div className="section-title">תת-פרק 1 — משוואה לינארית עם נעלם במכנה</div>
+      <div className="difficulty-row">
+        <button className="btn btn-new" style={{marginRight:'auto'}} onClick={()=>reset()}>משוואה חדשה ↺</button>
+      </div>
+
+      <div className="eq-card">
+        <div className="phase-title">המשוואה:</div>
+        <div className="eq-row">{renderLinearEq(display)}</div>
+        {lv===3&&<div style={{textAlign:'center',fontSize:13,color:'#888',marginTop:4}}>תנאי: x ≠ {-display.p}</div>}
+      </div>
+
+      {/* שלב 1 — מ״מ */}
+      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">שלב 1 — מהו המכנה המשותף?</div>
+        {lv===3&&<div className="info-box" style={{fontSize:13,marginBottom:8}}>הביטוי מכיל x</div>}
+        <div className="input-row">
+          <label>מ״מ =</label>
+          <input className="math-input" style={{width:lv===3?110:72}} value={lcmInp}
+            onChange={e=>setLcmInp(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&phase===0&&checkLCD()}
+            disabled={phase>0}/>
+          {phase===0&&<button className="btn btn-primary" onClick={checkLCD}>✓ אשר</button>}
+        </div>
+        {fb&&phase===0&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
+      </div>
+
+      {/* שלב 2 — כפל + כתיבת אגפים */}
+      {phase>=1&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — כפל כל איבר במ״מ:</div>
+          <MultDisplay/>
+          <div style={{height:14}}/>
+          <div className="phase-title">כתוב את שני אגפי המשוואה לאחר הפישוט:</div>
+          <div style={{direction:'ltr',display:'flex',alignItems:'center',gap:10,justifyContent:'center',marginTop:10,flexWrap:'wrap'}}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <span style={{fontSize:12,color:'#888',direction:'rtl'}}>צד שמאל</span>
+              <input
+                style={{width:160,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+                  fontSize:20,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+                  background:phase>1?'#f5f5f5':'#fff'}}
+                value={lhsExpr}
+                onChange={e=>setLhsExpr(e.target.value)}
+                placeholder=""
+                disabled={phase>1}/>
+            </div>
+            <span style={{fontSize:28,fontWeight:'bold',color:'#c62828',paddingTop:18}}>=</span>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <span style={{fontSize:12,color:'#888',direction:'rtl'}}>צד ימין</span>
+              <input
+                style={{width:160,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+                  fontSize:20,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+                  background:phase>1?'#f5f5f5':'#fff'}}
+                value={rhsExpr}
+                onChange={e=>setRhsExpr(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&phase===1&&checkSimp()}
+                placeholder=""
+                disabled={phase>1}/>
+            </div>
+          </div>
+          {phase===1&&<div style={{textAlign:'center',marginTop:14}}>
+            <button className="btn btn-primary" onClick={checkSimp}>✓ אשר</button>
+          </div>}
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {/* שלב 3 — גרירה */}
+      {phase>=2&&(
+        <div className="eq-card">
+          <div className="phase-title">שלב 3 — פתור בהעברת אגפים</div>
+          <div className="info-box" style={{fontSize:13,marginBottom:10}}>
+            גרור כל איבר לצד השני של המשוואה — הסימן יתהפך אוטומטית
+          </div>
+          <div style={{display:'flex',alignItems:'stretch',justifyContent:'center',gap:0,direction:'ltr'}}>
+            <div ref={leftZoneRef}
+              style={{flex:1,display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',justifyContent:'center',
+                minHeight:70,padding:'10px 8px',borderRadius:'12px 0 0 12px',
+                border:`2.5px dashed ${overSide==='left'?'#43a047':'#c5cae9'}`,
+                background:overSide==='left'?'#e8f5e9':'#fafafa',transition:'all 0.15s'}}>
+              {leftVis.length===0
+                ? <span style={{fontSize:20,color:'#bbb',fontWeight:'bold'}}>0</span>
+                : leftVis.map((t,i)=>{
+                    const realIdx=left.indexOf(t);
+                    return <TermChip key={i} coeff={t.coeff} power={t.power} isFirst={i===0}
+                      dimmed={draggingInfo?.side==='left'&&draggingInfo?.idx===realIdx}
+                      onMouseDown={e=>{e.preventDefault();dragRef.current={side:'left',idx:realIdx,coeff:t.coeff,power:t.power,startX:e.clientX,startY:e.clientY,active:false};}}/>;
+                  })}
+            </div>
+            <span style={{fontSize:30,fontWeight:'bold',color:'#c62828',alignSelf:'center',padding:'0 10px'}}>=</span>
+            <div ref={rightZoneRef}
+              style={{flex:1,display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',justifyContent:'center',
+                minHeight:70,padding:'10px 8px',borderRadius:'0 12px 12px 0',
+                border:`2.5px dashed ${overSide==='right'?'#43a047':'#c5cae9'}`,
+                background:overSide==='right'?'#e8f5e9':'#fafafa',transition:'all 0.15s'}}>
+              {rightVis.length===0
+                ? <span style={{fontSize:20,color:'#bbb',fontWeight:'bold'}}>0</span>
+                : rightVis.map((t,i)=>{
+                    const realIdx=right.indexOf(t);
+                    return <TermChip key={i} coeff={t.coeff} power={t.power} isFirst={i===0}
+                      dimmed={draggingInfo?.side==='right'&&draggingInfo?.idx===realIdx}
+                      onMouseDown={e=>{e.preventDefault();dragRef.current={side:'right',idx:realIdx,coeff:t.coeff,power:t.power,startX:e.clientX,startY:e.clientY,active:false};}}/>;
+                  })}
+            </div>
+          </div>
+          <div style={{display:'flex',justifyContent:'flex-end',marginTop:10}}>
+            <button className="btn btn-hint" onClick={collect}>⊕ כנס איברים משותפים</button>
+          </div>
+          {canSolve&&(
+            <div className="input-row" style={{marginTop:8,justifyContent:'center'}}>
+              <label style={{fontWeight:'bold',fontSize:16}}>x =</label>
+              <input className="math-input" value={solInp}
+                onChange={e=>setSolInp(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&checkSol()}/>
+              <button className="btn btn-success" onClick={checkSol}>✓ בדוק</button>
+            </div>)}
+          {!canSolve&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>
+            גרור איברים ולחץ "כנס איברים משותפים" עד שנשאר x לבד
+          </div>}
+          {fb&&phase===2&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {phase===99&&(
+        <><div className="success-banner">✅ נכון! x = {eq.solution}</div>
+          <div style={{textAlign:'center',marginTop:14}}>
+            <button className="btn btn-new" onClick={()=>reset()}>משוואה חדשה ↺</button>
+          </div>
+        </>)}
+
+      {ghost&&(
+        <div style={{position:'fixed',left:ghost.x+14,top:ghost.y-20,
+          background:'#3949ab',color:'#fff',padding:'8px 18px',
+          borderRadius:10,fontSize:18,fontWeight:'bold',
+          pointerEvents:'none',zIndex:9999,opacity:0.88,
+          direction:'ltr',whiteSpace:'nowrap',
+          boxShadow:'0 4px 16px rgba(0,0,0,0.25)'}}>
+          {termTxt(ghost.coeff, ghost.power, true)}
+        </div>)}
+    </div>);
+}
+
+// ─── Section 2 ────────────────────────────────
+function Section2() {
+  const [level, setLevel] = useState(2);
+  const [eq, setEq] = useState(()=>makeQuadEq(2));
+  const [phase, setPhase] = useState(0);
+  const [lcmInp, setLcmInp] = useState('');
+  // phase 1 (level 3 only): parenthesized coefficients
+  const [aParenInp, setAParenInp] = useState('');
+  const [bParenInp, setBParenInp] = useState('');
+  const [cParenInp, setCParenInp] = useState('');
+  // phase 2: expanded expressions
+  const [lhsExpr, setLhsExpr] = useState('');
+  const [rhsExpr, setRhsExpr] = useState('');
+  const [left, setLeft] = useState([]);
+  const [right, setRight] = useState([]);
+  const [quadReady, setQuadReady] = useState(false);
+  const [aInp, setAInp] = useState('');
+  const [bInp, setBInp] = useState('');
+  const [cInp, setCInp] = useState('');
+  const [sol1, setSol1] = useState('');
+  const [sol2, setSol2] = useState('');
+  const [noSolInp, setNoSolInp] = useState(false);
+  const [fb, setFb] = useState('');
+  const [ghost, setGhost] = useState(null);
+  const [overSide, setOverSide] = useState(null);
+  const [draggingInfo, setDraggingInfo] = useState(null);
+  const dragRef = useRef(null);
+  const leftRef = useRef([]);
+  const rightRef = useRef([]);
+  const leftZoneRef = useRef(null);
+  const rightZoneRef = useRef(null);
+  leftRef.current = left;
+  rightRef.current = right;
+
+  useEffect(() => {
+    function onMouseMove(e) {
+      const dr=dragRef.current; if(!dr) return;
+      const dx=e.clientX-dr.startX, dy=e.clientY-dr.startY;
+      if(!dr.active&&Math.sqrt(dx*dx+dy*dy)>8){dr.active=true;setDraggingInfo({side:dr.side,idx:dr.idx});document.body.style.userSelect='none';}
+      if(!dr.active) return;
+      setGhost({x:e.clientX,y:e.clientY,coeff:dr.coeff,power:dr.power});
+      let over=null;
+      const lz=leftZoneRef.current,rz=rightZoneRef.current;
+      if(lz){const r=lz.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)over='left';}
+      if(rz&&!over){const r=rz.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)over='right';}
+      setOverSide(over);
+    }
+    function onMouseUp(e) {
+      const dr=dragRef.current; if(!dr) return;
+      if(dr.active){
+        const {side,idx}=dr;
+        const lz=leftZoneRef.current,rz=rightZoneRef.current;
+        let dropped=null;
+        if(lz){const r=lz.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)dropped='left';}
+        if(rz&&!dropped){const r=rz.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)dropped='right';}
+        if(dropped&&dropped!==side){
+          const terms=side==='left'?leftRef.current:rightRef.current;
+          const t=terms[idx];
+          if(t){
+            if(side==='left'){setLeft(l=>l.filter((_,i)=>i!==idx));setRight(r=>[...r,{coeff:-t.coeff,power:t.power}]);}
+            else{setRight(r=>r.filter((_,i)=>i!==idx));setLeft(l=>[...l,{coeff:-t.coeff,power:t.power}]);}
+            setQuadReady(false);
+          }
+        }
+      }
+      document.body.style.userSelect='';
+      dragRef.current=null; setGhost(null); setOverSide(null); setDraggingInfo(null);
+    }
+    document.addEventListener('mousemove',onMouseMove);
+    document.addEventListener('mouseup',onMouseUp);
+    return()=>{document.removeEventListener('mousemove',onMouseMove);document.removeEventListener('mouseup',onMouseUp);};
+  },[]);
+
+  function reset(l) {
+    const lv=l||level; const e=makeQuadEq(lv);
+    setEq(e); setPhase(0); setLcmInp('');
+    setAParenInp(''); setBParenInp(''); setCParenInp('');
+    setLhsExpr(''); setRhsExpr('');
+    setLeft([]); setRight([]); setQuadReady(false);
+    setAInp(''); setBInp(''); setCInp('');
+    setSol1(''); setSol2(''); setNoSolInp(false); setFb('');
+    dragRef.current=null; setGhost(null); setOverSide(null); setDraggingInfo(null);
+  }
+
+  function checkLCD() {
+    const lv=eq.level;
+    let ok=false;
+    if(lv===1) ok=lcmInp.replace(/\s/g,'').toLowerCase()==='x';
+    else if(lv===2){
+      const {p}=eq.display;
+      const exp=p>=0?`x+${p}`:`x-${Math.abs(p)}`;
+      ok=lcmInp.replace(/\s/g,'')===exp;
+    } else {
+      ok=checkLCDQuad(lcmInp,eq.p3,eq.q3);
+    }
+    if(ok){setPhase(lv===3?1:2);setFb('');}
+    else setFb(lv===3?'✗ לא נכון. כתוב למשל: (x-2)(x+3)':'✗ לא נכון — נסה שוב');
+  }
+
+  function checkParen() {
+    const {a,b,c}=eq.display;
+    const av=parseInt(aParenInp), bv=parseInt(bParenInp), cv=parseInt(cParenInp);
+    if(av===a&&bv===b&&cv===c){setPhase(2);setFb('');}
+    else setFb('✗ אחד הערכים שגוי — נסה שוב');
+  }
+
+  function checkExpanded() {
+    const lhs=parseExpr2(lhsExpr), rhs=parseExpr2(rhsExpr);
+    if(!lhs||!rhs){setFb('✗ כתוב ביטוי בכל צד');return;}
+    const {lhsExp,rhsExp}=eq;
+    if(lhs.x2C!==lhsExp.x2C||lhs.xC!==lhsExp.xC||lhs.kC!==lhsExp.kC){setFb('✗ צד שמאל שגוי — נסה שוב');return;}
+    if(rhs.x2C!==rhsExp.x2C||rhs.xC!==rhsExp.xC||rhs.kC!==rhsExp.kC){setFb('✗ צד ימין שגוי — נסה שוב');return;}
+    const lTerms=parseExprToTerms2(lhsExpr)||eq.lhsTerms.map(t=>({...t}));
+    const rTerms=parseExprToTerms2(rhsExpr)||eq.rhsTerms.map(t=>({...t}));
+    setLeft(lTerms); setRight(rTerms);
+    setPhase(3); setFb('');
+  }
+
+  function collect() {
+    const newL=doCollect(left), newR=doCollect(right);
+    const safeL=newL.length?newL:[{coeff:0,power:0}];
+    const safeR=newR.length?newR:[{coeff:0,power:0}];
+    setLeft(safeL); setRight(safeR);
+    const rIsZero=newR.every(t=>t.coeff===0), lHasX2=newL.some(t=>t.power===2&&t.coeff!==0);
+    const lIsZero=newL.every(t=>t.coeff===0), rHasX2=newR.some(t=>t.power===2&&t.coeff!==0);
+    setQuadReady((rIsZero&&lHasX2)||(lIsZero&&rHasX2));
+    setFb('');
+  }
+
+  function checkCoeffs() {
+    const av=parseInt(aInp), bv=parseInt(bInp), cv=parseInt(cInp);
+    // Read from whichever side the student put x² on
+    const lHasX2=left.some(t=>t.power===2&&t.coeff!==0);
+    const src=lHasX2?left:right;
+    const a2=src.reduce((s,t)=>t.power===2?s+t.coeff:s,0);
+    const b1=src.reduce((s,t)=>t.power===1?s+t.coeff:s,0);
+    const c0=src.reduce((s,t)=>t.power===0?s+t.coeff:s,0);
+    if(av===a2&&bv===b1&&cv===c0){setPhase(5);setFb('');}
+    else setFb('✗ אחד המקדמים שגוי — נסה שוב');
+  }
+
+  function checkSols() {
+    if(noSolInp){setFb('✗ למשוואה זו יש פתרונות — נסה שוב');return;}
+    const v1=parseFloat(sol1), v2=parseFloat(sol2);
+    if(isNaN(v1)||isNaN(v2)){setFb('✗ הכנס שני מספרים');return;}
+    const [s1,s2]=eq.solutions;
+    if((v1===s1&&v2===s2)||(v1===s2&&v2===s1)){
+      const forb=eq.forbiddenX||[];
+      if(forb.some(f=>f===v1||f===v2)){setFb('✗ אחד הפתרונות מאפס מכנה — פסול!');return;}
+      setPhase(99); setFb('');
+    } else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  const {display,level:lv}=eq;
+  const leftVis=left.filter(t=>t.coeff!==0);
+  const rightVis=right.filter(t=>t.coeff!==0);
+
+  function MultDisplay() {
+    if(lv===1){
+      const {a,b}=display;
+      return (
+        <div className="eq-row" style={{fontSize:17,gap:10,direction:'ltr',flexWrap:'wrap',justifyContent:'center'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:3}}>x<span style={{color:'#aaa',fontSize:12}}>·x</span></span>
+          {a!==0&&<><span style={{color:'#555'}}>+</span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:3}}><Frac num={String(a)} den="x"/><span style={{color:'#aaa',fontSize:12}}>·x</span></span></>}
+          <span style={{color:'#c62828'}}>=</span>
+          <span>{b}<span style={{color:'#aaa',fontSize:12}}>·x</span></span>
+        </div>);
+    }
+    if(lv===2){
+      const {k,a,p,b}=display;
+      const pStr=p>=0?`x+${p}`:`x-${Math.abs(p)}`;
+      const pParen=`(${pStr})`;
+      const aAbs=Math.abs(a), aSign=a>=0?'+':'−';
+      return (
+        <div className="eq-row" style={{fontSize:17,gap:10,direction:'ltr',flexWrap:'wrap',justifyContent:'center'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
+            <span>{k}x</span><span style={{color:'#aaa',fontSize:12}}>·{pParen}</span>
+          </span>
+          <span style={{color:'#555'}}>{aSign}</span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
+            <Frac num={String(aAbs)} den={pStr}/><span style={{color:'#aaa',fontSize:12}}>·{pParen}</span>
+          </span>
+          <span style={{color:'#c62828'}}>=</span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
+            <span>{b}</span><span style={{color:'#aaa',fontSize:12}}>·{pParen}</span>
+          </span>
+        </div>);
+    }
+    const {a,b,p,q,c}=display;
+    const d1=p>=0?`x-${p}`:`x+${Math.abs(p)}`;
+    const d2=q>=0?`x-${q}`:`x+${Math.abs(q)}`;
+    const lcd=`(${d1})(${d2})`;
+    return (
+      <div className="eq-row" style={{fontSize:15,gap:8,direction:'ltr',flexWrap:'wrap',justifyContent:'center'}}>
+        <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
+          <Frac num={String(a)} den={d1}/><span style={{color:'#aaa',fontSize:11}}>·{lcd}</span>
+        </span>
+        <span style={{color:'#555'}}>{b>=0?'+':'-'}</span>
+        <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
+          <Frac num={String(Math.abs(b))} den={d2}/><span style={{color:'#aaa',fontSize:11}}>·{lcd}</span>
+        </span>
+        <span style={{color:'#c62828'}}>=</span>
+        <span>{c}<span style={{color:'#aaa',fontSize:11}}>·{lcd}</span></span>
+      </div>);
+  }
+
+  return (
+    <div className="section-wrapper">
+      <div className="section-title">תת-פרק 2 — משוואה ריבועית עם נעלם במכנה</div>
+      <div className="difficulty-row">
+        <button className="btn btn-new" style={{marginRight:'auto'}} onClick={()=>reset()}>משוואה חדשה ↺</button>
+      </div>
+
+      <div className="eq-card">
+        <div className="phase-title">המשוואה:</div>
+        <div className="eq-row">{renderQuadEq(display)}</div>
+        <div style={{textAlign:'center',fontSize:13,color:'#888',direction:'rtl'}}>תנאי: x ∉ {'{'+( eq.forbiddenX||[]).join(', ')+'}'}</div>
+      </div>
+
+      {/* שלב 1 — מ״מ */}
+      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">שלב 1 — מהו המכנה המשותף?</div>
+        {lv===3&&<div className="info-box" style={{fontSize:13,marginBottom:8}}>הביטוי מכיל x</div>}
+        <div className="input-row">
+          <label>מ״מ =</label>
+          <input className="math-input" style={{width:lv===3?180:72}} value={lcmInp}
+            onChange={e=>setLcmInp(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&phase===0&&checkLCD()}
+            disabled={phase>0}/>
+          {phase===0&&<button className="btn btn-primary" onClick={checkLCD}>✓ אשר</button>}
+        </div>
+        {fb&&phase===0&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
+      </div>
+
+      {/* שלב 2 (רמה קשה בלבד) — כתיבה עם סוגריים */}
+      {phase>=1&&lv===3&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — כתוב את המשוואה לאחר כפל במ״מ (עם סוגריים):</div>
+          <div className="info-box" style={{fontSize:13,marginBottom:12,direction:'rtl'}}>
+            כפול כל איבר במ״מ — המכנה יתבטל. מלא את המקדמים החסרים:
+          </div>
+          {(()=>{
+            const {p,q}=display;
+            const tQ=q>0?`x − ${q}`:`x + ${Math.abs(q)}`;
+            const tP=p>0?`x − ${p}`:`x + ${Math.abs(p)}`;
+            const ins={width:58,padding:'7px 10px',border:'2.5px solid #9fa8da',borderRadius:8,
+              fontSize:17,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>1?'#f5f5f5':'#fff'};
+            return (
+              <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',
+                justifyContent:'center',direction:'ltr',margin:'10px 0',fontSize:16,fontWeight:'bold'}}>
+                <input style={ins} value={aParenInp} onChange={e=>setAParenInp(e.target.value)} disabled={phase>1} placeholder="?"/>
+                <span>·({tQ})</span>
+                <span style={{color:'#555'}}>+</span>
+                <input style={ins} value={bParenInp} onChange={e=>setBParenInp(e.target.value)} disabled={phase>1} placeholder="?"/>
+                <span>·({tP})</span>
+                <span style={{color:'#c62828',fontSize:22}}>=</span>
+                <input style={ins} value={cParenInp} onChange={e=>setCParenInp(e.target.value)} disabled={phase>1} placeholder="?"/>
+                <span>·({tP})({tQ})</span>
+              </div>);
+          })()}
+          {phase===1&&<div style={{textAlign:'center',marginTop:12}}>
+            <button className="btn btn-primary" onClick={checkParen}>✓ אשר</button>
+          </div>}
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {/* שלב 2/3 — כפל + פישוט */}
+      {phase>=2&&(
+        <div className="eq-card" style={{opacity:phase>2?0.5:1,pointerEvents:phase>2?'none':'auto'}}>
+          <div className="phase-title">{lv===3?'שלב 3':'שלב 2'} — כפל כל איבר במ״מ:</div>
+          <MultDisplay/>
+          <div style={{height:14}}/>
+          <div className="phase-title">כתוב את שני אגפי המשוואה לאחר הפישוט:</div>
+          <div className="info-box" style={{fontSize:12,marginBottom:10,direction:'rtl'}}>
+            ניתן להשתמש ב-x² או x^2 עבור ריבוע
+          </div>
+          <div style={{direction:'ltr',display:'flex',alignItems:'center',gap:10,justifyContent:'center',marginTop:10,flexWrap:'wrap'}}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <span style={{fontSize:12,color:'#888',direction:'rtl'}}>צד שמאל</span>
+              <input style={{width:190,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+                fontSize:18,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+                background:phase>2?'#f5f5f5':'#fff'}}
+                value={lhsExpr} onChange={e=>setLhsExpr(e.target.value)}
+                disabled={phase>2}/>
+            </div>
+            <span style={{fontSize:28,fontWeight:'bold',color:'#c62828',paddingTop:18}}>=</span>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <span style={{fontSize:12,color:'#888',direction:'rtl'}}>צד ימין</span>
+              <input style={{width:190,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+                fontSize:18,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+                background:phase>2?'#f5f5f5':'#fff'}}
+                value={rhsExpr} onChange={e=>setRhsExpr(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&phase===2&&checkExpanded()}
+                disabled={phase>2}/>
+            </div>
+          </div>
+          {phase===2&&<div style={{textAlign:'center',marginTop:14}}>
+            <button className="btn btn-primary" onClick={checkExpanded}>✓ אשר</button>
+          </div>}
+          {fb&&phase===2&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {/* שלב 3/4 — גרירה לצורה ax²+bx+c=0 */}
+      {phase>=3&&(
+        <div className="eq-card" style={{opacity:phase>3?0.5:1,pointerEvents:phase>3?'none':'auto'}}>
+          <div className="phase-title">{lv===3?'שלב 4':'שלב 3'} — ארגן לצורה ax²+bx+c=0 (גרור איברים)</div>
+          <div className="info-box" style={{fontSize:13,marginBottom:10}}>
+            גרור כל איבר לצד השני — הסימן יתהפך. לחץ "כנס" כדי לאסוף. כשהצד הימין הוא 0 — ממשיכים.
+          </div>
+          <div style={{display:'flex',alignItems:'stretch',justifyContent:'center',gap:0,direction:'ltr'}}>
+            <div ref={leftZoneRef}
+              style={{flex:1,display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',justifyContent:'center',
+                minHeight:70,padding:'10px 8px',borderRadius:'12px 0 0 12px',
+                border:`2.5px dashed ${overSide==='left'?'#43a047':'#c5cae9'}`,
+                background:overSide==='left'?'#e8f5e9':'#fafafa',transition:'all 0.15s'}}>
+              {leftVis.length===0
+                ? <span style={{fontSize:20,color:'#bbb',fontWeight:'bold'}}>0</span>
+                : leftVis.map((t,i)=>{
+                    const ri=left.indexOf(t);
+                    return <TermChip key={i} coeff={t.coeff} power={t.power} isFirst={i===0}
+                      dimmed={draggingInfo?.side==='left'&&draggingInfo?.idx===ri}
+                      onMouseDown={e=>{e.preventDefault();dragRef.current={side:'left',idx:ri,coeff:t.coeff,power:t.power,startX:e.clientX,startY:e.clientY,active:false};}}/>;
+                  })}
+            </div>
+            <span style={{fontSize:30,fontWeight:'bold',color:'#c62828',alignSelf:'center',padding:'0 10px'}}>=</span>
+            <div ref={rightZoneRef}
+              style={{flex:1,display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',justifyContent:'center',
+                minHeight:70,padding:'10px 8px',borderRadius:'0 12px 12px 0',
+                border:`2.5px dashed ${overSide==='right'?'#43a047':'#c5cae9'}`,
+                background:overSide==='right'?'#e8f5e9':'#fafafa',transition:'all 0.15s'}}>
+              {rightVis.length===0
+                ? <span style={{fontSize:20,color:'#bbb',fontWeight:'bold'}}>0</span>
+                : rightVis.map((t,i)=>{
+                    const ri=right.indexOf(t);
+                    return <TermChip key={i} coeff={t.coeff} power={t.power} isFirst={i===0}
+                      dimmed={draggingInfo?.side==='right'&&draggingInfo?.idx===ri}
+                      onMouseDown={e=>{e.preventDefault();dragRef.current={side:'right',idx:ri,coeff:t.coeff,power:t.power,startX:e.clientX,startY:e.clientY,active:false};}}/>;
+                  })}
+            </div>
+          </div>
+          <div style={{display:'flex',justifyContent:'space-between',marginTop:10,alignItems:'center'}}>
+            <button className="btn btn-hint" onClick={collect}>⊕ כנס איברים משותפים</button>
+            {quadReady&&phase===3&&<button className="btn btn-primary" onClick={()=>{setPhase(4);setFb('');}}>המשך ←</button>}
+          </div>
+          {!quadReady&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>
+            גרור ואסוף עד שהצד הימין = 0 ויש x² בצד שמאל
+          </div>}
+          {fb&&phase===3&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {/* שלב 4/5 — מקדמים a,b,c */}
+      {phase>=4&&(
+        <div className="eq-card" style={{opacity:phase>4?0.5:1,pointerEvents:phase>4?'none':'auto'}}>
+          <div className="phase-title">{lv===3?'שלב 5':'שלב 4'} — זהה את המקדמים מהמשוואה שכתבת ax²+bx+c=0:</div>
+          <div className="input-row" style={{justifyContent:'center',direction:'ltr',gap:16,marginTop:10}}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <label style={{fontSize:13,color:'#555'}}>a</label>
+              <input className="math-input" style={{width:72}} value={aInp} onChange={e=>setAInp(e.target.value)} disabled={phase>4}/>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <label style={{fontSize:13,color:'#555'}}>b</label>
+              <input className="math-input" style={{width:72}} value={bInp} onChange={e=>setBInp(e.target.value)} disabled={phase>4}/>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <label style={{fontSize:13,color:'#555'}}>c</label>
+              <input className="math-input" style={{width:72}} value={cInp} onChange={e=>setCInp(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&phase===4&&checkCoeffs()} disabled={phase>4}/>
+            </div>
+          </div>
+          {phase===4&&<div style={{textAlign:'center',marginTop:14}}>
+            <button className="btn btn-primary" onClick={checkCoeffs}>✓ אשר</button>
+          </div>}
+          {fb&&phase===4&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {/* שלב 5/6 — פתרונות */}
+      {phase>=5&&(
+        <div className="eq-card">
+          <div className="phase-title">{lv===3?'שלב 6':'שלב 5'} — מצא את הפתרונות של המשוואה:</div>
+          <div style={{direction:'rtl',textAlign:'center',marginBottom:10,fontSize:14,color:'#555'}}>
+            אם אין פתרון — סמן את התיבה. אחרת הכנס את שני הפתרונות.
+          </div>
+          <label style={{display:'flex',alignItems:'center',gap:8,justifyContent:'center',direction:'rtl',
+            cursor:'pointer',marginBottom:12,fontSize:15}}>
+            <input type="checkbox" checked={noSolInp} onChange={e=>setNoSolInp(e.target.checked)}
+              disabled={phase>5} style={{width:18,height:18,cursor:'pointer'}}/>
+            אין פתרון
+          </label>
+          {!noSolInp&&(
+            <div className="input-row" style={{justifyContent:'center'}}>
+              <label>x₁ =</label>
+              <input className="math-input" value={sol1} onChange={e=>setSol1(e.target.value)}
+                disabled={phase>5}/>
+              <label>x₂ =</label>
+              <input className="math-input" value={sol2} onChange={e=>setSol2(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&phase===5&&checkSols()} disabled={phase>5}/>
+            </div>)}
+          <div className="warn-box" style={{marginTop:8}}>⚠️ בדוק שהפתרונות ≠ {(eq.forbiddenX||[]).join(', ')}</div>
+          {phase===5&&<div style={{textAlign:'center',marginTop:12}}>
+            <button className="btn btn-success" onClick={checkSols}>✓ בדוק</button>
+          </div>}
+          {fb&&phase===5&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {phase===99&&(
+        <><div className="success-banner">✅ נכון! x₁={eq.solutions[0]}, x₂={eq.solutions[1]}</div>
+          <div style={{textAlign:'center',marginTop:14}}>
+            <button className="btn btn-new" onClick={()=>reset()}>משוואה חדשה ↺</button>
+          </div>
+        </>)}
+
+      {ghost&&(
+        <div style={{position:'fixed',left:ghost.x+14,top:ghost.y-20,
+          background:'#3949ab',color:'#fff',padding:'8px 18px',borderRadius:10,
+          fontSize:18,fontWeight:'bold',pointerEvents:'none',zIndex:9999,opacity:0.88,
+          direction:'ltr',whiteSpace:'nowrap',boxShadow:'0 4px 16px rgba(0,0,0,0.25)'}}>
+          {termTxt(ghost.coeff,ghost.power,true)}
+        </div>)}
+    </div>);
+}
+
+// ═══════════════════════════════════════════════
+//  SECTION 3 — כפל מקוצר
+// ═══════════════════════════════════════════════
+
+// Formulas reference panel
+function FormulasRef() {
+  return (
+    <div className="formulas-ref">
+      <div className="formulas-ref-title">נוסחאות כפל מקוצר — לעיון תמיד:</div>
+      <div className="formulas-ref-row">
+        <span>(a+b)² = a² + 2ab + b²</span>
+        <span>(a-b)² = a² - 2ab + b²</span>
+        <span>(a+b)(a-b) = a² - b²</span>
+      </div>
+    </div>);
+}
+
+// Formula choice buttons
+function FormulaButtons({ onPick, disabled, chosen, wrongPick }) {
+  const opts = [
+    { k:'sq_plus',  label:'(a+b)²' },
+    { k:'sq_minus', label:'(a−b)²' },
+    { k:'diff_sq',  label:'(a+b)(a−b)' }
+  ];
+  return (
+    <div style={{display:'flex',gap:10,flexWrap:'wrap',direction:'ltr',margin:'8px 0'}}>
+      {opts.map(o=>(
+        <button key={o.k}
+          className={`btn-formula${chosen===o.k?' selected':''}${wrongPick===o.k?' wrong-pick':''}`}
+          onClick={()=>!disabled&&onPick(o.k)}
+          style={{opacity:disabled&&chosen!==o.k?0.45:1}}>
+          {o.label}
+        </button>))}
+    </div>);
+}
+
+const FORMULA_NAMES = { sq_plus:'(a+b)²', sq_minus:'(a−b)²', diff_sq:'(a+b)(a−b)' };
+
+// ── Generator א — factoring ──────────────────
+function makeFactoring(level) {
+  const types = ['sq_plus','sq_minus','diff_sq'];
+  const type = pick(types);
+  const n = level>=2 ? pick([1,1,2]) : 1;
+  const b = level>=3 ? pick([3,4,5,6]) : pick([2,3,4,5]);
+  let expr;
+  if(type==='sq_plus')  expr={x2:n*n, x1:2*n*b,  x0:b*b};
+  else if(type==='sq_minus') expr={x2:n*n, x1:-2*n*b, x0:b*b};
+  else                  expr={x2:n*n, x1:0,       x0:-b*b};
+  return { type, n, b, expr };
+}
+
+// ── Generator ב — expansion ──────────────────
+function makeExpansion(level) { return makeFactoring(level); } // same data, reversed direction
+
+// ── Generator ג — linear SM equation ─────────
+// Form: (x+a)² − (x+b)² = c  → linear after expansion
+function makeLinearSM(level) {
+  let a,b,x,c; let tries=0;
+  do {
+    tries++; if(tries>300) break;
+    a=rand(-5,5); b=rand(-5,5);
+    if(a===b) continue;
+    x=rand(-8,8);
+    c=2*(a-b)*x+(a*a-b*b);
+    if(Math.abs(c)>50||c===0) continue;
+    break;
+  } while(true);
+  const xCoeff=2*(a-b), constant=a*a-b*b;
+  return { a, b, c, x, xCoeff, constant };
+}
+
+// ── Generator ד — quadratic SM equation ──────
+// Form: (x+a)² = b²  i.e. (x+a)² − b² = 0
+function makeQuadSM(level) {
+  let a,b;
+  do {
+    a = level>=2 ? rand(-5,5) : rand(-3,3);
+    b = level>=3 ? pick([4,5,6,7]) : pick([2,3,4]);
+  } while(a===0||-a+b===-a-b||Math.abs(-a+b)>12||Math.abs(-a-b)>12);
+  const B=2*a, C=a*a-b*b;
+  const D=4*b*b, sqrtD=2*b;
+  const x1=-a+b, x2=-a-b;
+  return { a, b, B, C, D, sqrtD, x1:[x1,x2].sort((u,v)=>u-v)[1], x2:[x1,x2].sort((u,v)=>u-v)[0] };
+}
+
+// ── Generator ד CommonFactor ──────────────────
+function makeCommonFactor(level) {
+  let gcf, r2;
+  if(level===1){
+    gcf=1; r2=randNonZero(-5,5);
+  } else if(level===2){
+    gcf=pick([2,3,4,5,6]); r2=randNonZero(-6,6);
+  } else {
+    // gcf is product of two factors → larger, less obvious (e.g. 6,8,9,10,12,15)
+    const p=pick([2,3,4,5]), q=pick([2,3,4]);
+    gcf=p*q; r2=randNonZero(-6,6);
+  }
+  // Equation: gcf·x² − gcf·r2·x = 0
+  // True GCF of coefficients = gcf → factor out gcf·x → (x − r2)
+  const A=gcf, B=-gcf*r2;
+  return { A, B, gcf, qA:1, qB:-r2, sol1:0, sol2:r2 };
+}
+
+// Validate factored form: e.g. "3x(x-4)" or "x(x+2)"
+function checkFactoredCF(inp, gcf, qA, qB) {
+  let s=(inp||'').replace(/\s/g,'').replace(/−/g,'-').replace(/=\s*0$/,'');
+  const gcfStr=gcf===1?'x':`${gcf}x`;
+  if(!s.startsWith(gcfStr+'(')||!s.endsWith(')')) return false;
+  const inner=s.slice(gcfStr.length+1,-1);
+  const p=parseExpr(inner);
+  if(!p) return false;
+  return p.xC===qA&&p.kC===qB;
+}
+
+// ── Render helpers ─────────────────────────────
+function renderFactoredForm(type, n, b) {
+  const aStr = n===1 ? 'x' : `${n}x`;
+  if(type==='sq_plus')  return `(${aStr} + ${b})²`;
+  if(type==='sq_minus') return `(${aStr} − ${b})²`;
+  return `(${aStr} + ${b})(${aStr} − ${b})`;
+}
+
+function checkFactoredText(raw, type, n, b) {
+  const s = raw.replace(/\s/g,'').toLowerCase().replace(/²/g,'^2');
+  const a = n===1?'x':`${n}x`;
+  if(type==='sq_plus')  return s===`(${a}+${b})^2`;
+  if(type==='sq_minus') return s===`(${a}-${b})^2`;
+  // diff_sq — accept both orderings
+  return s===`(${a}+${b})(${a}-${b})`||s===`(${a}-${b})(${a}+${b})`;
+}
+
+// ══ Sub-section א ─ פירוק לגורמים (ללא רמות) ═
+function SubSection3A() {
+  const [ex, setEx] = useState(()=>makeFactoring(pick([1,2])));
+  const [phase, setPhase] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [wrongPick, setWrongPick] = useState(null);
+  const [formInp, setFormInp] = useState('');
+  const [fb, setFb] = useState('');
+
+  function reset() { setEx(makeFactoring(pick([1,2]))); setPhase(0); setChosen(null); setWrongPick(null); setFormInp(''); setFb(''); }
+
+  function pickOption(t) {
+    if(t===ex.type){
+      setChosen(t); setWrongPick(null); setPhase(1); setFb('');
+    } else {
+      setWrongPick(t); setFb('✗ לא נכון — נסה שוב');
+    }
+  }
+
+  function checkForm() {
+    if(checkFactoredText(formInp, ex.type, ex.n, ex.b)){ setPhase(2); setFb(''); }
+    else setFb('✗ לא נכון. השתמש ב-^ לחזקה: (x+3)^2 או (x+3)(x-3)');
+  }
+
+  const expStr = expandedStr(ex.expr.x2, ex.expr.x1, ex.expr.x0);
+  const opts = [
+    { k:'sq_plus',  label:'a² + 2ab + b²' },
+    { k:'sq_minus', label:'a² − 2ab + b²' },
+    { k:'diff_sq',  label:'a² − b²' },
+  ];
+
+  return (
+    <div>
+      <div className="eq-card">
+        <div className="phase-title">פרק לגורמים:</div>
+        <div className="eq-row" style={{fontSize:24}}>{expStr}</div>
+      </div>
+
+      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">שלב 1 — למה הביטוי דומה?</div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',direction:'ltr',margin:'12px 0'}}>
+          {opts.map(o=>(
+            <button key={o.k}
+              className={`btn-formula${chosen===o.k?' selected':''}${wrongPick===o.k?' wrong-pick':''}`}
+              onClick={()=>!phase&&pickOption(o.k)}
+              style={{opacity:phase&&chosen!==o.k?0.45:1,fontSize:17}}>
+              {o.label}
+            </button>))}
+        </div>
+        {fb&&phase===0&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
+      </div>
+
+      {phase>=1&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — פרק לגורמים:</div>
+          <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:10}}>
+            <input style={{width:240,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+              fontSize:18,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>1?'#f5f5f5':'#fff'}}
+              value={formInp} onChange={e=>setFormInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===1&&checkForm()}
+              disabled={phase>1}/>
+            {phase===1&&<button className="btn btn-success" onClick={checkForm}>✓ בדוק</button>}
+          </div>
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {phase===2&&(<><div className="success-banner">✅ מצוין! {renderFactoredForm(ex.type,ex.n,ex.b)}</div>
+        <div style={{textAlign:'center',marginTop:14}}><button className="btn btn-new" onClick={reset}>תרגיל חדש ↺</button></div></>)}
+    </div>);
+}
+
+// ══ Sub-section ב ─ פיתוח (ללא רמות) ════════
+function SubSection3B() {
+  const [ex, setEx] = useState(()=>makeExpansion(pick([1,2])));
+  const [phase, setPhase] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [wrongPick, setWrongPick] = useState(null);
+  const [exprInp, setExprInp] = useState('');
+  const [fb, setFb] = useState('');
+
+  function reset() { setEx(makeExpansion(pick([1,2]))); setPhase(0); setChosen(null); setWrongPick(null); setExprInp(''); setFb(''); }
+
+  function pickFormula(f) {
+    if(f===ex.type){ setChosen(f); setWrongPick(null); setPhase(1); setFb('✓ נכון!'); setTimeout(()=>setFb(''),900); }
+    else { setWrongPick(f); setFb('✗ לא נכון — נסה שוב'); }
+  }
+
+  function checkExpr() {
+    const p = parseExpr2(exprInp);
+    if(!p){ setFb('✗ ביטוי לא תקין — נסה שוב'); return; }
+    const {x2C, xC, kC} = p;
+    if(x2C===ex.expr.x2 && xC===ex.expr.x1 && kC===ex.expr.x0){ setPhase(2); setFb(''); }
+    else setFb('✗ לא נכון — בדוק את הפיתוח שוב');
+  }
+
+  const factoredStr = renderFactoredForm(ex.type, ex.n, ex.b);
+  const expStr = expandedStr(ex.expr.x2, ex.expr.x1, ex.expr.x0);
+  return (
+    <div>
+      <div className="eq-card">
+        <div className="phase-title">פתח את הביטוי:</div>
+        <div className="eq-row" style={{fontSize:24}}>{factoredStr}</div>
+      </div>
+      <div className="eq-card" style={{opacity:phase>0&&chosen?0.5:1}}>
+        <div className="phase-title">שלב 1 — לאיזו נוסחה שייך הביטוי?</div>
+        <FormulaButtons onPick={pickFormula} disabled={phase>0} chosen={chosen} wrongPick={wrongPick}/>
+        {fb&&phase===0&&<div className={fb.startsWith('✓')?'feedback-ok':'feedback-err'} style={{marginTop:6}}>{fb}</div>}
+      </div>
+      {phase>=1&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — כתוב את כל הביטוי המפותח:</div>
+          <div style={{fontSize:12,color:'#888',textAlign:'center',marginBottom:8,direction:'rtl'}}>
+            ניתן להשתמש ב-x² או x^2
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:6}}>
+            <input style={{width:240,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+              fontSize:18,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>1?'#f5f5f5':'#fff'}}
+              value={exprInp} onChange={e=>setExprInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===1&&checkExpr()}
+              disabled={phase>1}/>
+            {phase===1&&<button className="btn btn-success" onClick={checkExpr}>✓ בדוק</button>}
+          </div>
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase===2&&(<><div className="success-banner">✅ נכון! {expStr}</div>
+        <div style={{textAlign:'center',marginTop:14}}><button className="btn btn-new" onClick={reset}>תרגיל חדש ↺</button></div></>)}
+    </div>);
+}
+
+// ── helpers for ג/ד validation ────────────────
+function parseTwoFactors(s) {
+  s = s.replace(/\s/g,'').replace(/−/g,'-');
+  const m = s.match(/^\(([^)]+)\)·?\(([^)]+)\)$/);
+  if(m) return [parseExpr(m[1]), parseExpr(m[2])];
+  const m2 = s.match(/^\(([^)]+)\)·?(-?\d+)$/);
+  if(m2) return [parseExpr(m2[1]), {xC:0,kC:parseInt(m2[2])}];
+  const m3 = s.match(/^(-?\d+)·?\(([^)]+)\)$/);
+  if(m3) return [{xC:0,kC:parseInt(m3[1])}, parseExpr(m3[2])];
+  return null;
+}
+// ג linear: (x+a)²-(x+b)² → (2x+a+b)·(a-b)
+function checkGLinear(inp, a, b) {
+  const f = parseTwoFactors(inp.replace(/=.*$/,''));
+  if(!f) return false;
+  const [f1,f2]=f; if(!f1||!f2) return false;
+  const K=a+b, D=a-b;
+  return (f1.xC===2&&f1.kC===K&&f2.xC===0&&f2.kC===D)||
+         (f2.xC===2&&f2.kC===K&&f1.xC===0&&f1.kC===D);
+}
+// ג quad: (x+a)²-b²=0 → (x+a+b)(x+a-b)=0
+function checkGQuad(inp, a, b) {
+  const f = parseTwoFactors(inp.replace(/=.*$/,''));
+  if(!f) return false;
+  const [f1,f2]=f; if(!f1||!f2) return false;
+  const p1=a+b, p2=a-b;
+  return (f1.xC===1&&f1.kC===p1&&f2.xC===1&&f2.kC===p2)||
+         (f1.xC===1&&f1.kC===p2&&f2.xC===1&&f2.kC===p1);
+}
+// ד linear: expanded (x+a)²-(x+b)² → xCoeff·x + const = c
+function checkELinear(inp, a, b) {
+  const p = parseExpr(inp.replace(/=.*$/,'').replace(/−/g,'-'));
+  if(!p) return false;
+  return p.xC===2*(a-b) && p.kC===a*a-b*b;
+}
+// ד quad: expanded (x+a)²-b²=0 → x²+2ax+(a²-b²)=0
+function checkEQuad(inp, a, b) {
+  const p = parseExpr2(inp.replace(/=.*$/,'').replace(/−/g,'-'));
+  if(!p) return false;
+  return p.x2C===1 && p.xC===2*a && p.kC===a*a-b*b;
+}
+
+// ── Simplify Step: student writes expanded equation (constant still on left) ──
+function SimplifyStep({ xCoeff, constant, rhs, onDone }) {
+  const [inp, setInp] = useState('');
+  const [fb, setFb] = useState('');
+  const [done, setDone] = useState(false);
+
+  function xLabel(c) {
+    if(c===1) return 'x'; if(c===-1) return '-x'; return `${c}x`;
+  }
+
+  function check() {
+    const s = inp.replace(/\s/g,'').replace(/−/g,'-');
+    const eqIdx = s.indexOf('=');
+    if(eqIdx < 0){ setFb('✗ כתוב משוואה עם סימן שווה'); return; }
+    const p = parseExpr(s.slice(0, eqIdx));
+    const rightVal = parseFloat(s.slice(eqIdx+1));
+    if(!p || isNaN(rightVal)){ setFb('✗ ביטוי לא תקין — נסה שוב'); return; }
+    // Accept: xCoeff·x + constant = rhs  (constant still on left)
+    // Also accept if constant=0: xCoeff·x = rhs
+    const ok = p.xC === xCoeff && p.kC === constant && rightVal === rhs;
+    if(ok){ setDone(true); setFb(''); onDone(); }
+    else setFb('✗ לא נכון — פתח את הסוגריים ואסוף איברים');
+  }
+
+  if(constant === 0) {
+    return (
+      <div style={{textAlign:'center',padding:'6px 0'}}>
+        <div style={{fontSize:13,color:'#888',marginBottom:12,direction:'rtl'}}>אין איבר חופשי — כתוב את המשוואה המפושטת:</div>
+        <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr'}}>
+          <input style={{width:200,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+            fontSize:18,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+            background:done?'#f5f5f5':'#fff'}}
+            value={inp} onChange={e=>setInp(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&!done&&check()}
+            disabled={done} placeholder={`${xLabel(xCoeff)} = ?`}/>
+          {!done && <button className="btn btn-primary" onClick={check}>✓ אשר</button>}
+        </div>
+        {fb && <div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+      </div>);
+  }
+
+  return (
+    <div>
+      <div style={{fontSize:13,color:'#888',textAlign:'center',marginBottom:10,direction:'rtl'}}>
+        פתח את הסוגריים ואסוף איברים — כתוב את המשוואה (עם האיבר החופשי עדיין בשמאל):
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:6}}>
+        <input
+          style={{width:240,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+            fontSize:18,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+            background:done?'#f5f5f5':'#fff'}}
+          value={inp} onChange={e=>setInp(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&!done&&check()}
+          disabled={done}
+          placeholder={`${xLabel(xCoeff)}x ${constant>=0?'+':''}${constant} = ${rhs}`}
+        />
+        {!done && <button className="btn btn-primary" onClick={check}>✓ אשר</button>}
+      </div>
+      {fb && <div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+    </div>);
+}
+
+// ── Drag Step: drag constant from left to right ──
+function DragStep({ xCoeff, constant, rhs, onDone }) {
+  const [moved, setMoved] = useState(false);
+  const dragRef = useRef(null);
+
+  function xLabel(c) {
+    if(c===1) return 'x'; if(c===-1) return '-x'; return `${c}x`;
+  }
+  function signedNum(v) { return v>=0 ? `+${v}` : String(v); }
+
+  const chipStyle = {fontWeight:'bold',fontSize:20,padding:'8px 16px',borderRadius:8,display:'inline-flex',alignItems:'center'};
+  const finalRhs = rhs - constant;
+
+  if(constant === 0) {
+    // Nothing to drag — skip automatically
+    React.useEffect(()=>{ onDone(); }, []);
+    return null;
+  }
+
+  return (
+    <div>
+      <div style={{fontSize:13,color:'#888',textAlign:'center',marginBottom:14,direction:'rtl'}}>
+        גרור את האיבר <strong style={{color:'#e65100'}}>{signedNum(constant)}</strong> לצד ימין — הסימן יתהפך
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:16,justifyContent:'center',direction:'ltr',flexWrap:'wrap',minHeight:64}}>
+
+        {/* Left zone */}
+        <div
+          onDragOver={e=>e.preventDefault()}
+          onDrop={()=>{ if(dragRef.current==='right'){ setMoved(false); dragRef.current=null; }}}
+          style={{display:'flex',gap:8,alignItems:'center',padding:'10px 16px',
+            borderRadius:12,border:`2px dashed ${moved?'#a5d6a7':'#9fa8da'}`,
+            background:moved?'#f0fff0':'#f8f9ff',minWidth:100,minHeight:56,transition:'all 0.2s'}}>
+          <span style={{...chipStyle,background:'#e8eaf6'}}>{xLabel(xCoeff)}</span>
+          {!moved && (
+            <span draggable
+              onDragStart={e=>{ dragRef.current='left'; e.dataTransfer.effectAllowed='move'; }}
+              style={{...chipStyle,background:'#fff3e0',border:'2px solid #ff9800',cursor:'grab',userSelect:'none'}}>
+              {signedNum(constant)}
+            </span>)}
+        </div>
+
+        <span style={{fontWeight:'bold',fontSize:28,color:'#c62828'}}>=</span>
+
+        {/* Right zone */}
+        <div
+          onDragOver={e=>e.preventDefault()}
+          onDrop={()=>{ if(dragRef.current==='left'){ setMoved(true); dragRef.current=null; }}}
+          style={{display:'flex',gap:8,alignItems:'center',padding:'10px 16px',
+            borderRadius:12,border:`2px dashed ${moved?'#a5d6a7':'#9fa8da'}`,
+            background:moved?'#f0fff0':'#f8f9ff',minWidth:80,minHeight:56,transition:'all 0.2s'}}>
+          <span style={{...chipStyle,background:'#e8eaf6'}}>{rhs}</span>
+          {moved && (
+            <span draggable
+              onDragStart={e=>{ dragRef.current='right'; e.dataTransfer.effectAllowed='move'; }}
+              style={{...chipStyle,background:'#e8f5e9',border:'2px solid #43a047',cursor:'grab',userSelect:'none'}}>
+              {signedNum(-constant)}
+            </span>)}
+        </div>
+      </div>
+
+      {moved && (
+        <div style={{textAlign:'center',marginTop:16}}>
+          <div style={{fontWeight:'bold',fontSize:18,color:'#1a237e',marginBottom:12,direction:'ltr'}}>
+            {xLabel(xCoeff)} = {finalRhs}
+          </div>
+          <button className="btn btn-success" onClick={onDone}>✓ עכשיו פתור את x</button>
+        </div>)}
+    </div>);
+}
+
+// ══ ג — פתרון עם פירוק, קל (לינארי) ══════════
+// Equation: (x+a)²−(x+b)²=c  →  formula: a²−b²  →  factor: (2x+a+b)(a-b)=c
+function SubSection3G_Linear() {
+  const [ex, setEx] = useState(()=>makeLinearSM());
+  const [phase, setPhase] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [wrongPick, setWrongPick] = useState(null);
+  const [factInp, setFactInp] = useState('');
+  const [factInp2, setFactInp2] = useState('');
+  const [solInp, setSolInp] = useState('');
+  const [fb, setFb] = useState('');
+
+  function reset() { setEx(makeLinearSM()); setPhase(0); setChosen(null); setWrongPick(null); setFactInp(''); setFactInp2(''); setSolInp(''); setFb(''); }
+
+  const smOpts=[{k:'sq_plus',label:'a² + 2ab + b²'},{k:'sq_minus',label:'a² − 2ab + b²'},{k:'diff_sq',label:'a² − b²'}];
+
+  function pickFormula(f) {
+    if(f==='diff_sq'){setChosen(f);setWrongPick(null);setPhase(1);setFb('');}
+    else{setWrongPick(f);setFb('✗ לא נכון — שים לב לצורת הביטוי');}
+  }
+  function checkFactored() {
+    if(checkGLinear(factInp,ex.a,ex.b)){setPhase(2);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+  // Step 3: accept clean simplified factored form e.g. (2x+1)(9)=45
+  function checkFactored2() {
+    if(checkGLinear(factInp2,ex.a,ex.b)){setPhase(3);setFb('');}
+    else setFb('✗ לא נכון — פשט את הביטויים בתוך הסוגריים');
+  }
+  function checkSol() {
+    if(parseFloat(solInp)===ex.x){setPhase(6);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  const e1Str=ex.a>=0?`(x + ${ex.a})²`:`(x − ${Math.abs(ex.a)})²`;
+  const e2Str=ex.b>=0?`(x + ${ex.b})²`:`(x − ${Math.abs(ex.b)})²`;
+  return (
+    <div>
+      <div className="eq-card">
+        <div className="phase-title">פתור את המשוואה:</div>
+        <div className="eq-row" style={{fontSize:20,direction:'ltr'}}>
+          <span>{e1Str}</span><span style={{color:'#555',margin:'0 6px'}}>−</span><span>{e2Str}</span>
+          <span style={{color:'#c62828',margin:'0 6px'}}>=</span><span>{ex.c}</span>
+        </div>
+      </div>
+      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">שלב 1 — למה הצד השמאל דומה?</div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',direction:'ltr',margin:'12px 0'}}>
+          {smOpts.map(o=><button key={o.k} className={`btn-formula${chosen===o.k?' selected':''}${wrongPick===o.k?' wrong-pick':''}`}
+            onClick={()=>!phase&&pickFormula(o.k)} style={{opacity:phase&&chosen!==o.k?0.45:1,fontSize:16}}>{o.label}</button>)}
+        </div>
+        {fb&&phase===0&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
+      </div>
+      {phase>=1&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — פרק את הצד השמאל לגורמים וכתוב את המשוואה:</div>
+          <div style={{fontSize:12,color:'#888',textAlign:'center',marginBottom:6,direction:'rtl'}}>
+            השתמש בנוסחה: (a+b)(a−b) = a²−b²
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:6}}>
+            <input style={{width:300,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+              fontSize:17,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>1?'#f5f5f5':'#fff'}}
+              value={factInp} onChange={e=>setFactInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===1&&checkFactored()}
+              disabled={phase>1}/>
+            {phase===1&&<button className="btn btn-primary" onClick={checkFactored}>✓ אשר</button>}
+          </div>
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase>=2&&(
+        <div className="eq-card" style={{opacity:phase>2?0.5:1,pointerEvents:phase>2?'none':'auto'}}>
+          <div className="phase-title">שלב 3 — פשט את הגורמים וכתוב את המשוואה בצורה מסודרת:</div>
+          <div style={{fontSize:12,color:'#888',textAlign:'center',marginBottom:6,direction:'rtl'}}>
+            אסוף איברים דומים בתוך כל סוגריים
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:6}}>
+            <input style={{width:260,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+              fontSize:17,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>2?'#f5f5f5':'#fff'}}
+              value={factInp2} onChange={e=>setFactInp2(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===2&&checkFactored2()}
+              disabled={phase>2}/>
+            {phase===2&&<button className="btn btn-primary" onClick={checkFactored2}>✓ אשר</button>}
+          </div>
+          {fb&&phase===2&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase>=3&&(
+        <div className="eq-card" style={{opacity:phase>3?0.5:1,pointerEvents:phase>3?'none':'auto'}}>
+          <div className="phase-title">שלב 4 — פתח סוגריים וכתוב את המשוואה המלאה:</div>
+          <SimplifyStep xCoeff={ex.xCoeff} constant={ex.constant} rhs={ex.c} onDone={()=>setPhase(4)}/>
+        </div>)}
+      {phase>=4&&(
+        <div className="eq-card" style={{opacity:phase>4?0.5:1,pointerEvents:phase>4?'none':'auto'}}>
+          <div className="phase-title">שלב 5 — העבר אגפים בגרירה:</div>
+          <DragStep xCoeff={ex.xCoeff} constant={ex.constant} rhs={ex.c} onDone={()=>setPhase(5)}/>
+        </div>)}
+      {phase>=5&&(
+        <div className="eq-card">
+          <div className="phase-title">שלב 6 — פתור ל-x:</div>
+          <div className="input-row" style={{justifyContent:'center',direction:'ltr'}}>
+            <label>x =</label>
+            <input className="math-input" value={solInp} onChange={e=>setSolInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&checkSol()} disabled={phase>5}/>
+            {phase===5&&<button className="btn btn-success" onClick={checkSol}>✓ בדוק</button>}
+          </div>
+          {fb&&phase===5&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase===6&&(<><div className="success-banner">✅ נכון! x = {ex.x}</div>
+        <div style={{textAlign:'center',marginTop:14}}><button className="btn btn-new" onClick={reset}>תרגיל חדש ↺</button></div></>)}
+    </div>);
+}
+
+// ══ ג — פתרון עם פירוק, קשה (ריבועי) ═════════
+// Equation: (x+a)²−b²=0  →  formula: a²−b²  →  factor: (x+a+b)(x+a-b)=0
+function SubSection3G_Quad() {
+  const [ex, setEx] = useState(()=>makeQuadSM(1));
+  const [phase, setPhase] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [wrongPick, setWrongPick] = useState(null);
+  const [factInp, setFactInp] = useState('');
+  const [s1, setS1] = useState(''); const [s2, setS2] = useState('');
+  const [fb, setFb] = useState('');
+
+  function reset() { setEx(makeQuadSM(1)); setPhase(0); setChosen(null); setWrongPick(null); setFactInp(''); setS1(''); setS2(''); setFb(''); }
+
+  const smOpts=[{k:'sq_plus',label:'a² + 2ab + b²'},{k:'sq_minus',label:'a² − 2ab + b²'},{k:'diff_sq',label:'a² − b²'}];
+
+  function pickFormula(f) {
+    if(f==='diff_sq'){setChosen(f);setWrongPick(null);setPhase(1);setFb('');}
+    else{setWrongPick(f);setFb('✗ לא נכון — שים לב לצורת הביטוי');}
+  }
+  function checkFactored() {
+    if(checkGQuad(factInp,ex.a,ex.b)){setPhase(2);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+  function checkSols() {
+    const v1=parseFloat(s1),v2=parseFloat(s2);
+    if(isNaN(v1)||isNaN(v2)){setFb('✗ הכנס שני מספרים');return;}
+    if((v1===ex.x1&&v2===ex.x2)||(v1===ex.x2&&v2===ex.x1)){setPhase(3);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  const eqDisp=ex.a>=0?`(x + ${ex.a})² − ${ex.b}² = 0`:`(x − ${Math.abs(ex.a)})² − ${ex.b}² = 0`;
+  return (
+    <div>
+      <div className="eq-card">
+        <div className="phase-title">פתור את המשוואה:</div>
+        <div className="eq-row" style={{fontSize:22,direction:'ltr'}}>{eqDisp}</div>
+      </div>
+      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">שלב 1 — למה הצד השמאל דומה?</div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',direction:'ltr',margin:'12px 0'}}>
+          {smOpts.map(o=><button key={o.k} className={`btn-formula${chosen===o.k?' selected':''}${wrongPick===o.k?' wrong-pick':''}`}
+            onClick={()=>!phase&&pickFormula(o.k)} style={{opacity:phase&&chosen!==o.k?0.45:1,fontSize:16}}>{o.label}</button>)}
+        </div>
+        {fb&&phase===0&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
+      </div>
+      {phase>=1&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — פרק לגורמים וכתוב את המשוואה:</div>
+          <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:10}}>
+            <input style={{width:260,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+              fontSize:17,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>1?'#f5f5f5':'#fff'}}
+              value={factInp} onChange={e=>setFactInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===1&&checkFactored()}
+              disabled={phase>1}/>
+            {phase===1&&<button className="btn btn-primary" onClick={checkFactored}>✓ אשר</button>}
+          </div>
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase>=2&&(
+        <div className="eq-card">
+          <div className="phase-title">שלב 3 — מצא את שני הפתרונות:</div>
+          <div className="input-row" style={{justifyContent:'center',direction:'ltr'}}>
+            <label>x₁ =</label>
+            <input className="math-input" value={s1} onChange={e=>setS1(e.target.value)} disabled={phase>2}/>
+            <label>x₂ =</label>
+            <input className="math-input" value={s2} onChange={e=>setS2(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&checkSols()} disabled={phase>2}/>
+            {phase===2&&<button className="btn btn-success" onClick={checkSols}>✓ בדוק</button>}
+          </div>
+          {fb&&phase===2&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase===3&&(<><div className="success-banner">✅ נכון! x₁ = {ex.x1} , x₂ = {ex.x2}</div>
+        <div style={{textAlign:'center',marginTop:14}}><button className="btn btn-new" onClick={reset}>תרגיל חדש ↺</button></div></>)}
+    </div>);
+}
+
+function SubSection3G({ level }) {
+  if(level===1) return React.createElement(SubSection3G_Linear, {key:'g-lin'});
+  return React.createElement(SubSection3G_Quad, {key:'g-quad'});
+}
+
+// ══ ד — פתרון עם פיתוח, קל (לינארי) ══════════
+// Equation: (x+a)²−(x+b)²=c  →  expand each  →  write full simplified equation  →  solve
+function SubSection3E_Linear() {
+  const [ex, setEx] = useState(()=>makeLinearSM());
+  const [phase, setPhase] = useState(0);
+  const [ch1, setCh1] = useState(null); const [wp1, setWp1] = useState(null);
+  const [ch2, setCh2] = useState(null); const [wp2, setWp2] = useState(null);
+  const [exprInp, setExprInp] = useState('');
+  const [solInp, setSolInp] = useState('');
+  const [fb, setFb] = useState('');
+
+  function reset() {
+    setEx(makeLinearSM()); setPhase(0);
+    setCh1(null); setWp1(null); setCh2(null); setWp2(null);
+    setExprInp(''); setSolInp(''); setFb('');
+  }
+  const et1=ex.a>=0?'sq_plus':'sq_minus', et2=ex.b>=0?'sq_plus':'sq_minus';
+  function pickF1(f){ if(f===et1){setCh1(f);setWp1(null);setPhase(1);setFb('');}else{setWp1(f);setFb('✗ לא נכון');} }
+  function pickF2(f){ if(f===et2){setCh2(f);setWp2(null);setPhase(2);setFb('');}else{setWp2(f);setFb('✗ לא נכון');} }
+  function checkExpr() {
+    if(checkELinear(exprInp,ex.a,ex.b)){setPhase(3);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+  function checkSol() {
+    if(parseFloat(solInp)===ex.x){setPhase(6);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  const e1Str=ex.a>=0?`(x + ${ex.a})²`:`(x − ${Math.abs(ex.a)})²`;
+  const e2Str=ex.b>=0?`(x + ${ex.b})²`:`(x − ${Math.abs(ex.b)})²`;
+  const smOpts=[{k:'sq_plus',label:'a² + 2ab + b²'},{k:'sq_minus',label:'a² − 2ab + b²'},{k:'diff_sq',label:'a² − b²'}];
+
+  return (
+    <div>
+      <div className="eq-card">
+        <div className="phase-title">פתור את המשוואה:</div>
+        <div className="eq-row" style={{fontSize:20,direction:'ltr'}}>
+          <span>{e1Str}</span><span style={{color:'#555',margin:'0 6px'}}>−</span><span>{e2Str}</span>
+          <span style={{color:'#c62828',margin:'0 6px'}}>=</span><span>{ex.c}</span>
+        </div>
+      </div>
+      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">שלב 1 — {e1Str} דומה ל...?</div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',direction:'ltr',margin:'12px 0'}}>
+          {smOpts.map(o=><button key={o.k} className={`btn-formula${ch1===o.k?' selected':''}${wp1===o.k?' wrong-pick':''}`}
+            onClick={()=>!phase&&pickF1(o.k)} style={{opacity:phase&&ch1!==o.k?0.45:1,fontSize:16}}>{o.label}</button>)}
+        </div>
+        {fb&&phase===0&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
+      </div>
+      {phase>=1&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — {e2Str} דומה ל...?</div>
+          <div style={{display:'flex',gap:10,flexWrap:'wrap',direction:'ltr',margin:'12px 0'}}>
+            {smOpts.map(o=><button key={o.k} className={`btn-formula${ch2===o.k?' selected':''}${wp2===o.k?' wrong-pick':''}`}
+              onClick={()=>phase===1&&pickF2(o.k)} style={{opacity:phase>1&&ch2!==o.k?0.45:1,fontSize:16}}>{o.label}</button>)}
+          </div>
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
+        </div>)}
+      {phase>=2&&(
+        <div className="eq-card" style={{opacity:phase>2?0.5:1,pointerEvents:phase>2?'none':'auto'}}>
+          <div className="phase-title">שלב 3 — כתוב את המשוואה המפותחת הפשוטה (צד שמאל בלבד):</div>
+          <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:10}}>
+            <input style={{width:200,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+              fontSize:17,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>2?'#f5f5f5':'#fff'}}
+              value={exprInp} onChange={e=>setExprInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===2&&checkExpr()}
+              disabled={phase>2}/>
+            <span style={{fontWeight:'bold',fontSize:18,color:'#c62828'}}> = {ex.c}</span>
+            {phase===2&&<button className="btn btn-primary" onClick={checkExpr}>✓ אשר</button>}
+          </div>
+          {fb&&phase===2&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase>=3&&(
+        <div className="eq-card" style={{opacity:phase>3?0.5:1,pointerEvents:phase>3?'none':'auto'}}>
+          <div className="phase-title">שלב 4 — פתח סוגריים וכתוב את המשוואה המלאה:</div>
+          <SimplifyStep xCoeff={ex.xCoeff} constant={ex.constant} rhs={ex.c} onDone={()=>setPhase(4)}/>
+        </div>)}
+      {phase>=4&&(
+        <div className="eq-card" style={{opacity:phase>4?0.5:1,pointerEvents:phase>4?'none':'auto'}}>
+          <div className="phase-title">שלב 5 — העבר אגפים בגרירה:</div>
+          <DragStep xCoeff={ex.xCoeff} constant={ex.constant} rhs={ex.c} onDone={()=>setPhase(5)}/>
+        </div>)}
+      {phase>=5&&(
+        <div className="eq-card">
+          <div className="phase-title">שלב 6 — פתור ל-x:</div>
+          <div className="input-row" style={{justifyContent:'center',direction:'ltr'}}>
+            <label>x =</label>
+            <input className="math-input" value={solInp} onChange={e=>setSolInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&checkSol()} disabled={phase>5}/>
+            {phase===5&&<button className="btn btn-success" onClick={checkSol}>✓ בדוק</button>}
+          </div>
+          {fb&&phase===5&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase===6&&(<><div className="success-banner">✅ נכון! x = {ex.x}</div>
+        <div style={{textAlign:'center',marginTop:14}}><button className="btn btn-new" onClick={reset}>תרגיל חדש ↺</button></div></>)}
+    </div>);
+}
+
+// ══ ד — פתרון עם פיתוח, קשה (ריבועי) ═════════
+// Equation: (x+a)²−b²=0  →  identify formula  →  write expanded quadratic  →  solve
+function SubSection3E_Quad() {
+  const [ex, setEx] = useState(()=>makeQuadSM(1));
+  const [phase, setPhase] = useState(0);
+  const [chosen, setChosen] = useState(null);
+  const [wrongPick, setWrongPick] = useState(null);
+  const [exprInp, setExprInp] = useState('');
+  const [s1, setS1] = useState(''); const [s2, setS2] = useState('');
+  const [fb, setFb] = useState('');
+
+  function reset() {
+    setEx(makeQuadSM(1)); setPhase(0); setChosen(null); setWrongPick(null);
+    setExprInp(''); setS1(''); setS2(''); setFb('');
+  }
+  const expType = ex.a>=0?'sq_plus':'sq_minus';
+  const smOpts=[{k:'sq_plus',label:'a² + 2ab + b²'},{k:'sq_minus',label:'a² − 2ab + b²'},{k:'diff_sq',label:'a² − b²'}];
+  function pickFormula(f) {
+    if(f===expType){setChosen(f);setWrongPick(null);setPhase(1);setFb('');}
+    else{setWrongPick(f);setFb('✗ לא נכון — שים לב לסימן בתוך הסוגריים');}
+  }
+  function checkExpr() {
+    if(checkEQuad(exprInp,ex.a,ex.b)){setPhase(2);setFb('');}
+    else setFb('✗ לא נכון — בדוק את הפיתוח. ניתן להשתמש ב-x^2 או x²');
+  }
+  function checkSols() {
+    const v1=parseFloat(s1),v2=parseFloat(s2);
+    if(isNaN(v1)||isNaN(v2)){setFb('✗ הכנס שני מספרים');return;}
+    if((v1===ex.x1&&v2===ex.x2)||(v1===ex.x2&&v2===ex.x1)){setPhase(3);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  const eqDisp=ex.a>=0?`(x + ${ex.a})² − ${ex.b}² = 0`:`(x − ${Math.abs(ex.a)})² − ${ex.b}² = 0`;
+  const sqStr=ex.a>=0?`(x + ${ex.a})²`:`(x − ${Math.abs(ex.a)})²`;
+  return (
+    <div>
+      <div className="eq-card">
+        <div className="phase-title">פתור את המשוואה:</div>
+        <div className="eq-row" style={{fontSize:22,direction:'ltr'}}>{eqDisp}</div>
+      </div>
+      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">שלב 1 — {sqStr} דומה ל...?</div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',direction:'ltr',margin:'12px 0'}}>
+          {smOpts.map(o=><button key={o.k} className={`btn-formula${chosen===o.k?' selected':''}${wrongPick===o.k?' wrong-pick':''}`}
+            onClick={()=>!phase&&pickFormula(o.k)} style={{opacity:phase&&chosen!==o.k?0.45:1,fontSize:16}}>{o.label}</button>)}
+        </div>
+        {fb&&phase===0&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
+      </div>
+      {phase>=1&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — כתוב את כל המשוואה לאחר פיתוח (צד שמאל):</div>
+          <div style={{fontSize:12,color:'#888',textAlign:'center',marginBottom:8}}>ניתן להשתמש ב-x² או x^2</div>
+          <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:6}}>
+            <input style={{width:260,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+              fontSize:17,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>1?'#f5f5f5':'#fff'}}
+              value={exprInp} onChange={e=>setExprInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===1&&checkExpr()}
+              disabled={phase>1}/>
+            <span style={{fontWeight:'bold',fontSize:18,color:'#c62828'}}> = 0</span>
+            {phase===1&&<button className="btn btn-primary" onClick={checkExpr}>✓ אשר</button>}
+          </div>
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase>=2&&(
+        <div className="eq-card">
+          <div className="phase-title">שלב 3 — מצא את שני הפתרונות:</div>
+          <div className="input-row" style={{justifyContent:'center',direction:'ltr'}}>
+            <label>x₁ =</label>
+            <input className="math-input" value={s1} onChange={e=>setS1(e.target.value)} disabled={phase>2}/>
+            <label>x₂ =</label>
+            <input className="math-input" value={s2} onChange={e=>setS2(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&checkSols()} disabled={phase>2}/>
+            {phase===2&&<button className="btn btn-success" onClick={checkSols}>✓ בדוק</button>}
+          </div>
+          {fb&&phase===2&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+      {phase===3&&(<><div className="success-banner">✅ נכון! x₁ = {ex.x1} , x₂ = {ex.x2}</div>
+        <div style={{textAlign:'center',marginTop:14}}><button className="btn btn-new" onClick={reset}>תרגיל חדש ↺</button></div></>)}
+    </div>);
+}
+
+function SubSection3E({ level }) {
+  if(level===1) return React.createElement(SubSection3E_Linear, {key:'e-lin'});
+  return React.createElement(SubSection3E_Quad, {key:'e-quad'});
+}
+
+// ══ Section 3 wrapper ═════════════════════════
+function Section3() {
+  const [sub, setSub] = useState('alef');
+  const [level, setLevel] = useState(1);
+  const showLevels = sub==='gimel'||sub==='dalet';
+
+  const subTabs = [
+    { k:'alef',  label:'א — פירוק' },
+    { k:'bet',   label:'ב — פיתוח' },
+    { k:'gimel', label:'ג — פתרון עם פירוק' },
+    { k:'dalet', label:'ד — פתרון עם פיתוח' }
+  ];
+
+  return (
+    <div className="section-wrapper">
+      <div className="section-title">תת-פרק 3 — נוסחאות כפל מקוצר</div>
+      <FormulasRef/>
+      <div className="sub-tabs">
+        {subTabs.map(t=>(
+          <button key={t.k} className={`sub-tab${sub===t.k?' active':''}`}
+            onClick={()=>{setSub(t.k);setLevel(1);}}>{t.label}</button>))}
+      </div>
+      {showLevels&&(
+        <div className="difficulty-row">
+          <button className={`diff-btn${level===1?' active':''}`} onClick={()=>setLevel(1)}>לינארית</button>
+          <button className={`diff-btn${level===2?' active':''}`} onClick={()=>setLevel(2)}>ריבועית</button>
+        </div>)}
+      {sub==='alef'  && <SubSection3A key="a"/>}
+      {sub==='bet'   && <SubSection3B key="b"/>}
+      {sub==='gimel' && <SubSection3G key={`g-${level}`} level={level}/>}
+      {sub==='dalet' && <SubSection3E key={`e-${level}`} level={level}/>}
+    </div>);
+}
+
+// ═══════════════════════════════════════════════
+//  SECTION 4 — גורם משותף
+// ═══════════════════════════════════════════════
+
+function Section4() {
+  const [level, setLevel] = useState(2);
+  const [ex, setEx] = useState(()=>makeCommonFactor(2));
+  const [phase, setPhase] = useState(0);
+  const [gcfInp, setGcfInp] = useState('');
+  const [factInp, setFactInp] = useState('');
+  const [s1, setS1] = useState('');
+  const [s2, setS2] = useState('');
+  const [fb, setFb] = useState('');
+  const [fbType, setFbType] = useState('err'); // 'err' | 'warn'
+
+  function reset(l) {
+    const lv=l||level; const e=makeCommonFactor(lv);
+    setEx(e); setPhase(0); setGcfInp(''); setFactInp(''); setS1(''); setS2(''); setFb(''); setFbType('err');
+  }
+
+  function checkGCF() {
+    const s=gcfInp.replace(/\s/g,'');
+    const expected=ex.gcf===1?'x':`${ex.gcf}x`;
+    if(s===expected){setPhase(1);setFb('');setFbType('err');}
+    else {
+      const m=s.match(/^(\d+)x$/);
+      const n=m?parseInt(m[1]):(s==='x'?1:null);
+      if(n&&n>0&&n<ex.gcf&&ex.gcf%n===0){
+        setFbType('warn');
+        setFb('✓ נכון, אבל קיים גורם משותף גדול יותר — נסה שוב');
+      } else {
+        setFbType('err');
+        setFb('✗ לא נכון — נסה שוב');
+      }
+    }
+  }
+
+  function checkFactored() {
+    if(checkFactoredCF(factInp,ex.gcf,ex.qA,ex.qB)){setPhase(2);setFb('');}
+    else setFb('✗ לא נכון — בדוק את הגורם ואת הסוגריים');
+  }
+
+  function checkSols() {
+    const v1=parseFloat(s1), v2=parseFloat(s2);
+    if(isNaN(v1)||isNaN(v2)){setFb('✗ הכנס שני מספרים');return;}
+    if((v1===0&&v2===ex.sol2)||(v1===ex.sol2&&v2===0)){setPhase(3);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  const {A, B, gcf} = ex;
+  const aStr = A===1?'x²':`${A}x²`;
+  const bStr = B>=0?`+ ${B}x`:`− ${Math.abs(B)}x`;
+  const eqStr = `${aStr} ${bStr} = 0`;
+
+  return (
+    <div className="section-wrapper">
+      <div className="section-title">תת-פרק 4 — גורם משותף</div>
+      <div className="difficulty-row">
+        <button className="btn btn-new" style={{marginRight:'auto'}} onClick={()=>reset()}>משוואה חדשה ↺</button>
+      </div>
+
+      <div className="eq-card">
+        <div className="phase-title">המשוואה:</div>
+        <div className="eq-row" style={{fontSize:26,direction:'ltr',fontWeight:'bold'}}>{eqStr}</div>
+      </div>
+
+      {/* שלב 1 — גורם משותף */}
+      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">שלב 1 — מהו הגורם המשותף?</div>
+        <div className="input-row" style={{justifyContent:'center'}}>
+          <label>גורם משותף =</label>
+          <input className="math-input" style={{width:90}} value={gcfInp}
+            onChange={e=>setGcfInp(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&phase===0&&checkGCF()}
+            disabled={phase>0}/>
+          {phase===0&&<button className="btn btn-primary" onClick={checkGCF}>✓ אשר</button>}
+        </div>
+        {fb&&phase===0&&<div className={fbType==='warn'?'feedback-warn':'feedback-err'} style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+      </div>
+
+      {/* שלב 2 — ביטוי מפורק */}
+      {phase>=1&&(
+        <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — כתוב את המשוואה בצורה מפורקת:</div>
+          <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',flexWrap:'wrap',direction:'ltr'}}>
+            <input style={{width:200,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
+              fontSize:18,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
+              background:phase>1?'#f5f5f5':'#fff'}}
+              value={factInp} onChange={e=>setFactInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===1&&checkFactored()}
+              disabled={phase>1}/>
+            <span style={{fontSize:20,fontWeight:'bold',color:'#555'}}>=</span>
+            <span style={{fontSize:20,fontWeight:'bold'}}>0</span>
+            {phase===1&&<button className="btn btn-primary" onClick={checkFactored}>✓ אשר</button>}
+          </div>
+          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {/* שלב 3 — פתרונות */}
+      {phase>=2&&(
+        <div className="eq-card">
+          <div className="phase-title">שלב 3 — מצא את הפתרונות:</div>
+          <div className="input-row" style={{justifyContent:'center',direction:'ltr',marginTop:10}}>
+            <label>x₁ =</label>
+            <input className="math-input" value={s1} onChange={e=>setS1(e.target.value)}
+              disabled={phase>2}/>
+            <label>x₂ =</label>
+            <input className="math-input" value={s2} onChange={e=>setS2(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===2&&checkSols()}
+              disabled={phase>2}/>
+            {phase===2&&<button className="btn btn-success" onClick={checkSols}>✓ בדוק</button>}
+          </div>
+          {fb&&phase===2&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {phase===3&&(
+        <><div className="success-banner">✅ נכון! x₁ = 0 , x₂ = {ex.sol2}</div>
+          <div style={{textAlign:'center',marginTop:14}}>
+            <button className="btn btn-new" onClick={()=>reset()}>משוואה חדשה ↺</button>
+          </div>
+        </>)}
+    </div>);
+}
+
+// ═══════════════════════════════════════════════
+//  SECTION 5 — הכל יחד
+// ═══════════════════════════════════════════════
+
+/*
+  3 templates, one per level:
+  A (level 1): (x+a)²/d  − c  =  (x²−a²)/d          → linear
+  B (level 2): (x+a)²/d  − c  =  (x²−b²)/d  (b≠a)   → linear
+  C (level 3): (x+a)²/d  + k·x = c                   → quadratic w/ gcf
+*/
+function makeCombinedEq(level) {
+  if (level === 1) {
+    // (x+a)²/d - c = (x²-a²)/d
+    // After ×d: (x+a)² - cd = x²-a²  →  2ax = cd-2a²  →  x=(cd-2a²)/(2a)
+    let a,d,c,x, tries=0;
+    do {
+      tries++; if(tries>400)break;
+      a=randNonZero(-4,4); d=pick([2,3,4]); x=rand(-6,6);
+      const cd=2*a*(x+a); if(cd%d!==0)continue;
+      c=cd/d; if(c===0||Math.abs(c)>18)continue;
+      break;
+    } while(true);
+    return { template:'A', a, d, c, solution:x, lhsFormula:a>=0?'sq_plus':'sq_minus',
+      xCoeff:2*a, rhsVal:c*d-2*a*a };
+  }
+  if (level === 2) {
+    // Algebraic denominator: x
+    // Type D: (x+a)²/x = c   → after ×x: x²+(2a-c)x+a²=0
+    // Type E: (x+a)(x-a)/x=c → after ×x: x²-cx-a²=0
+    const casesD=[
+      {a:2,c:9, sols:[1,4]},
+      {a:3,c:16,sols:[1,9]},
+      {a:4,c:25,sols:[1,16]},
+      {a:6,c:25,sols:[4,9]},
+      {a:5,c:36,sols:[1,25]},
+      {a:8,c:36,sols:[4,16]},
+    ];
+    const casesE=[
+      {a:3,c:8, sols:[-1,9]},
+      {a:4,c:6, sols:[-2,8]},
+      {a:6,c:9, sols:[-3,12]},
+      {a:6,c:5, sols:[-4,9]},
+      {a:6,c:16,sols:[-2,18]},
+    ];
+    if(Math.random()<0.5){
+      const {a,c,sols}=pick(casesD);
+      return {template:'D',a,c,solutions:sols,qA:1,qB:2*a-c,qC:a*a};
+    } else {
+      const {a,c,sols}=pick(casesE);
+      return {template:'E',a,c,solutions:sols,qA:1,qB:-c,qC:-(a*a)};
+    }
+  }
+  // level 3 — (x+a)²/d + k·x = c  where c=a²/d (ensures quadratic has root 0)
+  // After ×d: (x+a)²+k·d·x = a²  →  x²+(2a+kd)x=0  →  x(x+(2a+kd))=0
+  let a,k,d,c,r2, tries=0;
+  do {
+    tries++; if(tries>400)break;
+    a=randNonZero(-4,4); d=pick([2,3,4]);
+    if((a*a)%d!==0)continue;
+    c=(a*a)/d;
+    k=randNonZero(-4,4);
+    r2=-(2*a+k*d);
+    if(r2===0||Math.abs(r2)>14||Math.abs(c)>14)continue;
+    break;
+  } while(true);
+  return { template:'C', a, k, d, c, solutions:[0,r2].sort((u,v)=>u-v),
+    lhsFormula:a>=0?'sq_plus':'sq_minus', qXCoeff:2*a+k*d };
+}
+
+// ── Term Drag Step: rearrange terms between sides (level 1, step 3) ──────────
+function TermDragStep2({ eqStr, onDone }) {
+  function parseSide(raw) {
+    const s = raw.replace(/\s/g,'').replace(/\^2/g,'\u00b2');
+    const str = /^[+\-]/.test(s) ? s : '+'+s;
+    const tokens = str.split(/(?=[+\-])/).filter(Boolean);
+    const terms = [];
+    let id = 0;
+    for(const tok of tokens) {
+      if(!tok || tok==='+' || tok==='-') continue;
+      const sign = tok[0]==='-' ? -1 : 1;
+      const body = tok.slice(1);
+      let coeff, power;
+      if(body.endsWith('\u00b2')) {
+        const withoutSq = body.slice(0,-1);
+        if(!withoutSq.endsWith('x')) continue;
+        const digits = withoutSq.slice(0,-1);
+        coeff = sign * (digits==='' ? 1 : parseInt(digits));
+        power = 2;
+      } else if(body.endsWith('x')) {
+        const digits = body.slice(0,-1);
+        coeff = sign * (digits==='' ? 1 : parseInt(digits));
+        power = 1;
+      } else if(body!=='' && /^\d+$/.test(body)) {
+        coeff = sign * parseInt(body);
+        power = 0;
+      } else { continue; }
+      if(!isNaN(coeff)) terms.push({id: id++, coeff, power});
+    }
+    return terms;
+  }
+
+  function parseEq(str) {
+    const ei = str.indexOf('=');
+    if(ei < 0) return {L:[], R:[]};
+    let id = 0;
+    const L = parseSide(str.slice(0,ei)).map(t=>({...t, id: id++}));
+    const R = parseSide(str.slice(ei+1)).map(t=>({...t, id: id++}));
+    return {L, R};
+  }
+
+  const init = React.useMemo(()=>parseEq(eqStr), [eqStr]);
+  const [L, setL] = useState(init.L);
+  const [R, setR] = useState(init.R);
+  const [overL, setOverL] = useState(false);
+  const [overR, setOverR] = useState(false);
+  const dragRef = React.useRef(null);
+  const nextId = React.useRef(init.L.length + init.R.length);
+
+  function chipLabel(t, isFirst) {
+    const showPlus = !isFirst && t.coeff > 0;
+    const sign = t.coeff < 0 ? '\u2212' : (showPlus ? '+' : '');
+    const abs = Math.abs(t.coeff);
+    const varPart = t.power===2 ? 'x\u00b2' : t.power===1 ? 'x' : '';
+    const numPart = t.power===0 ? String(abs) : (abs===1 ? '' : String(abs));
+    return sign + numPart + varPart;
+  }
+
+  function collectLike(terms) {
+    const s = {0:0, 1:0, 2:0};
+    for(const t of terms) s[t.power] += t.coeff;
+    let id = 0;
+    const result = [];
+    if(s[2]!==0) result.push({id:id++, coeff:s[2], power:2});
+    if(s[1]!==0) result.push({id:id++, coeff:s[1], power:1});
+    if(s[0]!==0) result.push({id:id++, coeff:s[0], power:0});
+    return result;
+  }
+
+  function rightIsZero() {
+    const s = {0:0, 1:0, 2:0};
+    for(const t of R) s[t.power] += t.coeff;
+    return s[0]===0 && s[1]===0 && s[2]===0;
+  }
+
+  function dropToSide(target) {
+    const d = dragRef.current;
+    if(!d || d.side===target) { dragRef.current=null; return; }
+    const newId = nextId.current++;
+    if(d.side==='L') {
+      const t = L.find(x=>x.id===d.id);
+      if(t) { setL(prev=>prev.filter(x=>x.id!==d.id)); setR(prev=>[...prev,{...t,id:newId,coeff:-t.coeff}]); }
+    } else {
+      const t = R.find(x=>x.id===d.id);
+      if(t) { setR(prev=>prev.filter(x=>x.id!==d.id)); setL(prev=>[...prev,{...t,id:newId,coeff:-t.coeff}]); }
+    }
+    dragRef.current = null;
+  }
+
+  const chipStyle = side => ({
+    fontWeight:'bold', fontSize:18, padding:'6px 14px', borderRadius:8,
+    background: side==='L' ? '#e3f2fd' : '#fce4ec',
+    border: `2px solid ${side==='L'?'#1e88e5':'#e53935'}`,
+    cursor:'grab', userSelect:'none', fontFamily:'monospace',
+    display:'inline-flex', alignItems:'center'
+  });
+
+  const zoneStyle = isOver => ({
+    display:'flex', gap:8, alignItems:'center', flexWrap:'wrap',
+    padding:'10px 16px', borderRadius:12,
+    border:`2px dashed ${isOver?'#f57f17':'#9fa8da'}`,
+    background: isOver ? '#fff8e1' : '#f8f9ff',
+    minWidth:120, minHeight:56, transition:'all 0.2s'
+  });
+
+  const done = rightIsZero();
+
+  function renderChips(terms, side) {
+    if(terms.length===0) return <span style={{color:'#bbb',fontSize:14,fontFamily:'monospace'}}>0</span>;
+    return terms.map((t,i)=>(
+      <span key={t.id} draggable
+        onDragStart={e=>{ dragRef.current={id:t.id,side}; e.dataTransfer.effectAllowed='move'; }}
+        style={chipStyle(side)}>
+        {chipLabel(t, i===0)}
+      </span>));
+  }
+
+  return (
+    <div>
+      <div style={{fontSize:13,color:'#555',direction:'rtl',textAlign:'center',marginBottom:14}}>
+        גרור איברים לצד השני — הסימן יתהפך. לחץ <strong>כנס</strong> לאיסוף איברים משותפים.
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:14,justifyContent:'center',
+        direction:'ltr',flexWrap:'wrap',minHeight:70}}>
+        <div onDragOver={e=>e.preventDefault()}
+          onDragEnter={()=>setOverL(true)} onDragLeave={()=>setOverL(false)}
+          onDrop={()=>{setOverL(false);dropToSide('L');}}
+          style={zoneStyle(overL)}>
+          {renderChips(L,'L')}
+        </div>
+        <span style={{fontWeight:'bold',fontSize:28,color:'#c62828'}}>=</span>
+        <div onDragOver={e=>e.preventDefault()}
+          onDragEnter={()=>setOverR(true)} onDragLeave={()=>setOverR(false)}
+          onDrop={()=>{setOverR(false);dropToSide('R');}}
+          style={zoneStyle(overR)}>
+          {done
+            ? <span style={{fontWeight:'bold',fontSize:20,fontFamily:'monospace'}}>0</span>
+            : renderChips(R,'R')}
+        </div>
+      </div>
+      <div style={{textAlign:'center',marginTop:14,display:'flex',gap:10,
+        justifyContent:'center',flexWrap:'wrap'}}>
+        {!done&&(
+          <button className="btn btn-primary"
+            onClick={()=>{setL(collectLike(L));setR(collectLike(R));}}>
+            כנס איברים משותפים ⊕
+          </button>)}
+        {done&&(
+          <button className="btn btn-success" onClick={()=>{
+            const collected = collectLike(L);
+            const lStr = collected.length===0 ? '0'
+              : collected.map((t,i)=>chipLabel(t,i===0)).join(' ');
+            onDone(lStr + ' = 0');
+          }}>
+            ממשיכים ✓
+          </button>)}
+      </div>
+    </div>
+  );
+}
+
+// ─── Section 5 component ─────────────────────────────────────────────────────
+//  Level 1: numeric LCD, 4-step structured flow
+//  Level 2: algebraic LCD (x), 5-step structured flow
+//  Level 3: open-ended
+// ─────────────────────────────────────────────────────────────────────────────
+function Section5() {
+  const [level, setLevel]     = useState(2);
+  const [ex, setEx]           = useState(()=>makeCombinedEq(2));
+  const [phase, setPhase]     = useState(0);
+  const [lcmInp, setLcmInp]   = useState('');      // level 1 step 1
+  const [steps, setSteps]     = useState([]);       // history of accepted steps
+  const [stepInp, setStepInp] = useState('');       // shared free-text input
+  const [fb, setFb]           = useState('');
+  const [dragParams, setDragParams] = useState(null);
+  const [cA, setCA] = useState('');  // level 2 step 4: coefficient a
+  const [cB, setCB] = useState('');  // level 2 step 4: coefficient b
+  const [cC, setCC] = useState('');  // level 2 step 4: coefficient c
+  const [solInp,   setSolInp]   = useState('');
+  const [gcfInp,   setGcfInp]   = useState('');
+  const [brackInp, setBrackInp] = useState('');
+  const [s1, setS1] = useState('');
+  const [s2, setS2] = useState('');
+  const [step3Eq, setStep3Eq] = useState('');
+  const [showHint, setShowHint] = useState(false);
+  const [showInput, setShowInput] = useState(false);
+
+  const isLinear = ex.template === 'A';
+  const {a, d, c, template} = ex;
+  const aSign   = a>=0 ? `+${a}` : `\u2212${Math.abs(a)}`;
+  const sqLabel = `(x${aSign})\u00b2`;
+
+  // ─── Math helpers ─────────────────────────────────────────────────────────
+
+  function evalAt(expr, xv) {
+    let s = String(expr||'').replace(/\s/g,'').replace(/\u2212/g,'-').replace(/\^2/g,'\u00b2');
+    for(let i=0; i<8; i++) {
+      const m = s.match(/\(([^()]+)\)\u00b2/);
+      if(!m) break;
+      const iv = evalAt(m[1], xv);
+      if(isNaN(iv)) return NaN;
+      s = s.slice(0,m.index) + `(${iv*iv})` + s.slice(m.index+m[0].length);
+    }
+    if(s.includes('NaN')) return NaN;
+    s = s.replace(/\)\s*\(/g,')*(');  // (a)(b) → (a)*(b)
+    s = s.replace(/(\d)\(/g,'$1*(');   // 4( → 4*(
+    s = s.replace(/\)(\d)/g,')*$1');   // )4 → )*4
+    s = s.replace(/(\d*)x\u00b2/g, (_,p)=>`(${p===''?1:+p}*${xv*xv})`);
+    s = s.replace(/(\d+)x/g,       (_,p)=>`(${+p*xv})`);
+    s = s.replace(/x/g, String(xv));
+    try { return +new Function(`return (${s})`)(); } catch(e) { return NaN; }
+  }
+
+  function checkEquivNumerical(inp) {
+    const s = inp.replace(/\s/g,'').replace(/\u2212/g,'-');
+    const ei = s.indexOf('=');
+    if(ei<0) return false;
+    const L=s.slice(0,ei), R=s.slice(ei+1);
+    if(isLinear) {
+      const pts = [1,2,3,4,5,-1,-2,-3].filter(t=>Math.abs(t-ex.solution)>0.4);
+      const [t1,t2] = pts;
+      const d1=evalAt(L,t1)-evalAt(R,t1), d2=evalAt(L,t2)-evalAt(R,t2);
+      if(isNaN(d1)||isNaN(d2)) return false;
+      const e1=ex.xCoeff*t1-ex.rhsVal, e2=ex.xCoeff*t2-ex.rhsVal;
+      if(Math.abs(e1)<0.001||Math.abs(e2)<0.001) return false;
+      return Math.abs(d1*e2-d2*e1) < 0.02*(Math.abs(d1*e2)+Math.abs(d2*e1)+1);
+    }
+    if(template==='D'||template==='E') {
+      const sols=ex.solutions;
+      const pts=[5,7,-3,11,-5,13,-7].filter(t=>t!==0&&!sols.includes(t));
+      const [t1,t2]=pts;
+      const d1=evalAt(L,t1)-evalAt(R,t1), d2=evalAt(L,t2)-evalAt(R,t2);
+      if(isNaN(d1)||isNaN(d2)) return false;
+      const e1=t1*t1+ex.qB*t1+ex.qC, e2=t2*t2+ex.qB*t2+ex.qC;
+      if(Math.abs(e1)<0.001||Math.abs(e2)<0.001) return false;
+      return Math.abs(d1*e2-d2*e1) < 0.02*(Math.abs(d1*e2)+Math.abs(d2*e1)+1);
+    }
+    // template C
+    const q=ex.qXCoeff;
+    const pts=[1,2,3,-1,-2].filter(t=>t!==0&&t!==-q);
+    const [t1,t2]=pts;
+    const d1=evalAt(L,t1)-evalAt(R,t1), d2=evalAt(L,t2)-evalAt(R,t2);
+    if(isNaN(d1)||isNaN(d2)) return false;
+    const e1=t1*t1+q*t1, e2=t2*t2+q*t2;
+    if(Math.abs(e1)<0.001||Math.abs(e2)<0.001) return false;
+    return Math.abs(d1*e2-d2*e1) < 0.02*(Math.abs(d1*e2)+Math.abs(d2*e1)+1);
+  }
+
+  function checkEquivClean(inp) {
+    const s=inp.replace(/\s/g,'').replace(/\u2212/g,'-');
+    const ei=s.indexOf('=');
+    if(ei<0) return false;
+    if(isLinear) {
+      const lp=parseExpr(s.slice(0,ei)), rp=parseExpr(s.slice(ei+1));
+      if(!lp||!rp) return false;
+      const netXC=lp.xC-rp.xC, netKC=rp.kC-lp.kC;
+      if(netXC===0) return false;
+      return netXC*ex.rhsVal === netKC*ex.xCoeff;
+    }
+    if(template==='D'||template==='E') {
+      // check equivalent to qA·x²+qB·x+qC=0 (rhs=0 required for clean)
+      const lp=parseExpr2(s.slice(0,ei)), rp=parseExpr2(s.slice(ei+1));
+      if(!lp||!rp) return false;
+      const nx2=lp.x2C-rp.x2C, nx=lp.xC-rp.xC, nk=lp.kC-rp.kC;
+      if(nx2===0) return false;
+      return nx===ex.qB*nx2 && nk===ex.qC*nx2;
+    }
+    // template C
+    const lp=parseExpr2(s.slice(0,ei)), rp=parseExpr2(s.slice(ei+1));
+    if(!lp||!rp) return false;
+    const nx2=lp.x2C-rp.x2C, nx=lp.xC-rp.xC, nk=lp.kC-rp.kC;
+    if(nx2===0) return false;
+    return nk===0 && nx===ex.qXCoeff*nx2;
+  }
+
+  function isCleanStep(inp) {
+    return !/[()²/]/.test(inp.replace(/\s/g,''));
+  }
+
+  function getLinearParams(inp) {
+    const s=inp.replace(/\s/g,'').replace(/\u2212/g,'-');
+    const ei=s.indexOf('=');
+    if(ei<0) return null;
+    const lp=parseExpr(s.slice(0,ei)), rp=parseExpr(s.slice(ei+1));
+    if(!lp||!rp) return null;
+    const nx=lp.xC-rp.xC;
+    if(nx>0) return {xCoeff:nx, constant:lp.kC, rhs:rp.kC};
+    if(nx<0) return {xCoeff:-nx, constant:-lp.kC, rhs:-rp.kC};
+    return {xCoeff:lp.xC, constant:lp.kC, rhs:rp.kC};
+  }
+
+  // ─── Reset ───────────────────────────────────────────────────────────────
+  function reset(l) {
+    const lv=l||level; setEx(makeCombinedEq(lv));
+    setPhase(0); setLcmInp(''); setSteps([]); setStepInp(''); setFb('');
+    setDragParams(null); setSolInp(''); setGcfInp(''); setBrackInp('');
+    setS1(''); setS2(''); setStep3Eq(''); setShowHint(false); setShowInput(false);
+    setCA(''); setCB(''); setCC('');
+  }
+
+  // ─── Handlers ────────────────────────────────────────────────────────────
+  function chkLCD() {
+    if(parseInt(lcmInp)===ex.d){ setPhase(1); setFb(''); }
+    else setFb('✗ לא נכון — מה המכנה של השברים?');
+  }
+
+  function handleIdentify() { setPhase(1); setFb(''); }
+
+  function submitStep(isPhase1) {
+    const inp = stepInp.trim();
+    if(!inp)               { setFb('✗ כתוב משוואה'); return; }
+    if(!inp.includes('=')) { setFb('✗ חסר סימן שווה'); return; }
+    const clean = isCleanStep(inp);
+    const equiv = clean ? checkEquivClean(inp) : checkEquivNumerical(inp);
+    if(!equiv) { setFb('✗ לא נכון — בדוק את החישוב ונסה שוב'); return; }
+    // Level 1, step 2: always proceed to step 3 (phase 2) — never skip it
+    if(isPhase1 && level===1) {
+      setSteps(prev=>[...prev,{text:inp,clean:clean}]);
+      setStepInp(''); setFb(''); setShowInput(false);
+      setPhase(2);
+      return;
+    }
+    if(clean) {
+      setSteps(prev=>[...prev,{text:inp,clean:true}]);
+      setStepInp(''); setFb('');
+      if(isLinear) {
+        const p=getLinearParams(inp);
+        setDragParams(p||{xCoeff:ex.xCoeff,constant:0,rhs:ex.rhsVal});
+        setPhase(3);
+      } else {
+        setPhase(3);
+      }
+    } else {
+      setSteps(prev=>[...prev,{text:inp,clean:false}]);
+      setStepInp('');
+      setShowInput(false);
+      setFb('');
+      if(isPhase1) setPhase(2);
+    }
+  }
+
+  function chkGCF() {
+    if(gcfInp.trim().toLowerCase()==='x'){setPhase(4);setFb('');}
+    else setFb('✗ הגורם המשותף הוא x');
+  }
+  function chkBrack() {
+    if(parseInt(brackInp)===ex.qXCoeff){setPhase(5);setFb('');}
+    else setFb('✗ לא נכון — מה נשאר בסוגריים?');
+  }
+  function chkQuadSols() {
+    const v1=parseFloat(s1), v2=parseFloat(s2);
+    if(isNaN(v1)||isNaN(v2)){setFb('✗ הכנס שני מספרים');return;}
+    const [q1,q2]=ex.solutions;
+    if((v1===q1&&v2===q2)||(v1===q2&&v2===q1)){setPhase(99);setFb('');}
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+  function chkLinearSol() {
+    if(parseFloat(solInp)===ex.solution){
+      setPhase(level===1 ? 4 : 99); setFb('');
+    } else setFb('✗ לא נכון — נסה שוב');
+  }
+  function chkFinalSol() {
+    const v = s1.trim().replace(/^x\s*=\s*/i,'');
+    if(parseFloat(v)===ex.solution){ setPhase(99); setFb(''); }
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  // ─── Display helpers ─────────────────────────────────────────────────────
+  function EqDisplay() {
+    if(template==='A') return (<>
+      <Frac num={sqLabel} den={String(d)} big/>
+      <span style={{color:'#555',margin:'0 6px'}}>&minus;</span><span>{c}</span>
+      <span style={{color:'#c62828',margin:'0 8px'}}>=</span>
+      <Frac num={`x\u00b2 \u2212 ${a*a}`} den={String(d)} big/>
+    </>);
+    if(template==='D') {
+      // (x+a)²/x = c
+      return (<>
+        <Frac num={sqLabel} den="x" big/>
+        <span style={{color:'#c62828',margin:'0 8px'}}>=</span>
+        <span>{ex.c}</span>
+      </>);
+    }
+    if(template==='E') {
+      // (x+a)(x-a)/x = c
+      const absA = Math.abs(ex.a);
+      const plus  = `(x+${absA})`;
+      const minus = `(x\u2212${absA})`;
+      return (<>
+        <Frac num={<span style={{direction:'ltr'}}>{plus}{minus}</span>} den="x" big/>
+        <span style={{color:'#c62828',margin:'0 8px'}}>=</span>
+        <span>{ex.c}</span>
+      </>);
+    }
+    const kSign=ex.k>=0?'+':'\u2212';
+    return (<>
+      <Frac num={sqLabel} den={String(d)} big/>
+      <span style={{color:'#555',margin:'0 6px'}}>{kSign}</span>
+      <span>{Math.abs(ex.k)}x</span>
+      <span style={{color:'#c62828',margin:'0 8px'}}>=</span>
+      <span>{c}</span>
+    </>);
+  }
+
+  function afterMultHint() {
+    if(template==='A') return `(x${aSign})\u00b2 \u2212 ${c*d} = x\u00b2 \u2212 ${a*a}`;
+    if(template==='D') return `(x${aSign})\u00b2 = ${ex.c}x`;
+    if(template==='E') {
+      const absA=Math.abs(ex.a);
+      return `(x+${absA})(x\u2212${absA}) = ${ex.c}x`;
+    }
+    const kd=ex.k*d;
+    return `(x${aSign})\u00b2 ${kd>=0?'+ '+kd:'\u2212 '+Math.abs(kd)}x = ${c*d}`;
+  }
+
+  // For level 2: after expand step hint
+  function afterExpandHint() {
+    if(template==='D') {
+      const b2 = ex.qB, b3 = ex.qC;
+      return `x\u00b2 ${b2>=0?'+ '+b2:'\u2212 '+Math.abs(b2)}x ${b3>=0?'+ '+b3:'\u2212 '+Math.abs(b3)} = 0`;
+    }
+    if(template==='E') {
+      const b2 = ex.qB, b3 = ex.qC;
+      return `x\u00b2 ${b2>=0?'+ '+b2:'\u2212 '+Math.abs(b2)}x ${b3>=0?'+ '+b3:'\u2212 '+Math.abs(b3)} = 0`;
+    }
+    return '';
+  }
+
+  // Level 2 step handlers
+  function submitLv2Step(stepNum) {
+    const inp = stepInp.trim();
+    if(!inp) { setFb('✗ כתוב משוואה'); return; }
+    if(!inp.includes('=')) { setFb('✗ חסר סימן שווה'); return; }
+    const clean = isCleanStep(inp);
+    const equiv = clean ? checkEquivClean(inp) : checkEquivNumerical(inp);
+    if(!equiv) { setFb('✗ לא נכון — בדוק את החישוב ונסה שוב'); return; }
+    setSteps(prev=>[...prev,{text:inp,clean}]);
+    setStepInp(''); setFb(''); setShowInput(false);
+    setPhase(stepNum+1);
+  }
+
+  function chkLv2Coeffs() {
+    const a2=parseInt(cA), b2=parseInt(cB), c2=parseInt(cC);
+    if(isNaN(a2)||isNaN(b2)||isNaN(c2)) { setFb('✗ הכנס מספרים בכל השדות'); return; }
+    if(a2===ex.qA && b2===ex.qB && c2===ex.qC) { setPhase(4); setFb(''); }
+    else setFb('✗ לא נכון — בדוק את המקדמים');
+  }
+
+  function chkLv2Sols() {
+    const v1=parseFloat(s1), v2=parseFloat(s2);
+    if(isNaN(v1)||isNaN(v2)) { setFb('✗ הכנס שני מספרים'); return; }
+    const [q1,q2]=ex.solutions;
+    if((v1===q1&&v2===q2)||(v1===q2&&v2===q1)) { setPhase(99); setFb(''); }
+    else setFb('✗ לא נכון — נסה שוב');
+  }
+
+  const hintMap = {
+    lv1_0: `המכנה המשותף של כל השברים הוא ${d}. כפול כל איבר בו.`,
+    lv1_1: `פרק: ${sqLabel} = x\u00b2${a>=0?'+'+2*a+'\u200bx':'\u2212'+Math.abs(2*a)+'\u200bx'}+${a*a} \u00a0 ו-\u00a0 x\u00b2\u2212${a*a} = (x${aSign})(x\u2212${Math.abs(a)}).`,
+    lv1_2: `בטל x\u00b2 משני הצדדים, אסוף איברים דומים — ברגע שאין סוגריים תעבור לגרירה.`,
+    lv1_3: `גרור את האיבר הקבוע לצד ימין — הסימן יתהפך.`,
+    open_0: `הביטוי ${sqLabel} הוא ריבוע — ניתן לכתיבה כ-(x${aSign})(x${aSign}).`,
+    open_1: `כפול כל איבר ב-${d}. שברים עם מכנה ${d} יהפכו לשלמים.`,
+    open_2: `פתח סוגריים, בטל, פשט — ברגע שאין סוגריים ושברים תעבור אוטומטית.`,
+  };
+  const curHint = level===1
+    ? (hintMap[`lv1_${Math.min(phase,3)}`]||hintMap.lv1_3)
+    : (hintMap[`open_${Math.min(phase,2)}`]||hintMap.open_2);
+
+  // Shared text input box — handler can be a boolean (for level 1 submitStep) or a function
+  const inputBox = (handler) => {
+    const onSubmit = typeof handler === 'function' ? handler : ()=>submitStep(handler);
+    return (
+    <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',
+      direction:'ltr',justifyContent:'center',marginTop:8}}>
+      <input style={{width:300,padding:'9px 13px',border:'2px solid #9fa8da',
+        borderRadius:9,fontSize:16,direction:'ltr',outline:'none',fontFamily:'monospace'}}
+        value={stepInp} onChange={e=>setStepInp(e.target.value)}
+        onKeyDown={e=>e.key==='Enter'&&onSubmit()}
+        placeholder="כתוב משוואה..."/>
+      <button className="btn btn-primary" onClick={onSubmit}>✓ אשר</button>
+    </div>);
+  };
+
+  // Steps history box
+  const stepsHistory = steps.length>0&&(
+    <div className="steps-box">
+      <div style={{fontSize:12,color:'#888',direction:'rtl',marginBottom:6}}>שלבי הפתרון שכתבת:</div>
+      {steps.map((st,i)=>(
+        <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'5px 0',
+          borderBottom:i<steps.length-1?'1px solid #e8eaf6':'none'}}>
+          <span style={{fontSize:12,color:'#aaa',minWidth:22,textAlign:'right'}}>{i+1}.</span>
+          <span style={{fontWeight:'bold',fontSize:16,direction:'ltr',fontFamily:'monospace',
+            color:st.clean?'#2e7d32':'#1a237e'}}>{st.text}</span>
+          {st.clean&&<span style={{fontSize:11,color:'#43a047',background:'#e8f5e9',
+            padding:'2px 8px',borderRadius:6,marginRight:'auto',direction:'rtl'}}>נקי ✓</span>}
+        </div>))}
+    </div>);
+
+  // Shared: drag + solve (linear)
+  const dragAndSolve = isLinear&&dragParams&&(<>
+    {phase>=3&&(
+      <div className="eq-card">
+        <div className="phase-title">{level===1?'שלב 3 — ':'שלב — '}הזזת איברים בגרירה</div>
+        <DragStep xCoeff={dragParams.xCoeff} constant={dragParams.constant}
+          rhs={dragParams.rhs} onDone={()=>{setPhase(4);setFb('');}}/>
+      </div>)}
+    {phase>=4&&(
+      <div className="eq-card">
+        <div className="phase-title">{level===1?'שלב 4 — ':'שלב — '}פתור עבור x</div>
+        <div className="input-row" style={{justifyContent:'center'}}>
+          <label>x =</label>
+          <input className="math-input" value={solInp}
+            onChange={e=>setSolInp(e.target.value)} disabled={phase>4}
+            onKeyDown={e=>e.key==='Enter'&&phase===4&&chkLinearSol()}/>
+          {phase===4&&<button className="btn btn-success" onClick={chkLinearSol}>✓ בדוק</button>}
+        </div>
+        {fb&&phase===4&&<div className="feedback-err" style={{textAlign:'center',marginTop:6}}>{fb}</div>}
+      </div>)}
+  </>);
+
+  // Shared: GCF → brackets → two solutions (quadratic)
+  const gcfPath = !isLinear&&(<>
+    {phase>=3&&(
+      <div className="eq-card" style={{opacity:phase>4?0.5:1}}>
+        <div className="phase-title">שלב — הוצא גורם משותף</div>
+        <div className="info-box" style={{marginBottom:8,direction:'ltr',textAlign:'center'}}>
+          x\u00b2 + {ex.qXCoeff}x = 0
+        </div>
+        <div className="input-row" style={{justifyContent:'center'}}>
+          <label>גורם משותף =</label>
+          <input className="math-input" value={gcfInp} onChange={e=>setGcfInp(e.target.value)}
+            disabled={phase>3} onKeyDown={e=>e.key==='Enter'&&phase===3&&chkGCF()} placeholder="?"/>
+          {phase===3&&<button className="btn btn-primary" onClick={chkGCF}>✓</button>}
+        </div>
+        {phase>=4&&(
+          <div className="input-row" style={{marginTop:10,justifyContent:'center',alignItems:'center'}}>
+            <label style={{fontWeight:'bold',direction:'ltr',whiteSpace:'nowrap'}}>x · ( x +</label>
+            <input className="math-input" value={brackInp}
+              onChange={e=>setBrackInp(e.target.value)} disabled={phase>4} placeholder="?"/>
+            <span style={{fontWeight:'bold',fontSize:16}}>) = 0</span>
+            {phase===4&&<button className="btn btn-primary" onClick={chkBrack}>✓</button>}
+          </div>)}
+        {fb&&(phase===3||phase===4)&&(
+          <div className="feedback-err" style={{textAlign:'center',marginTop:6}}>{fb}</div>)}
+      </div>)}
+    {phase>=5&&(
+      <div className="eq-card">
+        <div className="phase-title">שלב — מהם שני הפתרונות?</div>
+        <div className="info-box" style={{marginBottom:8}}>
+          x · (x + {ex.qXCoeff}) = 0 &nbsp;&rarr;&nbsp; כל גורם בנפרד שווה לאפס
+        </div>
+        <div className="input-row" style={{justifyContent:'center'}}>
+          <label>x&#8321; =</label>
+          <input className="math-input" value={s1} onChange={e=>setS1(e.target.value)} disabled={phase>5}/>
+          <label>x&#8322; =</label>
+          <input className="math-input" value={s2} onChange={e=>setS2(e.target.value)} disabled={phase>5}
+            onKeyDown={e=>e.key==='Enter'&&phase===5&&chkQuadSols()}/>
+          {phase===5&&<button className="btn btn-success" onClick={chkQuadSols}>✓ בדוק</button>}
+        </div>
+        {fb&&phase===5&&<div className="feedback-err" style={{textAlign:'center',marginTop:6}}>{fb}</div>}
+      </div>)}
+  </>);
+
+  // ─── Render ──────────────────────────────────────────────────────────────
+  return (
+    <div className="section-wrapper">
+      <div className="section-title">תת-פרק 5 — הכל יחד</div>
+      <div className="section-sub">שילוב: נעלם במכנה · נוסחאות כפל מקוצר · גורם משותף</div>
+      <FormulasRef/>
+
+      {/* New equation */}
+      <div className="difficulty-row">
+        <button className="btn btn-new" style={{marginRight:'auto'}} onClick={()=>reset()}>משוואה חדשה ↺</button>
+      </div>
+
+      {/* Equation display */}
+      <div className="eq-card">
+        <div style={{fontSize:13,fontWeight:'bold',color:'#3949ab',direction:'rtl',marginBottom:6}}>
+          המשוואה לפתרון:
+        </div>
+        <div className="eq-row" style={{fontSize:21,direction:'ltr'}}><EqDisplay/></div>
+      </div>
+
+      {/* Hint */}
+      <div style={{marginBottom:12,display:'flex',gap:10,alignItems:'flex-start',flexWrap:'wrap'}}>
+        <button className="btn btn-hint" onClick={()=>setShowHint(h=>!h)}>
+          {showHint?'הסתר רמז':'💡 רמז'}
+        </button>
+        {showHint&&(
+          <div className="warn-box" style={{flex:1,marginTop:0,padding:'8px 14px',fontSize:13}}>
+            {curHint}
+          </div>)}
+      </div>
+
+      {/* ══════════════════════════════════════════════════
+          LEVEL 1 — Structured 4-step flow
+          ══════════════════════════════════════════════════ */}
+      {level===1&&(<>
+
+        {/* ── Step 1: Find LCD ── */}
+        <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+          <div className="phase-title">שלב 1 — מצא את המכנה המשותף וכפול בו</div>
+          <div style={{fontSize:13,color:'#555',direction:'rtl',marginBottom:10}}>
+            מה המכנה המשותף של כל השברים במשוואה? כפול בו את שני הצדדים.
+          </div>
+          <div className="input-row" style={{justifyContent:'center'}}>
+            <label>מ״מ =</label>
+            <input className="math-input" value={lcmInp}
+              onChange={e=>setLcmInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&phase===0&&chkLCD()}
+              disabled={phase>0}/>
+            {phase===0&&<button className="btn btn-primary" onClick={chkLCD}>✓ אשר</button>}
+          </div>
+          {fb&&phase===0&&<div className="feedback-err" style={{textAlign:'center',marginTop:6}}>{fb}</div>}
+          {phase>0&&(
+            <div className="info-box" style={{marginTop:10,direction:'ltr',textAlign:'center',fontSize:15}}>
+              <strong>{afterMultHint()}</strong>
+            </div>)}
+        </div>
+
+        {/* ── Step 2: Apply formulas ── */}
+        {phase>=1&&(
+          <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+            <div className="phase-title">שלב 2 — פרק לפי נוסחאות כפל מקוצר</div>
+            <div className="info-box" style={{marginBottom:10}}>
+              <span style={{direction:'rtl',display:'block',marginBottom:4,fontSize:13}}>
+                פרק כל ביטוי לפי הנוסחה המתאימה (אין חובה לפשט):
+              </span>
+            </div>
+            {phase===1&&(<>
+              {inputBox(true)}
+              {fb&&<div className={fb.startsWith('✗')?'feedback-err':'feedback-ok'}
+                style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+            </>)}
+          </div>)}
+
+        {/* ── Steps history ── */}
+        {stepsHistory}
+
+        {/* ── Step 3: Term drag rearrangement ── */}
+        {phase===2&&steps.length>0&&(
+          <div className="eq-card">
+            <div className="phase-title">שלב 3 — סדר את המשוואה</div>
+            <TermDragStep2 eqStr={steps[steps.length-1].text}
+              onDone={eq=>{setStep3Eq(eq);setPhase(3);setFb('');}}/>
+          </div>)}
+
+        {/* ── Step 4: Solve x ── */}
+        {phase>=3&&(
+          <div className="eq-card" style={{opacity:phase>3?0.5:1,pointerEvents:phase>3?'none':'auto'}}>
+            <div className="phase-title">שלב 4 — פתור עבור x</div>
+            <div className="input-row" style={{justifyContent:'center'}}>
+              <label>x =</label>
+              <input className="math-input" value={solInp}
+                onChange={e=>setSolInp(e.target.value)} disabled={phase>3}
+                onKeyDown={e=>e.key==='Enter'&&phase===3&&chkLinearSol()}/>
+              {phase===3&&<button className="btn btn-success" onClick={chkLinearSol}>✓ בדוק</button>}
+            </div>
+            {fb&&phase===3&&<div className="feedback-err" style={{textAlign:'center',marginTop:6}}>{fb}</div>}
+          </div>)}
+
+        {/* ── Step 5: Write the solution ── */}
+        {phase>=4&&(
+          <div className="eq-card">
+            <div className="phase-title">שלב 5 — כתוב את הפתרון</div>
+            {step3Eq&&(
+              <div style={{textAlign:'center',marginBottom:12,direction:'ltr'}}>
+                <span style={{fontWeight:'bold',fontSize:17,fontFamily:'monospace',
+                  color:'#1a237e',background:'#e8eaf6',padding:'6px 16px',
+                  borderRadius:8,border:'1.5px solid #9fa8da'}}>
+                  {step3Eq}
+                </span>
+              </div>)}
+            <div className="input-row" style={{justifyContent:'center'}}>
+              <label style={{fontWeight:'bold'}}>x =</label>
+              <input className="math-input" value={s1}
+                onChange={e=>setS1(e.target.value)} disabled={phase>4}
+                onKeyDown={e=>e.key==='Enter'&&phase===4&&chkFinalSol()}
+                placeholder="?"/>
+              {phase===4&&<button className="btn btn-success" onClick={chkFinalSol}>✓ בדוק</button>}
+            </div>
+            {fb&&phase===4&&<div className="feedback-err" style={{textAlign:'center',marginTop:6}}>{fb}</div>}
+          </div>)}
+
+      </>)}
+
+      {/* ══════════════════════════════════════════════════
+          LEVEL 2 — Algebraic denominator (x), 5-step flow
+          ══════════════════════════════════════════════════ */}
+      {level===2&&(<>
+
+        {/* Step 1: Multiply by x */}
+        <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+          <div className="phase-title">שלב 1 — הכפל במכנה המשותף</div>
+          <div style={{fontSize:13,color:'#555',direction:'rtl',marginBottom:10}}>
+            המכנה הוא <strong>x</strong>. כפול את שני אגפי המשוואה ב-x וכתוב את התוצאה:
+          </div>
+          {phase===0&&(<>
+            {inputBox(()=>submitLv2Step(0))}
+            {fb&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+          </>)}
+          {phase>0&&(
+            <div className="info-box" style={{marginTop:6,direction:'ltr',textAlign:'center',fontSize:15}}>
+              <strong>{afterMultHint()}</strong>
+            </div>)}
+        </div>
+
+        {/* Step 2: Expand using formulas */}
+        {phase>=1&&(
+          <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
+            <div className="phase-title">שלב 2 — פרק לפי נוסחאות כפל מקוצר</div>
+            <div style={{fontSize:13,color:'#555',direction:'rtl',marginBottom:10}}>
+              פתח את הסוגריים בעזרת נוסחאות הכפל המקוצר:
+            </div>
+            {phase===1&&(<>
+              {inputBox(()=>submitLv2Step(1))}
+              {fb&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+            </>)}
+          </div>)}
+
+        {/* Step 3: Rearrange to ax²+bx+c=0 */}
+        {phase>=2&&(
+          <div className="eq-card" style={{opacity:phase>2?0.5:1,pointerEvents:phase>2?'none':'auto'}}>
+            <div className="phase-title">שלב 3 — סדר את המשוואה</div>
+            <div style={{display:'flex',alignItems:'center',gap:16,direction:'ltr',
+              justifyContent:'center',flexWrap:'wrap',padding:'6px 0'}}>
+              {!showInput&&phase===2&&(
+                <button className="btn btn-primary" onClick={()=>setShowInput(true)}>פשט ↓</button>)}
+              <span style={{fontWeight:'bold',fontSize:18,fontFamily:'monospace',color:'#2e7d32',
+                background:'#e8f5e9',padding:'8px 16px',borderRadius:8,border:'1.5px solid #a5d6a7'}}>
+                {steps[steps.length-1]?.text}
+              </span>
+            </div>
+            {showInput&&phase===2&&(<>
+              {inputBox(()=>submitLv2Step(2))}
+              {fb&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+            </>)}
+          </div>)}
+
+        {/* Steps history */}
+        {stepsHistory}
+
+        {/* Step 4: Identify coefficients */}
+        {phase>=3&&(
+          <div className="eq-card" style={{opacity:phase>3?0.5:1,pointerEvents:phase>3?'none':'auto'}}>
+            <div className="phase-title">שלב 4 — זהה את המקדמים</div>
+            <div style={{fontSize:13,color:'#555',direction:'rtl',marginBottom:12}}>
+              המשוואה הריבועית היא מסוג ax² + bx + c = 0. מה הם המקדמים?
+            </div>
+            <div style={{display:'flex',gap:16,alignItems:'center',justifyContent:'center',flexWrap:'wrap',direction:'ltr'}}>
+              <label style={{fontWeight:'bold'}}>a =</label>
+              <input className="math-input" value={cA} onChange={e=>setCA(e.target.value)} disabled={phase>3} style={{width:60}}/>
+              <label style={{fontWeight:'bold'}}>b =</label>
+              <input className="math-input" value={cB} onChange={e=>setCB(e.target.value)} disabled={phase>3} style={{width:60}}/>
+              <label style={{fontWeight:'bold'}}>c =</label>
+              <input className="math-input" value={cC} onChange={e=>setCC(e.target.value)} disabled={phase>3} style={{width:60}}
+                onKeyDown={e=>e.key==='Enter'&&phase===3&&chkLv2Coeffs()}/>
+              {phase===3&&<button className="btn btn-primary" onClick={chkLv2Coeffs}>✓ אשר</button>}
+            </div>
+            {fb&&phase===3&&<div className="feedback-err" style={{textAlign:'center',marginTop:8}}>{fb}</div>}
+          </div>)}
+
+        {/* Step 5: Solve */}
+        {phase>=4&&(
+          <div className="eq-card">
+            <div className="phase-title">שלב 5 — פתור את המשוואה הריבועית</div>
+            <div className="info-box" style={{direction:'ltr',textAlign:'center',marginBottom:12,fontSize:15}}>
+              <strong>{afterExpandHint()}</strong>
+            </div>
+            <div className="input-row" style={{justifyContent:'center',direction:'ltr'}}>
+              <label>x₁ =</label>
+              <input className="math-input" value={s1} onChange={e=>setS1(e.target.value)} disabled={phase>4}/>
+              <label>x₂ =</label>
+              <input className="math-input" value={s2} onChange={e=>setS2(e.target.value)} disabled={phase>4}
+                onKeyDown={e=>e.key==='Enter'&&phase===4&&chkLv2Sols()}/>
+              {phase===4&&<button className="btn btn-success" onClick={chkLv2Sols}>✓ בדוק</button>}
+            </div>
+            {fb&&phase===4&&<div className="feedback-err" style={{textAlign:'center',marginTop:6}}>{fb}</div>}
+          </div>)}
+
+      </>)}
+
+      {/* ══════════════════════════════════════════════════
+          LEVEL 3 — Open-ended flow
+          ══════════════════════════════════════════════════ */}
+      {level===3&&(<>
+
+        {/* Phase 0: Identify squared expression */}
+        {phase===0&&(
+          <div className="eq-card">
+            <div className="phase-title">שלב 1 — זיהוי ריבוע ביטוי</div>
+            <div className="info-box" style={{direction:'ltr',fontSize:16,lineHeight:1.8}}>
+              <span style={{direction:'rtl',display:'block',marginBottom:6,fontSize:13,color:'#555'}}>
+                הביטוי בריבוע ניתן לכתיבה כמכפלה של הביטוי בעצמו:
+              </span>
+              <strong>{sqLabel}&nbsp;=&nbsp;(x{aSign})(x{aSign})</strong>
+            </div>
+            <div style={{textAlign:'center',marginTop:14}}>
+              <button className="btn btn-primary" onClick={handleIdentify}>✓ הבנתי — ממשיכים</button>
+            </div>
+          </div>)}
+
+        {/* Phase 1: Write after ×d */}
+        {phase===1&&(
+          <div className="eq-card">
+            <div className="phase-title">שלב 2 — כפול ב-{d} משני הצדדים</div>
+            <div className="info-box" style={{marginBottom:10}}>
+              <span style={{direction:'rtl',display:'block',marginBottom:4,fontSize:13}}>
+                הצורה הצפויה לאחר כפול ב-{d} (ניתן להשאיר סוגריים):
+              </span>
+              <code style={{direction:'ltr',display:'block',fontSize:15,color:'#1565c0',textAlign:'center'}}>
+                {afterMultHint()}
+              </code>
+            </div>
+            {inputBox(true)}
+            {fb&&<div className={fb.startsWith('✗')?'feedback-err':'feedback-ok'}
+              style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+          </div>)}
+
+        {/* Steps history */}
+        {stepsHistory}
+
+        {/* Phase 2: Open-ended simplification */}
+        {phase===2&&steps.length>0&&(
+          <div className="eq-card">
+            <div style={{display:'flex',alignItems:'center',gap:16,direction:'ltr',
+              justifyContent:'center',flexWrap:'wrap',padding:'6px 0'}}>
+              {!showInput&&(
+                <button className="btn btn-primary" onClick={()=>setShowInput(true)}>פשט ↓</button>)}
+              <span style={{fontWeight:'bold',fontSize:18,fontFamily:'monospace',color:'#2e7d32',
+                background:'#e8f5e9',padding:'8px 16px',borderRadius:8,border:'1.5px solid #a5d6a7'}}>
+                {steps[steps.length-1].text}
+              </span>
+            </div>
+            {showInput&&(<>
+              {inputBox(false)}
+              {fb&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+            </>)}
+          </div>)}
+
+        {/* Phase 3+: linear drag & solve */}
+        {dragAndSolve}
+
+        {/* Phase 3+: quadratic GCF */}
+        {gcfPath}
+
+      </>)}
+
+      {/* Done */}
+      {phase===99&&(
+        <>
+          <div className="success-banner">
+            ✅ {isLinear ? `x = ${ex.solution}` : `x\u2081 = ${ex.solutions[0]} , x\u2082 = ${ex.solutions[1]}`}
+          </div>
+          <div style={{textAlign:'center',marginTop:14}}>
+            <button className="btn btn-new" onClick={()=>reset()}>משוואה חדשה ↺</button>
+          </div>
+        </>)}
+    </div>);
+}
+
+// ─── App root ─────────────────────────────────
+function App() {
+  const [tab, setTab] = useState(1);
+  const tabs = [
+    { k:1, label:'1 — לינארית עם מכנה' },
+    { k:2, label:'2 — ריבועית עם מכנה' },
+    { k:3, label:'3 — כפל מקוצר' },
+    { k:4, label:'4 — גורם משותף' },
+    { k:5, label:'5 — הכל יחד' },
+  ];
+  return (
+    <div>
+      <div className="top-nav">
+        <h1>📐 משוואות מתקדמות</h1>
+        {tabs.map(t=>(
+          <button key={t.k} className={`nav-btn${tab===t.k?' active':''}`} onClick={()=>setTab(t.k)}>
+            {t.label}
+          </button>))}
+      </div>
+      {tab===1&&<Section1/>}
+      {tab===2&&<Section2/>}
+      {tab===3&&<Section3/>}
+      {tab===4&&<Section4/>}
+      {tab===5&&<Section5/>}
+    </div>);
+}
+
+
+// ===== END ORIGINAL =====
+export default App;

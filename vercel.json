@@ -1,6 +1,5 @@
 {
-  "rewrites": [{ "source": "/favicon.ico", "destination": "/assets/icon.svg" }],
-  "headers": [
-    { "source": "/admin.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
-  ]
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "installCommand": "npm install"
 }

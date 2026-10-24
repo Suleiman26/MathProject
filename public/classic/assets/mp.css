@@ -1,0 +1,589 @@
+/* ==========================================================================
+   MathProject design system  (mp.css)
+   --------------------------------------------------------------------------
+   How it works
+   - Every page's original CSS sits in the "legacy" layer.
+   - This file sits in the "mp" layer, which always wins over "legacy",
+     whatever the selector specificity.
+   - Small per-page fixes go in the "page" layer (last, wins over both).
+   - Inline styles written inside the React code still win over everything,
+     so colors the math code sets on purpose (graphs, highlights) stay as is.
+   Rule of thumb: this layer sets the LOOK (color, border, radius, shadow,
+   type, motion). Layout (direction, display, widths, gaps) stays with the
+   page's own CSS, so nothing moves around by accident.
+   See DESIGN.md for the full guide.
+   ========================================================================== */
+
+@layer mp-base, legacy, mp, page;
+
+/* Default spacing for NEW topics (pages with <html data-mp-base>, like the
+   template). Older pages don't have the attribute, so they are not affected. */
+@layer mp-base {
+  html[data-mp-base] *, html[data-mp-base] *::before, html[data-mp-base] *::after { box-sizing: border-box; }
+  html[data-mp-base] body { margin: 0; }
+  html[data-mp-base] .content { max-width: 760px; margin: 20px auto; padding: 0 16px 64px; }
+  html[data-mp-base] .card { padding: 20px; margin-bottom: 14px; }
+  html[data-mp-base] .card-t { margin: 0 0 12px; }
+  html[data-mp-base] .step-card { padding: 16px; margin-top: 12px; }
+  html[data-mp-base] .step-label { font-size: .9rem; margin-bottom: 8px; }
+  html[data-mp-base] .info-box, html[data-mp-base] .info { padding: 14px 16px; margin-bottom: 14px; line-height: 1.7; }
+  html[data-mp-base] .formula-box, html[data-mp-base] .eq-box { padding: 14px; margin: 10px 0; text-align: center; direction: ltr; font-size: 1.4rem; }
+  html[data-mp-base] .given-box { padding: 8px 12px; margin: 8px 0; text-align: center; }
+  html[data-mp-base] .hint { font-size: .88rem; margin: 6px 0; }
+  html[data-mp-base] .ans-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; direction: ltr; }
+  html[data-mp-base] .ans-row input { width: 90px; padding: 8px 10px; font-size: 1.1rem; text-align: center; direction: ltr; }
+  html[data-mp-base] .choice-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 10px 0; }
+  html[data-mp-base] .choice-btn { padding: 8px 16px; font-size: .95rem; }
+  html[data-mp-base] .sub-tabs { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px; }
+  html[data-mp-base] .sub-tab { padding: 7px 14px; font-size: .88rem; }
+  html[data-mp-base] .ch-btns, html[data-mp-base] .ch-nav { display: flex; flex-wrap: wrap; }
+  html[data-mp-base] .fb { margin-top: 10px; text-align: center; }
+  html[data-mp-base] .banner { padding: 20px; margin-bottom: 14px; text-align: center; font-size: 1.2rem; font-weight: 700; }
+  html[data-mp-base] .banner button { display: block; margin: 12px auto 0; }
+  html[data-mp-base] .center { text-align: center; margin-top: 14px; }
+}
+
+@layer mp {
+
+/* ── 1. Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  --font: "Rubik", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+
+  /* neutrals: warm paper, near-black ink */
+  --bg: #f5f5f2;
+  --surface: #ffffff;
+  --surface-2: #fafaf8;
+  --surface-3: #f2f1ee;
+  --line: #e7e5e0;
+  --line-strong: #d6d3cc;
+  --ink: #1c1b19;
+  --ink-2: #4f4d48;
+  --ink-3: #8a877f;
+
+  /* feedback */
+  --ok-50: #f0fdf4; --ok-100: #dcfce7; --ok-200: #bbf7d0; --ok-500: #22c55e;
+  --ok-600: #16a34a; --ok-700: #15803d; --ok-800: #166534; --ok-900: #14532d;
+  --bad-50: #fef2f2; --bad-100: #fee2e2; --bad-200: #fecaca; --bad-500: #ef4444;
+  --bad-600: #dc2626; --bad-700: #b91c1c; --bad-800: #991b1b;
+  --warn-50: #fffbeb; --warn-100: #fef3c7; --warn-200: #fde68a; --warn-500: #f59e0b;
+  --warn-600: #d97706; --warn-800: #92400e; --warn-900: #78350f;
+
+  /* shape */
+  --r-xs: 6px; --r-sm: 8px; --r: 12px; --r-lg: 16px; --r-xl: 20px; --r-pill: 999px;
+
+  /* depth */
+  --sh-1: 0 1px 2px rgb(28 27 25 / .05);
+  --sh-2: 0 1px 2px rgb(28 27 25 / .04), 0 8px 24px -12px rgb(28 27 25 / .14);
+  --sh-3: 0 2px 4px rgb(28 27 25 / .04), 0 18px 40px -18px rgb(28 27 25 / .22);
+  --sh-accent: 0 1px 2px rgb(0 0 0 / .10), 0 6px 16px -8px color-mix(in srgb, var(--a-600) 70%, transparent);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--a-500) 28%, transparent);
+
+  /* motion */
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+  --t-fast: 120ms;
+  --t: 180ms;
+
+  /* default topic accent (teal) — each page picks its own with data-topic */
+  --a-50: #f0fdfa; --a-100: #ccfbf1; --a-200: #99f6e4; --a-300: #5eead4;
+  --a-500: #14b8a6; --a-600: #0d9488; --a-700: #0f766e; --a-800: #115e59; --a-900: #134e4a;
+}
+
+/* Topic accents. Hues match each page's original colors, so the colors the
+   math code sets inline (graphs, highlights) still fit the page. */
+[data-topic="teal"]   { --a-50:#f0fdfa; --a-100:#ccfbf1; --a-200:#99f6e4; --a-300:#5eead4; --a-500:#14b8a6; --a-600:#0d9488; --a-700:#0f766e; --a-800:#115e59; --a-900:#134e4a; }
+[data-topic="sky"]    { --a-50:#f0f9ff; --a-100:#e0f2fe; --a-200:#bae6fd; --a-300:#7dd3fc; --a-500:#0ea5e9; --a-600:#0284c7; --a-700:#0369a1; --a-800:#075985; --a-900:#0c4a6e; }
+[data-topic="blue"]   { --a-50:#eff6ff; --a-100:#dbeafe; --a-200:#bfdbfe; --a-300:#93c5fd; --a-500:#3b82f6; --a-600:#2563eb; --a-700:#1d4ed8; --a-800:#1e40af; --a-900:#1e3a8a; }
+[data-topic="indigo"] { --a-50:#eef2ff; --a-100:#e0e7ff; --a-200:#c7d2fe; --a-300:#a5b4fc; --a-500:#6366f1; --a-600:#4f46e5; --a-700:#4338ca; --a-800:#3730a3; --a-900:#312e81; }
+[data-topic="violet"] { --a-50:#f5f3ff; --a-100:#ede9fe; --a-200:#ddd6fe; --a-300:#c4b5fd; --a-500:#8b5cf6; --a-600:#7c3aed; --a-700:#6d28d9; --a-800:#5b21b6; --a-900:#4c1d95; }
+[data-topic="pink"]   { --a-50:#fdf2f8; --a-100:#fce7f3; --a-200:#fbcfe8; --a-300:#f9a8d4; --a-500:#ec4899; --a-600:#db2777; --a-700:#be185d; --a-800:#9d174d; --a-900:#831843; }
+[data-topic="cyan"]   { --a-50:#ecfeff; --a-100:#cffafe; --a-200:#a5f3fc; --a-300:#67e8f9; --a-500:#06b6d4; --a-600:#0891b2; --a-700:#0e7490; --a-800:#155e75; --a-900:#164e63; }
+[data-topic="orange"] { --a-50:#fff7ed; --a-100:#ffedd5; --a-200:#fed7aa; --a-300:#fdba74; --a-500:#f97316; --a-600:#ea580c; --a-700:#c2410c; --a-800:#9a3412; --a-900:#7c2d12; }
+
+/* ── 2. Base ───────────────────────────────────────────────────────────── */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  /* soft glow of the topic colour at the top of the page */
+  background:
+    radial-gradient(1100px 360px at 50% -140px, color-mix(in srgb, var(--a-200) 55%, transparent) 0%, transparent 72%) no-repeat,
+    var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+}
+body, body * { font-family: var(--font); }
+b, strong { font-weight: 700; }
+sup, sub { font-size: max(.72em, 11px); }
+::selection { background: color-mix(in srgb, var(--a-300) 55%, transparent); }
+
+button, select, input, textarea { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), [role="button"], select { cursor: pointer; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--a-500); outline-offset: 2px; }
+input[type="range"] { accent-color: var(--a-600); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--a-600); }
+
+/* every pressable thing answers the finger */
+button {
+  transition: transform var(--t-fast) var(--ease-out), background-color var(--t) ease,
+              border-color var(--t) ease, color var(--t) ease, box-shadow var(--t) ease, opacity var(--t) ease;
+}
+button:not(:disabled):active { transform: scale(.97); }
+button:disabled { cursor: not-allowed; }
+
+/* ── 3. Page header ────────────────────────────────────────────────────── */
+/* The coloured bar at the top of each page becomes a calm, airy header with
+   the topic colour as a soft glow. Chapter buttons become pill tabs. */
+.hdr, .top-nav, .nav {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 12px 8px;
+  padding: 26px 16px 18px;
+  text-align: center;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.hdr h1, .hdr-title, .top-nav h1, .nav-title {
+  flex: 0 0 100%;
+  margin: 0; padding: 0;
+  font-size: clamp(1.4rem, 1.1rem + 1.3vw, 1.85rem);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  white-space: normal;
+}
+.hdr-sub {
+  flex: 0 0 100%;
+  margin-top: -4px;
+  font-size: .9rem; font-weight: 500;
+  color: var(--a-700);
+}
+.ch-nav, .ch-btns { flex: 0 0 100%; justify-content: center; gap: 6px; }
+
+.ch-btn, .nav-btn {
+  min-height: 36px;
+  padding: 7px 15px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: .875rem; font-weight: 500; line-height: 1.2;
+  box-shadow: var(--sh-1);
+  margin: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .ch-btn:not(.active):hover, .nav-btn:not(.active):hover { border-color: var(--line-strong); color: var(--ink); background: var(--surface); }
+}
+.ch-btn.active, .nav-btn.active {
+  background: var(--a-600); border-color: var(--a-600); color: #fff; font-weight: 600;
+  box-shadow: var(--sh-accent);
+}
+
+/* phones: one swipeable row of chapters instead of a wrapped pile */
+@media (max-width: 640px) {
+  .ch-nav, .ch-btns {
+    flex-wrap: nowrap; justify-content: flex-start;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    margin-inline: -16px; padding: 2px 16px 6px;
+    scroll-padding-inline: 16px; scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to left, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+            mask-image: linear-gradient(to left, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  }
+  .ch-nav::-webkit-scrollbar, .ch-btns::-webkit-scrollbar { display: none; }
+  .ch-btn { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
+}
+
+/* ── 4. Surfaces ───────────────────────────────────────────────────────── */
+.card, .eq-card, .history, .tri-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-2);
+}
+.card.on { border-color: var(--a-500); box-shadow: var(--sh-2), var(--ring); }
+.card.done { box-shadow: var(--sh-1); }
+
+.card-t, .section-title, .task-title, .sec-title {
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -.005em;
+  border-bottom: 0;
+}
+.card-t { font-size: 1.12rem; padding-bottom: 0; }
+.section-title { font-size: 1.3rem; }
+.section-sub, .task-desc { color: var(--ink-2); }
+.card-title, .hist-label, .hlabel { color: var(--ink-3); font-weight: 600; letter-spacing: .02em; text-transform: none; }
+
+/* step blocks */
+.step-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.step-card.done { background: var(--ok-50); border-color: var(--ok-200); }
+.step-done {
+  background: var(--ok-50); border: 1px solid var(--ok-200); color: var(--ok-800);
+  border-radius: var(--r);
+}
+.step-label { color: var(--a-700); font-weight: 600; }
+.phase-title { color: var(--a-700); }
+
+/* explanation / formula / given panels */
+.info, .def-box, .explanation, .example-box, .elem-info, .formulas-ref, .steps-box, .law-card {
+  background: var(--a-50);
+  border: 1px solid color-mix(in srgb, var(--a-200) 70%, transparent);
+  border-radius: var(--r-lg);
+  color: var(--ink-2);
+}
+.info b, .example-box .ex-title, .law-title, .formulas-ref-title { color: var(--a-800); }
+.def-box { color: var(--a-900); }
+.info-box {
+  background: var(--a-50);
+  border: 1px solid color-mix(in srgb, var(--a-200) 70%, transparent);
+  border-radius: var(--r-lg);
+  color: var(--ink-2);
+}
+.info-box h3, .info-box b { color: var(--a-800); }
+.info-box p { color: var(--ink-2); }
+
+.formula-box, .formula, .big-formula, .p2-eq, .law-formula, .eq-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  color: var(--ink);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), var(--sh-1);
+}
+.law-formula { background: transparent; border: 0; box-shadow: none; color: var(--a-900); }
+.formula-box small { color: var(--ink-3); }
+
+.given-box {
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: var(--ink);
+}
+.warn-box, .task-box {
+  background: var(--warn-50);
+  border: 1px solid var(--warn-200);
+  border-radius: var(--r-lg);
+  color: var(--warn-900);
+}
+.task-box { border-right: 3px solid var(--warn-500); }
+.formulas-ref-row span { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
+
+.hint, .drag-hint, .p2-hint { color: var(--ink-3); }
+.near-hint { color: var(--warn-600); }
+
+/* tables */
+.rad-table th, .rad-table td { border-color: var(--line); }
+.rad-table th { background: var(--a-50); color: var(--a-800); }
+.rad-table tr:nth-child(even) td { background: var(--surface-2); }
+
+/* history list (equation solvers) */
+.h-num, .hnum { background: var(--a-100); color: var(--a-800); }
+.h-eq, .heq { color: var(--ink); }
+.h-desc, .hdesc { color: var(--ink-3); }
+.h-row, .hrow { border-bottom-color: var(--line); }
+
+/* ── 5. Buttons ────────────────────────────────────────────────────────── */
+/* secondary (default) */
+.btn, .act-btn, .btn-cancel, .btn-outline {
+  min-height: 42px;
+  padding: 10px 20px;
+  border-radius: var(--r);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: .95rem; font-weight: 600; line-height: 1.2;
+  box-shadow: var(--sh-1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn:not(:disabled):hover, .act-btn:not(:disabled):hover,
+  .btn-cancel:not(:disabled):hover, .btn-outline:not(:disabled):hover { background: var(--surface-2); border-color: var(--ink-3); }
+}
+.btn-outline { color: var(--a-700); border-color: var(--a-300); }
+
+/* primary */
+.bp, .btn-primary, .btn-ok, .btn-new {
+  background: var(--a-600);
+  border: 1px solid var(--a-600);
+  color: #fff;
+  box-shadow: var(--sh-accent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .bp:not(:disabled):hover, .btn-primary:not(:disabled):hover, .btn-ok:not(:disabled):hover, .btn-new:not(:disabled):hover { background: var(--a-700); border-color: var(--a-700); }
+}
+.btn-ok { min-height: 40px; padding: 8px 18px; border-radius: var(--r); font-weight: 600; }
+.btn-new { min-height: 48px; border-radius: var(--r-lg); font-size: 1rem; font-weight: 600; }
+
+/* success / next */
+.bg, .btn-success, .btn-next, button.btn.green {
+  background: var(--ok-600); border: 1px solid var(--ok-600); color: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 6px 16px -8px rgb(22 163 74 / .7);
+}
+@media (hover: hover) and (pointer: fine) {
+  .bg:not(:disabled):hover, .btn-success:not(:disabled):hover, .btn-next:not(:disabled):hover, button.btn.green:not(:disabled):hover { background: var(--ok-700); border-color: var(--ok-700); }
+}
+.btn-next { min-height: 42px; border-radius: var(--r); font-weight: 600; }
+.btn-rev {
+  min-height: 42px; border-radius: var(--r);
+  background: var(--ok-50); border: 1px solid var(--ok-200); color: var(--ok-700); font-weight: 600;
+}
+
+/* orange / warm actions */
+.bo, button.btn.orange {
+  background: #ea580c; border: 1px solid #ea580c; color: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 6px 16px -8px rgb(234 88 12 / .7);
+}
+@media (hover: hover) and (pointer: fine) {
+  .bo:not(:disabled):hover, button.btn.orange:not(:disabled):hover { background: #c2410c; border-color: #c2410c; }
+}
+/* danger */
+.btn-danger, button.btn.red {
+  background: var(--bad-600); border: 1px solid var(--bad-600); color: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 6px 16px -8px rgb(220 38 38 / .6);
+}
+/* hint */
+.btn-hint { background: var(--warn-100); border: 1px solid var(--warn-200); color: var(--warn-900); box-shadow: var(--sh-1); }
+@media (hover: hover) and (pointer: fine) { .btn-hint:not(:disabled):hover { background: var(--warn-200); } }
+
+/* Neutral buttons that the exercise code paints light gray inline
+   (unselected answers, "reset"): give them the system's secondary look.
+   !important is the only way a stylesheet can beat an inline colour. */
+.btn[style*="background: rgb(229, 231, 235)"], .btn[style*="background: rgb(241, 245, 249)"] {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn[style*="background: rgb(229, 231, 235)"]:not(:disabled):hover,
+  .btn[style*="background: rgb(241, 245, 249)"]:not(:disabled):hover { background: var(--a-50) !important; border-color: var(--a-300); color: var(--a-800) !important; }
+}
+
+.btn:disabled, .act-btn:disabled, .btn-primary:disabled, .bp:disabled, .bg:disabled, .bo:disabled {
+  opacity: .42; box-shadow: none;
+}
+
+/* ── 6. Chips, toggles, answer choices ─────────────────────────────────── */
+.choice-btn, .sub-tab, .tab, .sub-tab-btn, .sub-btn, .special-btn, .eq-choice,
+.part-btn, .prop-btn, .diff-btn, .btn-formula, .point-chip {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  border-radius: var(--r);
+  font-weight: 500;
+  box-shadow: var(--sh-1);
+  transition: transform var(--t-fast) var(--ease-out), background-color var(--t) ease, border-color var(--t) ease, color var(--t) ease, box-shadow var(--t) ease;
+}
+.prop-btn, .diff-btn, .sub-tab { border-radius: var(--r-pill); }
+.choice-btn, .eq-choice { min-height: 40px; }
+@media (hover: hover) and (pointer: fine) {
+  .choice-btn:not(.active):not(.correct):not(.wrong):hover, .sub-tab:not(.active):hover, .tab:not(.active):hover,
+  .sub-tab-btn:not(.active):hover, .sub-btn:not(.active):hover, .special-btn:not(.active):hover,
+  .eq-choice:not(.active):hover, .part-btn:not(.active):hover, .prop-btn:not(.active):hover,
+  .diff-btn:not(.active):hover, .btn-formula:not(.selected):not(.wrong-pick):hover, .point-chip:not(.selected):hover {
+    border-color: var(--a-300); color: var(--a-800); background: var(--a-50);
+  }
+}
+.choice-btn.active, .sub-tab.active, .tab.active, .sub-tab-btn.active, .sub-btn.active, .special-btn.active,
+.eq-choice.active, .part-btn.active, .prop-btn.active, .diff-btn.active, .btn-formula.selected, .point-chip.selected {
+  background: var(--a-600); border-color: var(--a-600); color: #fff; font-weight: 600;
+  box-shadow: var(--sh-accent);
+}
+.choice-btn.correct { background: var(--ok-50); border-color: var(--ok-500); color: var(--ok-800); box-shadow: 0 0 0 3px rgb(34 197 94 / .15); }
+.choice-btn.wrong, .btn-formula.wrong-pick { background: var(--bad-50); border-color: var(--bad-500); color: var(--bad-800); box-shadow: 0 0 0 3px rgb(239 68 68 / .12); }
+
+.theorem-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-1); }
+.theorem-card.expanded { background: var(--a-50); border-color: var(--a-300); }
+.theorem-card h4 { color: var(--a-800); }
+.theorem-card p { color: var(--ink-2); }
+
+/* progress chips */
+.ph { border: 1px solid var(--line); color: var(--ink-3); background: var(--surface); }
+.ph.done { background: var(--ok-50); border-color: var(--ok-200); color: var(--ok-700); }
+.ph.active { background: var(--a-50); border-color: var(--a-300); color: var(--a-800); }
+.step-dot { background: var(--surface-3); color: var(--ink-3); }
+.step-dot.done { background: var(--ok-600); color: #fff; }
+.step-dot.active { background: var(--a-600); color: #fff; box-shadow: var(--ring); }
+
+/* ── 7. Inputs ─────────────────────────────────────────────────────────── */
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), select, textarea {
+  border-width: 1.5px; border-style: solid; border-color: var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--t) ease, box-shadow var(--t) ease, background-color var(--t) ease;
+}
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--a-500);
+  box-shadow: var(--ring);
+}
+input::placeholder { color: var(--ink-3); font-weight: 400; opacity: 1; }
+.math-input.correct, .coef-inp.ok { border-color: var(--ok-500); background: var(--ok-50); }
+.math-input.wrong { border-color: var(--bad-500); background: var(--bad-50); }
+
+/* ── 7b. Phones: everything a finger presses is at least ~38px ─────────── */
+@media (pointer: coarse), (max-width: 640px) {
+  .sub-tab, .sub-tab-btn, .sub-btn, .tab, .prop-btn, .diff-btn, .part-btn, .special-btn,
+  .eq-choice, .choice-btn, .btn-formula, .point-chip, .nl-toggle { min-height: 38px; }
+  .choice-btn { min-width: 44px; }
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(.op-input):not(.eqs-val):not(.slv-opinput),
+  select { min-height: 40px; font-size: max(16px, 1em); }      /* 16px+ also stops iPhone from zooming in */
+  /* the + − × ÷ boxes of the equation solvers */
+  .op-btn, .op-x-btn, .eqs-op, .eqs-x { width: 30px; height: 30px; font-size: .95rem; }
+  .slv-opbtn, .slv-opxbtn { width: 32px; height: 32px; }
+  .op-input, .eqs-val { width: 38px; min-height: 30px; font-size: 16px; }
+  .slv-opinput { min-height: 32px; font-size: 16px; }
+  .op-box, .eqs-box { flex-wrap: wrap; justify-content: center; max-width: 118px; }
+}
+@media (max-width: 480px) {
+  /* keep each side of an equation on one line */
+  .tp { padding: 6px 4px; }
+  .tv, .tv-x, .tc, .xv { font-size: 1.6rem; }
+  .ts { font-size: 1.2rem; padding: 0 2px; }
+  .eqs-tp { padding: 5px 3px; }
+  .eqs-tv, .eqs-tvx { font-size: 1.35rem; }
+  .side-zone, .eqs-side { padding-inline: 4px; }
+  .eq-sign { padding: 0 8px; }
+}
+
+/* ── 8. Feedback ───────────────────────────────────────────────────────── */
+.fb:not(:empty), .feedback:not(:empty), .msg-success, .msg-error, .msg-info,
+.feedback-ok:not(:empty), .feedback-err:not(:empty), .feedback-warn:not(:empty) {
+  border-radius: var(--r);
+  font-weight: 600;
+  line-height: 1.5;
+}
+.fb.ok:not(:empty), .feedback.ok:not(:empty), .msg-success, .feedback-ok:not(:empty) {
+  padding: 10px 14px;
+  background: var(--ok-50); border: 1px solid var(--ok-200); color: var(--ok-800);
+}
+.fb.err:not(:empty), .feedback.err:not(:empty), .msg-error, .feedback-err:not(:empty) {
+  padding: 10px 14px;
+  background: var(--bad-50); border: 1px solid var(--bad-200); color: var(--bad-800);
+}
+.feedback-warn:not(:empty) {
+  padding: 10px 14px;
+  background: var(--warn-50); border: 1px solid var(--warn-200); color: var(--warn-900);
+}
+.feedback.info:not(:empty), .msg-info {
+  padding: 10px 14px;
+  background: var(--a-50); border: 1px solid color-mix(in srgb, var(--a-200) 70%, transparent); color: var(--a-900);
+}
+.feedback-ok, .feedback-err, .feedback-warn { display: block; }
+.err-msg, .sel-err, .ieq-div-err { color: var(--bad-600); font-weight: 500; }
+
+/* success banner: the moment a whole exercise is solved */
+.banner, .success-banner, .summary-box {
+  background:
+    radial-gradient(120% 140% at 50% -40%, rgb(255 255 255 / .9) 0%, transparent 60%),
+    linear-gradient(180deg, #ecfdf3 0%, #d9fbe6 100%);
+  border: 1px solid #a7f0c3;
+  border-radius: var(--r-xl);
+  color: var(--ok-900);
+  box-shadow: 0 1px 2px rgb(20 83 45 / .06), 0 14px 32px -18px rgb(22 163 74 / .55);
+}
+.summary-box h3 { color: var(--ok-800); }
+.summary-row .label { color: var(--ink); }
+.s-val, .sol-val { color: var(--ok-700); }
+.std-banner {
+  background: linear-gradient(180deg, #ecfdf3 0%, #dcfce7 100%);
+  border: 1px solid var(--ok-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+}
+.std-text { color: var(--ok-900); }
+
+/* ── 9. Motion ─────────────────────────────────────────────────────────── */
+@keyframes mp-rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes mp-fade { from { opacity: 0; } }
+
+/* the page fades in once the exercise is ready */
+#root > :not(.mp-boot) { animation: mp-fade 320ms var(--ease-out) backwards; }
+/* new cards and steps slide in softly instead of popping */
+.card, .step-card, .eq-card, .step-done, .info-box, .theorem-card {
+  animation: mp-rise 260ms var(--ease-out) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+  button:not(:disabled):active { transform: none; }
+}
+
+/* ── 10. App shell (top bar, loader) — added by mp.js ──────────────────── */
+.mp-topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 8px;
+  height: 56px;
+  padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: saturate(1.6) blur(14px);
+          backdrop-filter: saturate(1.6) blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--t) ease, background-color var(--t) ease;
+}
+.mp-topbar.is-scrolled { border-bottom-color: var(--line); }
+.mp-back {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 40px; padding: 0 12px 0 14px;
+  border-radius: var(--r-pill);
+  color: var(--ink-2); text-decoration: none;
+  font-size: .9rem; font-weight: 500;
+  transition: background-color var(--t) ease, color var(--t) ease, transform var(--t-fast) var(--ease-out);
+}
+.mp-back svg { width: 18px; height: 18px; flex: none; }
+.mp-back:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) { .mp-back:hover { background: rgb(28 27 25 / .05); color: var(--ink); } }
+.mp-topbar-title {
+  flex: 1; min-width: 0;
+  text-align: center;
+  font-size: .95rem; font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 200ms ease, transform 200ms var(--ease-out);
+  pointer-events: none;
+}
+.mp-topbar.is-scrolled .mp-topbar-title { opacity: 1; transform: none; }
+.mp-sound {
+  display: inline-grid; place-items: center;
+  width: 40px; height: 40px; flex: none;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-2);
+  box-shadow: none;
+}
+.mp-sound svg { width: 20px; height: 20px; }
+.mp-sound .mp-off { display: none; }
+.mp-sound[aria-pressed="false"] .mp-on { display: none; }
+.mp-sound[aria-pressed="false"] .mp-off { display: block; }
+.mp-sound[aria-pressed="false"] { color: var(--ink-3); }
+@media (hover: hover) and (pointer: fine) { .mp-sound:hover { background: rgb(28 27 25 / .05); color: var(--ink); } }
+
+/* loader shown while the exercise code is prepared in the browser */
+.mp-boot {
+  min-height: 70vh;
+  display: grid; place-items: center;
+}
+.mp-boot span {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2.5px solid color-mix(in srgb, var(--a-600) 18%, transparent);
+  border-top-color: var(--a-600);
+  animation: mp-spin 700ms linear infinite;
+}
+@keyframes mp-spin { to { transform: rotate(360deg); } }
+
+/* confetti for a solved exercise (made by mp.js) */
+.mp-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.mp-confetti i { position: absolute; width: 7px; height: 11px; border-radius: 2px; will-change: transform, opacity; }
+
+} /* end @layer mp */

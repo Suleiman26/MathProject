@@ -1,0 +1,24 @@
+{
+  "name": "mathproject",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 5180",
+    "build": "next build",
+    "start": "next start -p 5181",
+    "convert": "python3 tools/convert-topics.py",
+    "verify": "python3 tools/verify-logic.py"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}

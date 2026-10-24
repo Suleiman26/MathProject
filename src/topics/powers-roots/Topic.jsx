@@ -1,0 +1,605 @@
+'use client';
+/* eslint-disable */
+// Topic code by Sulaiman, copied unchanged from public/classic/powers-roots.html
+// (tools/verify-logic.py proves it). Added: these lines + the export at the end.
+// Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
+import React from 'react';
+import ReactDOM from 'react-dom';
+// ===== BEGIN ORIGINAL =====
+
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
+function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pick(arr){return arr[randInt(0,arr.length-1)];}
+function Fb({fb}){if(!fb)return null;return fb==='ok'?<div className="fb ok">✓ נכון!</div>:<div className="fb err">✗ לא נכון, נסה שוב.</div>;}
+function Frac({n,d,style}){return <span className="frac" style={style}><span className="frac-num">{n}</span><span className="frac-den">{d}</span></span>;}
+
+/* ═══════════════════════════════════════
+   CHAPTER 1 — Understanding Powers (Visual)
+   ═══════════════════════════════════════ */
+function genCh1(){
+  const mode = randInt(0,1); // 0=forward, 1=reverse
+  if(mode===0){
+    const base = randInt(2,6);
+    const exp = randInt(2,5);
+    const ans = Math.pow(base,exp);
+    const visType = exp===2?'grid':exp===3?'cube':'chain';
+    return {mode,base,exp,ans,visType};
+  } else {
+    const pairs=[[2,4,16],[2,5,32],[3,2,9],[3,3,27],[3,4,81],[4,2,16],[4,3,64],[5,2,25],[5,3,125],[2,6,64],[2,7,128],[6,2,36],[7,2,49],[8,2,64],[9,2,81],[10,2,100]];
+    const [base,exp,ans]=pick(pairs);
+    return {mode,base,exp,ans,visType:'chain'};
+  }
+}
+
+function GridVis({n}){
+  const s=20,g=2,total=s+g;
+  return <svg viewBox={`0 0 ${n*total} ${n*total}`} style={{width:Math.min(160,n*total),height:Math.min(160,n*total)}}>
+    {Array.from({length:n*n},(_,i)=>{
+      const r=Math.floor(i/n),c=i%n;
+      return <rect key={i} x={c*total} y={r*total} width={s} height={s} rx={3} fill="#7c3aed" opacity={0.7}/>;
+    })}
+  </svg>;
+}
+
+function ChainVis({base,exp}){
+  const parts=[];
+  for(let i=0;i<exp;i++){
+    parts.push(<span key={'n'+i} style={{background:'#ede9fe',padding:'4px 8px',borderRadius:6,fontWeight:700,color:'#7c3aed'}}>{base}</span>);
+    if(i<exp-1) parts.push(<span key={'x'+i} style={{margin:'0 4px',color:'#a78bfa'}}>×</span>);
+  }
+  return <div style={{display:'flex',alignItems:'center',justifyContent:'center',flexWrap:'wrap',gap:2,direction:'ltr'}}>{parts}</div>;
+}
+
+function Ch1(){
+  const [ex,setEx]=useState(()=>genCh1());
+  const [step,setStep]=useState(1);
+  const [a1,setA1]=useState('');
+  const [a2,setA2]=useState('');
+  const [fb,setFb]=useState(null);
+
+  const check1=()=>{
+    if(ex.mode===0){
+      // forward: enter multiplication chain result
+      const v=parseInt(a1);
+      if(v===ex.ans){setFb('ok');setTimeout(()=>{setStep(2);setFb(null);},600);}
+      else setFb('err');
+    } else {
+      // reverse: enter exponent
+      const v=parseInt(a1);
+      if(v===ex.exp){setFb('ok');setStep(3);}
+      else setFb('err');
+    }
+  };
+  const check2=()=>{
+    const v=parseInt(a2);
+    if(v===ex.ans){setFb('ok');setStep(3);}
+    else setFb('err');
+  };
+  const reset=()=>{const e=genCh1();setEx(e);setStep(1);setA1('');setA2('');setFb(null);};
+
+  return <div className="content">
+    <div className="info">
+      <b>חזקה</b> היא כפל חוזר של אותו מספר. למשל: <span style={{direction:'ltr',display:'inline-block'}}>2⁴ = 2·2·2·2 = 16</span>
+    </div>
+    <div className="card">
+      <div className="card-t">הבנת חזקות</div>
+      {ex.mode===0?<>
+        <div className="eq-box">{ex.base}<sup>{ex.exp}</sup> = ?</div>
+        <div className="vis-wrap">
+          {ex.visType==='grid'?<GridVis n={ex.base}/>:<ChainVis base={ex.base} exp={ex.exp}/>}
+        </div>
+        <div className={`step-card ${step>1?'done':''}`}>
+          <div className="step-label">שלב 1 — חשב את הכפל החוזר</div>
+          {step===1?<>
+            <div className="ans-row">
+              <ChainVis base={ex.base} exp={ex.exp}/>
+              <span style={{margin:'0 6px'}}>=</span>
+              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?"
+                onKeyDown={e=>e.key==='Enter'&&check1()}/>
+              <button className="btn bg" onClick={check1}>✓ בדוק</button>
+            </div>
+            <Fb fb={fb}/>
+          </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.ans}</div>}
+        </div>
+      </>:<>
+        <div className="eq-box">{ex.ans} = {ex.base}<sup>?</sup></div>
+        <div className="vis-wrap"><ChainVis base={ex.base} exp={ex.exp}/></div>
+        <div className={`step-card ${step>2?'done':''}`}>
+          <div className="step-label">מצא את המעריך</div>
+          {step<3?<>
+            <div className="ans-row">
+              <span style={{fontSize:18}}>{ex.ans} = {ex.base}</span>
+              <sup style={{fontSize:14}}>
+                <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:45}}
+                  onKeyDown={e=>e.key==='Enter'&&check1()}/>
+              </sup>
+              <button className="btn bg" onClick={check1}>✓ בדוק</button>
+            </div>
+            <Fb fb={fb}/>
+          </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.base}<sup>{ex.exp}</sup> = {ex.ans}</div>}
+        </div>
+      </>}
+    </div>
+    {step>=3?<div className="banner">✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════════════════════════════════════
+   CHAPTER 2 — Power Laws (Numeric)
+   ═══════════════════════════════════════ */
+function genLaw(lawIdx){
+  if(lawIdx===0){// a^n * a^m = a^(n+m)
+    const base=pick([2,3,4,5]);const n=randInt(2,4);const m=randInt(2,4);
+    return {law:0,base,n,m,expAns:n+m,numAns:Math.pow(base,n+m),
+      q:`${base}^${n} · ${base}^${m} = ${base}^?`};
+  }
+  if(lawIdx===1){// a^n / a^m = a^(n-m)
+    const base=pick([2,3,5]);const n=randInt(4,7);const m=randInt(1,n-1);
+    return {law:1,base,n,m,expAns:n-m,numAns:Math.pow(base,n-m),
+      q:`${base}^${n} ÷ ${base}^${m} = ${base}^?`};
+  }
+  if(lawIdx===2){// (a^n)^m = a^(n*m)
+    const base=pick([2,3]);const n=randInt(2,3);const m=randInt(2,4);
+    return {law:2,base,n,m,expAns:n*m,numAns:Math.pow(base,n*m),
+      q:`(${base}^${n})^${m} = ${base}^?`};
+  }
+  if(lawIdx===3){// (a*b)^n = a^n * b^n
+    const a=pick([2,3]);const b=pick([2,3,5]);const n=randInt(2,3);
+    return {law:3,a,b,n,ansA:Math.pow(a,n),ansB:Math.pow(b,n),numAns:Math.pow(a*b,n),
+      q:`(${a}·${b})^${n} = ?·?`};
+  }
+  if(lawIdx===4){// a^0 = 1
+    const base=pick([2,3,5,7,10,13,42,100]);
+    return {law:4,base,ans:1,q:`${base}^0 = ?`};
+  }
+  // lawIdx===5: a^(-n) = 1/a^n
+  const base=pick([2,3,4,5]);const n=randInt(1,3);
+  return {law:5,base,n,den:Math.pow(base,n),q:`${base}^(−${n}) = ?`};
+}
+
+const lawNames=['כפל חזקות','חילוק חזקות','חזקה של חזקה','חזקה של מכפלה','חזקה אפס','חזקה שלילית'];
+const lawFormulas=['aⁿ · aᵐ = aⁿ⁺ᵐ','aⁿ ÷ aᵐ = aⁿ⁻ᵐ','(aⁿ)ᵐ = aⁿ·ᵐ','(a·b)ⁿ = aⁿ·bⁿ','a⁰ = 1','a⁻ⁿ = 1/aⁿ'];
+
+function Ch2(){
+  const [lawIdx,setLawIdx]=useState(0);
+  const [ex,setEx]=useState(()=>genLaw(0));
+  const [step,setStep]=useState(1);
+  const [a1,setA1]=useState('');const [a2,setA2]=useState('');
+  const [fb,setFb]=useState(null);
+
+  const switchLaw=(i)=>{setLawIdx(i);const e=genLaw(i);setEx(e);setStep(1);setA1('');setA2('');setFb(null);};
+  const reset=()=>{const e=genLaw(lawIdx);setEx(e);setStep(1);setA1('');setA2('');setFb(null);};
+
+  const check1=()=>{
+    let correct=false;
+    if(ex.law<=2){const v=parseInt(a1);correct=v===ex.expAns;}
+    else if(ex.law===3){const v1=parseInt(a1),v2=parseInt(a2);correct=(v1===ex.ansA&&v2===ex.ansB)||(v1===ex.ansB&&v2===ex.ansA);}
+    else if(ex.law===4){const v=parseInt(a1);correct=v===1;}
+    else{// negative exponent — accept 1/n as fraction
+      const v=a1.trim();
+      if(v.includes('/')){const ps=v.split('/');correct=parseInt(ps[0])===1&&parseInt(ps[1])===ex.den;}
+      else correct=false;
+    }
+    if(correct){
+      if(ex.law<=2){setFb('ok');setTimeout(()=>{setStep(2);setFb(null);},600);}
+      else{setFb('ok');setStep(3);}
+    } else setFb('err');
+  };
+  const check2=()=>{
+    const v=parseInt(a2);
+    if(v===ex.numAns){setFb('ok');setStep(3);}
+    else setFb('err');
+  };
+
+  return <div className="content">
+    <div className="sub-btns">
+      {lawNames.map((l,i)=><button key={i} className={`sub-btn ${lawIdx===i?'active':''}`} onClick={()=>switchLaw(i)}>{i+1}. {l}</button>)}
+    </div>
+    <div className="law-card">
+      <div className="law-title">חוק {lawIdx+1}: {lawNames[lawIdx]}</div>
+      <div className="law-formula">{lawFormulas[lawIdx]}</div>
+    </div>
+    <div className="card">
+      <div className="card-t">תרגול — {lawNames[lawIdx]}</div>
+      <div className="eq-box">{ex.q}</div>
+
+      <div className={`step-card ${step>1?'done':''}`}>
+        <div className="step-label">שלב 1{ex.law<=2?' — מצא את המעריך':ex.law===3?' — חשב כל חזקה בנפרד':ex.law===5?' — כתוב כשבר (1/...)':' — מצא את התוצאה'}</div>
+        {step===1?<>
+          <div className="ans-row">
+            {ex.law<=2?<>
+              <span style={{fontSize:18}}>{ex.base}<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check1()}/></sup></span>
+            </>:ex.law===3?<>
+              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:55}}/>
+              <span>·</span>
+              <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:55}} onKeyDown={e=>e.key==='Enter'&&check1()}/>
+            </>:ex.law===5?<>
+              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="1/..." style={{width:80}} onKeyDown={e=>e.key==='Enter'&&check1()}/>
+            </>:<>
+              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:70}} onKeyDown={e=>e.key==='Enter'&&check1()}/>
+            </>}
+            <button className="btn bg" onClick={check1}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ שלב הושלם</div>}
+      </div>
+
+      {ex.law<=2&&step>=2&&<div className={`step-card ${step>2?'done':''}`}>
+        <div className="step-label">שלב 2 — חשב את התוצאה המספרית</div>
+        {step===2?<>
+          <div className="ans-row">
+            <span style={{fontSize:18}}>{ex.base}<sup>{ex.expAns}</sup> =</span>
+            <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" onKeyDown={e=>e.key==='Enter'&&check2()}/>
+            <button className="btn bg" onClick={check2}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.numAns}</div>}
+      </div>}
+    </div>
+    {step>=3?<div className="banner">✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════════════════════════════════════
+   CHAPTER 3 — Power Laws (Parametric)
+   ═══════════════════════════════════════ */
+function genParam(subIdx){
+  if(subIdx===0){// x^a * x^b = x^?
+    const a=randInt(2,6),b=randInt(2,6);
+    return {sub:0,a,b,ans:a+b,q:`x^${a} · x^${b} = x^?`};
+  }
+  if(subIdx===1){// (x^a)^b * x^c = x^?
+    const a=randInt(2,3),b=randInt(2,3),c=randInt(1,4);
+    return {sub:1,a,b,c,step1:a*b,ans:a*b+c,q:`(x^${a})^${b} · x^${c} = x^?`};
+  }
+  if(subIdx===2){// (kx^a)^b = ?·x^?
+    const k=pick([2,3,4,5]);const a=randInt(2,4);const b=pick([2,3]);
+    return {sub:2,k,a,b,coefAns:Math.pow(k,b),expAns:a*b,q:`(${k}x^${a})^${b} = ?·x^?`};
+  }
+  if(subIdx===3){// x^a / x^b = x^?
+    const a=randInt(5,9),b=randInt(1,a-1);
+    return {sub:3,a,b,ans:a-b,q:`x^${a} / x^${b} = x^?`};
+  }
+  // sub 4: (kx^a·y^b)^c
+  const k=pick([2,3]);const a=randInt(1,3),b=randInt(1,3),c=pick([2,3]);
+  return {sub:4,k,a,b,c,coefAns:Math.pow(k,c),expA:a*c,expB:b*c,q:`(${k}x^${a}y^${b})^${c} = ?·x^?·y^?`};
+}
+
+const paramNames=['כפל פשוט','חזקה של חזקה + כפל','חזקה עם מקדם','חילוק','ביטוי מעורב'];
+
+function Ch3(){
+  const [subIdx,setSubIdx]=useState(0);
+  const [ex,setEx]=useState(()=>genParam(0));
+  const [step,setStep]=useState(1);
+  const [a1,setA1]=useState('');const [a2,setA2]=useState('');const [a3,setA3]=useState('');
+  const [fb,setFb]=useState(null);
+
+  const switchSub=(i)=>{setSubIdx(i);setEx(genParam(i));setStep(1);setA1('');setA2('');setA3('');setFb(null);};
+  const reset=()=>{setEx(genParam(subIdx));setStep(1);setA1('');setA2('');setA3('');setFb(null);};
+
+  const check=()=>{
+    let correct=false;
+    if(ex.sub===0||ex.sub===3){correct=parseInt(a1)===ex.ans;}
+    else if(ex.sub===1){
+      if(step===1){correct=parseInt(a1)===ex.step1;}
+      else{correct=parseInt(a2)===ex.ans;}
+    }
+    else if(ex.sub===2){correct=parseInt(a1)===ex.coefAns&&parseInt(a2)===ex.expAns;}
+    else if(ex.sub===4){correct=parseInt(a1)===ex.coefAns&&parseInt(a2)===ex.expA&&parseInt(a3)===ex.expB;}
+    if(correct){
+      if(ex.sub===1&&step===1){setFb('ok');setTimeout(()=>{setStep(2);setFb(null);},600);}
+      else{setFb('ok');setStep(10);}
+    } else setFb('err');
+  };
+
+  return <div className="content">
+    <div className="sub-btns">
+      {paramNames.map((l,i)=><button key={i} className={`sub-btn ${subIdx===i?'active':''}`} onClick={()=>switchSub(i)}>{String.fromCharCode(1488+i)}. {l}</button>)}
+    </div>
+    <div className="card">
+      <div className="card-t">חוקי חזקות — פרמטרי</div>
+      <div className="eq-box">{ex.q}</div>
+
+      {(ex.sub===0||ex.sub===3)?<div className={`step-card ${step>=10?'done':''}`}>
+        <div className="step-label">מצא את המעריך</div>
+        {step<10?<><div className="ans-row">
+          <span style={{fontSize:18}}>x<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>
+          <button className="btn bg" onClick={check}>✓ בדוק</button>
+        </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ x<sup>{ex.ans}</sup></div>}
+      </div>
+
+      :ex.sub===1?<>
+        <div className={`step-card ${step>1?'done':''}`}>
+          <div className="step-label">שלב 1 — פשט (x<sup>{ex.a}</sup>)<sup>{ex.b}</sup></div>
+          {step===1?<><div className="ans-row">
+            <span style={{fontSize:18}}>x<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>
+            <button className="btn bg" onClick={check}>✓ בדוק</button>
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ x<sup>{ex.step1}</sup></div>}
+        </div>
+        {step>=2&&<div className={`step-card ${step>=10?'done':''}`}>
+          <div className="step-label">שלב 2 — חשב x<sup>{ex.step1}</sup> · x<sup>{ex.c}</sup></div>
+          {step<10?<><div className="ans-row">
+            <span style={{fontSize:18}}>x<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>
+            <button className="btn bg" onClick={check}>✓ בדוק</button>
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ x<sup>{ex.ans}</sup></div>}
+        </div>}
+      </>
+
+      :ex.sub===2?<div className={`step-card ${step>=10?'done':''}`}>
+        <div className="step-label">מצא את המקדם והמעריך</div>
+        {step<10?<><div className="ans-row">
+          <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:60}}/>
+          <span>· x<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:45}}
+            onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>
+          <button className="btn bg" onClick={check}>✓ בדוק</button>
+        </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.coefAns}x<sup>{ex.expAns}</sup></div>}
+      </div>
+
+      :<div className={`step-card ${step>=10?'done':''}`}>
+        <div className="step-label">מצא את המקדם והמעריכים</div>
+        {step<10?<><div className="ans-row">
+          <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:55}}/>
+          <span>· x<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:40}}/></sup></span>
+          <span>· y<sup><input value={a3} onChange={e=>{setA3(e.target.value);setFb(null);}} placeholder="?" style={{width:40}}
+            onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>
+          <button className="btn bg" onClick={check}>✓ בדוק</button>
+        </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.coefAns}x<sup>{ex.expA}</sup>y<sup>{ex.expB}</sup></div>}
+      </div>}
+    </div>
+    {step>=10?<div className="banner">✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>ביטוי חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>ביטוי חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════════════════════════════════════
+   CHAPTER 4 — Square Roots
+   ═══════════════════════════════════════ */
+function genRoot(subIdx){
+  if(subIdx===0){// exact: √n² = n
+    const n=pick([2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
+    return {sub:0,val:n*n,ans:n};
+  }
+  if(subIdx===1){// simplify: √(a²·b) = a√b
+    const pairs=[[2,2,8],[2,3,12],[2,5,20],[2,7,28],[3,2,18],[3,3,27],[3,5,45],[4,2,32],[4,3,48],[5,2,50],[5,3,75],[6,2,72]];
+    const [a,b,val]=pick(pairs);
+    return {sub:1,val,a,b,q:`√${val}`};
+  }
+  if(subIdx===2){// operations
+    const opType=randInt(0,3);
+    if(opType===0){// √a · √b = √(ab)
+      const pairs=[[3,12,36,6],[2,8,16,4],[5,20,100,10],[2,18,36,6],[3,27,81,9],[2,32,64,8]];
+      const [a,b,prod,ans]=pick(pairs);
+      return {sub:2,opType:0,a,b,prod,ans,q:`√${a} · √${b}`};
+    }
+    if(opType===1){// √a / √b
+      const pairs=[[50,2,25,5],[72,2,36,6],[75,3,25,5],[48,3,16,4],[98,2,49,7]];
+      const [a,b,div,ans]=pick(pairs);
+      return {sub:2,opType:1,a,b,div,ans,q:`√${a} ÷ √${b}`};
+    }
+    if(opType===2){// k√a + m√a = (k+m)√a
+      const base=pick([2,3,5,7]);const k=randInt(1,5),m=randInt(1,5);
+      return {sub:2,opType:2,base,k,m,ans:k+m,q:`${k}√${base} + ${m}√${base}`};
+    }
+    // opType===3: √8 + √2 = 3√2
+    const triples=[[8,2,3,2],[18,2,4,2],[12,3,3,3],[27,3,4,3],[20,5,3,5],[45,5,4,5],[50,2,6,2]];
+    const [a,b,coef,base]=pick(triples);
+    return {sub:2,opType:3,a,b,coef,base,q:`√${a} + √${b}`};
+  }
+  return genRoot(0);
+}
+
+const rootNames=['שורשים מדויקים','פישוט שורשים','פעולות עם שורשים'];
+
+function Ch4(){
+  const [subIdx,setSubIdx]=useState(0);
+  const [ex,setEx]=useState(()=>genRoot(0));
+  const [step,setStep]=useState(1);
+  const [a1,setA1]=useState('');const [a2,setA2]=useState('');
+  const [fb,setFb]=useState(null);
+
+  const switchSub=(i)=>{setSubIdx(i);setEx(genRoot(i));setStep(1);setA1('');setA2('');setFb(null);};
+  const reset=()=>{setEx(genRoot(subIdx));setStep(1);setA1('');setA2('');setFb(null);};
+
+  const check=()=>{
+    let correct=false;
+    if(ex.sub===0){correct=parseInt(a1)===ex.ans;}
+    else if(ex.sub===1){
+      if(step===1){// decomposition: a² and b
+        const v1=parseInt(a1),v2=parseInt(a2);
+        correct=(v1===ex.a*ex.a&&v2===ex.b);
+      } else {// final: coef√base
+        const v1=parseInt(a1),v2=parseInt(a2);
+        correct=v1===ex.a&&v2===ex.b;
+      }
+    } else {
+      if(ex.opType===0){correct=parseInt(a1)===ex.ans;}
+      else if(ex.opType===1){correct=parseInt(a1)===ex.ans;}
+      else if(ex.opType===2){correct=parseInt(a1)===ex.ans;}
+      else{// √a+√b = coef√base
+        const v1=parseInt(a1),v2=parseInt(a2);
+        correct=v1===ex.coef&&v2===ex.base;
+      }
+    }
+    if(correct){
+      if(ex.sub===1&&step===1){setFb('ok');setTimeout(()=>{setStep(2);setFb(null);},600);}
+      else{setFb('ok');setStep(10);}
+    } else setFb('err');
+  };
+
+  return <div className="content">
+    <div className="info">
+      <b>שורש ריבועי</b> הוא הפעולה ההפוכה לחזקה שנייה: <span style={{direction:'ltr',display:'inline-block'}}>√n² = n</span>
+    </div>
+    <div className="sub-btns">
+      {rootNames.map((l,i)=><button key={i} className={`sub-btn ${subIdx===i?'active':''}`} onClick={()=>switchSub(i)}>{String.fromCharCode(1488+i)}. {l}</button>)}
+    </div>
+    <div className="card">
+      <div className="card-t">{rootNames[subIdx]}</div>
+
+      {ex.sub===0?<>
+        <div className="eq-box">√{ex.val} = ?</div>
+        <div className="vis-wrap">
+          <div style={{textAlign:'center'}}>
+            <svg viewBox="0 0 120 120" style={{width:100,height:100}}>
+              <rect x={5} y={5} width={110} height={110} fill="#ede9fe" stroke="#7c3aed" strokeWidth={2} rx={6}/>
+              <text x={60} y={50} textAnchor="middle" fontSize="14" fill="#7c3aed" fontWeight="700">שטח = {ex.val}</text>
+              <text x={60} y={75} textAnchor="middle" fontSize="14" fill="#6d28d9">צלע = ?</text>
+            </svg>
+          </div>
+        </div>
+        <div className={`step-card ${step>=10?'done':''}`}>
+          <div className="step-label">איזה מספר בריבוע נותן {ex.val}?</div>
+          {step<10?<><div className="ans-row">
+            <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" onKeyDown={e=>e.key==='Enter'&&check()}/>
+            <button className="btn bg" onClick={check}>✓ בדוק</button>
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.ans}</div>}
+        </div>
+      </>
+
+      :ex.sub===1?<>
+        <div className="eq-box">{ex.q} = ?√?</div>
+        <div className={`step-card ${step>1?'done':''}`}>
+          <div className="step-label">שלב 1 — פרק: √({ex.val}) = √(__ · __)</div>
+          {step===1?<><div className="ans-row">
+            <span>√(</span>
+            <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="ריבועי" style={{width:55}}/>
+            <span>·</span>
+            <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="שארית" style={{width:55}} onKeyDown={e=>e.key==='Enter'&&check()}/>
+            <span>)</span>
+            <button className="btn bg" onClick={check}>✓ בדוק</button>
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ √({ex.a*ex.a}·{ex.b})</div>}
+        </div>
+        {step>=2&&<div className={`step-card ${step>=10?'done':''}`}>
+          <div className="step-label">שלב 2 — הוצא מהשורש</div>
+          {step<10?<><div className="ans-row">
+            <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:50}}/>
+            <span>√</span>
+            <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>
+            <button className="btn bg" onClick={check}>✓ בדוק</button>
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.a}√{ex.b}</div>}
+        </div>}
+      </>
+
+      :<>
+        <div className="eq-box">{ex.q} = ?</div>
+        <div className={`step-card ${step>=10?'done':''}`}>
+          <div className="step-label">חשב</div>
+          {step<10?<><div className="ans-row">
+            {(ex.opType===3)?<>
+              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:50}}/>
+              <span>√</span>
+              <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>
+            </>:ex.opType===2?<>
+              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>
+              <span>√{ex.base}</span>
+            </>:<>
+              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" onKeyDown={e=>e.key==='Enter'&&check()}/>
+            </>}
+            <button className="btn bg" onClick={check}>✓ בדוק</button>
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>
+            {ex.opType===3?`✓ ${ex.coef}√${ex.base}`:ex.opType===2?`✓ ${ex.ans}√${ex.base}`:`✓ ${ex.ans}`}
+          </div>}
+        </div>
+      </>}
+    </div>
+    {step>=10?<div className="banner">✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════════════════════════════════════
+   CHAPTER 5 — Everything Together
+   ═══════════════════════════════════════ */
+function genCombined(diff){
+  if(diff===0){// easy: √(x^a) = x^? where a is even
+    const a=pick([4,6,8,10]);
+    return {diff:0,q:`√(x^${a}) = x^?`,ans:a/2,type:'exp'};
+  }
+  if(diff===1){// medium: (√x)^a = x^?
+    const a=pick([4,6,8]);
+    return {diff:1,q:`(√x)^${a} = x^?`,ans:a/2,type:'exp'};
+  }
+  // hard: mixed
+  const types=[
+    ()=>{const a=pick([2,3]),b=pick([2,4]);return {q:`√(x^${a*b}·y^${2*b}) = x^?·y^?`,ansA:a*b/2,ansB:b,type:'2exp'};},
+    ()=>{const a=pick([2,3,4]);return {q:`x^${a} · √(x^${2*a}) = x^?`,ans:2*a,type:'exp'};},
+    ()=>{const k=pick([4,9,16,25]);const r=Math.sqrt(k);const a=pick([2,4]);return {q:`√(${k}x^${a}) = ?·x^?`,coef:r,expAns:a/2,type:'coefexp'};},
+  ];
+  return {diff:2,...pick(types)()};
+}
+
+const diffNames=['קל','בינוני','קשה'];
+
+function Ch5(){
+  const [diff,setDiff]=useState(0);
+  const [ex,setEx]=useState(()=>genCombined(0));
+  const [a1,setA1]=useState('');const [a2,setA2]=useState('');
+  const [fb,setFb]=useState(null);const [done,setDone]=useState(false);
+
+  const switchDiff=(d)=>{setDiff(d);setEx(genCombined(d));setA1('');setA2('');setFb(null);setDone(false);};
+  const reset=()=>{setEx(genCombined(diff));setA1('');setA2('');setFb(null);setDone(false);};
+
+  const check=()=>{
+    let correct=false;
+    if(ex.type==='exp'){correct=parseFloat(a1)===ex.ans;}
+    else if(ex.type==='2exp'){correct=parseFloat(a1)===ex.ansA&&parseFloat(a2)===ex.ansB;}
+    else if(ex.type==='coefexp'){correct=parseFloat(a1)===ex.coef&&parseFloat(a2)===ex.expAns;}
+    if(correct){setFb('ok');setDone(true);}
+    else setFb('err');
+  };
+
+  return <div className="content">
+    <div className="sub-btns">
+      {diffNames.map((l,i)=><button key={i} className={`sub-btn ${diff===i?'active':''}`} onClick={()=>switchDiff(i)}>{l}</button>)}
+    </div>
+    <div className="card">
+      <div className="card-t">הכל יחד</div>
+      <div className="eq-box">{ex.q}</div>
+      <div className={`step-card ${done?'done':''}`}>
+        <div className="step-label">פשט את הביטוי</div>
+        {!done?<><div className="ans-row">
+          {ex.type==='exp'?<>
+            <span>x<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>
+          </>:ex.type==='2exp'?<>
+            <span>x<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" style={{width:40}}/></sup></span>
+            <span>· y<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:40}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>
+          </>:<>
+            <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:50}}/>
+            <span>· x<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:40}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>
+          </>}
+          <button className="btn bg" onClick={check}>✓ בדוק</button>
+        </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>
+          ✓ {ex.type==='exp'?`x^${ex.ans}`:ex.type==='2exp'?`x^${ex.ansA}·y^${ex.ansB}`:`${ex.coef}x^${ex.expAns}`}
+        </div>}
+      </div>
+    </div>
+    {done?<div className="banner">✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>ביטוי חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>ביטוי חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════ Main App ═══════ */
+function App(){
+  const [ch,setCh]=useState(1);
+  const labels=['הבנת חזקות','חוקי חזקות','פרמטרי','שורשים','הכל יחד'];
+  return <div>
+    <div className="hdr">
+      <div className="hdr-title">חזקות ושורשים</div>
+      <div className="ch-btns">
+        {labels.map((l,i)=><button key={i} className={`ch-btn ${ch===i+1?'active':''}`} onClick={()=>setCh(i+1)}>{i+1}. {l}</button>)}
+      </div>
+    </div>
+    {ch===1?<Ch1 key="c1"/>:ch===2?<Ch2 key="c2"/>:ch===3?<Ch3 key="c3"/>:ch===4?<Ch4 key="c4"/>:<Ch5 key="c5"/>}
+  </div>;
+}
+
+
+// ===== END ORIGINAL =====
+export default App;
