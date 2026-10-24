@@ -1,31 +1,52 @@
 # MathProject: rules for Claude
 
-Hebrew (RTL) math practice site for middle school, grades 7–9. One HTML file per
-topic, React + Babel from a CDN, no build step. Live at
-https://mathproject-gamma.vercel.app (Vercel deploys every push to `main`, so
-students see it at once).
+Hebrew (RTL) math practice site for middle school, grades 7–9. Next.js 16 app
+(React 19). Live at https://mathproject-gamma.vercel.app. Vercel deploys every
+push to `main` (Sulaiman's Vercel team), so students see it at once.
 
-Partners: Sulaiman (math content) and Abed (design system and infrastructure).
+Partners: Sulaiman (math content) and Abed (design system, admin, infrastructure).
+Everything for this project lives on Sulaiman's accounts (Vercel team
+`math-project`, Supabase). Never create services for it on Abed's own accounts.
 
 ## Never without an explicit request
-- Don't change the math, the exercises or any Hebrew text. All of it lives in each
-  page's `<script type="text/babel">` block. Design work never edits that block.
+- Don't change the math, the exercises or any Hebrew text a student sees.
+  They live in `src/topics/<topic>/Topic.jsx` between `BEGIN ORIGINAL` and `END ORIGINAL`.
 - Don't push to `main`: it goes live for students immediately.
 
-## Design
-- Read `DESIGN.md` first. Shared look: `assets/mp.css`. Shared behavior: `assets/mp.js`.
-- Page CSS sits in `@layer legacy`, the design system in `@layer mp`, one-page fixes in `@layer page`.
-- New topic: start from `templates/module-template.html` and use the class vocabulary.
-- Older page: `python3 tools/upgrade-page.py <file> <topic-color>`.
+## Where things are
+| What | Where |
+|---|---|
+| A topic (Sulaiman's code) | `src/topics/<topic>/Topic.jsx` + its own CSS `styles.js`; list in `src/topics/registry.js` |
+| Topic page frame (top bar, sounds, stats) | `src/components/TopicView.jsx`, `TopBar.jsx`, `src/lib/mp-runtime.js` |
+| Design system | `src/styles/mp.css` (layers: mp-base < legacy < mp < page). Guide: `DESIGN.md` |
+| Drawing/display fixes per topic | `src/styles/topic-fixes.css` (scoped with `html[data-page="<topic>"]`) |
+| Home page | `app/page.tsx`, `src/home/` |
+| Admin (PIN 1111) | `app/admin/*`, `src/admin/*` |
+| Database (Supabase) | `supabase/migrations`; how to connect: `supabase/README.md`; settings: `src/lib/config.js` |
+| Old plain-HTML site | `public/classic/` (served at `/classic`), git tag `html-v1` |
+
+URLs: `/topics/<topic>`. Old `/<topic>.html` links redirect (next.config.ts).
 
 ## Admin and database
-- `admin.html`: management area (PIN, dashboard, content order, analytics, students, sales, settings). Code in `assets/admin.js` and `assets/admin.css`.
-- Data lives in Sulaiman's Supabase project. It is **not connected yet**: `assets/config.js` is empty, so the admin shows labelled sample data and no stats are sent. How to connect: `supabase/README.md`.
-- Database changes go in a new file in `supabase/migrations/`. Every admin action is a database function that checks the PIN session. Never put a secret key in the site.
-- `assets/mp.js` sends anonymous answer stats (page, chapter, step, correct/wrong/solved) when connected. It only watches the page; it never changes the exercise.
-- Local test copy: `supabase start` (Docker), ports 564xx. On localhost the site uses it automatically.
-- Accounts: everything for this project is on Sulaiman's accounts (Vercel team `math-project`, Supabase). Never create services on Abed's own accounts for it.
+- Not connected yet: `src/lib/config.js` is empty, so the admin shows labelled
+  sample data and no stats are sent. Connect with `supabase/README.md`.
+- Database changes go in a new file in `supabase/migrations/`. Every admin action
+  is a database function that checks the PIN session. Never put a secret key in the site.
+- `src/lib/mp-runtime.js` sends anonymous answer stats when connected. It only
+  watches the page; it never changes the exercise.
+- Local test copy: `supabase start` (Docker), ports 564xx. On localhost the app
+  uses it automatically (`?live=0` = preview mode).
+
+## Display fixes vs logic
+Prefer CSS in `src/styles/topic-fixes.css` for anything visual. Only touch
+`Topic.jsx` for display if CSS truly can't do it, and say so:
+`tools/verify-logic.py` will then flag that topic as changed.
 
 ## Check before finishing
 - `python3 tools/verify-logic.py` must say "math and text untouched".
+- `npx next build` must pass.
 - Look at changed pages on desktop and at phone width (375px).
+
+## Going back to the HTML version
+Deploy tag `html-v1` (or branch `classic-html`) to `main`. The HTML site is
+also always viewable at `/classic`.

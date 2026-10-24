@@ -15,11 +15,12 @@ export default function TopicView({ slug }) {
     initRuntime();
     const html = document.documentElement;
     html.dataset.topic = meta.topic;
+    html.dataset.page = slug;
     Promise.all([LOADERS[slug](), STYLES[slug]()]).then(([m, s]) => {
       if (alive) setLoaded({ Topic: m.default, css: s.default });
     });
     const t = setTimeout(() => window.MP && window.MP.view(), 1800);
-    return () => { alive = false; clearTimeout(t); delete html.dataset.topic; };
+    return () => { alive = false; clearTimeout(t); delete html.dataset.topic; delete html.dataset.page; };
   }, [slug, meta.topic]);
 
   const Topic = loaded && loaded.Topic;

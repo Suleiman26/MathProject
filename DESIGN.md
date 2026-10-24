@@ -18,15 +18,15 @@ proves it, byte for byte.
 
 | File | What it is |
 |---|---|
-| `assets/mp.css` | The design system: colors, type, buttons, inputs, cards, feedback, motion |
-| `assets/mp.js` | The app shell: top bar (back + sound switch), sounds, feedback animations, confetti |
-| `assets/icon.svg` | Site icon |
-| `templates/module-template.html` | Starting point for a new topic |
-| `tools/upgrade-page.py` | Plugs an old-style page into the design system |
+| `src/styles/mp.css` | The design system: colors, type, buttons, inputs, cards, feedback, motion |
+| `src/styles/topic-fixes.css` | Per-topic display fixes (drawing sizes, label outlines) |
+| `src/lib/mp-runtime.js` | Sounds, feedback animations, confetti, anonymous answer stats |
+| `src/components/TopicView.jsx`, `TopBar.jsx` | The frame around every topic |
+| `src/topics/<topic>/` | Each topic: `Topic.jsx` (Sulaiman's code) + `styles.js` (its own CSS) |
+| `src/admin/` | The admin: screens, charts, building blocks |
 | `tools/verify-logic.py` | Proves the math and text were not changed |
-| `admin.html` + `assets/admin.*` | The admin (same design language). Database: `supabase/README.md` |
-| `assets/config.js`, `assets/mp-data.js` | Connection settings and the tiny database client |
-| `assets/icons.js` | Topic icons shared by the home page and the admin |
+| `tools/convert-topics.py` | The one-time move from the HTML version (safe to re-run) |
+| `public/classic/` | The old plain-HTML site, kept as it was |
 
 ## How the styling layers work
 
@@ -96,16 +96,14 @@ To play a sound by hand: `MP.sound("ok")` (`tap`, `select`, `ok`, `bad`, `win`).
 
 ## Building a new topic
 
-1. Copy `templates/module-template.html` to `my-topic.html`.
-2. Pick a `data-topic` color.
-3. Write the exercise inside the `text/babel` block, using the class vocabulary above.
-4. Add a card for it in `index.html`: copy one `<a class="topic">` and change the link, name, grade, `data-g` (grades) and icon.
+1. Create `src/topics/<topic>/Topic.jsx`: a React component named `App`,
+   exported as default. Use the class vocabulary above.
+2. Create `src/topics/<topic>/styles.js` exporting the topic's own CSS as a
+   string, inside `@layer legacy { ... }` (layout only).
+3. Add it to `src/topics/registry.js` (title, color, loader, styles).
+4. Add it in the admin (Content → new topic) or in `src/home/catalog.js`.
 
-Got an older page that doesn't use the system yet?
-
-```bash
-python3 tools/upgrade-page.py my-topic.html teal
-```
+The page frame (top bar, sounds, stats, design) comes for free.
 
 ## Before every push
 
@@ -114,9 +112,9 @@ python3 tools/verify-logic.py
 ```
 
 It must end with `math and text untouched`, unless you meant to change the math.
+Also run `npx next build`.
 
-## Library versions (pinned)
+## Versions
 
-React `18.3.1`, Babel standalone `8.0.7`. They are pinned on purpose: an
-unpinned link changes by itself when a new version comes out, and a new major
-version can break every page overnight. Upgrade on purpose, then test every page.
+Next.js 16.3.8, React 19.2.8 (exact versions in package.json). Upgrade on
+purpose, then test every topic.

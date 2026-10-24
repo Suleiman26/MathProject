@@ -1,0 +1,24 @@
+/* Display fixes for the topics' drawings. Design only: nothing here changes
+   a number, a word or how an exercise works. Each rule is scoped to one topic
+   with html[data-page="<topic>"] (set by src/components/TopicView.jsx). */
+@layer page {
+
+/* Every label inside a drawing gets a thin white outline, like in printed
+   math books: when a line, arc or grid line passes behind a label, the label
+   stays readable instead of being crossed out. */
+#root svg text:not([stroke]) {
+  paint-order: stroke fill;
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  stroke-opacity: .95;
+}
+
+/* Triangles: the drawings were stretched up to ~1.9× on computers, pushing
+   the question below the fold. Keep them a comfortable size. */
+html[data-page="triangles"] .graph-wrap > svg { max-width: 460px !important; margin-inline: auto; }
+
+/* Pythagoras: the side triangle grew to 500px tall in chapter 1. */
+html[data-page="pythagoras"] .tri-box svg { max-height: 340px; }
+
+}

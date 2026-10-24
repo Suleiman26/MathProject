@@ -16,6 +16,7 @@ Then prove it:      python3 tools/verify-logic.py
 """
 import json
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -55,6 +56,12 @@ def convert(html_path: Path):
 
     d = OUT / slug
     d.mkdir(parents=True, exist_ok=True)
+    existing = d / "Topic.jsx"
+    if existing.exists() and "--force" not in sys.argv:
+        m = re.search(r"// ===== BEGIN ORIGINAL =====\n([\s\S]*)// ===== END ORIGINAL =====\n", existing.read_text(encoding="utf-8"))
+        if not m or m.group(1) != body:
+            print(f"  ! {slug}: Topic.jsx was edited after the move. Kept as is (use --force to overwrite).")
+            return {"slug": slug, "file": html_path.name, "title": title, "topic": topic.group(1) if topic else "teal"}
     (d / "Topic.jsx").write_text(HEADER.format(file=html_path.name) + body + FOOTER, encoding="utf-8")
     (d / "styles.js").write_text(
         "// The topic's own CSS (from public/classic/" + html_path.name + "), shown only while the topic is open.\n"
