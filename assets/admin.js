@@ -297,7 +297,7 @@
       if (navigator.vibrate) navigator.vibrate(40);
     }
     function submit() {
-      busy = true; msgEl.className = "pin-msg info"; msgEl.textContent = "בודק…";
+      busy = true; msgEl.className = "pin-msg quiet"; msgEl.textContent = "בודק…";
       login(digits).then(function (r) {
         busy = false;
         if (r && r.token) {
@@ -346,7 +346,7 @@
     app.innerHTML =
       '<div class="shell">' +
       '<aside class="side"><div class="brand">' + MARK + '<div><b>מתמטיקה חט״ב</b><small>ניהול</small></div></div>' +
-      '<nav class="nav" aria-label="ניווט ראשי">' + nav + "</nav>" +
+      '<nav class="snav" aria-label="ניווט ראשי">' + nav + "</nav>" +
       '<div class="side-foot">' +
       '<div class="status-pill' + (DEMO ? " demo" : "") + '"><i></i><span>' + (DEMO ? "מצב תצוגה · נתוני דוגמה" : "מחובר למסד הנתונים") + "</span></div>" +
       '<a class="side-link" href="index.html" target="_blank" rel="noopener">' + UI.external + "<span>לאתר התלמידים</span></a>" +
@@ -1071,7 +1071,7 @@
     state.view = id;
     observers.forEach(function (o) { o.disconnect(); }); observers = []; tip(null);
     var v = VIEWS.find(function (x) { return x.id === id; });
-    $$(".nav a, .bnav a").forEach(function (a) { if (a.dataset.v === id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    $$(".snav a, .bnav a").forEach(function (a) { if (a.dataset.v === id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     document.title = v.label + " · ניהול מתמטיקה חט״ב";
     var view = $("#view"), fresh = view.cloneNode(false); view.parentNode.replaceChild(fresh, view);   // drop old listeners
     var needs = NEEDS[id].filter(function (k) { return !state[k]; });
