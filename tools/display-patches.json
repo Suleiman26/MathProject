@@ -12,5 +12,19 @@
       "new": "const [rx,ry]=fromSvg((e.clientX-rect.left)*SVG_W/rect.width,(e.clientY-rect.top)*SVG_H/rect.height);",
       "count": 4
     }
+  ],
+  "equation-solver": [
+    {
+      "why": "Bug fix approved by Abed (2026-10-24): the 'solution steps' list saved the equation from BEFORE each action, so every row was one step behind. Save the equation AFTER the action. Math itself unchanged.",
+      "old": "setApp(s=>({...s,current:doOperate(s.current,opType,k,isX),history:[...s.history,{eq:s.current,desc:opDesc(opType,k,isX)}]}));",
+      "new": "setApp(s=>{const n=doOperate(s.current,opType,k,isX);return{...s,current:n,history:[...s.history,{eq:n,desc:opDesc(opType,k,isX)}]}});",
+      "count": 1
+    },
+    {
+      "why": "Bug fix approved by Abed (2026-10-24): the 'solution steps' list saved the equation from BEFORE each action, so every row was one step behind. Save the equation AFTER the action. Math itself unchanged.",
+      "old": "history:[...s.history,{eq:s.current,desc:'פישוט'}]",
+      "new": "history:[...s.history,{eq:{left,right},desc:'פישוט'}]",
+      "count": 1
+    }
   ]
 }

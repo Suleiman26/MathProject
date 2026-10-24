@@ -142,7 +142,7 @@ function App(){
     const k=parseInt(v,10);
     if(k===0){setOpErr('בחרו מספר שאינו אפס');return}
     const isX=opIsX&&(opType==='+'||opType==='−');
-    setApp(s=>({...s,current:doOperate(s.current,opType,k,isX),history:[...s.history,{eq:s.current,desc:opDesc(opType,k,isX)}]}));
+    setApp(s=>{const n=doOperate(s.current,opType,k,isX);return{...s,current:n,history:[...s.history,{eq:n,desc:opDesc(opType,k,isX)}]}});
     setOpVal('');setOpErr('');setOpIsX(false);
   }
 
@@ -150,7 +150,7 @@ function App(){
     setApp(s=>{
       const left=canSimp(s.current.left)?doSimplify(s.current.left):s.current.left;
       const right=canSimp(s.current.right)?doSimplify(s.current.right):s.current.right;
-      return{...s,current:{left,right},history:[...s.history,{eq:s.current,desc:'פישוט'}]};
+      return{...s,current:{left,right},history:[...s.history,{eq:{left,right},desc:'פישוט'}]};
     });
   }
 
