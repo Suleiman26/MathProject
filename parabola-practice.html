@@ -60,9 +60,16 @@
   .summary-row .label { font-weight: bold; color: #1a237e; width: 160px; }
 }
 </style>
-<link rel="stylesheet" href="assets/mp.css?v=2">
+<link rel="stylesheet" href="assets/mp.css?v=3">
 <style id="mp-page">
 @layer page {
+  /* graph tools (zoom hint, "move graph", "center"): readable and tappable */
+  #root div[style*="font-size: 11px"] { font-size: 12.5px !important; gap: 8px !important; margin-bottom: 8px !important; color: var(--ink-3) !important; }
+  #root div[style*="font-size: 11px"] > button {
+    font-size: 13px !important; min-height: 34px; padding: 6px 14px !important;
+    border-radius: 999px !important; border-color: var(--line-strong) !important; font-weight: 500;
+  }
+  #root div[style*="font-size: 11px"] > button[style*="background: rgb(245, 245, 245)"] { background: var(--surface) !important; color: var(--ink-2) !important; }
 }
 </style>
 <script src="assets/config.js?v=1" defer></script>

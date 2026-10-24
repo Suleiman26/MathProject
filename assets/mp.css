@@ -117,6 +117,7 @@ body {
 }
 body, body * { font-family: var(--font); }
 b, strong { font-weight: 700; }
+sup, sub { font-size: max(.72em, 11px); }
 ::selection { background: color-mix(in srgb, var(--a-300) 55%, transparent); }
 
 button, select, input, textarea { -webkit-tap-highlight-color: transparent; }
@@ -429,6 +430,31 @@ input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):focus, sele
 input::placeholder { color: var(--ink-3); font-weight: 400; opacity: 1; }
 .math-input.correct, .coef-inp.ok { border-color: var(--ok-500); background: var(--ok-50); }
 .math-input.wrong { border-color: var(--bad-500); background: var(--bad-50); }
+
+/* ── 7b. Phones: everything a finger presses is at least ~38px ─────────── */
+@media (pointer: coarse), (max-width: 640px) {
+  .sub-tab, .sub-tab-btn, .sub-btn, .tab, .prop-btn, .diff-btn, .part-btn, .special-btn,
+  .eq-choice, .choice-btn, .btn-formula, .point-chip, .nl-toggle { min-height: 38px; }
+  .choice-btn { min-width: 44px; }
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(.op-input):not(.eqs-val):not(.slv-opinput),
+  select { min-height: 40px; font-size: max(16px, 1em); }      /* 16px+ also stops iPhone from zooming in */
+  /* the + − × ÷ boxes of the equation solvers */
+  .op-btn, .op-x-btn, .eqs-op, .eqs-x { width: 30px; height: 30px; font-size: .95rem; }
+  .slv-opbtn, .slv-opxbtn { width: 32px; height: 32px; }
+  .op-input, .eqs-val { width: 38px; min-height: 30px; font-size: 16px; }
+  .slv-opinput { min-height: 32px; font-size: 16px; }
+  .op-box, .eqs-box { flex-wrap: wrap; justify-content: center; max-width: 118px; }
+}
+@media (max-width: 480px) {
+  /* keep each side of an equation on one line */
+  .tp { padding: 6px 4px; }
+  .tv, .tv-x, .tc, .xv { font-size: 1.6rem; }
+  .ts { font-size: 1.2rem; padding: 0 2px; }
+  .eqs-tp { padding: 5px 3px; }
+  .eqs-tv, .eqs-tvx { font-size: 1.35rem; }
+  .side-zone, .eqs-side { padding-inline: 4px; }
+  .eq-sign { padding: 0 8px; }
+}
 
 /* ── 8. Feedback ───────────────────────────────────────────────────────── */
 .fb:not(:empty), .feedback:not(:empty), .msg-success, .msg-error, .msg-info,
