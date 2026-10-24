@@ -512,6 +512,28 @@ input::placeholder { color: var(--ink-3); font-weight: 400; opacity: 1; }
 }
 .op-x-btn.active, .eqs-x.active, .slv-opxbtn.active { background: var(--a-600); border-color: var(--a-600); color: #fff; }
 
+/* The solvers drew TWO copies of this box (one above each side), but both
+   copies share one setting: tapping one always changed the other. Show a
+   single box centered over the "=", with two small arrows pointing to both
+   sides, so "the same action on both sides" is shown, not duplicated.
+   Display only: the logic still has its one shared setting. */
+:is(.g-left, .slv-left, .eqs-gl):has(> :is(.op-box, .eqs-box, .slv-opbox)) {
+  grid-column: 1 / -1; justify-self: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+:is(.g-left, .slv-left, .eqs-gl):has(> :is(.op-box, .eqs-box, .slv-opbox)) ~ :is(.g-right, .slv-right, .eqs-gr):has(> :is(.op-box, .eqs-box, .slv-opbox)),
+:is(.g-left, .slv-left, .eqs-gl):has(> :is(.op-box, .eqs-box, .slv-opbox)) + :empty { display: none; }
+:is(.g-left, .slv-left, .eqs-gl) > :is(.op-box, .eqs-box, .slv-opbox) {
+  width: min(280px, 100%);
+}
+:is(.g-left, .slv-left, .eqs-gl):has(> :is(.op-box, .eqs-box, .slv-opbox))::after {
+  content: ""; display: block; width: min(240px, 78%); height: 18px; margin-top: 4px;
+  /* two thin arrows: down-left and down-right */
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1px), var(--a-300) calc(50% - 1px), var(--a-300) calc(50% + 1px), transparent calc(50% + 1px)) left / 50% 100% no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 1px), var(--a-300) calc(50% - 1px), var(--a-300) calc(50% + 1px), transparent calc(50% + 1px)) right / 50% 100% no-repeat;
+}
+
 /* ── 8. Feedback ───────────────────────────────────────────────────────── */
 .fb:not(:empty), .feedback:not(:empty), .msg-success, .msg-error, .msg-info,
 .feedback-ok:not(:empty), .feedback-err:not(:empty), .feedback-warn:not(:empty) {
