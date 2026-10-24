@@ -1,0 +1,16 @@
+{
+  "linear-function": [
+    {
+      "why": "The coordinate graphs were a fixed 400x400 px with no viewBox, so on phones (~300px) their edges were cut off. Let them scale to the screen.",
+      "old": "<svg width={SVG_W} height={SVG_H} onClick={onClick} onMouseMove={onMouseMove}>",
+      "new": "<svg width={SVG_W} height={SVG_H} viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{maxWidth:'100%',height:'auto'}} onClick={onClick} onMouseMove={onMouseMove}>",
+      "count": 1
+    },
+    {
+      "why": "Taps on a scaled graph must be converted back to graph units (factor is exactly 1 on computers, so nothing changes there).",
+      "old": "const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);",
+      "new": "const [rx,ry]=fromSvg((e.clientX-rect.left)*SVG_W/rect.width,(e.clientY-rect.top)*SVG_H/rect.height);",
+      "count": 4
+    }
+  ]
+}

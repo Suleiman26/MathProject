@@ -52,7 +52,7 @@ function Grid({children,onClick,onMouseMove,highlight,hideNumbers,axisNames,hide
   const [,ay0]=toSvg(0,GRID_MIN);const [,ay1]=toSvg(0,GRID_MAX);
   const axLabels=axisNames===undefined?['x','y']:axisNames;
   return(
-    <svg width={SVG_W} height={SVG_H} onClick={onClick} onMouseMove={onMouseMove}>
+    <svg width={SVG_W} height={SVG_H} viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{maxWidth:'100%',height:'auto'}} onClick={onClick} onMouseMove={onMouseMove}>
       <rect x={0} y={0} width={SVG_W} height={SVG_H} fill="#f0fdfa" rx={8}/>
       {lines}{labels}
       {/* axis labels */}
@@ -432,7 +432,7 @@ function Chapter2(){
   function handleClick(e){
     if(placed)return;
     const rect=e.currentTarget.getBoundingClientRect();
-    const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);
+    const [rx,ry]=fromSvg((e.clientX-rect.left)*SVG_W/rect.width,(e.clientY-rect.top)*SVG_H/rect.height);
     const cx=snap(rx),cy=snap(ry);
     if(cx<GRID_MIN||cx>GRID_MAX||cy<GRID_MIN||cy>GRID_MAX)return;
     setPending({x:cx,y:cy});
@@ -446,7 +446,7 @@ function Chapter2(){
   function handleMove(e){
     if(placed)return;
     const rect=e.currentTarget.getBoundingClientRect();
-    const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);
+    const [rx,ry]=fromSvg((e.clientX-rect.left)*SVG_W/rect.width,(e.clientY-rect.top)*SVG_H/rect.height);
     const cx=snap(rx),cy=snap(ry);
     if(cx>=GRID_MIN&&cx<=GRID_MAX&&cy>=GRID_MIN&&cy<=GRID_MAX)setHover(toSvg(cx,cy));
     else setHover(null);
@@ -1097,7 +1097,7 @@ function Chapter5(){
   function handleClick(e){
     if(ptFb?.type==='ok')return;
     const rect=e.currentTarget.getBoundingClientRect();
-    const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);
+    const [rx,ry]=fromSvg((e.clientX-rect.left)*SVG_W/rect.width,(e.clientY-rect.top)*SVG_H/rect.height);
     const cx=snap(rx),cy=snap(ry);
     if(cx<GRID_MIN||cx>GRID_MAX||cy<GRID_MIN||cy>GRID_MAX)return;
     if(cx===q.px&&cy===q.py)return;
@@ -1106,7 +1106,7 @@ function Chapter5(){
   function handleMove(e){
     if(ptFb?.type==='ok')return;
     const rect=e.currentTarget.getBoundingClientRect();
-    const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);
+    const [rx,ry]=fromSvg((e.clientX-rect.left)*SVG_W/rect.width,(e.clientY-rect.top)*SVG_H/rect.height);
     const cx=snap(rx),cy=snap(ry);
     if(cx>=GRID_MIN&&cx<=GRID_MAX&&cy>=GRID_MIN&&cy<=GRID_MAX)setHover(toSvg(cx,cy));
     else setHover(null);

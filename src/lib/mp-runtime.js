@@ -64,6 +64,31 @@ export function initRuntime() {
     return ctx;
   }
 
+  /* ?mpdebug in the address shows a tiny status line (for testing on phones) */
+  var dbg = null;
+  if (/[?&]mpdebug/.test(location.search)) {
+    dbg = doc.createElement("div");
+    dbg.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:999;padding:6px 10px;border-radius:8px;background:#111;color:#fff;font:12px system-ui;direction:ltr";
+    dbg.textContent = "mpdebug ready";
+    doc.body.appendChild(dbg);
+  }
+
+  /* iPhone/iPad: audio may only start inside a real tap. Switch it on during
+     the first touches (create + resume + a silent blip), so the sounds that
+     follow a moment later are allowed to play. */
+  function unlockAudio() {
+    var c = audio();
+    if (!c) return;
+    try {
+      var b = c.createBuffer(1, 1, 22050), s = c.createBufferSource();
+      s.buffer = b; s.connect(c.destination); s.start(0);
+    } catch (e) {}
+    if (c.state === "running") {
+      ["touchend", "pointerup", "click", "keydown"].forEach(function (t) { doc.removeEventListener(t, unlockAudio, true); });
+    }
+  }
+  ["touchend", "pointerup", "click", "keydown"].forEach(function (t) { doc.addEventListener(t, unlockAudio, true); });
+
   /* a soft mallet-like note: sine body + quiet bright overtone, quick decay */
   function note(freq, o) {
     o = o || {};
@@ -102,6 +127,7 @@ export function initRuntime() {
   };
   function play(name) {
     if (window.MP) { window.MP.last = name; window.MP.log.push(name); }
+    if (dbg) dbg.textContent = "sound: " + name + " · audio: " + (ctx ? ctx.state : "none") + " · on: " + soundOn;
     if (!soundOn || doc.hidden) return;
     try { SOUNDS[name](); } catch (e) {}
   }
@@ -302,6 +328,51 @@ export function initRuntime() {
   }, true);
 
   watch();
+  centerShapes();
+
+  /* Geometry drawings are often placed off to one side of their frame, which
+     leaves an empty strip on phones. Slide the frame (not the shape) so the
+     drawing sits in the middle. Size and math stay exactly the same.
+     Drawings you drag on (touch-action: none) are left alone. */
+  function centerShapes() {
+    if (!window.MutationObserver) return;
+    var PAGES = /^(triangles|quadrilaterals|similar-triangles|pythagoras|angles-parallel|circle)$/;
+    var queued = false;
+    function fit() {
+      queued = false;
+      if (!PAGES.test(doc.documentElement.dataset.page || "")) return;
+      var svgs = doc.querySelectorAll("#root svg[viewBox]");
+      for (var i = 0; i < svgs.length; i++) {
+        var s = svgs[i];
+        if (s.style.touchAction === "none" || s.closest("[data-mp-keep]")) continue;
+        var cur = s.getAttribute("viewBox");
+        // a new frame from the topic itself (not one we set) becomes the new original
+        if (cur !== s.getAttribute("data-mp-set")) s.setAttribute("data-mp-vb", cur);
+        var vb = s.getAttribute("data-mp-vb").split(/[\s,]+/).map(Number);
+        if (vb.length !== 4 || !(vb[2] > 0)) continue;
+        var box; try { box = s.getBBox(); } catch (e) { continue; }
+        if (!box.width || box.width > vb[2] * 0.96) continue;
+        var shift = Math.round(box.x + box.width / 2 - (vb[0] + vb[2] / 2));
+        var next = Math.abs(shift) < vb[2] * 0.03 ? vb.slice() : [vb[0] + shift, vb[1], vb[2], vb[3]];
+        // trim a big empty band above/below (same scale, so the shape keeps its size)
+        var pad = Math.max(18, Math.round(vb[2] * 0.08)), h = Math.ceil(box.height + pad * 2);
+        var autoH = !s.getAttribute("height") && (!s.style.height || s.style.height === "auto");
+        if (autoH && box.height && h < vb[3] * 0.8) { next[1] = Math.floor(box.y - pad); next[3] = h; }
+        var val = next.join(" ");
+        s.setAttribute("data-mp-set", val);
+        if (cur !== val) s.setAttribute("viewBox", val);
+      }
+    }
+    new MutationObserver(function (list) {
+      if (queued) return;
+      for (var i = 0; i < list.length; i++) {
+        var t = list[i].target;
+        if (t.nodeType !== 1) t = t.parentNode;
+        if (t && t.closest && t.closest("#root")) { queued = true; requestAnimationFrame(fit); return; }
+      }
+    }).observe(doc.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["points", "d", "x", "cx", "x1"] });
+    queued = true; requestAnimationFrame(fit);
+  }
 
   // tiny public API, e.g. for a future module: MP.sound("ok")
   // (MP.log lists the sounds played — handy for testing)

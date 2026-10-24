@@ -1,13 +1,15 @@
-/* Home page (moved from index.html). */
+/* Home page. Every rule is scoped to .home so nothing leaks into the topics
+   (the app keeps CSS loaded between pages). */
 @layer page {
-  body {
+  .home {
+    position: relative; isolation: isolate;
     min-height: 100vh; margin: 0;
     background:
       radial-gradient(900px 420px at 50% -160px, rgb(20 184 166 / .16), transparent 70%) no-repeat,
       var(--bg);
   }
   /* faint graph paper behind the title */
-  body::before {
+  .home::before {
     content: ""; position: absolute; inset: 0 0 auto 0; height: 420px; z-index: -1; pointer-events: none;
     background-image:
       linear-gradient(to right, rgb(28 27 25 / .05) 1px, transparent 1px),
@@ -16,43 +18,43 @@
     -webkit-mask-image: radial-gradient(70% 100% at 50% 0%, #000 0%, transparent 75%);
             mask-image: radial-gradient(70% 100% at 50% 0%, #000 0%, transparent 75%);
   }
-  main { max-width: 980px; margin: 0 auto; padding: 56px 16px 64px; position: relative; }
+  .home main { max-width: 980px; margin: 0 auto; padding: 56px 16px 64px; position: relative; }
 
-  .hero { text-align: center; margin-bottom: 28px; }
-  .mark {
+  .home .hero { text-align: center; margin-bottom: 28px; }
+  .home .mark {
     width: 52px; height: 52px; margin: 0 auto 18px; display: block;
     border-radius: 15px; box-shadow: var(--sh-3);
     animation: mp-rise 420ms var(--ease-out) backwards;
   }
-  h1 {
+  .home h1 {
     margin: 0 0 10px;
     font-size: clamp(1.9rem, 1.3rem + 2.6vw, 2.9rem);
     line-height: 1.1; font-weight: 700; letter-spacing: -.02em;
     animation: mp-rise 420ms 40ms var(--ease-out) backwards;
   }
-  p.s {
+  .home p.s {
     margin: 0; color: var(--ink-2); font-size: 1.08rem;
     animation: mp-rise 420ms 80ms var(--ease-out) backwards;
   }
 
   /* grade filter */
-  .filters {
+  .home .filters {
     display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;
     margin: 26px 0 26px;
     animation: mp-rise 420ms 120ms var(--ease-out) backwards;
   }
-  .filters { padding: 4px; border-radius: var(--r-pill); background: rgb(28 27 25 / .045); width: fit-content; margin-inline: auto; }
-  .filters button {
+  .home .filters { padding: 4px; border-radius: var(--r-pill); background: rgb(28 27 25 / .045); width: fit-content; margin-inline: auto; }
+  .home .filters button {
     border: 0; background: transparent; color: var(--ink-2);
     height: 36px; padding: 0 16px; border-radius: var(--r-pill);
     font-size: .92rem; font-weight: 500;
   }
-  .filters button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--sh-1), 0 0 0 1px rgb(28 27 25 / .06); }
-  @media (hover: hover) and (pointer: fine) { .filters button[aria-pressed="false"]:hover { color: var(--ink); } }
+  .home .filters button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--sh-1), 0 0 0 1px rgb(28 27 25 / .06); }
+  @media (hover: hover) and (pointer: fine) { .home .filters button[aria-pressed="false"]:hover { color: var(--ink); } }
 
   /* topic cards */
-  .g { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-  .topic {
+  .home .g { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .home .topic {
     display: flex; align-items: center; gap: 14px;
     padding: 14px 16px 14px 14px;
     background: var(--surface);
@@ -64,51 +66,51 @@
     animation: mp-rise 360ms var(--ease-out) backwards;
     animation-delay: calc(var(--i, 0) * 28ms + 140ms);
   }
-  .topic[hidden] { display: none; }
-  .ic {
+  .home .topic[hidden] { display: none; }
+  .home .ic {
     flex: none; width: 46px; height: 46px; border-radius: 13px;
     display: grid; place-items: center;
     background: var(--a-50); color: var(--a-700);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-200) 60%, transparent);
   }
-  .ic svg { width: 26px; height: 26px; overflow: visible; direction: ltr; unicode-bidi: isolate; }
-  .ic text { font-family: var(--font); font-weight: 600; fill: currentColor; }
-  .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-  .nm { font-weight: 600; font-size: 1.04rem; line-height: 1.25; }
-  .tx small { color: var(--ink-3); font-size: .85rem; font-weight: 400; }
-  .go { flex: none; width: 18px; height: 18px; color: var(--ink-3); transition: transform 200ms var(--ease-out), color 200ms ease; }
+  .home .ic svg { width: 26px; height: 26px; overflow: visible; direction: ltr; unicode-bidi: isolate; }
+  .home .ic text { font-family: var(--font); font-weight: 600; fill: currentColor; }
+  .home .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .home .nm { font-weight: 600; font-size: 1.04rem; line-height: 1.25; }
+  .home .tx small { color: var(--ink-3); font-size: .85rem; font-weight: 400; }
+  .home .go { flex: none; width: 18px; height: 18px; color: var(--ink-3); transition: transform 200ms var(--ease-out), color 200ms ease; }
   @media (hover: hover) and (pointer: fine) {
-    .topic:hover { transform: translateY(-2px); box-shadow: var(--sh-3); border-color: color-mix(in srgb, var(--a-300) 70%, var(--line)); }
-    .topic:hover .go { color: var(--a-700); transform: translateX(-3px); }
+    .home .topic:hover { transform: translateY(-2px); box-shadow: var(--sh-3); border-color: color-mix(in srgb, var(--a-300) 70%, var(--line)); }
+    .home .topic:hover .go { color: var(--a-700); transform: translateX(-3px); }
   }
-  .topic:active { transform: scale(.98); transition-duration: 100ms; }
-  .topic:focus-visible { outline: 2px solid var(--a-500); outline-offset: 2px; }
+  .home .topic:active { transform: scale(.98); transition-duration: 100ms; }
+  .home .topic:focus-visible { outline: 2px solid var(--a-500); outline-offset: 2px; }
 
   /* sections (when the content order comes from the admin) */
-  .sec + .sec { margin-top: 26px; }
-  .sec-h { display: flex; align-items: center; gap: 8px; margin: 0 4px 12px; font-size: .9rem; font-weight: 600; color: var(--ink-2); }
-  .sec-h i { width: 8px; height: 8px; border-radius: 3px; background: var(--a-500); }
-  .sec-h span { color: var(--ink-3); font-weight: 400; }
-  .sec[hidden] { display: none; }
-  .topic.soon { cursor: default; background: var(--surface-2); box-shadow: none; }
-  .topic.soon .ic { filter: grayscale(.6); opacity: .7; }
-  .topic.soon .nm { color: var(--ink-2); }
-  .soon-b { flex: none; padding: 3px 9px; border-radius: 999px; background: var(--surface-3); color: var(--ink-3); font-size: .75rem; font-weight: 600; }
-  @media (hover: hover) and (pointer: fine) { .topic.soon:hover { transform: none; box-shadow: none; border-color: var(--line); } }
-  .topic.soon:active { transform: none; }
+  .home .sec + .sec { margin-top: 26px; }
+  .home .sec-h { display: flex; align-items: center; gap: 8px; margin: 0 4px 12px; font-size: .9rem; font-weight: 600; color: var(--ink-2); }
+  .home .sec-h i { width: 8px; height: 8px; border-radius: 3px; background: var(--a-500); }
+  .home .sec-h span { color: var(--ink-3); font-weight: 400; }
+  .home .sec[hidden] { display: none; }
+  .home .topic.soon { cursor: default; background: var(--surface-2); box-shadow: none; }
+  .home .topic.soon .ic { filter: grayscale(.6); opacity: .7; }
+  .home .topic.soon .nm { color: var(--ink-2); }
+  .home .soon-b { flex: none; padding: 3px 9px; border-radius: 999px; background: var(--surface-3); color: var(--ink-3); font-size: .75rem; font-weight: 600; }
+  @media (hover: hover) and (pointer: fine) { .home .topic.soon:hover { transform: none; box-shadow: none; border-color: var(--line); } }
+  .home .topic.soon:active { transform: none; }
 
-  .foot { margin-top: 40px; text-align: center; }
-  .foot a {
+  .home .foot { margin-top: 40px; text-align: center; }
+  .home .foot a {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 10px 16px; border-radius: var(--r-pill);
     color: var(--ink-3); font-size: .88rem; text-decoration: none;
     border: 1px dashed var(--line-strong);
     transition: color 200ms ease, border-color 200ms ease, background-color 200ms ease;
   }
-  @media (hover: hover) and (pointer: fine) { .foot a:hover { color: var(--ink); border-color: var(--ink-3); background: var(--surface); } }
+  @media (hover: hover) and (pointer: fine) { .home .foot a:hover { color: var(--ink); border-color: var(--ink-3); background: var(--surface); } }
 
   @media (max-width: 640px) {
-    main { padding-top: 40px; }
-    .g { grid-template-columns: 1fr; gap: 10px; }
+    .home main { padding-top: 40px; }
+    .home .g { grid-template-columns: 1fr; gap: 10px; }
   }
 }

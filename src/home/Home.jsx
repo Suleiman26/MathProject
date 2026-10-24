@@ -60,9 +60,9 @@ export default function Home() {
   const grouped = useMemo(() => data.sections.length > 1 || data.sections[0].name, [data]);
 
   return (
-    <main>
+    <div className="home"><main>
       <header className="hero">
-        <svg className="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#1c1b19" /><path d="M13 35l6-3 7 14 10-28h15" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" /><circle cx="46" cy="40" r="5" fill="#14b8a6" /></svg>
+        <img className="mark" src="/icon.png" alt="" width={64} height={64} />
         <h1>{HERO.title}</h1><p className="s">{HERO.sub}</p>
       </header>
 
@@ -92,6 +92,6 @@ export default function Home() {
       </div>
 
       <p className="foot"><a href="/classic/project-hub.html">{HERO.hub}</a></p>
-    </main>
+    </main></div>
   );
 }

@@ -200,6 +200,25 @@ button:disabled { cursor: not-allowed; }
   .ch-btn { flex: 0 0 auto; scroll-snap-align: start; white-space: nowrap; }
 }
 
+/* Phones: topics whose chapter buttons sit directly in the header bar
+   (parabola: 10 chapters, advanced equations: 5) get one swipeable row
+   instead of 3–5 rows of buttons. The title is lifted out of the row
+   (positioned against #root, see topic-fixes.css) so it never scrolls away. */
+@media (max-width: 640px) {
+  .top-nav, .nav {
+    display: flex; flex-wrap: nowrap; justify-content: flex-start;
+    gap: 6px; padding: 84px 16px 14px;
+    overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+    scroll-padding-inline: 16px;
+  }
+  .top-nav::-webkit-scrollbar, .nav::-webkit-scrollbar { display: none; }
+  .top-nav h1, .nav .nav-title {
+    position: absolute; top: 26px; inset-inline: 16px;
+    text-align: center;
+  }
+  .top-nav .nav-btn, .nav .nav-btn { flex: 0 0 auto; white-space: nowrap; }
+}
+
 /* ── 4. Surfaces ───────────────────────────────────────────────────────── */
 .card, .eq-card, .history, .tri-box {
   background: var(--surface);
@@ -438,12 +457,6 @@ input::placeholder { color: var(--ink-3); font-weight: 400; opacity: 1; }
   .choice-btn { min-width: 44px; }
   input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(.op-input):not(.eqs-val):not(.slv-opinput),
   select { min-height: 40px; font-size: max(16px, 1em); }      /* 16px+ also stops iPhone from zooming in */
-  /* the + − × ÷ boxes of the equation solvers */
-  .op-btn, .op-x-btn, .eqs-op, .eqs-x { width: 30px; height: 30px; font-size: .95rem; }
-  .slv-opbtn, .slv-opxbtn { width: 32px; height: 32px; }
-  .op-input, .eqs-val { width: 38px; min-height: 30px; font-size: 16px; }
-  .slv-opinput { min-height: 32px; font-size: 16px; }
-  .op-box, .eqs-box { flex-wrap: wrap; justify-content: center; max-width: 118px; }
 }
 @media (max-width: 480px) {
   /* keep each side of an equation on one line */
@@ -455,6 +468,49 @@ input::placeholder { color: var(--ink-3); font-weight: 400; opacity: 1; }
   .side-zone, .eqs-side { padding-inline: 4px; }
   .eq-sign { padding: 0 8px; }
 }
+
+/* ── 7c. The "do the same to both sides" box of the equation solvers ───────
+   One clear, steady layout everywhere (equations, linear function, ratio,
+   angles, triangles):
+     row 1  [ + ][ − ][ × ][ ÷ ]   the operation, like a calculator row
+     row 2  [   number   ][ x ]    the number (+ "x" when it applies)
+   The box never changes size: when "x" isn't offered (× and ÷), the number
+   field takes the whole row. */
+.op-box, .eqs-box, .slv-opbox {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px;
+  width: clamp(116px, 33vw, 176px); padding: 7px;
+  background: var(--surface); border: 1px solid color-mix(in srgb, var(--a-300) 70%, var(--line));
+  border-radius: 14px; box-shadow: var(--sh-1);
+  flex-wrap: nowrap;
+}
+.op-btns, .eqs-btns, .slv-opbtns {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px;
+  padding: 3px; border-radius: 10px; background: var(--surface-3);
+}
+.op-btn, .eqs-op, .slv-opbtn {
+  width: auto; height: 32px; min-width: 0; padding: 0;
+  border: 0; border-radius: 8px; background: transparent;
+  color: var(--ink-2); font-size: 1.05rem; font-weight: 600; line-height: 1;
+  box-shadow: none;
+}
+.op-btn.active, .eqs-op.active, .slv-opbtn.active {
+  background: var(--a-600); color: #fff; box-shadow: var(--sh-accent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .op-btn:not(.active):hover, .eqs-op:not(.active):hover, .slv-opbtn:not(.active):hover { background: var(--surface); color: var(--ink); }
+}
+.op-input, .eqs-val, .slv-opinput {
+  grid-column: 1; width: 100%; min-width: 0; height: 36px; min-height: 36px; padding: 0 8px;
+  border-radius: 9px; font-size: 16px; text-align: center; direction: ltr;
+}
+.op-input:last-child, .eqs-val:last-child, .slv-opinput:last-child { grid-column: 1 / -1; }
+.op-x-btn, .eqs-x, .slv-opxbtn {
+  grid-column: 2; width: 36px; height: 36px; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface);
+  color: var(--a-700); font-size: 1.05rem; font-weight: 700; font-style: italic; box-shadow: none;
+}
+.op-x-btn.active, .eqs-x.active, .slv-opxbtn.active { background: var(--a-600); border-color: var(--a-600); color: #fff; }
 
 /* ── 8. Feedback ───────────────────────────────────────────────────────── */
 .fb:not(:empty), .feedback:not(:empty), .msg-success, .msg-error, .msg-info,

@@ -18,7 +18,27 @@
    the question below the fold. Keep them a comfortable size. */
 html[data-page="triangles"] .graph-wrap > svg { max-width: 460px !important; margin-inline: auto; }
 
+/* Parabola / advanced equations on phones: the header title is positioned
+   against #root so the swipeable chapter row can scroll under it (mp.css). */
+@media (max-width: 640px) {
+  html[data-page="parabola-practice"] #root, html[data-page="equations-advanced"] #root { position: relative; }
+}
+
 /* Pythagoras: the side triangle grew to 500px tall in chapter 1. */
 html[data-page="pythagoras"] .tri-box svg { max-height: 340px; }
+
+/* Advanced equations on phones: the sub-chapter heading wrapped to two big lines. */
+@media (max-width: 640px) {
+  html[data-page="equations-advanced"] .section-title { font-size: 1.05rem; line-height: 1.4; text-wrap: balance; }
+}
+
+/* Similar triangles: the bottom side's number touched the caption below it. */
+html[data-page="similar-triangles"] #root svg[viewBox] { margin-block-end: 10px; }
+
+/* Pythagoras on phones: the layout stacks, but the step cards kept their
+   "shrink to content" width and sat in a narrow column on the left. */
+@media (max-width: 720px) {
+  html[data-page="pythagoras"] .main > .steps { align-self: stretch; width: 100%; }
+}
 
 }

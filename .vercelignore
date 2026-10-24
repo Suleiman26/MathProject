@@ -4,3 +4,4 @@ tools/
 templates/
 *.md
 .claude/
+design/

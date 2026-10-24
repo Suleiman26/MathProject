@@ -18,6 +18,7 @@ Usage:
 
 Exit code 0 = identical, 1 = something differs.
 """
+import json
 import re
 import subprocess
 import sys
@@ -29,6 +30,9 @@ BABEL = re.compile(r'<script type="text/babel"[^>]*>([\s\S]*?)</script>')
 RENDER = re.compile(r"^ReactDOM\.createRoot\(document\.getElementById\('root'\)\)\.render\(<App ?/>\);[ \t]*$", re.M)
 MIDDLE = re.compile(r"// ===== BEGIN ORIGINAL =====\n([\s\S]*)// ===== END ORIGINAL =====\n")
 # lines in the new home page / topic list where the original home texts must appear
+# Listed display-only patches (tools/display-patches.json): applied to the
+# original before comparing, so everything else must still match byte for byte.
+PATCHES = json.loads((Path(__file__).resolve().parent / "display-patches.json").read_text(encoding="utf-8"))
 HOME_SOURCES = ["app/layout.tsx", "app/page.tsx", "src/home/catalog.js", "src/home/Home.jsx"]
 
 
@@ -71,10 +75,19 @@ def main(argv):
             print(f"{name:24} {'(no code)':14} {'same' if classic_ok or not classic.exists() else 'CHANGED':12}")
             continue
         expected = RENDER.sub("", old_blocks[0], count=1)
+        slug = name[:-5]
+        applied = 0
+        for pt in PATCHES.get(slug, []):
+            if expected.count(pt["old"]) != pt["count"]:
+                print(f"  ! {slug}: display patch no longer matches: {pt['old'][:50]}")
+                bad += 1
+            expected = expected.replace(pt["old"], pt["new"])
+            applied += 1
         topic = ROOT / "src" / "topics" / name[:-5] / "Topic.jsx"
         m = MIDDLE.search(topic.read_text(encoding="utf-8")) if topic.exists() else None
         next_ok = bool(m) and m.group(1) == expected
-        print(f"{name:24} {'same' if next_ok else 'CHANGED':14} {'same' if classic_ok else 'CHANGED':12}")
+        label = ("same" if next_ok else "CHANGED") + (f" +{applied} display" if applied else "")
+        print(f"{name:24} {label:22} {'same' if classic_ok else 'CHANGED':12}")
         bad += (not next_ok) + (not classic_ok)
 
     # every text of the original home page must still be on the new home page

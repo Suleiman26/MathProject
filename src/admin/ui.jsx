@@ -123,7 +123,7 @@ export function Sheet({ title, onClose, onSave, onDelete, children, saving }) {
         </div>
       </div>
     </div>,
-    document.body
+    document.querySelector(".adm-root") || document.body
   );
 }
 
