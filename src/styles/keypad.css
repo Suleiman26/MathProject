@@ -1,0 +1,62 @@
+/* Math keypad (src/components/Keypad.jsx). Docked at the bottom on phones,
+   a bit shorter than the phone's own keyboard, and the page makes room for it. */
+@layer page {
+  html.kp-open body { padding-bottom: calc(var(--kp-h, 0px) + 12px); }
+
+  .kp {
+    position: fixed; inset-inline: 0; bottom: 0; z-index: 60;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--surface-2, #f4f4f1) 88%, transparent);
+    -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px);
+    border-top: 1px solid var(--line, #e5e5e0);
+    box-shadow: 0 -10px 30px -18px rgb(0 0 0 / .25);
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    touch-action: manipulation;
+    animation: kp-in 180ms cubic-bezier(.32, .72, 0, 1);
+    font-family: var(--font, system-ui);
+  }
+  @keyframes kp-in { from { transform: translateY(100%); } to { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .kp { animation: none; } }
+
+  /* top strip: close, normal keyboard, extra symbols, next box */
+  .kp-bar { display: flex; align-items: center; gap: 6px; margin: 0 2px 8px; min-height: 34px; }
+  .kp-grow { flex: 1; }
+  .kp-chip {
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    min-width: 40px; height: 34px; padding: 0 12px; margin: 0;
+    border: 1px solid var(--line, #e5e5e0); border-radius: 999px;
+    background: var(--surface, #fff); color: var(--ink-2, #44403c);
+    font: 600 15px/1 var(--font, system-ui); box-shadow: none; cursor: pointer;
+  }
+  .kp-close { padding: 0; width: 40px; }
+  .kp-sym { font-size: 19px; min-width: 44px; color: var(--ink, #1c1b19); }
+  .kp-next { background: var(--a-50, #f0fdfa); border-color: var(--a-200, #99f6e4); color: var(--a-800, #115e59); }
+
+  /* keys */
+  .kp-keys { display: grid; gap: 6px; }
+  .kp-num .kp-keys { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .kp-math .kp-keys { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .kp-key {
+    height: 46px; min-width: 0; margin: 0; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 11px;
+    background: var(--surface-3, #ecebe6); color: var(--ink, #1c1b19);
+    font: 500 22px/1 var(--font, system-ui);
+    box-shadow: 0 1px 0 rgb(0 0 0 / .12);
+    cursor: pointer; transition: transform 90ms ease-out, background 90ms ease-out;
+  }
+  .kp-key.kp-d { background: var(--surface, #fff); font-weight: 600; font-size: 24px; }
+  .kp-key.kp-x { font-style: italic; font-weight: 700; color: var(--a-700, #0f766e); }
+  .kp-key.kp-sq { font-size: 22px; font-weight: 700; }
+  .kp-sq-l i { font-style: italic; opacity: .35; margin-inline-end: 1px; }
+  .kp-key.kp-mode { font-size: 16px; font-weight: 700; color: var(--a-700, #0f766e); }
+  .kp-key.kp-ok { grid-row: span 2; height: auto; background: var(--a-600, #0d9488); color: #fff; box-shadow: var(--sh-accent, none); }
+  .kp-key:active { transform: scale(.94); background: var(--a-100, #ccfbf1); }
+  .kp-key.kp-ok:active { background: var(--a-700, #0f766e); }
+
+  /* the box being typed into: a clear focus ring, caret stays visible */
+  html.kp-open #root input:focus { outline: 2px solid var(--a-500, #14b8a6); outline-offset: 1px; }
+
+  /* small phones: a little shorter */
+  @media (max-height: 700px) { .kp-key { height: 42px; } .kp-bar { min-height: 32px; } .kp-chip { height: 32px; } }
+}

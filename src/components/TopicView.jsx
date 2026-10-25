@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { TOPICS, LOADERS, STYLES } from "@/topics/registry";
 import { initRuntime } from "@/lib/mp-runtime";
 import TopBar from "./TopBar";
+import Keypad from "./Keypad";
 
 export default function TopicView({ slug }) {
   const meta = TOPICS[slug];
@@ -29,6 +30,7 @@ export default function TopicView({ slug }) {
       {loaded && <style dangerouslySetInnerHTML={{ __html: loaded.css }} />}
       <TopBar title={meta.title.split(/\s[—–-]\s/)[0]} />
       <div id="root">{Topic ? <Topic /> : <div className="mp-boot" aria-hidden="true"><span /></div>}</div>
+      <Keypad page={slug} />
     </>
   );
 }
