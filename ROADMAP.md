@@ -4,7 +4,7 @@ Agreed with Abed on 2026-10-25. Goal: students enjoy coming back, not only
 "solve and get bored". Order can change; items marked MUST are not optional.
 
 ## Now
-1. **Math keypad** (first version live behind a test switch: add `?keypad=1` to any topic link on a phone; `?keypad=0` turns it off). Our own keypad for answers on phones,
+1. **Math keypad** (live, on for everyone on phones; admin → Settings can switch it off). Our own keypad for answers on phones,
    instead of the iPhone/Android keyboard. Must not hide the question or
    squeeze the screen. Expert UI/UX work.
 

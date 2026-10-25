@@ -1,8 +1,9 @@
 'use client';
-import { useState } from "react";
-import { Lock, DownloadSimple, ShieldCheck, Database } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { Lock, DownloadSimple, ShieldCheck, Database, Keyboard } from "@phosphor-icons/react";
 import { useAdmin, PageHead } from "../AdminShell";
-import { Card, Seg, useToast, fmt } from "../ui";
+import { Card, Seg, Switch, useToast, fmt } from "../ui";
+import { getSetting } from "../api";
 import { mpData } from "@/lib/mp-data";
 import { PERIODS } from "./Dashboard";
 
@@ -11,7 +12,19 @@ export default function Settings() {
   const toast = useToast();
   const [pin, setPin] = useState({ old: "", n1: "", n2: "" });
   const [days, setDays] = useState(a.days);
+  const [keypad, setKeypad] = useState(null);
+  useEffect(() => { getSetting("keypad", true).then((v) => setKeypad(v !== false)).catch(() => setKeypad(true)); }, []);
   let host = ""; try { host = new URL(mpData.url).host; } catch {}
+
+  async function toggleKeypad(v) {
+    const before = keypad;
+    setKeypad(v);
+    try {
+      const r = await a.run("admin_set_setting", { k: "keypad", v });
+      if (!r || !r.ok) throw new Error("not saved");
+      toast(v ? "המקלדת המתמטית פועלת" : "המקלדת המתמטית כבויה");
+    } catch (e) { setKeypad(before); toast("לא נשמר: " + e.message, true); }
+  }
 
   async function changePin() {
     if (!/^[0-9]{4,8}$/.test(pin.n1)) return toast("הקוד החדש צריך 4 עד 8 ספרות", true);
@@ -39,6 +52,10 @@ export default function Settings() {
     <>
       <PageHead />
       <div className="bento" style={{ alignItems: "start" }}>
+        <Card title="מקלדת מתמטית" className="span-6" action={keypad == null ? null : <Switch on={keypad} onChange={toggleKeypad} label="מקלדת מתמטית" />}>
+          <div className="stat-line"><span><Keyboard size={16} /> בטלפון ובטאבלט</span><b>{keypad == null ? "…" : keypad ? "פועלת" : "כבויה"}</b></div>
+          <p className="note">מקלדת עם מספרים, x, חזקה, שורש ושברים במקום מקלדת הטלפון. כשהיא כבויה, התלמידים מקבלים את מקלדת הטלפון הרגילה. במחשב אין שינוי.{a.preview && " (במצב תצוגה השינוי חל רק על המכשיר הזה. לכל התלמידים – אחרי חיבור המסד.)"}</p>
+        </Card>
         <Card title="קוד כניסה" className="span-6" action={<Lock size={18} className="muted" />}>
           {[["old", "הקוד הנוכחי", "current-password"], ["n1", "קוד חדש (4–8 ספרות)", "new-password"], ["n2", "שוב את הקוד החדש", "new-password"]].map(([k, l, ac]) => (
             <label key={k} className="field"><span>{l}</span><input type="password" inputMode="numeric" maxLength={8} autoComplete={ac} value={pin[k]} onChange={(e) => setPin({ ...pin, [k]: e.target.value })} /></label>

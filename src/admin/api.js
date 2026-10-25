@@ -167,6 +167,8 @@ const demo = {
   },
   admin_export: () => [],
   admin_change_pin: () => ({ error: "preview" }),
+  // preview: the switch affects this browser only (same key the site reads)
+  admin_set_setting({ k, v }) { try { localStorage.setItem("mp:set:" + k, v ? "on" : "off"); } catch {} return { ok: true, key: k, value: v }; },
   admin_logout: () => null,
 };
 
@@ -182,4 +184,13 @@ export async function call(fn, args, tok) {
     if (/unauthorized/i.test(e.message)) e.unauthorized = true;
     throw e;
   }
+}
+
+/* site-wide switches (e.g. the math keypad); everyone may read them */
+export async function getSetting(k, fallback) {
+  if (isPreview()) {
+    try { const v = localStorage.getItem("mp:set:" + k); return v == null ? fallback : v === "on"; } catch { return fallback; }
+  }
+  const rows = await mpData.select("site_settings", "select=value&key=eq." + encodeURIComponent(k));
+  return rows && rows[0] ? rows[0].value : fallback;
 }

@@ -3,11 +3,11 @@
    It types into Sulaiman's existing answer boxes the same characters a
    normal keyboard would, so his checking logic is never touched.
 
-   Test switch: add ?keypad=1 to the address (it stays on, also across
-   topics); ?keypad=0 turns it off. Only on touch screens. */
+   On by default on touch screens; the admin can turn it off in Settings. */
 import { useEffect, useRef, useState } from "react";
+import { mpData } from "@/lib/mp-data";
 
-const FLAG = "mp:keypad";
+const SETTING = "mp:set:keypad";
 const CHECK = /בדוק|בדיקה|אשר|אישור|✓/;
 const BACK = "⌫", OK = "✓";
 
@@ -103,15 +103,22 @@ export default function Keypad({ page }) {
   const swallow = useRef(0);
   const closeRef = useRef(() => {});
 
-  // feature switch (sticky) + touch screens only
+  // On for everyone on touch screens. The admin can switch it off
+  // (Settings → math keypad); the last known choice is kept in this browser.
   useEffect(() => {
-    try {
-      const q = new URLSearchParams(location.search).get("keypad");
-      if (q === "1") localStorage.setItem(FLAG, "1");
-      if (q === "0") localStorage.removeItem(FLAG);
-      const touch = matchMedia("(pointer: coarse)").matches;
-      setOn(localStorage.getItem(FLAG) === "1" && touch);
-    } catch {}
+    let alive = true;
+    const touch = matchMedia("(pointer: coarse)").matches;
+    let cached = null;
+    try { cached = localStorage.getItem(SETTING); } catch {}
+    setOn(touch && cached !== "off");
+    if (mpData.ready) {
+      mpData.select("site_settings", "select=value&key=eq.keypad").then((rows) => {
+        const v = rows && rows[0] ? rows[0].value !== false : true;
+        try { localStorage.setItem(SETTING, v ? "on" : "off"); } catch {}
+        if (alive) setOn(touch && v);
+      }).catch(() => {});
+    }
+    return () => { alive = false; };
   }, []);
 
   // open on any tap/focus of an answer box; close on a real tap elsewhere

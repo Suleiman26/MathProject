@@ -76,7 +76,7 @@ html, .adm-root body { min-height: 100%; }
   z-index: 30;
 }
 .adm-root .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
-.adm-root .brand svg { width: 34px; height: 34px; border-radius: 10px; flex: none; }
+.adm-root .brand svg, .adm-root .brand img { width: 34px; height: 34px; border-radius: 10px; flex: none; }
 .adm-root .brand b { display: block; font-size: .95rem; line-height: 1.2; }
 .adm-root .brand small { display: block; color: var(--ink-3); font-size: .78rem; }
 .adm-root .snav { display: flex; flex-direction: column; gap: 2px; }

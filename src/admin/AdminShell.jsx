@@ -16,7 +16,7 @@ export const NAV = [
   { href: "/admin/settings", label: "הגדרות", short: "הגדרות", Icon: Gear, sub: "קוד כניסה, חיבור ונתונים" },
 ];
 const Mark = ({ className }) => (
-  <svg className={className} viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#1c1b19" /><path d="M13 35l6-3 7 14 10-28h15" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" /><circle cx="46" cy="40" r="5" fill="#14b8a6" /></svg>
+  <img className={className} src="/icon.png" alt="" width={64} height={64} style={{ borderRadius: "22%" }} />
 );
 
 const Ctx = createContext(null);
