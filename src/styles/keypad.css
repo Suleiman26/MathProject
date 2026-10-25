@@ -55,7 +55,7 @@
   .kp-key.kp-ok:active { background: var(--a-700, #0f766e); }
 
   /* the box being typed into: a clear focus ring, caret stays visible */
-  html.kp-open #root input:focus { outline: 2px solid var(--a-500, #14b8a6); outline-offset: 1px; }
+  html.kp-open #root input:focus, html.kp-open #root input.kp-target { outline: 2px solid var(--a-500, #14b8a6); outline-offset: 1px; }
 
   /* small phones: a little shorter */
   @media (max-height: 700px) { .kp-key { height: 42px; } .kp-bar { min-height: 32px; } .kp-chip { height: 32px; } }

@@ -101,6 +101,7 @@ export default function Keypad({ page }) {
   const hold = useRef(null);
   const opened = useRef(0);
   const swallow = useRef(0);
+  const closeRef = useRef(() => {});
 
   // feature switch (sticky) + touch screens only
   useEffect(() => {
@@ -113,22 +114,31 @@ export default function Keypad({ page }) {
     } catch {}
   }, []);
 
-  // open on focus of an answer box, close when focus leaves
+  // open on any tap/focus of an answer box; close on a real tap elsewhere
   useEffect(() => {
     if (!on) return;
-    const onFocus = (e) => {
-      const el = e.target;
-      if (!(el instanceof HTMLInputElement) || !el.closest("#root") || /checkbox|radio|range/.test(el.type)) return;
-      if (el.dataset.kpNative) return; // student chose the normal keyboard here
-      if (!el.dataset.kpIm) el.dataset.kpIm = el.getAttribute("inputmode") || "";
+    const isBox = (el) => el instanceof HTMLInputElement && el.closest("#root") && !/checkbox|radio|range|hidden/.test(el.type) && !el.disabled && !el.readOnly;
+    const openFor = (el) => {
+      if (!isBox(el) || el.dataset.kpNative) return;
+      if (!("kpIm" in el.dataset)) el.dataset.kpIm = el.getAttribute("inputmode") || (el.type === "number" ? "decimal" : "");
+      // "number" boxes drop a lone "−" while typing, so negatives can't be built key by key.
+      // As text they behave like any box; the topic reads the value exactly the same way.
+      if (el.type === "number") el.type = "text";
       el.setAttribute("inputmode", "none"); // keep the phone keyboard closed
       const k = kindOf(el, page);
       setMode(k.mode); setExtras(k.extras);
       if (tgt.current !== el) opened.current = performance.now();
       tgt.current = el; setTarget(el);
     };
-    // close only on a tap outside the keypad and outside the answer boxes
-    // (iPhone Safari drops focus on its own, so focus is not a reliable signal)
+    const close = () => {
+      const b = tgt.current;
+      tgt.current = null; setTarget(null);
+      if (b && document.activeElement === b) b.blur(); // release it, so the next tap is a fresh one
+    };
+    closeRef.current = close;
+
+    const onFocus = (e) => openFor(e.target);
+    const start = { x: 0, y: 0, t: 0, el: null };
     const onDown = (e) => {
       const t = e.target;
       // iPhone Safari sometimes sends the first touch on the keypad to the page behind it.
@@ -141,26 +151,65 @@ export default function Keypad({ page }) {
           swallow.current = performance.now();
           const btn = Array.from(kp.querySelectorAll("button")).find((b) => { const q = b.getBoundingClientRect(); return e.clientX >= q.left && e.clientX <= q.right && e.clientY >= q.top && e.clientY <= q.bottom; });
           if (btn) btn.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+          start.el = null;
           return;
         }
       }
-      if (!tgt.current || (t.closest && (t.closest(".kp") || (t instanceof HTMLInputElement && t.closest("#root"))))) return;
+      // a tap on a box opens the keypad, even if that box is already selected
+      if (isBox(t)) {
+        start.el = null;
+        // "abc" lasts while the student stays in that box; a fresh tap later brings our keypad back
+        if (t.dataset.kpNative && document.activeElement !== t) delete t.dataset.kpNative;
+        openFor(t); return;
+      }
+      start.x = e.clientX; start.y = e.clientY; start.t = performance.now(); start.el = t;
+    };
+    // decide on finger-up: a scroll or drag never closes the keypad, only a tap does
+    const onUp = (e) => {
+      const t = start.el; start.el = null;
+      if (!t || !tgt.current) return;
+      if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) return;
+      if (t.closest && t.closest(".kp")) return;
       if (performance.now() - opened.current < 350) return; // a tap during the slide-in
-      // a tap inside the same question (e.g. choosing + − × ÷) keeps the keypad and the box
+      // a tap inside the same question (e.g. choosing + − × ÷, or "check") keeps the keypad
       const card = cardOf(tgt.current);
-      if (card && card !== document.getElementById("root") && card.contains(t) && !(t.closest && t.closest("button") && CHECK.test(t.closest("button").textContent || ""))) {
+      if (card && card !== document.getElementById("root") && card.contains(t)) {
         const box = tgt.current;
-        setTimeout(() => { if (box.isConnected && document.activeElement !== box) { try { box.focus({ preventScroll: true }); } catch {} } }, 80);
+        setTimeout(() => { if (box.isConnected && box.offsetParent && document.activeElement !== box) { try { box.focus({ preventScroll: true }); } catch {} } }, 80);
         return;
       }
-      tgt.current = null; setTarget(null);
+      close();
     };
     document.addEventListener("focusin", onFocus);
     document.addEventListener("pointerdown", onDown, true);
+    document.addEventListener("pointerup", onUp, true);
     const eat = (e) => { if (performance.now() - swallow.current < 600 && !(e.target.closest && e.target.closest(".kp"))) { e.preventDefault(); e.stopPropagation(); } };
     ["touchstart", "touchend", "mousedown", "click"].forEach((t) => document.addEventListener(t, eat, { capture: true, passive: false }));
-    return () => { document.removeEventListener("focusin", onFocus); document.removeEventListener("pointerdown", onDown, true); ["touchstart", "touchend", "mousedown", "click"].forEach((t) => document.removeEventListener(t, eat, { capture: true })); };
+    return () => {
+      document.removeEventListener("focusin", onFocus);
+      document.removeEventListener("pointerdown", onDown, true);
+      document.removeEventListener("pointerup", onUp, true);
+      ["touchstart", "touchend", "mousedown", "click"].forEach((t) => document.removeEventListener(t, eat, { capture: true }));
+    };
   }, [on, page]);
+
+  // mark the box being typed into (visible even before iPhone gives it focus)
+  useEffect(() => {
+    if (!target) return;
+    target.classList.add("kp-target");
+    return () => target.classList.remove("kp-target");
+  }, [target]);
+
+  // leaving the page (back to topics): clean up the page space
+  useEffect(() => () => { const r = document.documentElement; r.classList.remove("kp-open"); r.style.removeProperty("--kp-h"); }, []);
+
+  // phone turned / window resized: re-measure
+  useEffect(() => {
+    if (!target) return;
+    const f = () => { if (ref.current) document.documentElement.style.setProperty("--kp-h", ref.current.offsetHeight + "px"); };
+    addEventListener("resize", f);
+    return () => removeEventListener("resize", f);
+  }, [target]);
 
   // make room: the page gets bottom space and the box scrolls above the keypad
   useEffect(() => {
@@ -213,7 +262,7 @@ export default function Keypad({ page }) {
     if (key === BACK) return backspace(box);
     if (key === OK) {
       const b = checkButtonFor(box);
-      if (b) b.click(); else box.blur();
+      if (b) b.click(); else closeRef.current();
       return;
     }
     if (key === "x=") return setMode("math");
@@ -247,7 +296,7 @@ export default function Keypad({ page }) {
   return (
     <div className={"kp kp-" + mode} ref={ref} role="group" aria-label="מקלדת מתמטית">
       <div className="kp-bar">
-        <button type="button" className="kp-chip kp-close" aria-label="סגירת המקלדת" onPointerDown={() => { const b = tgt.current; tgt.current = null; setTarget(null); if (b) b.blur(); }}>
+        <button type="button" className="kp-chip kp-close" aria-label="סגירת המקלדת" onPointerDown={() => closeRef.current()}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
         </button>
         <button type="button" className="kp-chip" onPointerDown={native} aria-label="מקלדת רגילה">abc</button>
