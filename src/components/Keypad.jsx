@@ -290,13 +290,19 @@ export default function Keypad({ page }) {
   const list = fields().filter((i) => card.contains(i));
   const idx = list.indexOf(target);
   const next = list.length > 1 ? list[(idx + 1) % list.length] : null;
-  const native = () => {
+  // Switch this box to the phone's own keyboard. iPhone only opens its keyboard
+  // when the box is focused right inside the finger-lift of a tap, so this runs
+  // on touchend (and on click for a mouse), with blur + focus in the same moment.
+  const native = (e) => {
+    if (e && e.cancelable) e.preventDefault();
     const box = tgt.current; if (!box) return;
     box.dataset.kpNative = "1";
     const im = box.dataset.kpIm;
     if (im) box.setAttribute("inputmode", im); else box.removeAttribute("inputmode");
-    tgt.current = null; setTarget(null);
-    box.blur(); setTimeout(() => box.focus(), 30);
+    tgt.current = null;
+    box.blur();
+    box.focus();
+    setTarget(null);
   };
   const rows = mode === "math" ? MATH : NUM;
 
@@ -306,7 +312,10 @@ export default function Keypad({ page }) {
         <button type="button" className="kp-chip kp-close" aria-label="סגירת המקלדת" onPointerDown={() => closeRef.current()}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
         </button>
-        <button type="button" className="kp-chip" onPointerDown={native} aria-label="מקלדת רגילה">abc</button>
+        <button type="button" className="kp-chip kp-native" onTouchEnd={native} onClick={native} aria-label="מקלדת הטלפון הרגילה">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8" /></svg>
+          <span>מקלדת רגילה</span>
+        </button>
         <span className="kp-grow" />
         {extras.map((x) => <button key={x} type="button" className="kp-chip kp-sym" onPointerDown={() => press(x)}>{x}</button>)}
         {next && <button type="button" className="kp-chip kp-next" onPointerDown={() => next.focus()}>הבא<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg></button>}
