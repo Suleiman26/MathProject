@@ -13,6 +13,10 @@ Agreed with Abed on 2026-10-25. Goal: students enjoy coming back, not only
 3. **Shared exercise engine** — steps, checking, scoring built once, so new
    topics are quick and every improvement reaches all topics.
 
+## Content notes from Sulaiman
+- Triangles: add a congruence practice sub-chapter, probably after quadrilaterals
+  and their properties (more question types become possible there).
+
 ## Then: student experience
 4. **Student profile** — achievements, progress per topic, and a beautiful
    avatar. Students earn points and spend them on avatar items.

@@ -345,6 +345,14 @@ export function initRuntime() {
       for (var i = 0; i < svgs.length; i++) {
         var s = svgs[i];
         if (s.style.touchAction === "none" || s.closest("[data-mp-keep]")) continue;
+        // drawings made of stacked layers (an overlay on top of the shape) must keep
+        // identical frames, or the marks stop lining up with the shape. Leave them alone.
+        var stacked = false, sib = s.parentElement ? s.parentElement.children : [];
+        for (var k = 0; k < sib.length; k++) if (sib[k] !== s && sib[k].tagName.toLowerCase() === "svg") stacked = true;
+        if (stacked) {
+          if (s.hasAttribute("data-mp-vb") && s.getAttribute("viewBox") !== s.getAttribute("data-mp-vb")) s.setAttribute("viewBox", s.getAttribute("data-mp-vb"));
+          continue;
+        }
         var cur = s.getAttribute("viewBox");
         // a new frame from the topic itself (not one we set) becomes the new original
         if (cur !== s.getAttribute("data-mp-set")) s.setAttribute("data-mp-vb", cur);

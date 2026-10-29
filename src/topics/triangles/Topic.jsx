@@ -216,7 +216,7 @@ function rightAngleMark(vertex,p1,p2,size){
 
 /* ═══ Triangle SVG Component ═══ */
 function TriSVG({verts,labels=['A','B','C'],angleVals,sideVals,equalSides,equalAngles,
-  rightAt,showExterior,extAngleVal,highlight,heightLine,onClick,W=340,H=280}){
+  rightAt,showExterior,extAngleVal,highlight,heightLine,onClick,W=340,H=280,fill,centerLabel}){
   const [A,B,C]=verts;
   const sides=[[A,B],[B,C],[A,C]];
   const angleVerts=[[A,B,C],[B,C,A],[C,A,B]]; // vertex, then two other points
@@ -250,7 +250,8 @@ function TriSVG({verts,labels=['A','B','C'],angleVals,sideVals,equalSides,equalA
     :{width:Math.min(W,340),height:'auto',direction:'ltr'};
   return <svg viewBox={`0 0 ${W} ${H}`} style={svgStyle}>
     {/* Triangle edges */}
-    <polygon points={`${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`} fill="rgba(37,99,235,0.05)" stroke="#2563eb" strokeWidth="2.5"/>
+    <polygon points={`${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`} fill={fill||"rgba(37,99,235,0.05)"} stroke="#2563eb" strokeWidth="2.5"/>
+    {centerLabel&&<text x={centroid.x} y={centroid.y} textAnchor="middle" dominantBaseline="middle" fontSize={fs(20)} fontWeight="800" fill="#0f766e" opacity="0.85">{centerLabel}</text>}
 
     {/* Side labels */}
     {sideVals&&sideVals.map((v,i)=>{
@@ -855,7 +856,7 @@ function ChRightExercise({forceSub}){
 
       {ex.sub==='area'&&ex.mode==='direct'&&<>
         <div className="graph-wrap">
-          <TriSVG verts={verts} sideVals={[ex.hyp,ex.legA,ex.legB]} rightAt={2}/>
+          <TriSVG verts={verts} sideVals={[ex.hyp,ex.legA,ex.legB]} rightAt={2} fill="rgba(20,184,166,0.28)" centerLabel="S"/>
         </div>
         <p className="hint">כתבו בעצמכם את חישוב השטח (הניצבים נראים באיור).</p>
         {!allDone?<div className="ans-row" style={{fontSize:18}}>
@@ -876,7 +877,7 @@ function ChRightExercise({forceSub}){
         return <>
           <div className="graph-wrap">
             <TriSVG verts={buildRightVerts(ex.knownLeg,phase>=3?ex.missingLeg:ex.knownLeg)}
-              sideVals={[null,ex.knownLeg,phase>=3?ex.missingLeg:'x']} rightAt={2}/>
+              sideVals={[null,ex.knownLeg,phase>=3?ex.missingLeg:'x']} rightAt={2} fill="rgba(20,184,166,0.28)" centerLabel="S"/>
           </div>
           <p className="hint">ניצב אחד = {ex.knownLeg}, שטח המשולש = {ex.area}. מצאו את הניצב השני (סמנו אותו כ-x).</p>
 
@@ -1195,8 +1196,7 @@ function IsoBasicsExercise({forceSub}){
       })()}
 
       {ex.sub==='missingAngle'&&(()=>{
-        const base=Math.max(3,Math.round(2*ex.leg*Math.cos(deg2rad(ex.baseAngle))));
-        const verts=buildIsoVerts(ex.leg,base);
+        const verts=buildIsoVerts(ex.leg,2*ex.leg*Math.cos(deg2rad(ex.baseAngle)));
         const aVals=ex.type==='fromVertex'
           ?[ex.vertexAngle+'°',allDone?ex.baseAngle+'°':'x',allDone?ex.baseAngle+'°':'x']
           :[allDone?ex.vertexAngle+'°':'x',ex.baseAngle+'°',ex.baseAngle+'°'];
@@ -1248,7 +1248,7 @@ function IsoBasicsExercise({forceSub}){
       })()}
 
       {ex.sub==='missingLeg'&&(()=>{
-        const verts=buildIsoVerts(ex.leg,ex.base);
+        const verts=buildIsoVerts(ex.leg,2*ex.leg*Math.cos(deg2rad(ex.baseAngle)));
         return <>
           <div className="graph-wrap">
             <TriSVG verts={verts} sideVals={[ex.leg,null,allDone?ex.leg:'?']}
@@ -1276,8 +1276,8 @@ function IsoBasicsExercise({forceSub}){
 
 function ChIsoBasics(){
   const [part,setPart]=useState(0);
-  const labels=['זיהוי','זווית חסרה','שוק חסר'];
-  const subs=['identify','missingAngle','missingLeg'];
+  const labels=['זיהוי','שוק חסר','זווית חסרה'];
+  const subs=['identify','missingLeg','missingAngle'];
   return <div>
     <div className="content" style={{marginBottom:-14}}>
       <div className="sub-tabs">
@@ -1416,7 +1416,7 @@ function IsoHeightExercise({forceSub}){
       })()}
 
       {ex.sub==='legAngle'&&(()=>{
-        const verts=buildIsoVerts(ex.leg,ex.base);
+        const verts=buildIsoVerts(ex.leg,2*ex.leg*Math.cos(deg2rad(ex.baseAngle!=null?ex.baseAngle:ex.answer)));
         const[A,B]=verts;
         const M={x:(verts[1].x+verts[2].x)/2,y:verts[1].y};
         const arc=angleArcAtVertex(A.x,A.y,B,M,10,5);
@@ -1446,7 +1446,7 @@ function IsoHeightExercise({forceSub}){
       })()}
 
       {ex.sub==='baseAngleHalf'&&(()=>{
-        const verts=buildIsoVerts(ex.leg,ex.base);
+        const verts=buildIsoVerts(ex.leg,2*ex.leg*Math.cos(deg2rad(ex.baseAngle!=null?ex.baseAngle:ex.answer)));
         const[A,B]=verts;
         const M={x:(verts[1].x+verts[2].x)/2,y:verts[1].y};
         const arc=angleArcAtVertex(A.x,A.y,B,M,10,5);
@@ -1747,9 +1747,9 @@ function genCh3(){
     // Mark sides and angles according to the theorem
     let marks={sides:[0,0,0],angles:[0,0,0]};
     if(theorem==='צ.צ.צ') marks={sides:[1,2,3],angles:[0,0,0]};
-    else if(theorem==='צ.ז.צ') marks={sides:[1,0,2],angles:[0,0,1]}; // two sides + included angle
-    else if(theorem==='ז.צ.ז') marks={sides:[0,1,0],angles:[1,0,2]}; // two angles + included side
-    else if(theorem==='צ.צ.ז') marks={sides:[1,2,0],angles:[1,0,0]}; // two sides + angle opposite longer
+    else if(theorem==='צ.ז.צ') marks={sides:[1,0,2],angles:[1,0,0]}; // two sides (AB, AC) + included angle A
+    else if(theorem==='ז.צ.ז') marks={sides:[0,0,1],angles:[1,0,2]}; // two angles (A, C) + included side AC
+    else if(theorem==='צ.צ.ז') marks=a>=c?{sides:[1,2,0],angles:[1,0,0]}:{sides:[1,2,0],angles:[0,0,1]}; // AB, BC + the angle opposite the longer of them
     else marks={sides:[0,0,1],angles:[1,2,0]}; // AAS: two angles + non-included side
     return{sub,theorem,marks,angles:[a,b,c],sides:[s1,s2,s3]};
   }
@@ -1782,8 +1782,8 @@ function genCh3(){
 }
 
 function DualTriSVG({marks1,marks2,angles,sides,labels1=['A','B','C'],labels2=['D','E','F'],W=380,H=250}){
-  const verts1=vertsFromAngles(angles).map(v=>({x:v.x*0.5+10,y:v.y*0.85+10}));
-  const verts2=vertsFromAngles(angles).map(v=>({x:v.x*0.5+200,y:v.y*0.85+10}));
+  const verts1=vertsFromAngles(angles).map(v=>({x:v.x*0.55+2,y:v.y*0.55+40}));
+  const verts2=vertsFromAngles(angles).map(v=>({x:v.x*0.55+192,y:v.y*0.55+40}));
 
   const drawTri=(verts,labels,marks,xoff)=>{
     const [A,B,C]=verts;
@@ -1836,6 +1836,24 @@ function DualTriSVG({marks1,marks2,angles,sides,labels1=['A','B','C'],labels2=['
   </svg>;
 }
 
+const theoremExamples={
+  'צ.צ.צ':{marks:{sides:[1,2,3],angles:[0,0,0]},txt:'AB = DE ,  BC = EF ,  AC = DF'},
+  'צ.ז.צ':{marks:{sides:[1,0,2],angles:[1,0,0]},txt:'AB = DE ,  ∠A = ∠D ,  AC = DF'},
+  'ז.צ.ז':{marks:{sides:[0,0,1],angles:[1,0,2]},txt:'∠A = ∠D ,  AC = DF ,  ∠C = ∠F'},
+  'צ.צ.ז':{marks:{sides:[1,2,0],angles:[1,0,0]},txt:'AB = DE ,  BC = EF ,  ∠A = ∠D',note:'∠A נמצאת מול BC — הגדולה מבין שתי הצלעות'},
+  'ז.ז.צ':{marks:{sides:[0,0,1],angles:[1,2,0]},txt:'∠A = ∠D ,  ∠B = ∠E ,  AC = DF'},
+};
+function TheoremExample({t}){
+  const e=theoremExamples[t];
+  return <div className="step-card" style={{marginTop:10}}>
+    <div className="step-label">דוגמה — {t}: {theoremNames[t]}</div>
+    <DualTriSVG marks1={e.marks} marks2={e.marks} angles={[70,60,50]}/>
+    <div className="ans-row" style={{justifyContent:'center',flexWrap:'wrap'}}><span dir="ltr">{e.txt}</span></div>
+    {e.note&&<p className="hint" style={{textAlign:'center',margin:'2px 0'}}>{e.note}</p>}
+    <div className="ans-row" style={{justifyContent:'center',fontWeight:700,color:'#16a34a'}}><span dir="ltr">⇐ △ABC ≅ △DEF</span></div>
+  </div>;
+}
+
 function Ch3(){
   const [ex,setEx]=useState(()=>genCh3());
   const [fb,setFb]=useState(null);
@@ -1871,6 +1889,7 @@ function Ch3(){
           {expandedTheorem===t&&<p>{theoremNames[t]}</p>}
         </div>)}
       </div>
+      {expandedTheorem?<TheoremExample t={expandedTheorem}/>:<p className="hint" style={{textAlign:'center'}}>לחצו על משפט כדי לראות דוגמה</p>}
       <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
     </div>}
 
@@ -1917,6 +1936,23 @@ function Ch3(){
 }
 
 /* ═══ Chapter 4: Types of Triangles ═══ */
+// Three small reference triangles by sides (equilateral / isosceles / scalene);
+// side lengths follow the angles so each picture is to scale
+function TriSideExample(){
+  const types=[
+    {angles:[60,60,60],sides:[5,5,5],eq:[1,1,1],label:'שווה צלעות'},
+    {angles:[40,70,70],sides:[8,5,8],eq:[1,0,1],label:'שווה שוקיים'},
+    {angles:[50,60,70],sides:[9,7,8],eq:null,label:'שונה צלעות'},
+  ];
+  const W=210,H=180;
+  return <div style={{display:'flex',justifyContent:'center',gap:10,flexWrap:'wrap',margin:'8px 0'}}>
+    {types.map((t,i)=><div key={i} style={{textAlign:'center'}}>
+      <TriSVG verts={vertsFromAngles(t.angles,W,H)} sideVals={t.sides} equalSides={t.eq} W={W} H={H}/>
+      <div style={{fontSize:12,fontWeight:700,color:'#0369a1'}}>{t.label}</div>
+    </div>)}
+  </div>;
+}
+
 function classifyByAngles(angles){
   if(angles.some(a=>a===90))return'ישר זווית';
   if(angles.some(a=>a>90))return'קהה זווית';
@@ -1932,39 +1968,32 @@ function classifyBySides(sides){
 function genCh4(){
   const sub=pick(['classify','build']);
   if(sub==='classify'){
-    // Generate triangle with known classification
-    const type=pick(['acute','right','obtuse']);
-    let angles,sides;
-    if(type==='right'){
-      const a=randInt(20,70);
-      angles=[90,a,90-a];
-      const triple=pick(pyTriples);
-      sides=[triple[2],triple[0],triple[1]];
-    } else if(type==='obtuse'){
-      const big=randInt(95,150);
-      const rest=180-big;
-      const a=randInt(Math.max(10,rest-70),Math.min(70,rest-10));
-      angles=[big,a,rest-a];
-      sides=[randInt(4,10),randInt(4,10),randInt(4,10)];
-    } else {
-      const a=randInt(35,75),b=randInt(35,Math.min(80,175-a));
-      angles=[a,b,180-a-b];
-      sides=[randInt(4,10),randInt(4,10),randInt(4,10)];
+    // angles, sides and drawing always describe ONE real triangle: pick a side
+    // type and an angle type that can exist together, build the angles, then
+    // take the sides from the angles (law of sines) so they are in proportion
+    for(let tries=0;tries<400;tries++){
+      const sideType=pick(['equilateral','isosceles','scalene']);
+      const kind=pick(['acute','right','obtuse']);
+      let angles;
+      if(sideType==='equilateral') angles=[60,60,60];
+      else if(sideType==='isosceles'){
+        const apex=kind==='right'?90:kind==='obtuse'?randInt(48,70)*2:randInt(15,43)*2;
+        if(apex===60) continue;
+        angles=[apex,(180-apex)/2,(180-apex)/2];
+      } else if(kind==='right'){const a=randInt(25,65);angles=[90,a,90-a];}
+      else if(kind==='obtuse'){const big=randInt(95,140);const a=randInt(15,165-big);angles=[big,a,180-big-a];}
+      else {const a=randInt(45,80),b=randInt(45,80);angles=[a,b,180-a-b];}
+      if(angles.some(x=>x<15)) continue;
+      if(sideType==='scalene'&&new Set(angles).size<3) continue;
+      if(sideType!=='equilateral'&&kind==='acute'&&angles.some(x=>x>=90)) continue;
+      // side opposite each angle: BC↔A, AC↔B, AB↔C; TriSVG order is [AB, BC, AC]
+      const big=randInt(9,16), maxSin=Math.max(...angles.map(a=>Math.sin(deg2rad(a))));
+      const opp=angles.map(a=>Math.max(2,Math.round(big*Math.sin(deg2rad(a))/maxSin)));
+      const sides=[opp[2],opp[0],opp[1]];
+      if(classifyBySides(sides)!==({equilateral:'שווה צלעות',isosceles:'שווה שוקיים',scalene:'שונה צלעות'})[sideType]) continue;
+      return{sub,angles,sides,byAngles:classifyByAngles(angles),bySides:classifyBySides(sides)};
     }
-    // Make sides match classification
-    const sideType=pick(['equilateral','isosceles','scalene']);
-    if(sideType==='equilateral'){sides=[7,7,7];angles=[60,60,60];}
-    else if(sideType==='isosceles'){
-      const leg=randInt(5,12);sides=[leg,leg,randInt(3,leg*2-1)];
-      if(sides[2]===leg)sides[2]=leg+1;
-    }
-    else{
-      // ensure all different
-      sides=[randInt(4,8),randInt(9,12),randInt(13,16)];
-      // verify triangle inequality
-      if(sides[0]+sides[1]<=sides[2])sides[0]=sides[2]-1;
-    }
-    return{sub,angles,sides,byAngles:classifyByAngles(angles),bySides:classifyBySides(sides)};
+    return{sub,angles:[60,60,60],sides:[7,7,7],byAngles:'חד זווית',bySides:'שווה צלעות'};
   }
   // build: target condition
   const targets=[
@@ -1984,6 +2013,7 @@ function Ch4(){
   const [chosenAngle,setChosenAngle]=useState(null);
   const [chosenSide,setChosenSide]=useState(null);
   const [showInfo,setShowInfo]=useState(true);
+  const [infoStep,setInfoStep]=useState(0);
   // For drag exercise
   const [dragPt,setDragPt]=useState({x:170,y:60});
   const svgRef=useRef(null);
@@ -2053,12 +2083,24 @@ function Ch4(){
   return <div className="content">
     {showInfo&&<div className="info-box">
       <h3>📐 סוגי משולשים</h3>
-      <p><strong>סוגי זוויות:</strong> זווית חדה — קטנה מ-90°. זווית ישרה — בדיוק 90°. זווית קהה — גדולה מ-90° (וקטנה מ-180°).</p>
-      <p><strong>לפי זוויות:</strong> חד זווית (כל הזוויות חדות), ישר זווית (זווית אחת 90°), קהה זווית (זווית אחת קהה)</p>
-      <p style={{textAlign:'center',fontWeight:600,marginTop:4}}>לדוגמה:</p>
-      <TriTypeExample/>
-      <p><strong>לפי צלעות:</strong> שווה צלעות (3 שוות), שווה שוקיים (2 שוות), שונה צלעות (אף אחת לא שווה)</p>
-      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+      <div className="info-steps" aria-label={`שלב ${infoStep+1} מתוך 3`}>{[0,1,2].map(i=><i key={i} className={i<=infoStep?'on':''}/>)}<span>שלב {infoStep+1} מתוך 3</span></div>
+      {infoStep===0&&<p><strong>סוגי זוויות:</strong> זווית חדה — קטנה מ-90°. זווית ישרה — בדיוק 90°. זווית קהה — גדולה מ-90° (וקטנה מ-180°).</p>}
+      {infoStep===1&&<>
+        <p><strong>לפי זוויות:</strong> חד זווית (כל הזוויות חדות), ישר זווית (זווית אחת 90°), קהה זווית (זווית אחת קהה)</p>
+        <p style={{textAlign:'center',fontWeight:600,marginTop:4}}>לדוגמה:</p>
+        <TriTypeExample/>
+      </>}
+      {infoStep===2&&<>
+        <p><strong>לפי צלעות:</strong> שווה צלעות (3 שוות), שווה שוקיים (2 שוות), שונה צלעות (אף אחת לא שווה)</p>
+        <p style={{textAlign:'center',fontWeight:600,marginTop:4}}>לדוגמה:</p>
+        <TriSideExample/>
+      </>}
+      <div className="center" style={{marginTop:6,display:'flex',gap:8,justifyContent:'center'}}>
+        {infoStep>0&&<button className="btn" onClick={()=>setInfoStep(infoStep-1)} style={{fontSize:12}}>‹ הקודם</button>}
+        {infoStep<2
+          ?<button className="btn bp" onClick={()=>setInfoStep(infoStep+1)} style={{fontSize:12}}>המשך ›</button>
+          :<button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button>}
+      </div>
     </div>}
 
     <div className="card">
@@ -2110,6 +2152,8 @@ function Ch4(){
           <p className="drag-hint">גרור את הקודקוד העליון</p>
           <div className="graph-wrap">
             <svg ref={svgRef} viewBox="0 0 340 250" style={{width:'100%',maxWidth:640,height:'auto',display:'block',direction:'ltr',touchAction:'none'}}>
+              <defs><pattern id="tri-build-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#dbe3ee" strokeWidth="1"/></pattern></defs>
+              <rect x="0" y="0" width="340" height="250" fill="url(#tri-build-grid)"/>
               <polygon points={`${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`}
                 fill="rgba(37,99,235,0.08)" stroke="#2563eb" strokeWidth="2"/>
               <circle cx={A.x} cy={A.y} r={8} fill={dragging?'#dc2626':'#0369a1'} stroke="#fff" strokeWidth="2"

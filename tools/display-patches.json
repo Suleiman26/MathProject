@@ -26,5 +26,121 @@
       "new": "history:[...s.history,{eq:{left,right},desc:'פישוט'}]",
       "count": 1
     }
+  ],
+  "triangles": [
+    {
+      "why": "Sulaiman's fix list (2026-10-29): angles drawn to scale. The isosceles picture used a rounded base (min 3), so steep angles were drawn wrong (80° drawn ~68°). Draw from the exact angle; numbers shown to the student are unchanged.",
+      "old": "const base=Math.max(3,Math.round(2*ex.leg*Math.cos(deg2rad(ex.baseAngle))));\n        const verts=buildIsoVerts(ex.leg,base);",
+      "new": "const verts=buildIsoVerts(ex.leg,2*ex.leg*Math.cos(deg2rad(ex.baseAngle)));",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-29): angles drawn to scale. The isosceles picture used a rounded base (min 3), so steep angles were drawn wrong (80° drawn ~68°). Draw from the exact angle; numbers shown to the student are unchanged.",
+      "old": "const verts=buildIsoVerts(ex.leg,ex.base);\n        const[A,B]=verts;",
+      "new": "const verts=buildIsoVerts(ex.leg,2*ex.leg*Math.cos(deg2rad(ex.baseAngle!=null?ex.baseAngle:ex.answer)));\n        const[A,B]=verts;",
+      "count": 2
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-29): angles drawn to scale. The isosceles picture used a rounded base (min 3), so steep angles were drawn wrong (80° drawn ~68°). Draw from the exact angle; numbers shown to the student are unchanged.",
+      "old": "const verts=buildIsoVerts(ex.leg,ex.base);\n        return <>\n          <div className=\"graph-wrap\">\n            <TriSVG verts={verts} sideVals={[ex.leg,null,allDone?ex.leg:'?']}",
+      "new": "const verts=buildIsoVerts(ex.leg,2*ex.leg*Math.cos(deg2rad(ex.baseAngle)));\n        return <>\n          <div className=\"graph-wrap\">\n            <TriSVG verts={verts} sideVals={[ex.leg,null,allDone?ex.leg:'?']}",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: in isosceles definitions, the missing-leg tab comes before the missing-angle tab.",
+      "old": "const labels=['זיהוי','זווית חסרה','שוק חסר'];\n  const subs=['identify','missingAngle','missingLeg'];",
+      "new": "const labels=['זיהוי','שוק חסר','זווית חסרה'];\n  const subs=['identify','missingLeg','missingAngle'];",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: right-triangle area — highlight the area. TriSVG gets optional fill / centre label (default look unchanged).",
+      "old": "rightAt,showExterior,extAngleVal,highlight,heightLine,onClick,W=340,H=280}){",
+      "new": "rightAt,showExterior,extAngleVal,highlight,heightLine,onClick,W=340,H=280,fill,centerLabel}){",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: right-triangle area — highlight the area. TriSVG gets optional fill / centre label (default look unchanged).",
+      "old": "<polygon points={`${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`} fill=\"rgba(37,99,235,0.05)\" stroke=\"#2563eb\" strokeWidth=\"2.5\"/>",
+      "new": "<polygon points={`${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`} fill={fill||\"rgba(37,99,235,0.05)\"} stroke=\"#2563eb\" strokeWidth=\"2.5\"/>\n    {centerLabel&&<text x={centroid.x} y={centroid.y} textAnchor=\"middle\" dominantBaseline=\"middle\" fontSize={fs(20)} fontWeight=\"800\" fill=\"#0f766e\" opacity=\"0.85\">{centerLabel}</text>}",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: right-triangle area — highlight the area. TriSVG gets optional fill / centre label (default look unchanged).",
+      "old": "{ex.sub==='area'&&ex.mode==='direct'&&<>\n        <div className=\"graph-wrap\">\n          <TriSVG verts={verts} sideVals={[ex.hyp,ex.legA,ex.legB]} rightAt={2}/>",
+      "new": "{ex.sub==='area'&&ex.mode==='direct'&&<>\n        <div className=\"graph-wrap\">\n          <TriSVG verts={verts} sideVals={[ex.hyp,ex.legA,ex.legB]} rightAt={2} fill=\"rgba(20,184,166,0.28)\" centerLabel=\"S\"/>",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: right-triangle area — highlight the area. TriSVG gets optional fill / centre label (default look unchanged).",
+      "old": "sideVals={[null,ex.knownLeg,phase>=3?ex.missingLeg:'x']} rightAt={2}/>",
+      "new": "sideVals={[null,ex.knownLeg,phase>=3?ex.missingLeg:'x']} rightAt={2} fill=\"rgba(20,184,166,0.28)\" centerLabel=\"S\"/>",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: angles must match the triangle. Classify picked angles and sides separately, so e.g. an 'isosceles' triangle could have 3 different angles. Now one consistent triangle: compatible side/angle types, sides from the angles (law of sines).",
+      "old": "  if(sub==='classify'){\n    // Generate triangle with known classification\n    const type=pick(['acute','right','obtuse']);\n    let angles,sides;\n    if(type==='right'){\n      const a=randInt(20,70);\n      angles=[90,a,90-a];\n      const triple=pick(pyTriples);\n      sides=[triple[2],triple[0],triple[1]];\n    } else if(type==='obtuse'){\n      const big=randInt(95,150);\n      const rest=180-big;\n      const a=randInt(Math.max(10,rest-70),Math.min(70,rest-10));\n      angles=[big,a,rest-a];\n      sides=[randInt(4,10),randInt(4,10),randInt(4,10)];\n    } else {\n      const a=randInt(35,75),b=randInt(35,Math.min(80,175-a));\n      angles=[a,b,180-a-b];\n      sides=[randInt(4,10),randInt(4,10),randInt(4,10)];\n    }\n    // Make sides match classification\n    const sideType=pick(['equilateral','isosceles','scalene']);\n    if(sideType==='equilateral'){sides=[7,7,7];angles=[60,60,60];}\n    else if(sideType==='isosceles'){\n      const leg=randInt(5,12);sides=[leg,leg,randInt(3,leg*2-1)];\n      if(sides[2]===leg)sides[2]=leg+1;\n    }\n    else{\n      // ensure all different\n      sides=[randInt(4,8),randInt(9,12),randInt(13,16)];\n      // verify triangle inequality\n      if(sides[0]+sides[1]<=sides[2])sides[0]=sides[2]-1;\n    }\n    return{sub,angles,sides,byAngles:classifyByAngles(angles),bySides:classifyBySides(sides)};\n  }\n",
+      "new": "  if(sub==='classify'){\n    // angles, sides and drawing always describe ONE real triangle: pick a side\n    // type and an angle type that can exist together, build the angles, then\n    // take the sides from the angles (law of sines) so they are in proportion\n    for(let tries=0;tries<400;tries++){\n      const sideType=pick(['equilateral','isosceles','scalene']);\n      const kind=pick(['acute','right','obtuse']);\n      let angles;\n      if(sideType==='equilateral') angles=[60,60,60];\n      else if(sideType==='isosceles'){\n        const apex=kind==='right'?90:kind==='obtuse'?randInt(48,70)*2:randInt(15,43)*2;\n        if(apex===60) continue;\n        angles=[apex,(180-apex)/2,(180-apex)/2];\n      } else if(kind==='right'){const a=randInt(25,65);angles=[90,a,90-a];}\n      else if(kind==='obtuse'){const big=randInt(95,140);const a=randInt(15,165-big);angles=[big,a,180-big-a];}\n      else {const a=randInt(45,80),b=randInt(45,80);angles=[a,b,180-a-b];}\n      if(angles.some(x=>x<15)) continue;\n      if(sideType==='scalene'&&new Set(angles).size<3) continue;\n      if(sideType!=='equilateral'&&kind==='acute'&&angles.some(x=>x>=90)) continue;\n      // side opposite each angle: BC↔A, AC↔B, AB↔C; TriSVG order is [AB, BC, AC]\n      const big=randInt(9,16), maxSin=Math.max(...angles.map(a=>Math.sin(deg2rad(a))));\n      const opp=angles.map(a=>Math.max(2,Math.round(big*Math.sin(deg2rad(a))/maxSin)));\n      const sides=[opp[2],opp[0],opp[1]];\n      if(classifyBySides(sides)!==({equilateral:'שווה צלעות',isosceles:'שווה שוקיים',scalene:'שונה צלעות'})[sideType]) continue;\n      return{sub,angles,sides,byAngles:classifyByAngles(angles),bySides:classifyBySides(sides)};\n    }\n    return{sub,angles:[60,60,60],sides:[7,7,7],byAngles:'חד זווית',bySides:'שווה צלעות'};\n  }\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: types of triangles — show the explanation one part at a time with a continue button, plus side-type examples.",
+      "old": "const [chosenSide,setChosenSide]=useState(null);\n  const [showInfo,setShowInfo]=useState(true);",
+      "new": "const [chosenSide,setChosenSide]=useState(null);\n  const [showInfo,setShowInfo]=useState(true);\n  const [infoStep,setInfoStep]=useState(0);",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: types of triangles — show the explanation one part at a time with a continue button, plus side-type examples.",
+      "old": "      <h3>📐 סוגי משולשים</h3>\n      <p><strong>סוגי זוויות:</strong> זווית חדה — קטנה מ-90°. זווית ישרה — בדיוק 90°. זווית קהה — גדולה מ-90° (וקטנה מ-180°).</p>\n      <p><strong>לפי זוויות:</strong> חד זווית (כל הזוויות חדות), ישר זווית (זווית אחת 90°), קהה זווית (זווית אחת קהה)</p>\n      <p style={{textAlign:'center',fontWeight:600,marginTop:4}}>לדוגמה:</p>\n      <TriTypeExample/>\n      <p><strong>לפי צלעות:</strong> שווה צלעות (3 שוות), שווה שוקיים (2 שוות), שונה צלעות (אף אחת לא שווה)</p>\n      <div className=\"center\" style={{marginTop:6}}><button className=\"btn bp\" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>",
+      "new": "      <h3>📐 סוגי משולשים</h3>\n      <div className=\"info-steps\" aria-label={`שלב ${infoStep+1} מתוך 3`}>{[0,1,2].map(i=><i key={i} className={i<=infoStep?'on':''}/>)}<span>שלב {infoStep+1} מתוך 3</span></div>\n      {infoStep===0&&<p><strong>סוגי זוויות:</strong> זווית חדה — קטנה מ-90°. זווית ישרה — בדיוק 90°. זווית קהה — גדולה מ-90° (וקטנה מ-180°).</p>}\n      {infoStep===1&&<>\n        <p><strong>לפי זוויות:</strong> חד זווית (כל הזוויות חדות), ישר זווית (זווית אחת 90°), קהה זווית (זווית אחת קהה)</p>\n        <p style={{textAlign:'center',fontWeight:600,marginTop:4}}>לדוגמה:</p>\n        <TriTypeExample/>\n      </>}\n      {infoStep===2&&<>\n        <p><strong>לפי צלעות:</strong> שווה צלעות (3 שוות), שווה שוקיים (2 שוות), שונה צלעות (אף אחת לא שווה)</p>\n        <p style={{textAlign:'center',fontWeight:600,marginTop:4}}>לדוגמה:</p>\n        <TriSideExample/>\n      </>}\n      <div className=\"center\" style={{marginTop:6,display:'flex',gap:8,justifyContent:'center'}}>\n        {infoStep>0&&<button className=\"btn\" onClick={()=>setInfoStep(infoStep-1)} style={{fontSize:12}}>‹ הקודם</button>}\n        {infoStep<2\n          ?<button className=\"btn bp\" onClick={()=>setInfoStep(infoStep+1)} style={{fontSize:12}}>המשך ›</button>\n          :<button className=\"btn bp\" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button>}\n      </div>",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: types of triangles — show the explanation one part at a time with a continue button, plus side-type examples.",
+      "old": "function classifyByAngles(angles){",
+      "new": "// Three small reference triangles by sides (equilateral / isosceles / scalene);\n// side lengths follow the angles so each picture is to scale\nfunction TriSideExample(){\n  const types=[\n    {angles:[60,60,60],sides:[5,5,5],eq:[1,1,1],label:'שווה צלעות'},\n    {angles:[40,70,70],sides:[8,5,8],eq:[1,0,1],label:'שווה שוקיים'},\n    {angles:[50,60,70],sides:[9,7,8],eq:null,label:'שונה צלעות'},\n  ];\n  const W=210,H=180;\n  return <div style={{display:'flex',justifyContent:'center',gap:10,flexWrap:'wrap',margin:'8px 0'}}>\n    {types.map((t,i)=><div key={i} style={{textAlign:'center'}}>\n      <TriSVG verts={vertsFromAngles(t.angles,W,H)} sideVals={t.sides} equalSides={t.eq} W={W} H={H}/>\n      <div style={{fontSize:12,fontWeight:700,color:'#0369a1'}}>{t.label}</div>\n    </div>)}\n  </div>;\n}\n\nfunction classifyByAngles(angles){",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: build-a-triangle practice — add a grid behind the triangle (B and C sit on grid points).",
+      "old": "<svg ref={svgRef} viewBox=\"0 0 340 250\" style={{width:'100%',maxWidth:640,height:'auto',display:'block',direction:'ltr',touchAction:'none'}}>\n              <polygon",
+      "new": "<svg ref={svgRef} viewBox=\"0 0 340 250\" style={{width:'100%',maxWidth:640,height:'auto',display:'block',direction:'ltr',touchAction:'none'}}>\n              <defs><pattern id=\"tri-build-grid\" width=\"20\" height=\"20\" patternUnits=\"userSpaceOnUse\"><path d=\"M20 0H0V20\" fill=\"none\" stroke=\"#dbe3ee\" strokeWidth=\"1\"/></pattern></defs>\n              <rect x=\"0\" y=\"0\" width=\"340\" height=\"250\" fill=\"url(#tri-build-grid)\"/>\n              <polygon",
+      "count": 1
+    },
+    {
+      "why": "Congruence: marks fixed so they match the theorem. SAS marked an angle outside the two sides (now the angle between them); ASA marked a side outside the two angles (now the side between them); SSA marks the angle opposite the longer of the two sides.",
+      "old": "else if(theorem==='צ.ז.צ') marks={sides:[1,0,2],angles:[0,0,1]}; // two sides + included angle",
+      "new": "else if(theorem==='צ.ז.צ') marks={sides:[1,0,2],angles:[1,0,0]}; // two sides (AB, AC) + included angle A",
+      "count": 1
+    },
+    {
+      "why": "Congruence: marks fixed so they match the theorem. SAS marked an angle outside the two sides (now the angle between them); ASA marked a side outside the two angles (now the side between them); SSA marks the angle opposite the longer of the two sides.",
+      "old": "else if(theorem==='ז.צ.ז') marks={sides:[0,1,0],angles:[1,0,2]}; // two angles + included side",
+      "new": "else if(theorem==='ז.צ.ז') marks={sides:[0,0,1],angles:[1,0,2]}; // two angles (A, C) + included side AC",
+      "count": 1
+    },
+    {
+      "why": "Congruence: marks fixed so they match the theorem. SAS marked an angle outside the two sides (now the angle between them); ASA marked a side outside the two angles (now the side between them); SSA marks the angle opposite the longer of the two sides.",
+      "old": "else if(theorem==='צ.צ.ז') marks={sides:[1,2,0],angles:[1,0,0]}; // two sides + angle opposite longer",
+      "new": "else if(theorem==='צ.צ.ז') marks=a>=c?{sides:[1,2,0],angles:[1,0,0]}:{sides:[1,2,0],angles:[0,0,1]}; // AB, BC + the angle opposite the longer of them",
+      "count": 1
+    },
+    {
+      "why": "Congruence drawings were squashed (x scaled 0.5, y 0.85), so angles were off. Same scale both ways.",
+      "old": "const verts1=vertsFromAngles(angles).map(v=>({x:v.x*0.5+10,y:v.y*0.85+10}));\n  const verts2=vertsFromAngles(angles).map(v=>({x:v.x*0.5+200,y:v.y*0.85+10}));",
+      "new": "const verts1=vertsFromAngles(angles).map(v=>({x:v.x*0.55+2,y:v.y*0.55+40}));\n  const verts2=vertsFromAngles(angles).map(v=>({x:v.x*0.55+192,y:v.y*0.55+40}));",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: congruence — add an example for each theorem (tap a theorem to see it).",
+      "old": "function Ch3(){",
+      "new": "const theoremExamples={\n  'צ.צ.צ':{marks:{sides:[1,2,3],angles:[0,0,0]},txt:'AB = DE ,  BC = EF ,  AC = DF'},\n  'צ.ז.צ':{marks:{sides:[1,0,2],angles:[1,0,0]},txt:'AB = DE ,  ∠A = ∠D ,  AC = DF'},\n  'ז.צ.ז':{marks:{sides:[0,0,1],angles:[1,0,2]},txt:'∠A = ∠D ,  AC = DF ,  ∠C = ∠F'},\n  'צ.צ.ז':{marks:{sides:[1,2,0],angles:[1,0,0]},txt:'AB = DE ,  BC = EF ,  ∠A = ∠D',note:'∠A נמצאת מול BC — הגדולה מבין שתי הצלעות'},\n  'ז.ז.צ':{marks:{sides:[0,0,1],angles:[1,2,0]},txt:'∠A = ∠D ,  ∠B = ∠E ,  AC = DF'},\n};\nfunction TheoremExample({t}){\n  const e=theoremExamples[t];\n  return <div className=\"step-card\" style={{marginTop:10}}>\n    <div className=\"step-label\">דוגמה — {t}: {theoremNames[t]}</div>\n    <DualTriSVG marks1={e.marks} marks2={e.marks} angles={[70,60,50]}/>\n    <div className=\"ans-row\" style={{justifyContent:'center',flexWrap:'wrap'}}><span dir=\"ltr\">{e.txt}</span></div>\n    {e.note&&<p className=\"hint\" style={{textAlign:'center',margin:'2px 0'}}>{e.note}</p>}\n    <div className=\"ans-row\" style={{justifyContent:'center',fontWeight:700,color:'#16a34a'}}><span dir=\"ltr\">⇐ △ABC ≅ △DEF</span></div>\n  </div>;\n}\n\nfunction Ch3(){",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list: congruence — add an example for each theorem (tap a theorem to see it).",
+      "old": "          {expandedTheorem===t&&<p>{theoremNames[t]}</p>}\n        </div>)}\n      </div>",
+      "new": "          {expandedTheorem===t&&<p>{theoremNames[t]}</p>}\n        </div>)}\n      </div>\n      {expandedTheorem?<TheoremExample t={expandedTheorem}/>:<p className=\"hint\" style={{textAlign:'center'}}>לחצו על משפט כדי לראות דוגמה</p>}",
+      "count": 1
+    }
   ]
 }

@@ -41,4 +41,10 @@ html[data-page="similar-triangles"] #root svg[viewBox] { margin-block-end: 10px;
   html[data-page="pythagoras"] .main > .steps { align-self: stretch; width: 100%; }
 }
 
+
+/* Triangles → types: "step 1 of 3" dots in the explanation */
+html[data-page="triangles"] .info-steps { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px 0 10px; font-size: 12px; color: var(--ink-3, #64748b); }
+html[data-page="triangles"] .info-steps i { width: 22px; height: 4px; border-radius: 4px; background: var(--line, #e2e8f0); }
+html[data-page="triangles"] .info-steps i.on { background: var(--a-500, #0ea5e9); }
+html[data-page="triangles"] .info-steps span { margin-inline-start: 6px; }
 }
