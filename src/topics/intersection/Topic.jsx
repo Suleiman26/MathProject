@@ -688,9 +688,14 @@ function Ch2(){
 
   const checkCoefs=()=>{
     const va=parseInt(ca),vb=parseInt(cb),vc=parseInt(cc);
-    if(va===ex.eqA&&vb===ex.eqB&&vc===ex.eqC){setFb('ok');setTimeout(()=>{setPhase('solve');setFb(null);},600);}
+    // accept the equation exactly as the student arranged it (e.g. everything moved to the other side)
+    const mine=dragCoefs&&va===dragCoefs.a&&vb===dragCoefs.b&&vc===dragCoefs.c;
+    if((va===ex.eqA&&vb===ex.eqB&&vc===ex.eqC)||mine){setFb('ok');setTimeout(()=>{setPhase('solve');setFb(null);},600);}
     else setFb('err');
   };
+  // the arranged equation, shown after step 2 so it stays visible while identifying a, b, c
+  const arranged=dragCoefs||{a:ex.eqA,b:ex.eqB,c:ex.eqC};
+  const arrangedStr=fmtQuad(arranged.a,arranged.b,arranged.c,'#').replace('# = ','')+' = 0';
 
   const checkXvals=()=>{
     if(ex.type==='none'){if(special==='none'){setFb('ok');setPhase('done');}else setFb('err');return;}
@@ -762,12 +767,13 @@ function Ch2(){
           initLeft={initTerms2.l} initRight={initTerms2.r} onSolved={onDragSolved2} mode="quadratic"/>
       </div>}
       {pi>1&&<div className="step-card done"><div className="step-label">שלב 2 — סידור</div>
-        <div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ המשוואה מסודרת</div>
+        <div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ <span dir="ltr">{arrangedStr}</span></div>
       </div>}
 
       {/* Step 3: Identify coefficients */}
       {pi>=2&&<div className={`step-card ${pi>2?'done':''}`}>
         <div className="step-label">שלב 3 — זהה את המקדמים a, b, c</div>
+        {phase==='coefs'&&<div className="isx-eq" dir="ltr">{arrangedStr}</div>}
         {phase==='coefs'?<>
           <div className="ans-row">
             <span>a =</span><input value={ca} onChange={e=>{setCa(e.target.value);setFb(null);}} placeholder="?" style={{width:50}}/>

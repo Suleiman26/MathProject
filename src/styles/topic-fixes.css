@@ -239,4 +239,7 @@ html[data-page="parabola-practice"] .pp-rv { width: 64px; height: 40px; text-ali
   html[data-page="parabola-practice"] .pp-template { font-size: 13px; gap: 3px; justify-content: flex-start; margin-inline: -4px; }
   html[data-page="parabola-practice"] .pp-slot { width: 30px; height: 32px; font-size: 14px; margin: 0 1px; border-radius: 7px; }
 }
+
+/* ── Intersection (Sulaiman's fix list, 2026-10-30): arranged equation stays visible ── */
+html[data-page="intersection"] .isx-eq { text-align: center; font-size: 20px; font-weight: 800; margin: 4px 0 10px; padding: 8px 12px; border-radius: 10px; background: var(--surface, #fff); border: 1px solid var(--a-200, #bfdbfe); color: var(--a-900, #1e3a8a); }
 }

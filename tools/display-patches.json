@@ -740,5 +740,25 @@
       "new": "            <div className=\"pp-mon-hint\">הגבול בין עלייה לירידה הוא ה-x של הקודקוד: <bdi dir=\"ltr\">x = {vx%1===0?vx:vx.toFixed(2)}</bdi> (הקו המקווקו). הסתכלו לאן הפרבולה הולכת משמאל ומימין לו.</div>\n            <Graph a={a} b={b} c={c} highlightVertex axisOfSymmetry={vx}\n              extraPoints={[{x:vx,y:vy,color:'#ff6f00',label:'קודקוד'}]} />\n            {[['rise','עולה כאשר',riseAns,setRiseAns],['fall','יורדת כאשר',fallAns,setFallAns]].map(([k,l,v,set])=>(\n              <div className=\"pp-range\" key={k}>\n                <span className=\"pp-range-l\">{l}</span>\n                <span className=\"pp-range-m\" dir=\"ltr\">\n                  <span className=\"pp-var\">x</span>\n                  <span className=\"pp-seg\" role=\"group\" aria-label=\"סימן\">\n                    {['<','>'].map(o=><button key={o} type=\"button\" className={v.op===o?'on':''} onClick={()=>set(p=>({...p,op:o}))}>{o}</button>)}\n                  </span>\n                  <input className=\"pp-rv\" value={v.val} onChange={e=>set(p=>({...p,val:e.target.value}))} placeholder=\"?\" />\n                </span>\n              </div>))}\n",
       "count": 1
     }
+  ],
+  "intersection": [
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: intersection. The arranged equation stays visible after step 2 and above the coefficient inputs; coefficients are accepted for the equation exactly as the student arranged it.",
+      "old": "    if(va===ex.eqA&&vb===ex.eqB&&vc===ex.eqC){setFb('ok');setTimeout(()=>{setPhase('solve');setFb(null);},600);}\n    else setFb('err');\n  };\n",
+      "new": "    // accept the equation exactly as the student arranged it (e.g. everything moved to the other side)\n    const mine=dragCoefs&&va===dragCoefs.a&&vb===dragCoefs.b&&vc===dragCoefs.c;\n    if((va===ex.eqA&&vb===ex.eqB&&vc===ex.eqC)||mine){setFb('ok');setTimeout(()=>{setPhase('solve');setFb(null);},600);}\n    else setFb('err');\n  };\n  // the arranged equation, shown after step 2 so it stays visible while identifying a, b, c\n  const arranged=dragCoefs||{a:ex.eqA,b:ex.eqB,c:ex.eqC};\n  const arrangedStr=fmtQuad(arranged.a,arranged.b,arranged.c,'#').replace('# = ','')+' = 0';\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: intersection. The arranged equation stays visible after step 2 and above the coefficient inputs; coefficients are accepted for the equation exactly as the student arranged it.",
+      "old": "        <div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ המשוואה מסודרת</div>\n",
+      "new": "        <div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ <span dir=\"ltr\">{arrangedStr}</span></div>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: intersection. The arranged equation stays visible after step 2 and above the coefficient inputs; coefficients are accepted for the equation exactly as the student arranged it.",
+      "old": "        {phase==='coefs'?<>\n",
+      "new": "        {phase==='coefs'&&<div className=\"isx-eq\" dir=\"ltr\">{arrangedStr}</div>}\n        {phase==='coefs'?<>\n",
+      "count": 1
+    }
   ]
 }
