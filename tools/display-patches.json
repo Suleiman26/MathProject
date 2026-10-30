@@ -142,5 +142,241 @@
       "new": "          {expandedTheorem===t&&<p>{theoremNames[t]}</p>}\n        </div>)}\n      </div>\n      {expandedTheorem?<TheoremExample t={expandedTheorem}/>:<p className=\"hint\" style={{textAlign:'center'}}>לחצו על משפט כדי לראות דוגמה</p>}",
       "count": 1
     }
+  ],
+  "powers-roots": [
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "          ✓ {ex.type==='exp'?`x^${ex.ans}`:ex.type==='2exp'?`x^${ex.ansA}·y^${ex.ansB}`:`${ex.coef}x^${ex.expAns}`}\n",
+      "new": "          ✓ <Mx s={ex.type==='exp'?`${ex.v}^${ex.ans}`:ex.type==='2exp'?`${ex.v}^${ex.ansA}·${ex.w}^${ex.ansB}`:`${ex.coef}${ex.v}^${ex.expAns}`}/>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "            <span>· x<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "new": "            <span>· {ex.v}<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "            <span>x<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}}/></sup></span>\n            <span>· y<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "new": "            <span>{ex.v}<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}}/></sup></span>\n            <span>· {ex.w}<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "            <span>x<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "new": "            <span>{ex.v}<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "      <div className=\"card-t\">הכל יחד</div>\n      <div className=\"eq-box\">{ex.q}</div>\n      <div className={`step-card ${done?'done':''}`}>\n",
+      "new": "      <div className=\"card-t\">הכל יחד</div>\n      <div className=\"eq-box\"><Mx s={ex.q}/></div>\n      <div className={`step-card ${done?'done':''}`}>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "  return {diff:2,...pick(types)()};\n",
+      "new": "  // medium: a root together with a power law\n  const medium=[\n    ()=>{const a=pick([4,6,8]);return {q:`(√${v})^${a} = ${v}^?`,ans:a/2,type:'exp'};},\n    ()=>{const a=pick([2,4,6]),b=randInt(1,4);return {q:`√(${v}^${a}) · ${v}^${b} = ${v}^?`,ans:a/2+b,type:'exp'};},\n    ()=>{const b=pick([2,4,6]),a=randInt(b/2+1,b/2+5);return {q:`${v}^${a} ÷ √(${v}^${b}) = ${v}^?`,ans:a-b/2,type:'exp'};},\n    ()=>{const k=randInt(2,5),a=randInt(1,4);return {q:`(${k}${v}^${a})^2 = ?·${v}^?`,coef:k*k,expAns:2*a,type:'coefexp'};},\n  ];\n  // hard: several laws in one expression\n  const hard=[\n    ()=>{const a=pick([2,3]),b=pick([2,4]);return {q:`√(${v}^${a*b}·${w}^${2*b}) = ${v}^?·${w}^?`,ansA:a*b/2,ansB:b,type:'2exp'};},\n    ()=>{const a=pick([2,3,4]);return {q:`${v}^${a} · √(${v}^${2*a}) = ${v}^?`,ans:2*a,type:'exp'};},\n    ()=>{const k=pick([4,9,16,25]);const r=Math.sqrt(k);const a=pick([2,4]);return {q:`√(${k}${v}^${a}) = ?·${v}^?`,coef:r,expAns:a/2,type:'coefexp'};},\n    ()=>{const a=pick([3,5,7]),b=pick([1,3,5]);return {q:`√(${v}^${a}) · ${b===1?`√${v}`:`√(${v}^${b})`} = ${v}^?`,ans:(a+b)/2,type:'exp'};},\n    ()=>{const a=randInt(2,3),b=randInt(2,3),c=pick([2,3]),d=randInt(1,a*c-1);return {q:`(${v}^${a}${w}^${b})^${c} ÷ ${v}^${d} = ${v}^?·${w}^?`,ansA:a*c-d,ansB:b*c,type:'2exp'};},\n    ()=>{const a=randInt(1,4),b=randInt(a+1,a+6);return {q:`${v}^(−${a}) · ${v}^${b} = ${v}^?`,ans:b-a,type:'exp'};},\n  ];\n  return {diff,v,w,...pick([easy,medium,hard][diff])()};\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "  if(diff===0){// easy: √(x^a) = x^? where a is even\n    const a=pick([4,6,8,10]);\n    return {diff:0,q:`√(x^${a}) = x^?`,ans:a/2,type:'exp'};\n  }\n  if(diff===1){// medium: (√x)^a = x^?\n    const a=pick([4,6,8]);\n    return {diff:1,q:`(√x)^${a} = x^?`,ans:a/2,type:'exp'};\n  }\n  // hard: mixed\n  const types=[\n    ()=>{const a=pick([2,3]),b=pick([2,4]);return {q:`√(x^${a*b}·y^${2*b}) = x^?·y^?`,ansA:a*b/2,ansB:b,type:'2exp'};},\n    ()=>{const a=pick([2,3,4]);return {q:`x^${a} · √(x^${2*a}) = x^?`,ans:2*a,type:'exp'};},\n    ()=>{const k=pick([4,9,16,25]);const r=Math.sqrt(k);const a=pick([2,4]);return {q:`√(${k}x^${a}) = ?·x^?`,coef:r,expAns:a/2,type:'coefexp'};},\n",
+      "new": "  const [v,w]=pickVars();\n  // easy: one power law, or a root of an even power\n  const easy=[\n    ()=>{const a=pick([4,6,8,10]);return {q:`√(${v}^${a}) = ${v}^?`,ans:a/2,type:'exp'};},\n    ()=>{const a=randInt(3,5),b=randInt(1,2*a-1);return {q:`(${v}^${a})^2 ÷ ${v}^${b} = ${v}^?`,ans:2*a-b,type:'exp'};},\n    ()=>{const a=randInt(2,6),b=randInt(2,6),c=randInt(1,a+b-1);return {q:`${v}^${a} · ${v}^${b} ÷ ${v}^${c} = ${v}^?`,ans:a+b-c,type:'exp'};},\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "      {rootNames.map((l,i)=><button key={i} className={`sub-btn ${subIdx===i?'active':''}`} onClick={()=>switchSub(i)}>{String.fromCharCode(1488+i)}. {l}</button>)}\n    </div>\n    <div className=\"card\">\n      <div className=\"card-t\">{rootNames[subIdx]}</div>\n",
+      "new": "      {rootNames.map((l,i)=><button key={i} className={`sub-btn ${subIdx===i?'active':''}`} onClick={()=>switchSub(i)}>{String.fromCharCode(1488+i)}. {l}</button>)}\n    </div>\n    {subIdx===0&&<RootExactInfo/>}\n    {subIdx===1&&<RootSimplifyInfo/>}\n    <div className=\"card\">\n      <div className=\"card-t\">{rootNames[subIdx]}</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "\nfunction Ch4(){\n",
+      "new": "\n// Exact roots: an example and the multiplication table, whose diagonal holds every perfect square.\nfunction RootExactInfo(){\n  const n=[1,2,3,4,5,6,7,8,9,10];\n  // open on computers; on phones it starts closed so the exercise stays close\n  const [wide]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(min-width: 700px)').matches);\n  return <div className=\"info pw-info\">\n    <p><b>דוגמה:</b> <span className=\"mx\">√49 = 7</span>, כי <span className=\"mx\">7<sup>2</sup> = 7·7 = 49</span>. שואלים: איזה מספר כפול עצמו נותן 49?</p>\n    <p>השורשים המדויקים נמצאים על <b>האלכסון של לוח הכפל</b>: שם כל מספר כפול עצמו.</p>\n    <details className=\"sq-details\" open={wide}>\n      <summary>לוח הכפל — האלכסון</summary>\n      <div className=\"sq-wrap\"><table className=\"sq-table\" dir=\"ltr\"><tbody>\n        <tr><th>×</th>{n.map(c=><th key={c}>{c}</th>)}</tr>\n        {n.map(r=><tr key={r}><th>{r}</th>{n.map(c=><td key={c} className={r===c?'d':''}>{r*c}</td>)}</tr>)}\n      </tbody></table></div>\n    </details>\n    <p className=\"pw-warn\">⭐ חשוב לדעת בעל פה את השורשים המדויקים לפחות עד 100:</p>\n    <div className=\"sq-chips\" dir=\"ltr\">{n.map(k=><span key={k}>√{k*k} = {k}</span>)}</div>\n  </div>;\n}\n\n// Simplifying roots: the rule, why it is true (law 4: power of a product), and an example.\nfunction RootSimplifyInfo(){\n  return <div className=\"info pw-info\">\n    <p><b>הכלל:</b> <span className=\"mx\">√(a·b) = √a · √b</span>. שורש של מכפלה שווה למכפלת השורשים (כש-a ו-b אינם שליליים).</p>\n    <p><b>למה?</b> לפי חוק 4 בחוקי חזקות (חזקה של מכפלה): <Mx s=\"(√a · √b)^2 = (√a)^2 · (√b)^2 = a·b\"/>. כלומר <span className=\"mx\">√a · √b</span> הוא המספר שבריבוע נותן <span className=\"mx\">a·b</span>, ולכן הוא <span className=\"mx\">√(a·b)</span>.</p>\n    <p><b>דוגמה:</b> <span className=\"mx\">√12 = √(4·3) = √4 · √3 = 2√3</span></p>\n    <p>הטריק: מחפשים את <b>הריבוע המושלם הגדול ביותר</b> שמחלק את המספר (מהאלכסון של לוח הכפל), ומוציאים את השורש שלו מחוץ לשורש.</p>\n  </div>;\n}\n\nfunction Ch4(){\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "        </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.coefAns}x<sup>{ex.expA}</sup>y<sup>{ex.expB}</sup></div>}\n",
+      "new": "        </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.coefAns}{ex.v}<sup>{ex.expA}</sup>{ex.w}<sup>{ex.expB}</sup></div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "          <span>· x<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}}/></sup></span>\n          <span>· y<sup><input value={a3} onChange={e=>{setA3(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}}\n",
+      "new": "          <span>· {ex.v}<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}}/></sup></span>\n          <span>· {ex.w}<sup><input value={a3} onChange={e=>{setA3(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:40}}\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "        </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.coefAns}x<sup>{ex.expAns}</sup></div>}\n",
+      "new": "        </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.coefAns}{ex.v}<sup>{ex.expAns}</sup></div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "          <span>· x<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}}\n",
+      "new": "          <span>· {ex.v}<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}}\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "          </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ x<sup>{ex.ans}</sup></div>}\n",
+      "new": "          </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.v}<sup>{ex.ans}</sup></div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "            <span style={{fontSize:18}}>x<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "new": "            <span style={{fontSize:18}}>{ex.v}<sup><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "          <div className=\"step-label\">שלב 2 — חשב x<sup>{ex.step1}</sup> · x<sup>{ex.c}</sup></div>\n",
+      "new": "          <div className=\"step-label\">שלב 2 — חשב {ex.v}<sup>{ex.step1}</sup> · {ex.v}<sup>{ex.c}</sup></div>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "          </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ x<sup>{ex.step1}</sup></div>}\n",
+      "new": "          </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.v}<sup>{ex.step1}</sup></div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "            <span style={{fontSize:18}}>x<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "new": "            <span style={{fontSize:18}}>{ex.v}<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "          <div className=\"step-label\">שלב 1 — פשט (x<sup>{ex.a}</sup>)<sup>{ex.b}</sup></div>\n",
+      "new": "          <div className=\"step-label\">שלב 1 — פשט ({ex.v}<sup>{ex.a}</sup>)<sup>{ex.b}</sup></div>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "          <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n        </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ x<sup>{ex.ans}</sup></div>}\n      </div>\n",
+      "new": "          <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n        </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.v}<sup>{ex.ans}</sup></div>}\n      </div>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "        {step<10?<><div className=\"ans-row\">\n          <span style={{fontSize:18}}>x<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n          <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n",
+      "new": "        {step<10?<><div className=\"ans-row\">\n          <span style={{fontSize:18}}>{ex.v}<sup><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:45}} onKeyDown={e=>e.key==='Enter'&&check()}/></sup></span>\n          <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "      <div className=\"card-t\">חוקי חזקות — פרמטרי</div>\n      <div className=\"eq-box\">{ex.q}</div>\n\n",
+      "new": "      <div className=\"card-t\">חוקי חזקות — פרמטרי</div>\n      <div className=\"eq-box\"><Mx s={ex.q}/></div>\n\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "  return {sub:4,k,a,b,c,coefAns:Math.pow(k,c),expA:a*c,expB:b*c,q:`(${k}x^${a}y^${b})^${c} = ?·x^?·y^?`};\n",
+      "new": "  return {v,w,sub:4,k,a,b,c,coefAns:Math.pow(k,c),expA:a*c,expB:b*c,q:`(${k}${v}^${a}${w}^${b})^${c} = ?·${v}^?·${w}^?`};\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "    return {sub:3,a,b,ans:a-b,q:`x^${a} / x^${b} = x^?`};\n",
+      "new": "    return {v,w,sub:3,a,b,ans:a-b,q:`${v}^${a} / ${v}^${b} = ${v}^?`};\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "    return {sub:2,k,a,b,coefAns:Math.pow(k,b),expAns:a*b,q:`(${k}x^${a})^${b} = ?·x^?`};\n",
+      "new": "    return {v,w,sub:2,k,a,b,coefAns:Math.pow(k,b),expAns:a*b,q:`(${k}${v}^${a})^${b} = ?·${v}^?`};\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "    return {sub:1,a,b,c,step1:a*b,ans:a*b+c,q:`(x^${a})^${b} · x^${c} = x^?`};\n",
+      "new": "    return {v,w,sub:1,a,b,c,step1:a*b,ans:a*b+c,q:`(${v}^${a})^${b} · ${v}^${c} = ${v}^?`};\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "    return {sub:0,a,b,ans:a+b,q:`x^${a} · x^${b} = x^?`};\n",
+      "new": "    return {v,w,sub:0,a,b,ans:a+b,q:`${v}^${a} · ${v}^${b} = ${v}^?`};\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "function genParam(subIdx){\n  if(subIdx===0){// x^a * x^b = x^?\n",
+      "new": "function genParam(subIdx){\n  const [v,w]=pickVars();\n  if(subIdx===0){// x^a * x^b = x^?\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"1/...\" style={{width:80}} onKeyDown={e=>e.key==='Enter'&&check1()}/>\n",
+      "new": "              <Frac n=\"1\" d={<input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:64}} onKeyDown={e=>e.key==='Enter'&&check1()}/>}/>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "        <div className=\"step-label\">שלב 1{ex.law<=2?' — מצא את המעריך':ex.law===3?' — חשב כל חזקה בנפרד':ex.law===5?' — כתוב כשבר (1/...)':' — מצא את התוצאה'}</div>\n",
+      "new": "        <div className=\"step-label\">שלב 1{ex.law<=2?' — מצא את המעריך':ex.law===3?' — חשב כל חזקה בנפרד':ex.law===5?' — כתוב כשבר: 1 חלקי ?':' — מצא את התוצאה'}</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "      <div className=\"card-t\">תרגול — {lawNames[lawIdx]}</div>\n      <div className=\"eq-box\">{ex.q}</div>\n\n",
+      "new": "      <div className=\"card-t\">תרגול — {lawNames[lawIdx]}</div>\n      <div className=\"eq-box\"><Mx s={ex.q}/></div>\n\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "      <div className=\"law-formula\">{lawFormulas[lawIdx]}</div>\n    </div>\n",
+      "new": "      <div className=\"law-formula\">{lawFormulas[lawIdx]}</div>\n      <LawProof key={lawIdx} i={lawIdx}/>\n    </div>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "      else correct=false;\n",
+      "new": "      else correct=parseInt(v)===ex.den;\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "    else{// negative exponent — accept 1/n as fraction\n",
+      "new": "    else{// negative exponent — the student fills the denominator of 1/? (typing 1/n still works)\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "const lawFormulas=['aⁿ · aᵐ = aⁿ⁺ᵐ','aⁿ ÷ aᵐ = aⁿ⁻ᵐ','(aⁿ)ᵐ = aⁿ·ᵐ','(a·b)ⁿ = aⁿ·bⁿ','a⁰ = 1','a⁻ⁿ = 1/aⁿ'];\n\n",
+      "new": "const lawFormulas=['aⁿ · aᵐ = aⁿ⁺ᵐ','aⁿ ÷ aᵐ = aⁿ⁻ᵐ','(aⁿ)ᵐ = aⁿ·ᵐ','(a·b)ⁿ = aⁿ·bⁿ','a⁰ = 1','a⁻ⁿ = 1/aⁿ'];\n// \"Why is it true?\" for each law: a hint to try first, then the proof and an example.\nconst lawProofs=[\n  {hint:<>כתבו כל חזקה ככפל חוזר, וספרו כמה פעמים מופיע a.</>,\n   steps:[<><Mx s=\"a^n\"/> זה a כפול עצמו n פעמים, ו-<Mx s=\"a^m\"/> זה a כפול עצמו m פעמים.</>,\n     <>כשכופלים אותם יחד, a מופיע <span className=\"mx\">n+m</span> פעמים. כלומר <Mx s=\"a^n · a^m = a^(n+m)\"/>.</>],\n   ex:'2^3 · 2^2 = (2·2·2)·(2·2) = 2^5'},\n  {hint:<>כתבו את החילוק כשבר, וצמצמו.</>,\n   steps:[<>ב-<Mx s=\"a^n ÷ a^m\"/> יש במונה n פעמים a, ובמכנה m פעמים a.</>,\n     <>כל a במכנה מצטמצם עם a אחד במונה, ונשארים <span className=\"mx\">n−m</span> פעמים a. כלומר <Mx s=\"a^(n−m)\"/>.</>],\n   ex:'2^5 ÷ 2^2 = (2·2·2·2·2) ÷ (2·2) = 2·2·2 = 2^3'},\n  {hint:<>כתבו את <Mx s=\"(a^n)^m\"/> ככפל של <Mx s=\"a^n\"/> בעצמו, והשתמשו בחוק 1.</>,\n   steps:[<><Mx s=\"(a^n)^m\"/> זה <Mx s=\"a^n\"/> כפול עצמו m פעמים.</>,\n     <>לפי חוק 1 מחברים את המעריכים: <span className=\"mx\">n+n+…+n</span> (m פעמים), וזה <span className=\"mx\">n·m</span>. כלומר <Mx s=\"a^(n·m)\"/>.</>],\n   ex:'(2^3)^2 = 2^3 · 2^3 = 2^(3+3) = 2^6'},\n  {hint:<>כתבו את <Mx s=\"(a·b)^n\"/> ככפל חוזר, ושנו את סדר הגורמים.</>,\n   steps:[<><Mx s=\"(a·b)^n\"/> זה <span className=\"mx\">(a·b)</span> כפול עצמו n פעמים.</>,\n     <>בכפל מותר לשנות סדר: מקבצים את כל ה-a יחד ואת כל ה-b יחד, ומקבלים <Mx s=\"a^n · b^n\"/>.</>],\n   ex:'(2·3)^2 = (2·3)·(2·3) = 2·2·3·3 = 2^2 · 3^2'},\n  {hint:<>חלקו חזקה בעצמה בשתי דרכים: לפי חוק 2, ולפי מה שיודעים על מספר חלקי עצמו.</>,\n   steps:[<>לפי חוק 2: <Mx s=\"a^n ÷ a^n = a^(n−n) = a^0\"/>.</>,\n     <>אבל כל מספר (שאינו 0) חלקי עצמו שווה 1. לכן <Mx s=\"a^0 = 1\"/>.</>],\n   ex:'5^3 ÷ 5^3 = 5^0 = 1'},\n  {hint:<>חשבו על <Mx s=\"a^0 ÷ a^n\"/> בשתי דרכים: לפי חוק 2 ולפי חוק 5.</>,\n   steps:[<>לפי חוק 2: <Mx s=\"a^0 ÷ a^n = a^(0−n) = a^(−n)\"/>.</>,\n     <>לפי חוק 5: <Mx s=\"a^0 = 1\"/>, ולכן אותו חילוק שווה <Mx s=\"1 ÷ a^n\"/>.</>,\n     <>שתי הדרכים נותנות את אותו מספר, ולכן <Mx s=\"a^(−n) = 1 ÷ a^n\"/>.</>],\n   ex:'2^(−3) = 1 ÷ 2^3 = 1/8'},\n];\n\nfunction LawProof({i}){\n  const [open,setOpen]=useState(0); // 0 closed, 1 try it, 2 proof shown\n  const p=lawProofs[i];\n  if(open===0)return <button className=\"proof-open\" onClick={()=>setOpen(1)}>🧠 למה זה נכון? נסו להוכיח</button>;\n  return <div className=\"proof\">\n    <div className=\"proof-head\"><b>נסו להוכיח בעצמכם</b><button className=\"proof-x\" aria-label=\"סגור\" onClick={()=>setOpen(0)}>✕</button></div>\n    <p className=\"proof-hint\">💡 רמז: {p.hint}</p>\n    {open===1?<button className=\"btn bp proof-show\" onClick={()=>setOpen(2)}>הצג הוכחה</button>:<>\n      <ol className=\"proof-steps\">{p.steps.map((s,k)=><li key={k}>{s}</li>)}</ol>\n      <div className=\"proof-ex\"><span>דוגמה:</span> <Mx s={p.ex}/></div>\n    </>}\n  </div>;\n}\n\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "  return <div className=\"content\">\n    <div className=\"info\">\n      <b>חזקה</b> היא כפל חוזר של אותו מספר. למשל: <span style={{direction:'ltr',display:'inline-block'}}>2⁴ = 2·2·2·2 = 16</span>\n    </div>\n",
+      "new": "  return <div>\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "function Ch1(){\n  const [ex,setEx]=useState(()=>genCh1());\n",
+      "new": "function Ch1(){\n  const [sub,setSub]=useState(0);\n  return <div className=\"content\">\n    <div className=\"info pw-info\">\n      <p><b>חזקה</b> היא סימן מקוצר לכפל חוזר. כשכופלים מספר בעצמו כמה פעמים, לא כותבים את כל הכפל: כותבים את המספר פעם אחת, ולמעלה, בקטן, כמה פעמים כופלים אותו.</p>\n      <div className=\"be-demo\" dir=\"ltr\">\n        <span className=\"be-pow\"><span className=\"be-b\">2<em>בסיס</em></span><span className=\"be-e\">4<em>מעריך</em></span></span>\n        <span className=\"be-eq\">= 2·2·2·2 = 16</span>\n      </div>\n      <p><b>הבסיס</b> הוא המספר שכופלים. <b>המעריך</b> אומר כמה פעמים כופלים אותו. קוראים: ״2 בחזקת 4״.</p>\n      <p className=\"pw-warn\">שימו לב: <span className=\"mx\">2<sup>4</sup></span> זה לא <span className=\"mx\">2·4</span>.<br/><span className=\"mx\">2<sup>4</sup> = 2·2·2·2 = 16</span>, ואילו <span className=\"mx\">2·4 = 8</span>.</p>\n    </div>\n    <div className=\"sub-btns\">\n      {['זיהוי בסיס ומעריך','חישוב חזקה'].map((l,i)=><button key={i} className={`sub-btn ${sub===i?'active':''}`} onClick={()=>setSub(i)}>{String.fromCharCode(1488+i)}. {l}</button>)}\n    </div>\n    {sub===0?<BaseExp key=\"be\"/>:<Ch1Calc key=\"calc\"/>}\n  </div>;\n}\n\nfunction Ch1Calc(){\n  const [ex,setEx]=useState(()=>genCh1());\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "\nfunction Ch1(){\n",
+      "new": "\nfunction genBaseExp(){\n  const mode=randInt(0,1); // 0 = given a power: name base and exponent, 1 = given a repeated product: write it as a power\n  return mode===0?{mode,base:randInt(2,12),exp:randInt(2,9)}:{mode,base:randInt(2,9),exp:randInt(2,6)};\n}\n\nfunction BaseExp(){\n  const [ex,setEx]=useState(()=>genBaseExp());\n  const [b,setB]=useState('');const [e,setE]=useState('');\n  const [fb,setFb]=useState(null);const [done,setDone]=useState(false);\n  const check=()=>{if(parseInt(b)===ex.base&&parseInt(e)===ex.exp){setFb('ok');setDone(true);}else setFb('err');};\n  const reset=()=>{setEx(genBaseExp());setB('');setE('');setFb(null);setDone(false);};\n  return <>\n    <div className=\"card\">\n      <div className=\"card-t\">זיהוי בסיס ומעריך</div>\n      {ex.mode===0\n        ?<div className=\"eq-box\">{ex.base}<sup>{ex.exp}</sup></div>\n        :<div className=\"eq-box\"><ChainVis base={ex.base} exp={ex.exp}/></div>}\n      <div className={`step-card ${done?'done':''}`}>\n        <div className=\"step-label\">{ex.mode===0?'מה הבסיס ומה המעריך?':'כתוב את הכפל כחזקה: מה הבסיס ומה המעריך?'}</div>\n        {!done?<>\n          <div className=\"ans-row\">\n            <span className=\"be-template\">\n              <input value={b} onChange={x=>{setB(x.target.value);setFb(null);}} placeholder=\"בסיס\" style={{width:64}}/>\n              <sup><input value={e} onChange={x=>{setE(x.target.value);setFb(null);}} placeholder=\"מעריך\" style={{width:64}} onKeyDown={x=>x.key==='Enter'&&check()}/></sup>\n            </span>\n            <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n          </div>\n          <Fb fb={fb}/>\n        </>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ בסיס {ex.base}, מעריך {ex.exp}: {ex.base}<sup>{ex.exp}</sup> = {ChainText(ex.base,ex.exp)}</div>}\n      </div>\n    </div>\n    {done?<div className=\"banner\">✅ כל הכבוד!\n      <div style={{marginTop:12}}><button className=\"btn\" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>\n    </div>:<div className=\"center\" style={{marginTop:8}}><button className=\"btn bp\" onClick={reset}>תרגיל חדש ↺</button></div>}\n  </>;\n}\nfunction ChainText(base,exp){return Array.from({length:exp},()=>base).join('·');}\n\nfunction Ch1(){\n",
+      "count": 1
+    },
+    {
+      "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
+      "old": "function Frac({n,d,style}){return <span className=\"frac\" style={style}><span className=\"frac-num\">{n}</span><span className=\"frac-den\">{d}</span></span>;}\n\n",
+      "new": "function Frac({n,d,style}){return <span className=\"frac\" style={style}><span className=\"frac-num\">{n}</span><span className=\"frac-den\">{d}</span></span>;}\n// Shows a power the way it is written in a notebook (small raised exponent), never with \"^\".\n// \"x^12\" → x¹², \"2^(−3)\" → 2⁻³, \"x^2y^3\" → x²y³.\nfunction Mx({s}){\n  const out=[];let buf='',i=0,k=0;\n  const flush=()=>{if(buf){out.push(buf);buf='';}};\n  while(i<s.length){\n    if(s[i]!=='^'){buf+=s[i];i++;continue;}\n    let e='';i++;\n    if(s[i]==='('){let d=1;i++;while(i<s.length){if(s[i]==='(')d++;else if(s[i]===')'){d--;if(d===0){i++;break;}}e+=s[i];i++;}}\n    else if(/[0-9]/.test(s[i]||'')){while(i<s.length&&/[0-9]/.test(s[i])){e+=s[i];i++;}}\n    else{e=s[i]||'';i++;}\n    flush();out.push(<sup key={k++}>{e}</sup>);\n  }\n  flush();\n  return <span className=\"mx\">{out}</span>;\n}\n// Letters for the parametric exercises (not only x and y).\nconst VARS=['x','y','z','a','b','m','n','t'];\nfunction pickVars(){const v=pick(VARS);let w=pick(VARS);while(w===v)w=pick(VARS);return [v,w];}\n\n",
+      "count": 1
+    }
   ]
 }
