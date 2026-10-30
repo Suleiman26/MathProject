@@ -4,8 +4,8 @@
    and the admin opens in preview mode with sample numbers.
    See supabase/README.md. */
 const LIVE = {
-  supabaseUrl: "",
-  supabaseKey: "",
+  supabaseUrl: "https://uucqyjskkyrfhvbsmorx.supabase.co",
+  supabaseKey: "sb_publishable_iVOeHH932U6US3g7722FjQ_kIDz3puf",
 };
 
 /* Local testing on this computer (supabase start): Supabase's shared

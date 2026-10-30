@@ -94,8 +94,11 @@ function nearStandard(eq){
 function genEq(){
   const opts=[-5,-4,-3,-2,-1,1,2,3,4,5];
   const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+  const mode=Math.random(); // <0.2: c=0 (common factor), <0.4: b=0 (x² = number), else general
   for(let i=0;i<300;i++){
-    const r1=pick(opts),r2=pick(opts.filter(x=>x!==r1));
+    let r1=pick(opts),r2=pick(opts.filter(x=>x!==r1));
+    if(mode<0.2) r1=0;
+    else if(mode<0.4) r2=-Math.abs(r1), r1=Math.abs(r1);
     const B=-(r1+r2),C=r1*r2;
     const k=Math.floor(Math.random()*3);    // extra x² on both sides (0-2)
     const m=Math.floor(Math.random()*7)-3;  // extra x on both (-3..3)
@@ -487,24 +490,181 @@ function Phase3({a,b,c}){
   );
 }
 
+/* ── Special cases (Sulaiman's fix list) ─────────────────────────────────── */
+const fmtN=v=>(v<0?'−'+Math.abs(v):String(v));
+function SpecialCasesInfo(){
+  return(
+    <details className="qs-special">
+      <summary>מקרים מיוחדים: מתי לא צריך את נוסחת השורשים?</summary>
+      <div className="qs-cases">
+        <div className="qs-case"><b>c = 0 (אין מספר חופשי)</b><span>מוציאים x כגורם משותף, ומכפלה שווה 0 רק כשאחד הגורמים 0.</span><div className="qs-m" dir="ltr">x² − 5x = 0 → x(x − 5) = 0 → x = 0 , x = 5</div></div>
+        <div className="qs-case"><b>b = 0 (אין איבר עם x)</b><span>מבודדים את x² ומוציאים שורש. לא לשכוח: יש פתרון חיובי ושלילי. אם יוצא x² שלילי, אין פתרון.</span><div className="qs-m" dir="ltr">x² − 9 = 0 → x² = 9 → x = ±3</div></div>
+        <div className="qs-case"><b>b = 0 וגם c = 0</b><span>נשאר ax² = 0, ולכן הפתרון היחיד הוא x = 0.</span></div>
+        <div className="qs-case"><b>a = 0</b><span>זו בכלל לא משוואה ריבועית, אלא משוואה קווית.</span></div>
+        <div className="qs-case main"><b>אף מקדם לא 0</b><span>רק אז משתמשים בנוסחת השורשים.</span></div>
+      </div>
+    </details>
+  );
+}
+
+function PickCase({a,b,c,onPick}){
+  const[err,setErr]=useState('');
+  const right=c===0?'c0':b===0?'b0':'none';
+  const opts=[['c0','c = 0: גורם משותף'],['b0','b = 0: בידוד x²'],['none','אף אחד: נוסחת השורשים']];
+  return(
+    <div className="card">
+      <div className="card-title">שלב 3 — איזה מקרה זה?</div>
+      <div className="p2-eq" dir="ltr">a = {a} ,  b = {b} ,  c = {c}</div>
+      <div className="p2-hint">לפני שבוחרים דרך פתרון: האם אחד המקדמים b או c שווה 0?</div>
+      <div className="qs-pick">
+        {opts.map(([k,l])=><button key={k} className="btn-next qs-opt" onClick={()=>{if(k===right)onPick(k);else setErr(k==='none'?'בדקו שוב: אחד המקדמים כן שווה 0.':'בדקו שוב את המקדמים.')}}>{l}</button>)}
+      </div>
+      {err&&<div className="err-msg">{err}</div>}
+    </div>
+  );
+}
+
+function Done({text}){return <div className="qs-done">✅ {text}</div>}
+
+// c = 0: x(ax + b) = 0
+function SolveCommonFactor({a,b}){
+  const[v,setV]=useState({p:'',q:'',r:''});
+  const[step,setStep]=useState(1);
+  const[err,setErr]=useState('');
+  const root=-b/a;
+  function check1(){if(Number(v.p)===a&&Number(v.q)===b){setStep(2);setErr('')}else setErr('בדקו שוב: מה נשאר בסוגריים אחרי שמוציאים x?')}
+  function check2(){if(Number(v.r)===root){setStep(3);setErr('')}else setErr('בדקו שוב: מתי הגורם בסוגריים שווה 0?')}
+  return(
+    <div className="card">
+      <div className="card-title">שלב 4 — פתרון בגורם משותף</div>
+      <div className="p2-eq" dir="ltr">{fmtN(a)===('1')?'':fmtN(a)===('−1')?'−':fmtN(a)}x² {b<0?'−':'+'} {Math.abs(b)}x = 0</div>
+      <div className="p2-hint">1. מוציאים x כגורם משותף:</div>
+      <div className="coef-row" dir="ltr">
+        <span className="coef-label">x(</span>
+        <input className="coef-inp" value={v.p} placeholder="?" disabled={step>1} onChange={e=>{setV({...v,p:e.target.value});setErr('')}}/>
+        <span className="coef-label">x +</span>
+        <input className="coef-inp" value={v.q} placeholder="?" disabled={step>1} onChange={e=>{setV({...v,q:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check1()}/>
+        <span className="coef-label">) = 0</span>
+        {step===1&&<button className="btn-next" onClick={check1}>בדוק</button>}
+      </div>
+      {step>=2&&<>
+        <div className="p2-hint">2. מכפלה שווה 0 רק כשאחד הגורמים 0: <span dir="ltr" className="qs-ltr">x = 0</span> או שהסוגריים שווים 0.</div>
+        <div className="coef-row" dir="ltr">
+          <span className="coef-label">x₁ = 0 ,  x₂ =</span>
+          <input className="coef-inp" value={v.r} placeholder="?" disabled={step>2} onChange={e=>{setV({...v,r:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check2()}/>
+          {step===2&&<button className="btn-next" onClick={check2}>בדוק</button>}
+        </div>
+      </>}
+      {err&&<div className="err-msg">{err}</div>}
+      {step===3&&<Done text={`x = 0  או  x = ${root}`}/>}
+    </div>
+  );
+}
+
+// b = 0: ax² + c = 0 → x² = −c/a → x = ±√
+function SolveNoB({a,c}){
+  const[v,setV]=useState({s:'',r:''});
+  const[step,setStep]=useState(1);
+  const[err,setErr]=useState('');
+  const sq=-c/a, r=Math.sqrt(sq);
+  function check1(){if(Number(v.s)===sq){setStep(2);setErr('')}else setErr('בדקו שוב: מעבירים את c לצד השני ומחלקים ב-a.')}
+  function check2(){if(Number(v.r)===r){setStep(3);setErr('')}else setErr('בדקו שוב: איזה מספר בריבוע נותן '+sq+'?')}
+  return(
+    <div className="card">
+      <div className="card-title">שלב 4 — בידוד x²</div>
+      <div className="p2-eq" dir="ltr">{a===1?'':a===-1?'−':fmtN(a)}x² {c<0?'−':'+'} {Math.abs(c)} = 0</div>
+      <div className="p2-hint">1. מבודדים את x²:</div>
+      <div className="coef-row" dir="ltr">
+        <span className="coef-label">x² =</span>
+        <input className="coef-inp" value={v.s} placeholder="?" disabled={step>1} onChange={e=>{setV({...v,s:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check1()}/>
+        {step===1&&<button className="btn-next" onClick={check1}>בדוק</button>}
+      </div>
+      {step>=2&&<>
+        <div className="p2-hint">2. מוציאים שורש. יש שני פתרונות: חיובי ושלילי.</div>
+        <div className="coef-row" dir="ltr">
+          <span className="coef-label">x = ±</span>
+          <input className="coef-inp" value={v.r} placeholder="?" disabled={step>2} onChange={e=>{setV({...v,r:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check2()}/>
+          {step===2&&<button className="btn-next" onClick={check2}>בדוק</button>}
+        </div>
+      </>}
+      {err&&<div className="err-msg">{err}</div>}
+      {step===3&&<Done text={`x = ${r}  או  x = −${r}`}/>}
+    </div>
+  );
+}
+
+// No zero coefficient: the root formula as a template. The student places a, b, c; the computer calculates.
+function FormulaExample(){
+  return(
+    <details className="qs-example">
+      <summary>דוגמה פתורה: x² − 5x + 6 = 0</summary>
+      <ol>
+        <li>מקדמים: <span dir="ltr" className="qs-ltr">a = 1 , b = −5 , c = 6</span></li>
+        <li>הצבה בתבנית: <span dir="ltr" className="qs-ltr">x = ( −(−5) ± √( (−5)² − 4·(1)·(6) ) ) / ( 2·(1) )</span></li>
+        <li>הדיסקרימיננטה: <span dir="ltr" className="qs-ltr">Δ = 25 − 24 = 1 , √Δ = 1</span></li>
+        <li>שני הפתרונות: <span dir="ltr" className="qs-ltr">x₁ = (5 + 1) / 2 = 3 , x₂ = (5 − 1) / 2 = 2</span></li>
+      </ol>
+    </details>
+  );
+}
+function FormulaTemplate({a,b,c}){
+  const[v,setV]=useState({b1:'',b2:'',a1:'',c1:'',a2:''});
+  const[ok,setOk]=useState(false);
+  const[err,setErr]=useState('');
+  const[rev,setRev]=useState(0);
+  const steps=useMemo(()=>buildSteps(a,b,c).slice(1),[a,b,c]);
+  const want={b1:b,b2:b,a1:a,c1:c,a2:a};
+  function check(){
+    const bad=Object.keys(want).filter(k=>v[k]===''||Number(v[k])!==want[k]);
+    if(!bad.length){setOk(true);setErr('')}
+    else setErr((bad.length===1?'מקום אחד לא נכון':bad.length+' מקומות לא נכונים')+' (מסומן באדום). b נכנס במקומות של b, a במקומות של a, ו-c במקום של c.');
+  }
+  const box=k=><input key={k} className={'qs-slot'+(err&&v[k]!==''&&Number(v[k])!==want[k]?' bad':'')} value={v[k]} placeholder={k[0]} disabled={ok}
+    onChange={e=>{setV({...v,[k]:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check()}/>;
+  return(
+    <div className="card">
+      <div className="card-title">שלב 4 — נוסחת השורשים</div>
+      <FormulaExample/>
+      <div className="p2-hint">הציבו את המקדמים <span dir="ltr" className="qs-ltr">a = {a} , b = {b} , c = {c}</span> במקומות המתאימים. את החישוב המחשב יעשה.</div>
+      <div className="qs-template" dir="ltr">
+        <span className="qs-x">x =</span>
+        <span className="qs-frac">
+          <span className="qs-num">−({box('b1')}) ± √( ({box('b2')})² − 4·({box('a1')})·({box('c1')}) )</span>
+          <span className="qs-den">2·({box('a2')})</span>
+        </span>
+      </div>
+      {!ok&&<div style={{textAlign:'center',marginTop:12}}><button className="btn-next" onClick={check}>בדוק הצבה ✓</button></div>}
+      {err&&<div className="err-msg">{err}</div>}
+      {ok&&<>
+        <div className="steps-list" style={{marginTop:14}}>
+          {steps.slice(0,rev+1).map((st,i)=><StepItem key={i} step={st} last={i===rev}/>)}
+        </div>
+        {rev<steps.length-1&&<div style={{textAlign:'center'}}><button className="btn-rev" onClick={()=>setRev(r=>r+1)}>הצג שלב הבא →</button></div>}
+      </>}
+    </div>
+  );
+}
+
 /* ── App ──────────────────────────────────────────────────────────────────── */
 function App(){
   const[eqData,setEqData]=useState(()=>genEq());
   const[phase,setPhase]=useState(1);
   const[stdTerms,setStdTerms]=useState(null);
   const[coeffs,setCoeffs]=useState(null);
+  const[route,setRoute]=useState(null);
 
   function newEq(){
-    setEqData(genEq());setPhase(1);setStdTerms(null);setCoeffs(null);
+    setEqData(genEq());setPhase(1);setStdTerms(null);setCoeffs(null);setRoute(null);
   }
   function handleNext(terms){setStdTerms(terms);setPhase(2)}
   function handleCoeffs(a,b,c){setCoeffs({a,b,c});setPhase(3)}
 
-  const phaseLabels=['שלב 1: סידור','שלב 2: מקדמים','שלב 3: נוסחה'];
+  const phaseLabels=['שלב 1: סידור','שלב 2: מקדמים','שלב 3: איזה מקרה?','שלב 4: פתרון'];
   return(
     <div className="app">
       <h1>משוואות ריבועיות</h1>
       <p className="sub">כיתה ט׳</p>
+      <SpecialCasesInfo/>
       <div className="phases">
         {phaseLabels.map((l,i)=>(
           <div key={i} className={`ph${phase===i+1?' active':phase>i+1?' done':''}`}>{l}</div>
@@ -512,7 +672,10 @@ function App(){
       </div>
       {phase===1&&<Phase1 key={eqData.key} eqData={eqData} onNext={handleNext}/>}
       {phase===2&&<Phase2 stdTerms={stdTerms} onConfirm={handleCoeffs}/>}
-      {phase===3&&<Phase3 a={coeffs.a} b={coeffs.b} c={coeffs.c}/>}
+      {phase===3&&<PickCase a={coeffs.a} b={coeffs.b} c={coeffs.c} onPick={r=>{setRoute(r);setPhase(4)}}/>}
+      {phase===4&&route==='c0'&&<SolveCommonFactor a={coeffs.a} b={coeffs.b}/>}
+      {phase===4&&route==='b0'&&<SolveNoB a={coeffs.a} c={coeffs.c}/>}
+      {phase===4&&route==='none'&&<FormulaTemplate a={coeffs.a} b={coeffs.b} c={coeffs.c}/>}
       <div className="bottom" style={{marginTop:8}}>
         <button className="btn-new" onClick={newEq}>משוואה חדשה 🎲</button>
       </div>

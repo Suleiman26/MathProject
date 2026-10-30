@@ -36,28 +36,37 @@ def main(slug, why):
         print("no new changes")
         return
     a, b = base.splitlines(keepends=True), now.splitlines(keepends=True)
-    new = []
-    work = base
-    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes()[::-1]:
+    # changed regions, top to bottom; regions closer than 3 lines are merged
+    hunks = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
         if tag == "equal":
             continue
-        # grow context until the old text is unique in the text being patched
+        if hunks and i1 - hunks[-1][1] < 3:
+            h = hunks[-1]
+            hunks[-1] = [h[0], i2, h[2], j2]
+        else:
+            hunks.append([i1, i2, j1, j2])
+    new = []
+    work = base
+    prev_end = 0
+    for k, (i1, i2, j1, j2) in enumerate(hunks):
+        next_start = hunks[k + 1][0] if k + 1 < len(hunks) else len(a)
         lo, hi = i1, i2
+        # grow context (only into untouched lines) until the old text occurs once in the text as it is then
         while True:
             old = "".join(a[lo:hi])
             if old and work.count(old) == 1:
                 break
-            if lo > 0:
-                lo -= 1
-            if hi < len(a) and (not old or work.count(old) != 1):
+            if hi < next_start:
                 hi += 1
+            elif lo > prev_end:
+                lo -= 1
+            else:
+                sys.exit(f"could not make change near line {i1 + 1} unique; nothing written")
         new_txt = "".join(a[lo:i1]) + "".join(b[j1:j2]) + "".join(a[i2:hi])
+        work = work.replace(old, new_txt)
         new.append({"why": why, "old": old, "new": new_txt, "count": 1})
-    # replay exactly like verify-logic.py does: each old text must occur once
-    for pt in new:
-        if work.count(pt["old"]) != 1:
-            sys.exit("a patch is not unique when replayed; nothing written")
-        work = work.replace(pt["old"], pt["new"])
+        prev_end = hi
     if work != now:
         sys.exit("could not express the change as unique patches; nothing written")
     patches.setdefault(slug, []).extend(new)

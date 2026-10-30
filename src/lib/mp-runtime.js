@@ -382,6 +382,39 @@ export function initRuntime() {
     queued = true; requestAnimationFrame(fit);
   }
 
+  /* ── Finger dragging for mouse-only drags ─────────────────────────────── */
+  // Some modules move terms across "=" with mouse events only, so on a phone
+  // the finger just scrolled the page. On those pages, a finger on a draggable
+  // term is passed on as the same mouse drag. The exercise code is unchanged.
+  var MOUSE_DRAG_PAGES = { "equations-advanced": 1 };
+  var DRAGGABLE = "[title='גרור לצד השני']"; // the term chips (other chips use the browser's own drag)
+  var fingerDrag = null;
+  function sendMouse(type, target, t) {
+    target.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window, clientX: t.clientX, clientY: t.clientY, button: 0, buttons: type === "mouseup" ? 0 : 1 }));
+  }
+  doc.addEventListener("touchstart", function (e) {
+    if (!MOUSE_DRAG_PAGES[doc.documentElement.dataset.page] || e.touches.length !== 1) return;
+    var el = e.target.closest && e.target.closest(DRAGGABLE);
+    if (!el || !el.closest("#root")) return;
+    e.preventDefault(); // no page scroll, no extra emulated click
+    fingerDrag = { last: e.touches[0] };
+    sendMouse("mousedown", el, e.touches[0]);
+  }, { passive: false, capture: true });
+  doc.addEventListener("touchmove", function (e) {
+    if (!fingerDrag) return;
+    e.preventDefault();
+    fingerDrag.last = e.touches[0];
+    sendMouse("mousemove", doc, e.touches[0]);
+  }, { passive: false, capture: true });
+  function endFinger(e) {
+    if (!fingerDrag) return;
+    var t = (e.changedTouches && e.changedTouches[0]) || fingerDrag.last;
+    fingerDrag = null;
+    sendMouse("mouseup", doc, t);
+  }
+  doc.addEventListener("touchend", endFinger, { capture: true });
+  doc.addEventListener("touchcancel", endFinger, { capture: true });
+
   // tiny public API, e.g. for a future module: MP.sound("ok")
   // (MP.log lists the sounds played — handy for testing)
   window.MP = {

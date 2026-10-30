@@ -117,4 +117,55 @@ html[data-page="powers-roots"] .sq-chips span { padding: 4px 10px; border-radius
   html[data-page="powers-roots"] .be-b { font-size: 38px; }
   html[data-page="powers-roots"] .be-eq { font-size: 19px; }
 }
+
+/* ── Advanced equations (Sulaiman's fix list, 2026-10-30) ───────────────── */
+html[data-page="equations-advanced"] .ea-explain { text-align: start; line-height: 1.75; font-size: 14.5px; margin-bottom: 12px; }
+html[data-page="equations-advanced"] .ea-ex { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 10px 0 2px; padding: 10px; border-radius: 10px; background: var(--surface, #fff); font-size: 18px; font-weight: 700; direction: ltr; }
+html[data-page="equations-advanced"] .ea-arrow { font-size: 13px; font-weight: 700; color: var(--a-700, #3949ab); background: var(--a-50, #eef2ff); padding: 3px 8px; border-radius: 999px; }
+html[data-page="equations-advanced"] .ea-dom { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--a-200, #c5cae9); }
+html[data-page="equations-advanced"] .ltr-m { direction: ltr; unicode-bidi: isolate; display: inline-block; white-space: nowrap; font-weight: 600; }
+html[data-page="equations-advanced"] .sm-examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0 14px; }
+html[data-page="equations-advanced"] .sm-ex { background: var(--surface, #fff); border: 1px solid var(--a-200, #c5cae9); border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.7; }
+html[data-page="equations-advanced"] .sm-ex-t { font-weight: 800; color: var(--a-800, #283593); margin-bottom: 4px; }
+html[data-page="equations-advanced"] .sm-ex-q { text-align: center; font-size: 20px; font-weight: 800; padding: 6px; margin-bottom: 6px; border-radius: 8px; background: var(--a-50, #eef2ff); }
+html[data-page="equations-advanced"] .sm-ex ol { margin: 0; padding-inline-start: 20px; }
+html[data-page="equations-advanced"] .sm-ex li + li { margin-top: 4px; }
+html[data-page="equations-advanced"] .sm-ex li::marker { font-weight: 800; color: var(--a-600, #3f51b5); }
+html[data-page="equations-advanced"] .ab-row { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+html[data-page="equations-advanced"] .ab-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 20px; font-weight: 800; }
+@media (max-width: 640px) {
+  html[data-page="equations-advanced"] .sm-examples { grid-template-columns: minmax(0, 1fr); }
+  html[data-page="equations-advanced"] .ltr-m { white-space: normal; }
+}
+
+/* ── Quadratic equations (Sulaiman's fix list, 2026-10-30) ──────────────── */
+html[data-page="quadratic-solver"] .qs-special, html[data-page="quadratic-solver"] .qs-example { margin: 10px 0 14px; border: 1px solid var(--a-200, #bfdbfe); border-radius: 14px; background: var(--a-50, #eff6ff); text-align: start; }
+html[data-page="quadratic-solver"] .qs-special summary, html[data-page="quadratic-solver"] .qs-example summary { cursor: pointer; list-style: none; padding: 12px 14px; font-weight: 700; color: var(--a-800, #1e3a5f); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+html[data-page="quadratic-solver"] .qs-special summary::-webkit-details-marker, html[data-page="quadratic-solver"] .qs-example summary::-webkit-details-marker { display: none; }
+html[data-page="quadratic-solver"] .qs-special summary::after, html[data-page="quadratic-solver"] .qs-example summary::after { content: "פתיחה ▾"; font-size: 12.5px; font-weight: 600; color: var(--a-600, #2563eb); flex: none; }
+html[data-page="quadratic-solver"] details[open] > summary::after { content: "סגירה ▴"; }
+html[data-page="quadratic-solver"] .qs-cases { display: grid; gap: 8px; padding: 0 12px 12px; }
+html[data-page="quadratic-solver"] .qs-case { background: var(--surface, #fff); border-radius: 10px; padding: 10px 12px; display: grid; gap: 3px; font-size: 14px; line-height: 1.6; color: var(--ink-2, #334155); }
+html[data-page="quadratic-solver"] .qs-case b { color: var(--a-800, #1e3a5f); }
+html[data-page="quadratic-solver"] .qs-case.main { border: 1.5px solid var(--a-300, #93c5fd); }
+html[data-page="quadratic-solver"] .qs-m, html[data-page="quadratic-solver"] .qs-ltr { direction: ltr; unicode-bidi: isolate; font-weight: 700; color: var(--ink, #0f172a); }
+html[data-page="quadratic-solver"] .qs-m { margin-top: 4px; text-align: center; background: var(--a-50, #eff6ff); border-radius: 8px; padding: 5px 8px; }
+html[data-page="quadratic-solver"] .qs-example ol { margin: 0; padding: 0 30px 12px 14px; font-size: 14px; line-height: 1.9; }
+html[data-page="quadratic-solver"] .qs-ltr { display: inline-block; }
+html[data-page="quadratic-solver"] .qs-pick { display: grid; gap: 8px; max-width: 360px; margin: 12px auto 0; }
+html[data-page="quadratic-solver"] .qs-opt { width: 100%; }
+html[data-page="quadratic-solver"] .qs-done { margin-top: 14px; padding: 14px; border-radius: 12px; text-align: center; font-weight: 800; font-size: 18px; background: var(--ok-50, #f0fdf4); color: var(--ok-800, #166534); border: 1px solid var(--ok-200, #bbf7d0); direction: rtl; }
+html[data-page="quadratic-solver"] .qs-template { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0 4px; font-size: 20px; font-weight: 700; color: var(--a-900, #1e3a5f); flex-wrap: wrap; }
+html[data-page="quadratic-solver"] .qs-frac { display: inline-flex; flex-direction: column; align-items: center; }
+html[data-page="quadratic-solver"] .qs-num { padding: 0 4px 8px; border-bottom: 2.5px solid currentColor; white-space: nowrap; }
+html[data-page="quadratic-solver"] .qs-den { padding-top: 8px; }
+html[data-page="quadratic-solver"] .qs-slot { width: 46px; height: 40px; margin: 0 2px; padding: 0; text-align: center; font-size: 18px; font-weight: 700; border: 2px dashed var(--a-400, #60a5fa); border-radius: 9px; background: var(--surface, #fff); vertical-align: middle; }
+html[data-page="quadratic-solver"] .qs-slot:not(:placeholder-shown) { border-style: solid; }
+html[data-page="quadratic-solver"] .qs-slot.bad { border-color: var(--bad-500, #ef4444); background: var(--bad-50, #fef2f2); }
+html[data-page="quadratic-solver"] .qs-slot::placeholder { color: var(--a-300, #93c5fd); font-style: italic; }
+@media (max-width: 560px) {
+  html[data-page="quadratic-solver"] .qs-template { font-size: 14px; gap: 4px; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 4px; margin-inline: -6px; }
+  html[data-page="quadratic-solver"] .qs-x { flex: none; }
+  html[data-page="quadratic-solver"] .qs-slot { width: 34px; height: 34px; font-size: 15px; margin: 0 1px; border-radius: 8px; }
+}
 }

@@ -5,8 +5,10 @@ Hebrew (RTL) math practice site for middle school, grades 7–9. Next.js 16 app
 push to `main` (Sulaiman's Vercel team), so students see it at once.
 
 Partners: Sulaiman (math content) and Abed (design system, admin, infrastructure).
-Everything for this project lives on Sulaiman's accounts (Vercel team
-`math-project`, Supabase). Never create services for it on Abed's own accounts.
+Vercel and GitHub are on Sulaiman's accounts (Vercel team `math-project`).
+Supabase is the project's own account, managed by Abed (project "mathix",
+ref uucqyjskkyrfhvbsmorx, since 2026-10-30). Don't create other services
+for this project on Abed's personal accounts.
 
 ## Never without an explicit request
 - Don't change the math, the exercises or any Hebrew text a student sees.
@@ -28,14 +30,19 @@ Everything for this project lives on Sulaiman's accounts (Vercel team
 URLs: `/topics/<topic>`. Old `/<topic>.html` links redirect (next.config.ts).
 
 ## Admin and database
-- Not connected yet: `src/lib/config.js` is empty, so the admin shows labelled
-  sample data and no stats are sent. Connect with `supabase/README.md`.
+- Connected (2026-10-30): `src/lib/config.js` holds the public URL + publishable
+  key. Admin, answer stats, keypad switch and the fixes board (admin → תיקונים)
+  use the real database. Apply new migrations with `supabase db push` (this
+  folder is linked; login via `supabase login`, no keys needed).
+- New Supabase projects don't grant table access to the public roles by
+  default: every table the site reads needs an explicit `grant` in its migration.
 - Database changes go in a new file in `supabase/migrations/`. Every admin action
   is a database function that checks the PIN session. Never put a secret key in the site.
 - `src/lib/mp-runtime.js` sends anonymous answer stats when connected. It only
   watches the page; it never changes the exercise.
 - Local test copy: `supabase start` (Docker), ports 564xx. On localhost the app
-  uses it automatically (`?live=0` = preview mode).
+  uses it automatically. `?live=0` makes localhost use the REAL database (so
+  test answers become real stats); `?live=1` switches back.
 
 ## Display fixes vs logic
 Prefer CSS in `src/styles/topic-fixes.css` for anything visual. Only touch

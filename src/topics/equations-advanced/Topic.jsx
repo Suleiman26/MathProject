@@ -76,6 +76,24 @@ function makeLinearEq(level) {
     return { level:2, display:{type:'axPlusB_overD_eq_c',a,b,d,c},
       solution:x, lcmVal:d, lhsTerms, rhsTerms, lhsX:a, lhsC:b, rhsC:c*d };
   }
+  // level 3, second kind: (x+r)/(x+p) = s/(x+p) + b  →  ×(x+p)  →  x+r = bx+(s+bp)
+  // Half of these give x = −p, which is outside the domain, so the equation has no solution.
+  if (Math.random() < 0.6) {
+    const reject = Math.random() < 0.5;
+    for (let t=0; t<500; t++) {
+      const p=randNonZero(-5,5), r=rand(-5,5), b=pick([-3,-2,-1,2,3]);
+      if (r===p) continue;
+      let x, s;
+      if (reject) { x=-p; s=r-p; }
+      else { x=randNonZero(-8,8); if (x===-p) continue; s=x+r-b*(x+p); }
+      if (s===0||Math.abs(s)>20) continue;
+      const lhsX=1, lhsC=r, rhsX=b, rhsC=s+b*p;
+      const lhsTerms=[{coeff:lhsX,power:1}]; if(lhsC!==0) lhsTerms.push({coeff:lhsC,power:0});
+      const rhsTerms=[{coeff:rhsX,power:1}]; if(rhsC!==0) rhsTerms.push({coeff:rhsC,power:0});
+      return { level:3, display:{type:'xPlusR_over_xPlusP_eq_s_over_xPlusP_plus_b',r,s,b,p},
+        solution:x, rejected:reject, lcmVal:null, lhsTerms, rhsTerms, lhsX, lhsC, rhsX, rhsC };
+    }
+  }
   // level 3: a/(x+p) + b = c  →  ×(x+p)  →  bx+(a+bp) = cx+cp
   let a,b,c,p,x; let tries=0;
   while(true) {
@@ -294,6 +312,18 @@ function renderLinearEq(display) {
         <span style={{color:'#c62828'}}>=</span><span>{c}</span>
       </span>);
   }
+  if (type==='xPlusR_over_xPlusP_eq_s_over_xPlusP_plus_b') {
+    const {r,s}=display;
+    const denStr = p>=0?`x + ${p}`:`x − ${Math.abs(p)}`;
+    const numStr = r===0?'x':r>0?`x + ${r}`:`x − ${Math.abs(r)}`;
+    return (
+      <span style={{display:'inline-flex',alignItems:'center',gap:8,direction:'ltr',fontSize:22,fontWeight:'bold'}}>
+        <Frac num={numStr} den={denStr} big/>
+        <span style={{color:'#c62828'}}>=</span>
+        <Frac num={String(s)} den={denStr} big/>
+        <span style={{color:'#555'}}>{b>0?'+ '+b:'− '+Math.abs(b)}</span>
+      </span>);
+  }
   return null;
 }
 
@@ -381,6 +411,9 @@ function Section1() {
   const [ghost, setGhost] = useState(null);
   const [overSide, setOverSide] = useState(null);
   const [draggingInfo, setDraggingInfo] = useState(null);
+  const [domInp, setDomInp] = useState('');
+  const [domOk, setDomOk] = useState(false);
+  const [domFb, setDomFb] = useState('');
   const dragRef = useRef(null);
   const leftRef = useRef([]);
   const rightRef = useRef([]);
@@ -439,7 +472,7 @@ function Section1() {
 
   function reset(l) {
     const lv=l||level; const e=makeLinearEq(lv);
-    setEq(e); setPhase(0); setLcmInp('');
+    setEq(e); setPhase(0); setLcmInp(''); setDomInp(''); setDomOk(false); setDomFb('');
     setLhsExpr(''); setRhsExpr('');
     setLeft([]); setRight([]); setCanSolve(false); setSolInp(''); setFb('');
     dragRef.current=null; setGhost(null); setOverSide(null); setDraggingInfo(null);
@@ -488,11 +521,21 @@ function Section1() {
   }
 
   function checkSol() {
-    if(parseFloat(solInp)===eq.solution){ setPhase(99); setFb(''); }
+    if(parseFloat(solInp)===eq.solution){ setPhase(eq.level===3?3:99); setFb(''); }
     else setFb('✗ לא נכון — נסה שוב');
   }
 
+  function checkDomain() {
+    if(parseFloat(domInp.replace('−','-'))===-eq.display.p){ setDomOk(true); setDomFb(''); }
+    else setDomFb('✗ לא נכון. מה מאפס את המכנה?');
+  }
+  function answerInDomain(yes) {
+    if(yes===!eq.rejected){ setPhase(99); setFb(''); }
+    else setFb(eq.rejected?'✗ בדקו שוב: האם הפתרון מאפס את המכנה?':'✗ בדקו שוב: הפתרון לא מאפס את המכנה, אז הוא מתקבל.');
+  }
+
   const {display, level:lv} = eq;
+  const excluded = lv===3 ? -display.p : null;
 
   function MultDisplay() {
     if(lv===1){
@@ -521,6 +564,21 @@ function Section1() {
     }
     const {a,b,c,p}=display;
     const pStr=p>=0?`x+${p}`:`x-${Math.abs(p)}`;
+    if(display.type==='xPlusR_over_xPlusP_eq_s_over_xPlusP_plus_b'){
+      const {r,s}=display;
+      const numStr=r===0?'x':r>0?`x+${r}`:`x-${Math.abs(r)}`;
+      return (
+        <div className="eq-row" style={{fontSize:16,gap:8,direction:'ltr',flexWrap:'wrap',justifyContent:'center'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
+            <Frac num={numStr} den={pStr}/><span style={{color:'#aaa',fontSize:12}}>·({pStr})</span>
+          </span>
+          <span style={{color:'#c62828'}}>=</span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
+            <Frac num={String(s)} den={pStr}/><span style={{color:'#aaa',fontSize:12}}>·({pStr})</span>
+          </span>
+          <span style={{color:'#555'}}>{b>0?'+':'−'}</span><span style={{color:'#555'}}>{Math.abs(b)}·({pStr})</span>
+        </div>);
+    }
     return (
       <div className="eq-row" style={{fontSize:16,gap:8,direction:'ltr',flexWrap:'wrap',justifyContent:'center'}}>
         <span style={{display:'inline-flex',alignItems:'center',gap:3}}>
@@ -538,19 +596,42 @@ function Section1() {
   return (
     <div className="section-wrapper">
       <div className="section-title">תת-פרק 1 — משוואה לינארית עם נעלם במכנה</div>
+      <div className="info-box ea-explain">
+        <b>למה מכנה משותף?</b> מחפשים מספר (או ביטוי) שאם נכפול בו <b>את כל המשוואה</b>, כל המכנים יצטמצמו, ונקבל משוואה רגילה בלי שברים.
+        <div className="ea-ex" dir="ltr"><Frac num="x" den="3"/><span>+ 2 = 5</span><span className="ea-arrow">⟶ ·3 ⟶</span><span>x + 6 = 15</span></div>
+        {lv===3&&<div className="ea-dom"><b>נעלם במכנה:</b> אסור לחלק ב-0. לכן לפני שפותרים, מוצאים איזה x מאפס את המכנה. כל השאר הוא <b>תחום ההגדרה</b>. אם בסוף יוצא בדיוק הערך האסור, הפתרון <b>נפסל</b>.</div>}
+      </div>
       <div className="difficulty-row">
+        {[[1,'שבר פשוט'],[2,'ביטוי במונה'],[3,'נעלם במכנה']].map(([k,l])=>(
+          <button key={k} className={`diff-btn${level===k?' active':''}`} onClick={()=>{setLevel(k);reset(k);}}>{l}</button>))}
         <button className="btn btn-new" style={{marginRight:'auto'}} onClick={()=>reset()}>משוואה חדשה ↺</button>
       </div>
 
       <div className="eq-card">
         <div className="phase-title">המשוואה:</div>
         <div className="eq-row">{renderLinearEq(display)}</div>
-        {lv===3&&<div style={{textAlign:'center',fontSize:13,color:'#888',marginTop:4}}>תנאי: x ≠ {-display.p}</div>}
+        {lv===3&&domOk&&<div style={{textAlign:'center',fontSize:14,color:'#3949ab',fontWeight:600,marginTop:6}}>תחום הגדרה: <bdi dir="ltr">x ≠ {excluded}</bdi></div>}
       </div>
 
+      {/* שלב 0 — תחום הגדרה (נעלם במכנה) */}
+      {lv===3&&(
+        <div className="eq-card" style={{opacity:domOk?0.5:1,pointerEvents:domOk?'none':'auto'}}>
+          <div className="phase-title">שלב 1 — תחום הגדרה: איזה x אסור?</div>
+          <div style={{fontSize:14,color:'#555',marginBottom:8}}>המכנה לא יכול להיות 0. מצאו את ה-x שמאפס אותו.</div>
+          <div className="input-row">
+            <label>x ≠</label>
+            <input className="math-input" style={{width:72}} value={domInp}
+              onChange={e=>setDomInp(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&!domOk&&checkDomain()}
+              disabled={domOk}/>
+            {!domOk&&<button className="btn btn-primary" onClick={checkDomain}>✓ אשר</button>}
+          </div>
+          {domFb&&!domOk&&<div className="feedback-err" style={{marginTop:6}}>{domFb}</div>}
+        </div>)}
+
       {/* שלב 1 — מ״מ */}
-      <div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
-        <div className="phase-title">שלב 1 — מהו המכנה המשותף?</div>
+      {(lv!==3||domOk)&&<div className="eq-card" style={{opacity:phase>0?0.5:1,pointerEvents:phase>0?'none':'auto'}}>
+        <div className="phase-title">{lv===3?'שלב 2':'שלב 1'} — מהו המכנה המשותף?</div>
         {lv===3&&<div className="info-box" style={{fontSize:13,marginBottom:8}}>הביטוי מכיל x</div>}
         <div className="input-row">
           <label>מ״מ =</label>
@@ -561,12 +642,12 @@ function Section1() {
           {phase===0&&<button className="btn btn-primary" onClick={checkLCD}>✓ אשר</button>}
         </div>
         {fb&&phase===0&&<div className="feedback-err" style={{marginTop:6}}>{fb}</div>}
-      </div>
+      </div>}
 
       {/* שלב 2 — כפל + כתיבת אגפים */}
       {phase>=1&&(
         <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
-          <div className="phase-title">שלב 2 — כפל כל איבר במ״מ:</div>
+          <div className="phase-title">{lv===3?'שלב 3':'שלב 2'} — כפל כל איבר במ״מ:</div>
           <MultDisplay/>
           <div style={{height:14}}/>
           <div className="phase-title">כתוב את שני אגפי המשוואה לאחר הפישוט:</div>
@@ -605,7 +686,7 @@ function Section1() {
       {/* שלב 3 — גרירה */}
       {phase>=2&&(
         <div className="eq-card">
-          <div className="phase-title">שלב 3 — פתור בהעברת אגפים</div>
+          <div className="phase-title">{lv===3?'שלב 4':'שלב 3'} — פתור בהעברת אגפים</div>
           <div className="info-box" style={{fontSize:13,marginBottom:10}}>
             גרור כל איבר לצד השני של המשוואה — הסימן יתהפך אוטומטית
           </div>
@@ -657,8 +738,18 @@ function Section1() {
           {fb&&phase===2&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
         </div>)}
 
+      {phase===3&&(
+        <div className="eq-card">
+          <div className="phase-title">שלב 5 — בדיקה: האם <bdi dir="ltr">x = {eq.solution}</bdi> בתחום ההגדרה (<bdi dir="ltr">x ≠ {excluded}</bdi>)?</div>
+          <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginTop:6}}>
+            <button className="btn btn-success" onClick={()=>answerInDomain(true)}>כן, הפתרון מתקבל</button>
+            <button className="btn btn-primary" onClick={()=>answerInDomain(false)}>לא, הפתרון נפסל</button>
+          </div>
+          {fb&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
       {phase===99&&(
-        <><div className="success-banner">✅ נכון! x = {eq.solution}</div>
+        <><div className="success-banner">{eq.rejected?<>✅ נכון! <bdi dir="ltr">x = {eq.solution}</bdi> מאפס את המכנה, ולכן הוא נפסל: <b>למשוואה אין פתרון</b>.</>:<>✅ נכון! <bdi dir="ltr">x = {eq.solution}</bdi></>}</div>
           <div style={{textAlign:'center',marginTop:14}}>
             <button className="btn btn-new" onClick={()=>reset()}>משוואה חדשה ↺</button>
           </div>
@@ -1141,8 +1232,10 @@ const FORMULA_NAMES = { sq_plus:'(a+b)²', sq_minus:'(a−b)²', diff_sq:'(a+b)(
 function makeFactoring(level) {
   const types = ['sq_plus','sq_minus','diff_sq'];
   const type = pick(types);
-  const n = level>=2 ? pick([1,1,2]) : 1;
-  const b = level>=3 ? pick([3,4,5,6]) : pick([2,3,4,5]);
+  const n = level>=3 ? pick([2,3]) : level>=2 ? pick([1,1,2]) : 1;
+  let b;
+  // with a coefficient on x, keep n and b coprime: 4x²+16x+16 would really be 4(x+2)², a common-factor question
+  do { b = level>=3 ? pick([3,4,5,6]) : pick([2,3,4,5]); } while (gcd(n,b)!==1);
   let expr;
   if(type==='sq_plus')  expr={x2:n*n, x1:2*n*b,  x0:b*b};
   else if(type==='sq_minus') expr={x2:n*n, x1:-2*n*b, x0:b*b};
@@ -1230,16 +1323,63 @@ function checkFactoredText(raw, type, n, b) {
   return s===`(${a}+${b})(${a}-${b})`||s===`(${a}-${b})(${a}+${b})`;
 }
 
-// ══ Sub-section א ─ פירוק לגורמים (ללא רמות) ═
-function SubSection3A() {
-  const [ex, setEx] = useState(()=>makeFactoring(pick([1,2])));
+// ══ Worked examples: expansion and factoring, step by step ═
+function SMExamples() {
+  return (
+    <div className="sm-examples">
+      <div className="sm-ex">
+        <div className="sm-ex-t">דוגמה לפיתוח</div>
+        <div className="sm-ex-q" dir="ltr">(x + 3)²</div>
+        <ol>
+          <li>זיהוי הנוסחה: <span className="ltr-m">(a + b)² = a² + 2ab + b²</span></li>
+          <li>זיהוי a ו-b: <span className="ltr-m">a = x , b = 3</span></li>
+          <li>הצבה בנוסחה: <span className="ltr-m">x² + 2·x·3 + 3² = <b>x² + 6x + 9</b></span></li>
+        </ol>
+      </div>
+      <div className="sm-ex">
+        <div className="sm-ex-t">דוגמה לפירוק</div>
+        <div className="sm-ex-q" dir="ltr">x² − 10x + 25</div>
+        <ol>
+          <li>זיהוי הנוסחה: שני ריבועים ואיבר אמצעי עם מינוס, כלומר <span className="ltr-m">a² − 2ab + b²</span></li>
+          <li>זיהוי a ו-b: <span className="ltr-m">a = x</span> (כי <span className="ltr-m">x² = a²</span>), <span className="ltr-m">b = 5</span> (כי <span className="ltr-m">25 = 5²</span>). בדיקה: <span className="ltr-m">2·x·5 = 10x ✓</span></li>
+          <li>פירוק: <span className="ltr-m"><b>(x − 5)²</b></span></li>
+        </ol>
+      </div>
+    </div>);
+}
+
+// ══ Mixed practice: factoring and expansion, in random order ═
+function SubSection3Mix({ level }) {
+  const [kind, setKind] = useState(()=>pick(['a','b']));
+  const [n, setN] = useState(0);
+  const next = ()=>{ setKind(pick(['a','b'])); setN(v=>v+1); };
+  return kind==='a'
+    ? <SubSection3A key={'a'+n} level={level} onNext={next}/>
+    : <SubSection3B key={'b'+n} level={level} onNext={next}/>;
+}
+
+// ══ Sub-section א ─ פירוק לגורמים ═
+// Steps: 1. which formula  2. what are a and b  3. factor
+function normA(v) { return (v||'').replace(/\s/g,'').replace(/·|\*/g,'').toLowerCase(); }
+function SubSection3A({ level, onNext }) {
+  const lvPick = ()=>level||pick([1,2]);
+  const [ex, setEx] = useState(()=>makeFactoring(lvPick()));
   const [phase, setPhase] = useState(0);
   const [chosen, setChosen] = useState(null);
   const [wrongPick, setWrongPick] = useState(null);
   const [formInp, setFormInp] = useState('');
+  const [aInp, setAInp] = useState('');
+  const [bInp, setBInp] = useState('');
+  const [abOk, setAbOk] = useState(false);
   const [fb, setFb] = useState('');
 
-  function reset() { setEx(makeFactoring(pick([1,2]))); setPhase(0); setChosen(null); setWrongPick(null); setFormInp(''); setFb(''); }
+  function reset() { if(onNext) return onNext(); setEx(makeFactoring(lvPick())); setPhase(0); setChosen(null); setWrongPick(null); setFormInp(''); setAInp(''); setBInp(''); setAbOk(false); setFb(''); }
+  function checkAB() {
+    const aOk = normA(aInp)===(ex.n===1?'x':`${ex.n}x`);
+    const bOk = parseInt(bInp)===ex.b;
+    if(aOk&&bOk){ setAbOk(true); setFb(''); }
+    else setFb(!aOk?'✗ a לא נכון: מה בריבוע נותן את האיבר עם x²?':'✗ b לא נכון: מה בריבוע נותן את המספר?');
+  }
 
   function pickOption(t) {
     if(t===ex.type){
@@ -1251,7 +1391,7 @@ function SubSection3A() {
 
   function checkForm() {
     if(checkFactoredText(formInp, ex.type, ex.n, ex.b)){ setPhase(2); setFb(''); }
-    else setFb('✗ לא נכון. השתמש ב-^ לחזקה: (x+3)^2 או (x+3)(x-3)');
+    else setFb('✗ לא נכון. כתבו למשל (x+3)² או (x+3)(x−3)');
   }
 
   const expStr = expandedStr(ex.expr.x2, ex.expr.x1, ex.expr.x0);
@@ -1283,8 +1423,19 @@ function SubSection3A() {
       </div>
 
       {phase>=1&&(
+        <div className="eq-card" style={{opacity:abOk?0.5:1,pointerEvents:abOk?'none':'auto'}}>
+          <div className="phase-title">שלב 2 — מה a ומה b?</div>
+          <div className="ab-row" dir="ltr">
+            <label>a =<input className="math-input" style={{width:80}} value={aInp} onChange={e=>setAInp(e.target.value)} disabled={abOk}/></label>
+            <label>b =<input className="math-input" style={{width:80}} value={bInp} onChange={e=>setBInp(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!abOk&&checkAB()} disabled={abOk}/></label>
+            {!abOk&&<button className="btn btn-primary" onClick={checkAB}>✓ אשר</button>}
+          </div>
+          {fb&&phase===1&&!abOk&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+        </div>)}
+
+      {phase>=1&&abOk&&(
         <div className="eq-card" style={{opacity:phase>1?0.5:1,pointerEvents:phase>1?'none':'auto'}}>
-          <div className="phase-title">שלב 2 — פרק לגורמים:</div>
+          <div className="phase-title">שלב 3 — פרק לגורמים:</div>
           <div style={{display:'flex',alignItems:'center',gap:10,justifyContent:'center',direction:'ltr',marginTop:10}}>
             <input style={{width:240,padding:'10px 14px',border:'2.5px solid #9fa8da',borderRadius:10,
               fontSize:18,fontWeight:'bold',textAlign:'center',outline:'none',direction:'ltr',
@@ -1294,7 +1445,7 @@ function SubSection3A() {
               disabled={phase>1}/>
             {phase===1&&<button className="btn btn-success" onClick={checkForm}>✓ בדוק</button>}
           </div>
-          {fb&&phase===1&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
+          {fb&&phase===1&&abOk&&<div className="feedback-err" style={{marginTop:8,textAlign:'center'}}>{fb}</div>}
         </div>)}
 
       {phase===2&&(<><div className="success-banner">✅ מצוין! {renderFactoredForm(ex.type,ex.n,ex.b)}</div>
@@ -1302,16 +1453,17 @@ function SubSection3A() {
     </div>);
 }
 
-// ══ Sub-section ב ─ פיתוח (ללא רמות) ════════
-function SubSection3B() {
-  const [ex, setEx] = useState(()=>makeExpansion(pick([1,2])));
+// ══ Sub-section ב ─ פיתוח ════════
+function SubSection3B({ level, onNext }) {
+  const lvPick = ()=>level||pick([1,2]);
+  const [ex, setEx] = useState(()=>makeExpansion(lvPick()));
   const [phase, setPhase] = useState(0);
   const [chosen, setChosen] = useState(null);
   const [wrongPick, setWrongPick] = useState(null);
   const [exprInp, setExprInp] = useState('');
   const [fb, setFb] = useState('');
 
-  function reset() { setEx(makeExpansion(pick([1,2]))); setPhase(0); setChosen(null); setWrongPick(null); setExprInp(''); setFb(''); }
+  function reset() { if(onNext) return onNext(); setEx(makeExpansion(lvPick())); setPhase(0); setChosen(null); setWrongPick(null); setExprInp(''); setFb(''); }
 
   function pickFormula(f) {
     if(f===ex.type){ setChosen(f); setWrongPick(null); setPhase(1); setFb('✓ נכון!'); setTimeout(()=>setFb(''),900); }
@@ -1922,18 +2074,21 @@ function Section3() {
   const [sub, setSub] = useState('alef');
   const [level, setLevel] = useState(1);
   const showLevels = sub==='gimel'||sub==='dalet';
+  const showDiff = sub==='alef'||sub==='bet'||sub==='mix';
 
   const subTabs = [
     { k:'alef',  label:'א — פירוק' },
     { k:'bet',   label:'ב — פיתוח' },
-    { k:'gimel', label:'ג — פתרון עם פירוק' },
-    { k:'dalet', label:'ד — פתרון עם פיתוח' }
+    { k:'mix',   label:'ג — מעורב' },
+    { k:'gimel', label:'ד — פתרון עם פירוק' },
+    { k:'dalet', label:'ה — פתרון עם פיתוח' }
   ];
 
   return (
     <div className="section-wrapper">
       <div className="section-title">תת-פרק 3 — נוסחאות כפל מקוצר</div>
       <FormulasRef/>
+      {showDiff&&<SMExamples/>}
       <div className="sub-tabs">
         {subTabs.map(t=>(
           <button key={t.k} className={`sub-tab${sub===t.k?' active':''}`}
@@ -1944,8 +2099,14 @@ function Section3() {
           <button className={`diff-btn${level===1?' active':''}`} onClick={()=>setLevel(1)}>לינארית</button>
           <button className={`diff-btn${level===2?' active':''}`} onClick={()=>setLevel(2)}>ריבועית</button>
         </div>)}
-      {sub==='alef'  && <SubSection3A key="a"/>}
-      {sub==='bet'   && <SubSection3B key="b"/>}
+      {showDiff&&(
+        <div className="difficulty-row">
+          {[[1,'קל'],[2,'בינוני'],[3,'קשה']].map(([k,l])=>(
+            <button key={k} className={`diff-btn${level===k?' active':''}`} onClick={()=>setLevel(k)}>{l}</button>))}
+        </div>)}
+      {sub==='alef'  && <SubSection3A key={'a'+level} level={level}/>}
+      {sub==='bet'   && <SubSection3B key={'b'+level} level={level}/>}
+      {sub==='mix'   && <SubSection3Mix key={'m'+level} level={level}/>}
       {sub==='gimel' && <SubSection3G key={`g-${level}`} level={level}/>}
       {sub==='dalet' && <SubSection3E key={`e-${level}`} level={level}/>}
     </div>);
@@ -3013,8 +3174,7 @@ function App() {
     { k:1, label:'1 — לינארית עם מכנה' },
     { k:2, label:'2 — ריבועית עם מכנה' },
     { k:3, label:'3 — כפל מקוצר' },
-    { k:4, label:'4 — גורם משותף' },
-    { k:5, label:'5 — הכל יחד' },
+    { k:5, label:'4 — הכל יחד' },   // 'common factor' moved to the quadratic equations topic (c = 0)
   ];
   return (
     <div>
