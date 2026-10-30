@@ -166,7 +166,8 @@ html[data-page="quadratic-solver"] .qs-slot::placeholder { color: var(--a-300, #
 @media (max-width: 560px) {
   html[data-page="quadratic-solver"] .qs-template { font-size: 14px; gap: 4px; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 4px; margin-inline: -6px; }
   html[data-page="quadratic-solver"] .qs-x { flex: none; }
-  html[data-page="quadratic-solver"] .qs-slot { width: 34px; height: 34px; font-size: 15px; margin: 0 1px; border-radius: 8px; }
+  html[data-page="quadratic-solver"] .qs-slot { width: 31px; height: 32px; font-size: 14px; margin: 0 1px; border-radius: 7px; }
+  html[data-page="quadratic-solver"] .qs-template { font-size: 13px; gap: 3px; }
 }
 
 /* ── Inequalities (Sulaiman's fix list, 2026-10-30): solve by writing operations ── */
@@ -197,5 +198,45 @@ html[data-page="inequalities"] .iq-sols span:not(.iq-and) { direction: ltr; unic
 html[data-page="inequalities"] .iq-and { font-weight: 700; color: var(--ink-2, #44403c); }
 @media (max-width: 720px) {
   html[data-page="inequalities"] .iq-pair { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── Quadratic function (Sulaiman's fix list, 2026-10-30) ───────────────── */
+html[data-page="parabola-practice"] .pp-q { margin-top: 12px; padding: 14px; border-radius: 14px; background: var(--surface, #fff); border: 1.5px solid var(--a-200, #c7d2fe); }
+html[data-page="parabola-practice"] .pp-q-t { font-weight: 800; font-size: 17px; color: var(--a-900, #1a237e); text-align: center; margin-bottom: 10px; }
+html[data-page="parabola-practice"] .pp-q-b { display: flex; gap: 10px; justify-content: center; }
+html[data-page="parabola-practice"] .pp-q-b .btn { min-width: 96px; }
+html[data-page="parabola-practice"] .pp-sum { margin-top: 14px; padding: 16px; border-radius: 16px; background: var(--a-50, #eef2ff); border: 1px solid var(--a-200, #c7d2fe); display: grid; gap: 10px; }
+html[data-page="parabola-practice"] .pp-sum h3 { margin: 0; color: var(--a-900, #1a237e); }
+html[data-page="parabola-practice"] .pp-sum-r { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start; line-height: 1.65; font-size: 14.5px; }
+html[data-page="parabola-practice"] .pp-sum-r b { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--a-600, #3949ab); color: #fff; font-size: 18px; font-style: italic; }
+html[data-page="parabola-practice"] .pp-sum .btn { justify-self: start; }
+html[data-page="parabola-practice"] .pp-ex { display: grid; gap: 4px; }
+html[data-page="parabola-practice"] .pp-ex-box { margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: var(--surface, #fff); display: grid; gap: 3px; }
+html[data-page="parabola-practice"] bdi { unicode-bidi: isolate; white-space: nowrap; }
+html[data-page="parabola-practice"] .pp-template { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0; font-size: 18px; font-weight: 700; color: var(--a-900, #1a237e); overflow-x: auto; padding-bottom: 4px; }
+html[data-page="parabola-practice"] .pp-x { flex: none; }
+html[data-page="parabola-practice"] .pp-frac { display: inline-flex; flex-direction: column; align-items: center; }
+html[data-page="parabola-practice"] .pp-num { padding: 0 4px 8px; border-bottom: 2.5px solid currentColor; white-space: nowrap; }
+html[data-page="parabola-practice"] .pp-den { padding-top: 8px; }
+html[data-page="parabola-practice"] .pp-slot { width: 42px; height: 38px; margin: 0 2px; padding: 0; text-align: center; font-size: 17px; font-weight: 700; border: 2px dashed var(--a-400, #7986cb); border-radius: 9px; background: var(--surface, #fff); vertical-align: middle; }
+html[data-page="parabola-practice"] .pp-slot:not(:placeholder-shown) { border-style: solid; }
+html[data-page="parabola-practice"] .pp-slot.bad { border-color: var(--bad-500, #ef4444); background: var(--bad-50, #fef2f2); }
+html[data-page="parabola-practice"] .pp-slot::placeholder { color: var(--a-300, #9fa8da); font-style: italic; }
+html[data-page="parabola-practice"] .pp-calc { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--ok-50, #f0fdf4); border: 1px solid var(--ok-200, #bbf7d0); display: grid; gap: 4px; font-size: 16px; text-align: left; }
+html[data-page="parabola-practice"] .pp-calc b { color: var(--ok-800, #166534); }
+html[data-page="parabola-practice"] .pp-calc-he { text-align: right; }
+html[data-page="parabola-practice"] .pp-calc .btn { justify-self: center; }
+html[data-page="parabola-practice"] .pp-mon-hint { font-size: 14px; color: var(--ink-2, #44403c); margin: 6px 0 10px; line-height: 1.6; }
+html[data-page="parabola-practice"] .pp-range { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, #f7f7f5); }
+html[data-page="parabola-practice"] .pp-range-l { font-weight: 700; color: var(--a-900, #1a237e); flex: 0 0 88px; }
+html[data-page="parabola-practice"] .pp-range-m { display: inline-flex; align-items: center; gap: 8px; }
+html[data-page="parabola-practice"] .pp-var { font-size: 20px; font-weight: 800; font-style: italic; }
+html[data-page="parabola-practice"] .pp-seg { display: inline-flex; padding: 3px; border-radius: 11px; background: var(--surface-3, #ecebe6); }
+html[data-page="parabola-practice"] .pp-seg button { width: 42px; height: 36px; border: 0; border-radius: 8px; background: transparent; font-size: 20px; font-weight: 800; color: var(--ink-2, #44403c); padding: 0; cursor: pointer; box-shadow: none; }
+html[data-page="parabola-practice"] .pp-seg button.on { background: var(--surface, #fff); color: var(--a-700, #303f9f); box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
+html[data-page="parabola-practice"] .pp-rv { width: 64px; height: 40px; text-align: center; font-size: 18px; font-weight: 700; border-radius: 10px; }
+@media (max-width: 560px) {
+  html[data-page="parabola-practice"] .pp-template { font-size: 13px; gap: 3px; justify-content: flex-start; margin-inline: -4px; }
+  html[data-page="parabola-practice"] .pp-slot { width: 30px; height: 32px; font-size: 14px; margin: 0 1px; border-radius: 7px; }
 }
 }

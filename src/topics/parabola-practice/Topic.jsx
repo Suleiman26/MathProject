@@ -320,13 +320,20 @@ function Graph({
 }
 
 // ── Section 1 ─────────────────────────────────────────────────────────────────
+const near1 = (v, t) => Math.abs(v - t) < 0.05;
 const tasks1 = [
-  { text: 'שנה את a ל-2 וצפה מה קורה לפרבולה — האם היא נעשית צרה יותר או רחבה יותר?', check: (a,b,c) => a === 2, hint: 'הזז את הסליידר של a עד שיהיה 2' },
-  { text: 'שנה את a ל-(-1) — מה קורה לכיוון הפתיחה?', check: (a,b,c) => a === -1, hint: 'הזז את הסליידר של a ל-(-1)' },
-  { text: 'החזר את a ל-1, ושנה את c ל-3 — מה השתנה בגרף?', check: (a,b,c) => a === 1 && c === 3, hint: 'a=1, c=3' },
-  { text: 'שנה את b ל-2 — לאן עבר הקודקוד?', check: (a,b,c) => b === 2, hint: 'הזז את b ל-2' },
-  { text: 'שנה את b ל-(-4) — שים לב לציר הסימטריה', check: (a,b,c) => b === -4, hint: 'הזז את b ל-(-4)' },
-  { text: 'הגדר a=2, b=-4, c=1 — מצא את נקודת הקודקוד מהגרף', check: (a,b,c) => a === 2 && b === -4 && c === 1, hint: 'a=2, b=-4, c=1' },
+  { text: 'שנה את a ל-2 וצפה מה קורה לפרבולה — האם היא נעשית צרה יותר או רחבה יותר?', check: (a,b,c) => near1(a,2), hint: 'הזז את הסליידר של a עד שיהיה 2',
+    q: 'הפרבולה נעשתה צרה יותר?', yes: true, why: 'ככל ש-|a| גדול יותר, הענפים עולים מהר יותר והפרבולה צרה יותר.' },
+  { text: 'שנה את a ל-(-1) — מה קורה לכיוון הפתיחה?', check: (a,b,c) => near1(a,-1), hint: 'הזז את הסליידר של a ל-(-1)',
+    q: 'הפרבולה עדיין פתוחה כלפי מעלה?', yes: false, why: 'כש-a שלילי הפרבולה פתוחה כלפי מטה (∩). הסימן של a קובע את כיוון הפתיחה.' },
+  { text: 'החזר את a ל-1, ושנה את c ל-3 — מה השתנה בגרף?', check: (a,b,c) => near1(a,1) && near1(c,3), hint: 'a=1, c=3',
+    q: 'הצורה של הפרבולה השתנתה?', yes: false, why: 'c לא משנה את הצורה. הוא רק מזיז את הפרבולה למעלה או למטה, ו-c היא נקודת החיתוך עם ציר y.' },
+  { text: 'שנה את b ל-2 — לאן עבר הקודקוד?', check: (a,b,c) => near1(b,2), hint: 'הזז את b ל-2',
+    q: 'הקודקוד נשאר על ציר y?', yes: false, why: 'b מזיז את הקודקוד הצידה: x של הקודקוד הוא ‎−b/2a‎.' },
+  { text: 'שנה את b ל-(-4) — שים לב לציר הסימטריה', check: (a,b,c) => near1(b,-4), hint: 'הזז את b ל-(-4)',
+    q: 'ציר הסימטריה עבר לצד השני של ציר y?', yes: true, why: 'כשהסימן של b מתהפך, ‎−b/2a‎ מחליף סימן, והקודקוד עובר לצד השני.' },
+  { text: 'הגדר a=2, b=-4, c=1 — מצא את נקודת הקודקוד מהגרף', check: (a,b,c) => near1(a,2) && near1(b,-4) && near1(c,1), hint: 'a=2, b=-4, c=1',
+    q: 'הקודקוד הוא הנקודה (1, −1)?', yes: true, why: 'x = −(−4) / (2·2) = 1, ו-y = 2·1² − 4·1 + 1 = −1.' },
 ];
 
 function Section1() {
@@ -335,69 +342,85 @@ function Section1() {
   const [c, setC] = useState(0);
   const [taskIdx, setTaskIdx] = useState(0);
   const [confirmed, setConfirmed] = useState(false);
+  const [answer, setAnswer] = useState(null); // null | 'ok' | 'err'
+  const [finished, setFinished] = useState(false);
   const task = tasks1[taskIdx];
   const vx = -b / (2 * a);
   const vy = evalY(a, b, c, vx);
+  const r1 = v => Math.round(v * 10) / 10;
+  const sgn = v => (v >= 0 ? '+ ' + r1(v) : '− ' + r1(Math.abs(v)));
 
   const handleA = (v) => {
     const val = parseFloat(v);
-    setA(val === 0 ? 0.5 : val);
-    setConfirmed(false);
+    setA(Math.abs(val) < 0.05 ? 0.1 : val);
   };
 
   useEffect(() => {
-    if (confirmed) return;
-    if (task && task.check(a, b, c)) {
-      setConfirmed(true);
-    }
+    if (confirmed || finished) return;
+    if (task && task.check(a, b, c)) setConfirmed(true);
   }, [a, b, c, taskIdx]);
 
+  const reply = (yes) => setAnswer(yes === task.yes ? 'ok' : 'err');
   const next = () => {
-    if (taskIdx < tasks1.length - 1) { setTaskIdx(t => t + 1); setConfirmed(false); }
+    setAnswer(null); setConfirmed(false);
+    if (taskIdx < tasks1.length - 1) setTaskIdx(t => t + 1); else setFinished(true);
   };
 
   return (
     <div className="section">
       <div className="card">
         <div className="section-title">1 — השפעת המקדמים על הגרף</div>
-        <div className="formula">y = {a}x² {b >= 0 ? '+' : ''}{b}x {c >= 0 ? '+' : ''}{c}</div>
-        <div style={{marginBottom: 8, color: '#555', fontSize: 14}}>קודקוד: ({vx % 1 === 0 ? vx : vx.toFixed(2)}, {vy % 1 === 0 ? vy : vy.toFixed(2)})</div>
+        <div className="formula" dir="ltr">y = {r1(a)}x² {sgn(b)}x {sgn(c)}</div>
+        <div style={{marginBottom: 8, color: '#555', fontSize: 14}}>קודקוד: <bdi dir="ltr">({r1(vx)}, {r1(vy)})</bdi></div>
         <Graph a={a} b={b} c={c} highlightVertex />
         <div style={{marginTop: 16}}>
           <div className="slider-row">
             <span className="slider-label">a</span>
-            <input type="range" min="-3" max="3" step="0.5" value={a}
+            <input type="range" min="-3" max="3" step="0.1" value={a} disabled={confirmed && !finished}
               onChange={e => handleA(e.target.value)} />
-            <span className="slider-val">{a}</span>
+            <span className="slider-val">{r1(a)}</span>
           </div>
           <div className="slider-row">
             <span className="slider-label">b</span>
-            <input type="range" min="-5" max="5" step="1" value={b}
-              onChange={e => { setB(parseFloat(e.target.value)); setConfirmed(false); }} />
-            <span className="slider-val">{b}</span>
+            <input type="range" min="-5" max="5" step="0.1" value={b} disabled={confirmed && !finished}
+              onChange={e => setB(parseFloat(e.target.value))} />
+            <span className="slider-val">{r1(b)}</span>
           </div>
           <div className="slider-row">
             <span className="slider-label">c</span>
-            <input type="range" min="-5" max="5" step="1" value={c}
-              onChange={e => { setC(parseFloat(e.target.value)); setConfirmed(false); }} />
-            <span className="slider-val">{c}</span>
+            <input type="range" min="-5" max="5" step="0.1" value={c} disabled={confirmed && !finished}
+              onChange={e => setC(parseFloat(e.target.value))} />
+            <span className="slider-val">{r1(c)}</span>
           </div>
         </div>
-        {taskIdx < tasks1.length && (
+        {!finished ? (
           <>
             <div className="task-box">
               <strong>משימה {taskIdx + 1}/{tasks1.length}:</strong> {task.text}
             </div>
             {confirmed ? (
-              <div className="msg-success">
-                כל הכבוד! {taskIdx < tasks1.length - 1
-                  ? <button className="btn" style={{marginRight: 10}} onClick={next}>משימה הבאה ←</button>
-                  : '✓ סיימת את כל המשימות!'}
+              <div className="pp-q">
+                <div className="pp-q-t">{task.q}</div>
+                {answer !== 'ok' && <div className="pp-q-b">
+                  <button className="btn green" onClick={() => reply(true)}>כן</button>
+                  <button className="btn" onClick={() => reply(false)}>לא</button>
+                </div>}
+                {answer === 'err' && <div className="msg-error">לא בדיוק. הסתכלו שוב על הגרף ונסו שוב.</div>}
+                {answer === 'ok' && <div className="msg-success">נכון! {task.why}
+                  <button className="btn" style={{marginRight: 10}} onClick={next}>{taskIdx < tasks1.length - 1 ? 'משימה הבאה ←' : 'לסיכום ←'}</button></div>}
               </div>
             ) : (
               <div className="msg-info" style={{fontSize:13}}>רמז: {task.hint}</div>
             )}
           </>
+        ) : (
+          <div className="pp-sum">
+            <h3>סיכום: מה עושה כל מקדם?</h3>
+            <div className="pp-sum-r"><b>a</b><span>הסימן קובע את כיוון הפתיחה: a חיובי ← פתוחה למעלה (∪), a שלילי ← פתוחה למטה (∩). ככל ש-|a| גדול יותר, הפרבולה צרה יותר.</span></div>
+            <div className="pp-sum-r"><b>b</b><span>מזיז את הקודקוד הצידה (יחד עם a): ציר הסימטריה הוא <bdi dir="ltr">x = −b/2a</bdi>. כש-b = 0 הקודקוד על ציר y.</span></div>
+            <div className="pp-sum-r"><b>c</b><span>מזיז את הפרבולה למעלה ולמטה בלי לשנות את הצורה. c היא נקודת החיתוך עם ציר y: <bdi dir="ltr">(0, c)</bdi>.</span></div>
+            <button className="btn" onClick={() => { setFinished(false); setTaskIdx(0); setA(1); setB(0); setC(0); }}>להתחיל מחדש</button>
+          </div>
         )}
       </div>
     </div>
@@ -471,6 +494,10 @@ function Section3() {
     <div className="section">
       <div className="card">
         <div className="section-title">3 — מציאת הקודקוד מגרף</div>
+        <div className="explanation">
+          <strong>הקודקוד</strong> הוא הנקודה שבה הפרבולה ״מסתובבת״: הנקודה הכי נמוכה כשהפרבולה פתוחה למעלה, או הכי גבוהה כשהיא פתוחה למטה. ציר הסימטריה עובר דרכו.<br/>
+          כדי לקרוא אותו מהגרף: יורדים ממנו לציר x (זה ה-x שלו) ופונים לציר y (זה ה-y שלו).
+        </div>
         <div className="task-box">זהה את הקודקוד (הנקודה הכתומה) והזן את הקואורדינטות שלו</div>
         <Graph a={a} b={b} c={c} highlightVertex />
         <div className="input-row" style={{marginTop: 14, direction: 'ltr', justifyContent: 'flex-start'}}>
@@ -522,6 +549,17 @@ function Section4() {
     <div className="section">
       <div className="card">
         <div className="section-title">4 — מציאת הקודקוד מהמשוואה</div>
+        <div className="explanation pp-ex">
+          <div><strong>איך מוצאים את הקודקוד בלי גרף?</strong></div>
+          <div>1. ה-x של הקודקוד: <bdi dir="ltr">x = −b / 2a</bdi></div>
+          <div>2. ה-y של הקודקוד: מציבים את ה-x הזה במשוואה.</div>
+          <div className="pp-ex-box">
+            <div><strong>דוגמה:</strong> <bdi dir="ltr">y = x² − 4x + 1</bdi> (כאן <bdi dir="ltr">a = 1 , b = −4</bdi>)</div>
+            <div>1. <bdi dir="ltr">x = −(−4) / (2·1) = 4 / 2 = 2</bdi></div>
+            <div>2. <bdi dir="ltr">y = 2² − 4·2 + 1 = 4 − 8 + 1 = −3</bdi></div>
+            <div>הקודקוד: <bdi dir="ltr">(2, −3)</bdi></div>
+          </div>
+        </div>
         <div className="formula">y = {a}x² {b >= 0 ? '+' : ''}{b}x {c >= 0 ? '+' : ''}{c}</div>
 
         <div style={{marginTop: 12}}>
@@ -577,14 +615,30 @@ function useDrawing(a, b, c) {
   // store world coordinates so accuracy is zoom-independent
   const startDraw = ({ wx, wy }) => { setDrawing(true); setUserPath([{ wx, wy }]); setDrawResult(null); setShowTrue(false); };
   const continueDraw = ({ wx, wy }) => { if (drawing) setUserPath(p => [...p, { wx, wy }]); };
+  // Checks the drawing like a teacher would:
+  //  1. the line stays close to the parabola (distance to the curve, not only the vertical gap,
+  //     so steep parts are judged fairly)
+  //  2. it goes through the vertex
+  //  3. it covers both sides of the vertex (a real parabola, not a short scribble)
   const endDraw = () => {
     if (!drawing) return;
     setDrawing(false);
     if (userPath.length < 5) return;
-    let totalErr = 0;
-    userPath.forEach(pt => { totalErr += Math.abs(pt.wy - evalY(a, b, c, pt.wx)); });
-    if (totalErr / userPath.length <= 1.0) { setDrawResult('ok'); setShowTrue(true); }
-    else setDrawResult('err');
+    const vx = -b / (2 * a), vy = evalY(a, b, c, vx);
+    const curve = [];
+    for (let x = -RANGE; x <= RANGE; x += 0.02) { const y = evalY(a, b, c, x); if (Math.abs(y) <= RANGE + 2) curve.push([x, y]); }
+    const dist = (pt) => { let m = Infinity; for (const [x, y] of curve) { const d = (pt.wx - x) ** 2 + (pt.wy - y) ** 2; if (d < m) m = d; } return Math.sqrt(m); };
+    const ds = userPath.map(dist).sort((p, q) => p - q);
+    const mean = ds.reduce((s, d) => s + d, 0) / ds.length;
+    const p90 = ds[Math.floor(ds.length * 0.9)];
+    const nearVertex = userPath.some(pt => Math.hypot(pt.wx - vx, pt.wy - vy) <= 0.7);
+    // how far to each side the parabola stays on screen (at most 2 units)
+    const room = Math.sqrt(Math.max(0, (RANGE - 0.5 - (a > 0 ? vy : -vy)) / Math.abs(a)));
+    const need = Math.min(2, room) * 0.75;
+    const xs = userPath.map(pt => pt.wx);
+    const bothSides = Math.min(...xs) <= vx - need && Math.max(...xs) >= vx + need;
+    if (mean <= 0.45 && p90 <= 0.9 && nearVertex && bothSides) { setDrawResult('ok'); setShowTrue(true); }
+    else setDrawResult(!nearVertex ? 'vertex' : !bothSides ? 'sides' : 'err');
   };
 
   const reset = () => { setUserPath([]); setDrawResult(null); setShowTrue(false); };
@@ -633,6 +687,8 @@ function Section5() {
         />
         {drawResult === 'ok' && <div className="msg-success">מצוין! הפרבולה מדויקת — הפרבולה האמיתית מוצגת בירוק</div>}
         {drawResult === 'err' && <div className="msg-error">נסה שוב — הפרבולה צריכה לעבור דרך שתי הנקודות בדיוק</div>}
+        {drawResult === 'vertex' && <div className="msg-error">נסה שוב — הקו צריך לעבור דרך הקודקוד (הנקודה הכתומה)</div>}
+        {drawResult === 'sides' && <div className="msg-error">נסה שוב — שרטט את שני הענפים, משני צידי הקודקוד</div>}
         <div style={{display:'flex', gap: 8, marginTop: 12}}>
           <button className="btn" onClick={reset}>נקה ונסה שוב</button>
           <button className="btn orange" onClick={newFn}>פרבולה חדשה</button>
@@ -722,88 +778,67 @@ function Section6() {
 
 // ── Section 7 ─────────────────────────────────────────────────────────────────
 function QuadSolver({ a, b, c, onDone }) {
-  const [stepNum, setStepNum] = useState(0);
-  const [inputs, setInputs] = useState({});
-  const [results, setResults] = useState({});
+  const [stage, setStage] = useState(0); // 0 coefficients, 1 template, 2 computed
+  const [co, setCo] = useState({ a: '', b: '', c: '' });
+  const [coErr, setCoErr] = useState(null);
+  const [slot, setSlot] = useState({ b1: '', b2: '', a1: '', c1: '', a2: '' });
+  const [slotErr, setSlotErr] = useState(null);
 
   const disc = b * b - 4 * a * c;
   const r1 = disc >= 0 ? (-b + Math.sqrt(disc)) / (2 * a) : null;
   const r2 = disc >= 0 ? (-b - Math.sqrt(disc)) / (2 * a) : null;
+  const num = v => parseFloat(String(v).replace('−', '-'));
+  const f2 = v => (v % 1 === 0 ? v : v.toFixed(2));
+  const p = v => (v < 0 ? `(${v})` : `${v}`);
 
-  const check = (key, expected, tolerance = 0.1) => {
-    const val = parseFloat(inputs[key]);
-    if (isNaN(val)) return 'invalid';
-    return Math.abs(val - expected) < tolerance ? 'ok' : 'err';
+  const checkCo = () => {
+    if (num(co.a) === a && num(co.b) === b && num(co.c) === c) { setStage(1); setCoErr(null); }
+    else setCoErr('לא נכון — a הוא המקדם של x², b של x, ו-c המספר החופשי (עם הסימן).');
   };
-
-  const steps = [
-    {
-      label: 'זהה את המקדמים',
-      fields: [
-        { key: 'a', label: 'a =', expected: a },
-        { key: 'b', label: 'b =', expected: b },
-        { key: 'c', label: 'c =', expected: c },
-      ],
-    },
-    {
-      label: 'חשב את הדיסקרימיננטה: Δ = b² - 4ac',
-      fields: [{ key: 'disc', label: 'Δ =', expected: disc }],
-    },
-    disc > 0 ? {
-      label: 'חשב את שני השורשים',
-      fields: [
-        { key: 'r1', label: 'x₁ =', expected: r1 },
-        { key: 'r2', label: 'x₂ =', expected: r2 },
-      ],
-    } : disc === 0 ? {
-      label: 'דיסקרימיננטה = 0 — שורש כפול',
-      fields: [{ key: 'r1', label: 'x =', expected: r1 }],
-    } : null,
-  ].filter(Boolean);
-
-  const currentStep = steps[stepNum];
-
-  const allOk = () => currentStep.fields.every(f => check(f.key, f.expected) === 'ok');
-
-  const next = () => {
-    if (stepNum < steps.length - 1) { setStepNum(s => s + 1); setInputs({}); setResults({}); }
-    else onDone && onDone(disc < 0 ? [] : disc === 0 ? [r1] : [r1, r2]);
+  const want = { b1: b, b2: b, a1: a, c1: c, a2: a };
+  const bad = Object.keys(want).filter(k => slot[k] === '' || num(slot[k]) !== want[k]);
+  const checkSlots = () => {
+    if (!bad.length) { setStage(2); setSlotErr(null); }
+    else setSlotErr(bad.length === 1 ? 'מקום אחד לא נכון (מסומן באדום).' : bad.length + ' מקומות לא נכונים (מסומנים באדום).');
   };
-
-  if (disc < 0 && stepNum >= 1) {
-    return (
-      <div>
-        <div className="msg-info">הדיסקרימיננטה שלילית — <strong>אין חיתוך עם ציר x</strong> (הפרבולה כולה מעל/מתחת לציר)</div>
-        <button className="btn" onClick={() => onDone && onDone([])}>המשך</button>
-      </div>
-    );
-  }
+  const box = k => <input key={k} className={'pp-slot' + (slotErr && bad.includes(k) && slot[k] !== '' ? ' bad' : '')} value={slot[k]} placeholder={k[0]} disabled={stage > 1}
+    onChange={e => { setSlot(v => ({ ...v, [k]: e.target.value })); setSlotErr(null); }} onKeyDown={e => e.key === 'Enter' && checkSlots()} />;
+  const roots = disc < 0 ? [] : disc === 0 ? [r1] : [r1, r2];
 
   return (
     <div>
-      <div style={{marginBottom: 8, fontWeight: 'bold', color: '#1a237e'}}>שלב {stepNum + 1}: {currentStep.label}</div>
-      {currentStep.fields.map(f => (
-        <div className="input-row" key={f.key}>
-          <label>{f.label}</label>
-          <input
-            value={inputs[f.key] || ''}
-            onChange={e => { setInputs(p => ({...p, [f.key]: e.target.value})); setResults(p => ({...p, [f.key]: null})); }}
-            placeholder="?"
-          />
-          {results[f.key] === 'ok' && <span style={{color:'#2e7d32'}}>✓</span>}
-          {results[f.key] === 'err' && <span style={{color:'#b71c1c'}}>✗</span>}
-        </div>
-      ))}
-      <div style={{display: 'flex', gap: 8}}>
-        <button className="btn" onClick={() => {
-          const newR = {};
-          currentStep.fields.forEach(f => newR[f.key] = check(f.key, f.expected));
-          setResults(newR);
-        }}>בדוק</button>
-        {Object.values(results).length > 0 && allOk() && (
-          <button className="btn green" onClick={next}>{stepNum < steps.length - 1 ? 'שלב הבא' : 'סיום'}</button>
-        )}
+      <div style={{marginBottom: 8, fontWeight: 'bold', color: '#1a237e'}}>שלב 1: זהה את המקדמים</div>
+      <div className="input-row" dir="ltr">
+        {['a', 'b', 'c'].map(k => <React.Fragment key={k}><label>{k} =</label>
+          <input value={co[k]} disabled={stage > 0} onChange={e => { setCo(v => ({ ...v, [k]: e.target.value })); setCoErr(null); }} onKeyDown={e => e.key === 'Enter' && checkCo()} placeholder="?" /></React.Fragment>)}
+        {stage === 0 && <button className="btn" onClick={checkCo}>בדוק</button>}
       </div>
+      {coErr && <div className="msg-error">{coErr}</div>}
+
+      {stage >= 1 && <>
+        <div style={{margin: '14px 0 4px', fontWeight: 'bold', color: '#1a237e'}}>שלב 2: הציבו בנוסחת השורשים (החישוב על המחשב)</div>
+        <div className="pp-template" dir="ltr">
+          <span className="pp-x">x₁,₂ =</span>
+          <span className="pp-frac">
+            <span className="pp-num">−({box('b1')}) ± √( ({box('b2')})² − 4·({box('a1')})·({box('c1')}) )</span>
+            <span className="pp-den">2·({box('a2')})</span>
+          </span>
+        </div>
+        {stage === 1 && <button className="btn" onClick={checkSlots}>בדוק הצבה</button>}
+        {slotErr && <div className="msg-error">{slotErr}</div>}
+      </>}
+
+      {stage === 2 && <div className="pp-calc" dir="ltr">
+        <div>Δ = {p(b)}² − 4·{p(a)}·{p(c)} = {b * b} {4 * a * c >= 0 ? '−' : '+'} {Math.abs(4 * a * c)} = <b>{disc}</b></div>
+        {disc < 0 && <div className="pp-calc-he" dir="rtl">Δ שלילי ← <b>אין חיתוך עם ציר x</b> (הפרבולה כולה מעל או מתחת לציר).</div>}
+        {disc === 0 && <div>x = {-b} / {2 * a} = <b>{f2(r1)}</b> <span dir="rtl">(Δ = 0 ← נקודת חיתוך אחת)</span></div>}
+        {disc > 0 && <>
+          <div>√Δ = √{disc} = {f2(Math.sqrt(disc))}</div>
+          <div>x₁ = ({-b} + {f2(Math.sqrt(disc))}) / {2 * a} = <b>{f2(r1)}</b></div>
+          <div>x₂ = ({-b} − {f2(Math.sqrt(disc))}) / {2 * a} = <b>{f2(r2)}</b></div>
+        </>}
+        <button className="btn green" style={{marginTop: 10}} onClick={() => onDone && onDone(roots)}>סיום</button>
+      </div>}
     </div>
   );
 }
@@ -1310,6 +1345,8 @@ function Section10() {
               <button className="btn green" onClick={() => { markDone(3); setStep(4); }}>שלב הבא</button>
             </>}
             {drawResult==='err' && <div className="msg-error">נסה שוב</div>}
+            {drawResult==='vertex' && <div className="msg-error">נסה שוב — הקו צריך לעבור דרך הקודקוד</div>}
+            {drawResult==='sides' && <div className="msg-error">נסה שוב — שרטט את שני הענפים, משני צידי הקודקוד</div>}
             <button className="btn" onClick={resetDraw} style={{marginTop:8}}>נקה</button>
           </div>
         )}
@@ -1360,17 +1397,20 @@ function Section10() {
         {step === 5 && (
           <div>
             <div className="task-box">נסח את תחומי העלייה והירידה</div>
-            <div style={{fontSize:14,color:'#555',margin:'8px 0'}}>x קודקוד = {vx%1===0?vx:vx.toFixed(2)}</div>
-            <div className="input-row">
-              <label>עולה: x</label>
-              <select value={riseAns.op} onChange={e=>setRiseAns(p=>({...p,op:e.target.value}))}><option>&gt;</option><option>&lt;</option></select>
-              <input value={riseAns.val} onChange={e=>setRiseAns(p=>({...p,val:e.target.value}))} placeholder="x קודקוד" style={{width:70}} />
-            </div>
-            <div className="input-row">
-              <label>יורדת: x</label>
-              <select value={fallAns.op} onChange={e=>setFallAns(p=>({...p,op:e.target.value}))}><option>&lt;</option><option>&gt;</option></select>
-              <input value={fallAns.val} onChange={e=>setFallAns(p=>({...p,val:e.target.value}))} placeholder="x קודקוד" style={{width:70}} />
-            </div>
+            <div className="pp-mon-hint">הגבול בין עלייה לירידה הוא ה-x של הקודקוד: <bdi dir="ltr">x = {vx%1===0?vx:vx.toFixed(2)}</bdi> (הקו המקווקו). הסתכלו לאן הפרבולה הולכת משמאל ומימין לו.</div>
+            <Graph a={a} b={b} c={c} highlightVertex axisOfSymmetry={vx}
+              extraPoints={[{x:vx,y:vy,color:'#ff6f00',label:'קודקוד'}]} />
+            {[['rise','עולה כאשר',riseAns,setRiseAns],['fall','יורדת כאשר',fallAns,setFallAns]].map(([k,l,v,set])=>(
+              <div className="pp-range" key={k}>
+                <span className="pp-range-l">{l}</span>
+                <span className="pp-range-m" dir="ltr">
+                  <span className="pp-var">x</span>
+                  <span className="pp-seg" role="group" aria-label="סימן">
+                    {['<','>'].map(o=><button key={o} type="button" className={v.op===o?'on':''} onClick={()=>set(p=>({...p,op:o}))}>{o}</button>)}
+                  </span>
+                  <input className="pp-rv" value={v.val} onChange={e=>set(p=>({...p,val:e.target.value}))} placeholder="?" />
+                </span>
+              </div>))}
             <button className="btn" onClick={() => {
               const rv=parseFloat(riseAns.val), fv=parseFloat(fallAns.val);
               if(isNaN(rv)||isNaN(fv)){setMonResult('invalid');return;}
