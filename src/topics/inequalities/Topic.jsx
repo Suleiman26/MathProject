@@ -154,46 +154,93 @@ function SolvedConfirm({sign,value,onCorrect}){
   </div>;
 }
 
+// Solve like an equation: write an operation on both sides, then simplify. Each line stays on screen.
+function iqTerms(terms){
+  const parts=[];
+  terms.forEach((t,i)=>{
+    if(t.coef===0 && terms.length>1) return;
+    const abs=Math.abs(t.coef);
+    const body=t.type==='x'?(abs===1?'x':abs+'x'):String(abs);
+    if(parts.length===0) parts.push((t.coef<0?'−':'')+body);
+    else parts.push((t.coef<0?' − ':' + ')+body);
+  });
+  return parts.join('')||'0';
+}
+const IQ_OPS={'+':'+','-':'−','*':'·','/':'÷'};
+function iqWithOp(terms,o,n){
+  const side=iqTerms(terms);
+  const num=n<0?'('+'−'+Math.abs(n)+')':String(n);
+  const wrap=(o==='*'||o==='/')&&terms.filter(t=>t.coef!==0).length>1?'('+side+')':side;
+  return wrap+' '+IQ_OPS[o]+' '+num;
+}
 function IeqSolver({a,b,c,sign,onSolved}){
   const [state,setState]=useState(()=>({left:[ieqMkTerm('x',a),ieqMkTerm('const',b)],right:[ieqMkTerm('const',c)],sign}));
+  const [hist,setHist]=useState([]);
+  const [pending,setPending]=useState(null);
+  const [opSym,setOpSym]=useState('-');
+  const [opNum,setOpNum]=useState('');
   const [err,setErr]=useState(null);
-  const [divPopup,setDivPopup]=useState(null);
+  const [note,setNote]=useState(null);
   const [solvedInfo,setSolvedInfo]=useState(null);
   const [confirmed,setConfirmed]=useState(false);
 
   useEffect(()=>{
     if(confirmed) return;
-    setSolvedInfo(ieqCheckSolved(state));
-  },[state]);
+    setSolvedInfo(pending?null:ieqCheckSolved(state));
+  },[state,pending]);
 
-  function handleMove(side,id){
-    setErr(null);
-    setState(s=>ieqDoSimplify(ieqDoMove(s,side,id)));
+  function applyOp(){
+    const n=parseInt(String(opNum).replace('−','-'),10);
+    if(isNaN(n)){ setErr('כתבו מספר'); return; }
+    if((opSym==='*'||opSym==='/')&&n===0){ setErr(opSym==='/'?'אי אפשר לחלק ב-0':'כפל ב-0 מוחק את כל האי-שוויון'); return; }
+    if((opSym==='+'||opSym==='-')&&n===0){ setErr('הוספה או חיסור של 0 לא משנים כלום'); return; }
+    if(opSym==='/'&&[...state.left,...state.right].some(t=>t.coef%n!==0)){ setErr('לא כל האיברים מתחלקים ב-'+n+'. נסו פעולה אחרת קודם.'); return; }
+    setErr(null); setNote(null); setPending({o:opSym,n});
   }
-  function requestDivide(coef){ setErr(null); setDivPopup(Math.abs(coef)); }
-  function confirmDivide(){
-    const res=ieqDoDivide(state,divPopup);
-    if(!res.ok) setErr('לא ניתן לחלק את כל האיברים ב-'+divPopup+' באופן שלם');
-    else setState(ieqDoSimplify(res.state));
-    setDivPopup(null);
+  function simplify(){
+    const {o,n}=pending;
+    const line=`${iqWithOp(state.left,o,n)}  ${state.sign}  ${iqWithOp(state.right,o,n)}`;
+    let next;
+    if(o==='+'||o==='-'){
+      const k=o==='+'?n:-n;
+      next=ieqDoSimplify({...state,left:[...state.left,ieqMkTerm('const',k)],right:[...state.right,ieqMkTerm('const',k)]});
+    } else {
+      const f=t=>ieqMkTerm(t.type,o==='*'?t.coef*n:t.coef/n);
+      const flip=n<0;
+      next=ieqDoSimplify({...state,left:state.left.map(f),right:state.right.map(f),sign:flip?flipSign(state.sign):state.sign});
+      if(flip) setNote((o==='*'?'כפלנו':'חילקנו')+' במספר שלילי, ולכן סימן אי-השוויון התהפך: '+state.sign+' ← '+next.sign);
+    }
+    setHist(h=>[...h,line]);
+    setState(next); setPending(null); setOpNum('');
   }
-  return <div className="ieq-solver">
-    <div className="ieq-board">
-      <div className="ieq-zone" data-zone="left">
-        {state.left.map(t=><IeqTermPill key={t.id} term={t} side="left" onMove={handleMove} onDivideRequest={requestDivide}/>)}
-      </div>
-      <span className="ieq-sign">{state.sign}</span>
-      <div className="ieq-zone" data-zone="right">
-        {state.right.map(t=><IeqTermPill key={t.id} term={t} side="right" onMove={handleMove} onDivideRequest={requestDivide}/>)}
-      </div>
+  function undo(){
+    if(pending){ setPending(null); return; }
+  }
+  const cur=`${iqTerms(state.left)}  ${state.sign}  ${iqTerms(state.right)}`;
+  return <div className="ieq-solver iq">
+    <div className="iq-lines" dir="ltr">
+      {hist.map((l,i)=><div key={i} className="iq-line old">{l}</div>)}
+      {pending
+        ? <div className="iq-line cur">{iqWithOp(state.left,pending.o,pending.n)}  {state.sign}  {iqWithOp(state.right,pending.o,pending.n)}</div>
+        : <div className="iq-line cur">{cur}</div>}
     </div>
-    {divPopup!=null && <div className="ieq-div-bar">לחלק את שני האגפים ב-{divPopup}?
-      <button className="btn bp" onClick={confirmDivide}>כן</button>
-      <button className="btn" onClick={()=>setDivPopup(null)}>ביטול</button>
+    {note && <div className="iq-note">{note}</div>}
+    {!solvedInfo && !pending && <div className="iq-op">
+      <div className="iq-op-t">איזו פעולה עושים על שני האגפים?</div>
+      <div className="iq-op-row" dir="ltr">
+        {Object.keys(IQ_OPS).map(k=><button key={k} className={`iq-sym${opSym===k?' on':''}`} onClick={()=>{setOpSym(k);setErr(null);}} aria-label={{'+':'חיבור','-':'חיסור','*':'כפל','/':'חילוק'}[k]}>{IQ_OPS[k]}</button>)}
+        <input className="iq-num" value={opNum} onChange={e=>{setOpNum(e.target.value);setErr(null);}} onKeyDown={e=>e.key==='Enter'&&applyOp()} placeholder="מספר" inputMode="numeric"/>
+        <button className="btn bp" onClick={applyOp}>החל על שני האגפים</button>
+      </div>
+    </div>}
+    {pending && <div className="iq-act">
+      <button className="btn bp" onClick={simplify}>פשט ⟵</button>
+      <button className="btn" onClick={undo}>ביטול הפעולה</button>
     </div>}
     {err && <div className="ieq-div-err">{err}</div>}
-    <div className="hint">גררו איבר (לחיצה ממושכת) כדי להעביר אותו לאגף השני. לחיצה קצרה על איבר עם מקדם תציע לחלק בו את שני האגפים.</div>
+    {!solvedInfo && <div className="hint">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), היא נכתבת על שני האגפים, ולוחצים ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}
     {solvedInfo && !confirmed && <SolvedConfirm sign={solvedInfo.sign} value={solvedInfo.value} onCorrect={()=>{setConfirmed(true); onSolved(solvedInfo.sign,solvedInfo.value);}}/>}
+    {confirmed && solvedInfo && <div className="iq-done" dir="ltr">x {solvedInfo.sign} {solvedInfo.value} ✓</div>}
   </div>;
 }
 
@@ -386,11 +433,12 @@ function Ch1(){
       <div className="card-t">אי-שוויון פשוט</div>
       <div className="formula-box">{ineqText(data.a,data.b,data.c,data.sign)}</div>
       {phase==='solve' && <div className="step-card">
-        <div className="hint">שלב 1: פתרו את האי-שוויון בהעברת אגפים</div>
+        <div className="hint">שלב 1: פתרו את האי-שוויון, כמו משוואה</div>
         <IeqSolver key={data.a+'-'+data.b+'-'+data.c} a={data.a} b={data.b} c={data.c} sign={data.sign}
           onSolved={()=>setPhase('line')}/>
       </div>}
       {phase==='line' && <div className="step-card">
+        <div className="iq-sols" dir="ltr"><span className="c0">x {data.sign} {data.v}</span></div>
         <div className="hint">שלב 2: סמנו את הפתרון על ציר המספרים</div>
         <RayMarker expected={{value:data.v,closed:closedOfSign(data.sign),dir:dirOfSign(data.sign)}}
           color="#db2777" onCorrect={()=>setPhase('done')}/>
@@ -534,8 +582,12 @@ function Ch3(){
   const [notationFb,setNotationFb]=useState(null);
   const [listTxt,setListTxt]=useState('');
   const [listFb,setListFb]=useState(null);
+  const [done1,setDone1]=useState(false);
+  const [done2,setDone2]=useState(false);
+  useEffect(()=>{ if(phase===0&&done1&&done2) setPhase(2); },[done1,done2,phase]);
 
   function reset(){
+    setDone1(false); setDone2(false);
     setData(genCh3()); setPhase(0); setBoundaryOk(false);
     setNotationTxt(''); setNotationFb(null); setListTxt(''); setListFb(null);
   }
@@ -564,14 +616,20 @@ function Ch3(){
         {ineqText(data.ineq2.a,data.ineq2.b,data.ineq2.c,data.ineq2.sign)}
       </div>
 
-      {phase===0 && <div className="step-card">
-        <div className="hint">שלב 1: פתרו את האי-שוויון הראשון</div>
-        <IeqSolver key={'s1-'+data.ineq1.a+data.ineq1.b+data.ineq1.c} a={data.ineq1.a} b={data.ineq1.b} c={data.ineq1.c} sign={data.ineq1.sign} onSolved={()=>setPhase(1)}/>
+      {phase<=1 && <div className="step-card">
+        <div className="hint">שלב 1: פתרו את שני האי-שוויונות (בכל סדר)</div>
+        <div className="iq-pair">
+          <div className="iq-col c1"><div className="iq-col-t">אי-שוויון 1</div>
+            <IeqSolver key={'s1-'+data.ineq1.a+data.ineq1.b+data.ineq1.c} a={data.ineq1.a} b={data.ineq1.b} c={data.ineq1.c} sign={data.ineq1.sign} onSolved={()=>setDone1(true)}/></div>
+          <div className="iq-col c2"><div className="iq-col-t">אי-שוויון 2</div>
+            <IeqSolver key={'s2-'+data.ineq2.a+data.ineq2.b+data.ineq2.c} a={data.ineq2.a} b={data.ineq2.b} c={data.ineq2.c} sign={data.ineq2.sign} onSolved={()=>setDone2(true)}/></div>
+        </div>
       </div>}
 
-      {phase===1 && <div className="step-card">
-        <div className="hint">שלב 1: פתרו את האי-שוויון השני</div>
-        <IeqSolver key={'s2-'+data.ineq2.a+data.ineq2.b+data.ineq2.c} a={data.ineq2.a} b={data.ineq2.b} c={data.ineq2.c} sign={data.ineq2.sign} onSolved={()=>setPhase(2)}/>
+      {phase>=2 && phase<6 && <div className="iq-sols">
+        <span className="c1">x {data.ineq1.sign} {data.ineq1.v}</span>
+        <span className="iq-and">וגם</span>
+        <span className="c2">x {data.ineq2.sign} {data.ineq2.v}</span>
       </div>}
 
       {phase===2 && <div className="step-card">

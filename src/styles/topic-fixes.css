@@ -168,4 +168,34 @@ html[data-page="quadratic-solver"] .qs-slot::placeholder { color: var(--a-300, #
   html[data-page="quadratic-solver"] .qs-x { flex: none; }
   html[data-page="quadratic-solver"] .qs-slot { width: 34px; height: 34px; font-size: 15px; margin: 0 1px; border-radius: 8px; }
 }
+
+/* ── Inequalities (Sulaiman's fix list, 2026-10-30): solve by writing operations ── */
+html[data-page="inequalities"] .iq-lines { display: grid; gap: 4px; margin: 6px 0 12px; padding: 12px 14px; border-radius: 12px; background: var(--surface, #fff); border: 1px solid var(--a-200, #fbcfe8); }
+html[data-page="inequalities"] .iq-line { text-align: center; font-size: 20px; font-weight: 700; white-space: pre-wrap; font-variant-numeric: tabular-nums; color: var(--ink, #1c1b19); }
+html[data-page="inequalities"] .iq-line.old { font-size: 15px; font-weight: 600; color: var(--ink-3, #78716c); }
+html[data-page="inequalities"] .iq-line.cur { color: var(--a-800, #9d174d); }
+html[data-page="inequalities"] .iq-op { display: grid; gap: 8px; justify-items: center; }
+html[data-page="inequalities"] .iq-op-t { font-weight: 700; color: var(--a-800, #9d174d); font-size: 14.5px; }
+html[data-page="inequalities"] .iq-op-row { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+html[data-page="inequalities"] .iq-sym { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--a-200, #fbcfe8); background: var(--surface, #fff); color: var(--a-800, #9d174d); font-size: 22px; font-weight: 700; padding: 0; cursor: pointer; transition: transform 100ms ease-out; }
+html[data-page="inequalities"] .iq-sym:active { transform: scale(.94); }
+html[data-page="inequalities"] .iq-sym.on { background: var(--a-600, #db2777); border-color: var(--a-600, #db2777); color: #fff; }
+html[data-page="inequalities"] .iq-num { width: 84px; height: 44px; text-align: center; font-size: 18px; border-radius: 12px; }
+html[data-page="inequalities"] .iq-act { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+html[data-page="inequalities"] .iq-note { margin: 0 0 10px; padding: 8px 12px; border-radius: 10px; background: var(--warn-50, #fffbeb); color: var(--warn-900, #78350f); border: 1px solid var(--warn-200, #fde68a); font-size: 14px; text-align: center; }
+html[data-page="inequalities"] .iq-done { text-align: center; font-size: 20px; font-weight: 800; color: var(--ok-700, #15803d); padding: 8px; }
+html[data-page="inequalities"] .iq-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+html[data-page="inequalities"] .iq-col { border-radius: 14px; padding: 10px; background: var(--surface-2, #fafaf9); border-top: 4px solid var(--c); }
+html[data-page="inequalities"] .iq-col.c1, html[data-page="inequalities"] .iq-sols .c1 { --c: #2563eb; }
+html[data-page="inequalities"] .iq-col.c2, html[data-page="inequalities"] .iq-sols .c2 { --c: #ea580c; }
+html[data-page="inequalities"] .iq-sols .c0 { --c: #db2777; }
+html[data-page="inequalities"] .iq-col-t { font-weight: 800; color: var(--c); margin-bottom: 4px; text-align: center; }
+html[data-page="inequalities"] .iq-col .iq-line { font-size: 17px; }
+html[data-page="inequalities"] .iq-col .hint { display: none; }
+html[data-page="inequalities"] .iq-sols { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+html[data-page="inequalities"] .iq-sols span:not(.iq-and) { direction: ltr; unicode-bidi: isolate; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 18px; color: #fff; background: var(--c); }
+html[data-page="inequalities"] .iq-and { font-weight: 700; color: var(--ink-2, #44403c); }
+@media (max-width: 720px) {
+  html[data-page="inequalities"] .iq-pair { grid-template-columns: minmax(0, 1fr); }
+}
 }
