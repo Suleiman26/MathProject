@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { SquaresFour, Stack, ChartBar, Users, CreditCard, Gear, SignOut, ArrowSquareOut, Backspace, Info } from "@phosphor-icons/react";
+import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, SignOut, ArrowSquareOut, Backspace, Info } from "@phosphor-icons/react";
 import { call, login, isPreview } from "./api";
 import { ToastHost } from "./ui";
 
 export const NAV = [
   { href: "/admin", label: "לוח בקרה", short: "לוח", Icon: SquaresFour, sub: "תמונת מצב של הפלטפורמה" },
+  { href: "/admin/fixes", label: "תיקונים", short: "תיקונים", Icon: ListChecks, sub: "מה לתקן בכל נושא, מה תוקן ומחכה לבדיקה, ומה אושר" },
   { href: "/admin/content", label: "תוכן", short: "תוכן", Icon: Stack, sub: "כיתות, קטגוריות ונושאים. גררו כדי לשנות סדר." },
   { href: "/admin/analytics", label: "ניתוח", short: "ניתוח", Icon: ChartBar, sub: "איפה התלמידים מצליחים ואיפה נתקעים" },
   { href: "/admin/students", label: "תלמידים", short: "תלמידים", Icon: Users, sub: "פעילות התלמידים (אנונימית עד שתהיה הרשמה)" },

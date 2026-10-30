@@ -449,7 +449,7 @@ html, .adm-root body { min-height: 100%; }
   .adm-root .mtop .brand { padding: 0; }
   .adm-root .mtop .brand svg { width: 30px; height: 30px; }
   .adm-root .bnav {
-    display: grid; grid-template-columns: repeat(6, 1fr);
+    display: grid; grid-template-columns: repeat(7, 1fr);
     position: fixed; inset: auto 0 0 0; z-index: 40;
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--surface) 92%, transparent);
@@ -727,4 +727,86 @@ html, .adm-root body { min-height: 100%; }
   .adm-root .calc-out b { font-size: 1.4rem; }
   .adm-root .hero-card { padding: 20px 18px; }
 }
+}
+
+/* ── Fixes board (admin → תיקונים) ─────────────────────────────────────── */
+.adm-root .grow { flex: 1; }
+.adm-root .fx-who { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 14px 16px; margin-bottom: 14px; border-radius: 16px; background: var(--a-50, #f0fdfa); border: 1px solid var(--a-200, #99f6e4); }
+.adm-root .fx-who span { color: var(--ink-2); font-size: .9rem; }
+.adm-root .fx-who-b { display: flex; gap: 8px; margin-inline-start: auto; }
+
+.adm-root .fx-top { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 2px rgb(0 0 0 / .04); }
+.adm-root .fx-prog { display: grid; gap: 10px; margin-bottom: 14px; font-size: .95rem; color: var(--ink-2); }
+.adm-root .fx-prog b { font-size: 1.35rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.adm-root .fx-hl { color: #6d28d9; font-weight: 600; }
+.adm-root .fx-bar { position: relative; display: flex; height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.adm-root .fx-bar i { height: 100%; background: var(--ok-600); transition: width 400ms cubic-bezier(.23,1,.32,1); }
+.adm-root .fx-bar i.rv { background: #a78bfa; }
+.adm-root .fx-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.adm-root .fx-filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; padding-bottom: 2px; }
+.adm-root .fx-filters::-webkit-scrollbar { display: none; }
+.adm-root .fx-f { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); font: 500 .88rem/1 inherit; white-space: nowrap; cursor: pointer; flex: none; transition: transform 120ms ease-out, background 120ms; }
+.adm-root .fx-f span { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--surface-3); color: var(--ink-2); display: inline-grid; place-items: center; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.adm-root .fx-f:active { transform: scale(.97); }
+.adm-root .fx-f[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.adm-root .fx-f[aria-selected="true"] span { background: rgb(255 255 255 / .18); color: #fff; }
+.adm-root .fx-f.hot:not([aria-selected="true"]) span { background: #7c3aed; color: #fff; }
+.adm-root .fx-topic select { height: 36px; border-radius: 999px; padding: 0 12px; border: 1px solid var(--line-strong); background: var(--surface); font: 500 .88rem inherit; color: var(--ink-2); max-width: 220px; }
+.adm-root .fx-me { height: 36px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; color: var(--ink-3); font: 500 .84rem inherit; cursor: pointer; }
+
+.adm-root .fx-group { margin-bottom: 18px; }
+.adm-root .fx-gh { display: flex; align-items: center; gap: 8px; margin: 0 4px 10px; }
+.adm-root .fx-gh h2 { font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+.adm-root .fx-n { min-width: 24px; height: 22px; padding: 0 7px; border-radius: 999px; background: var(--surface-3); color: var(--ink-2); font-size: .78rem; font-weight: 700; display: inline-grid; place-items: center; }
+.adm-root .fx-open { margin-inline-start: auto; display: inline-flex; align-items: center; gap: 5px; font-size: .84rem; font-weight: 500; color: var(--a-700); text-decoration: none; padding: 6px 8px; border-radius: 8px; }
+@media (hover: hover) { .adm-root .fx-open:hover { background: var(--a-50, #f0fdfa); } }
+.adm-root .fx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.adm-root .fx-item { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px 12px; box-shadow: 0 1px 2px rgb(0 0 0 / .04); }
+.adm-root .fx-item::before { content: ""; position: absolute; inset-block: 14px; inset-inline-start: 0; width: 3px; border-radius: 0 3px 3px 0; background: var(--st, var(--line-strong)); }
+.adm-root .fx-ih { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.adm-root .fx-sec { font-size: .82rem; font-weight: 600; color: var(--ink-2); background: var(--surface-2); padding: 3px 9px; border-radius: 7px; }
+.adm-root .fx-edit { width: 32px; height: 32px; border-color: transparent; box-shadow: none; background: transparent; color: var(--ink-3); }
+.adm-root .fx-body { margin: 8px 0 4px; font-size: .98rem; line-height: 1.65; color: var(--ink); white-space: pre-line; }
+.adm-root .fx-meta { font-size: .78rem; color: var(--ink-3); }
+
+.adm-root .fx-st { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: .76rem; font-weight: 700; white-space: nowrap; background: var(--stb); color: var(--stc); }
+.adm-root .fx-st::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.adm-root .fx-st.sm { height: 20px; font-size: .7rem; padding: 0 7px; }
+.adm-root .st-new      { --st: #2563eb; --stb: #eff6ff; --stc: #1d4ed8; }
+.adm-root .st-working  { --st: #d97706; --stb: var(--warn-50); --stc: var(--warn-800); }
+.adm-root .st-review   { --st: #7c3aed; --stb: #f5f3ff; --stc: #6d28d9; }
+.adm-root .st-reopened { --st: #dc2626; --stb: var(--bad-50); --stc: var(--bad-700); }
+.adm-root .st-done     { --st: #16a34a; --stb: var(--ok-50); --stc: var(--ok-700); }
+.adm-root .st-later    { --st: #a8a29e; --stb: var(--surface-3); --stc: var(--ink-3); }
+.adm-root .fx-item.st-done .fx-body { color: var(--ink-3); }
+
+.adm-root .fx-thread { list-style: none; margin: 12px 0 0; padding: 10px 0 0; border-top: 1px dashed var(--line); display: grid; gap: 10px; }
+.adm-root .fx-thread li { padding-inline-start: 12px; border-inline-start: 2px solid var(--line); }
+.adm-root .fx-thread li.bot { border-color: #c4b5fd; }
+.adm-root .fx-thread p { margin: 3px 0 0; font-size: .9rem; line-height: 1.6; color: var(--ink-2); white-space: pre-line; }
+.adm-root .fx-ch { display: flex; align-items: center; gap: 8px; font-size: .8rem; }
+.adm-root .fx-ch b { color: var(--ink); }
+.adm-root .fx-ch time { color: var(--ink-3); }
+.adm-root .fx-more { border: 0 !important; padding: 0 !important; }
+.adm-root .fx-more button { border: 0; background: none; color: var(--a-700); font: 500 .82rem inherit; cursor: pointer; padding: 2px 0; }
+
+.adm-root .fx-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.adm-root .abtn.ok { background: var(--ok-600); border-color: var(--ok-600); color: #fff; }
+@media (hover: hover) { .adm-root .abtn.ok:hover { background: var(--ok-700); } }
+.adm-root .abtn.warn { background: var(--bad-600); border-color: var(--bad-600); color: #fff; }
+.adm-root .abtn:active:not(:disabled) { transform: scale(.97); }
+.adm-root .fx-reply { margin-top: 12px; }
+.adm-root .fx-ta { width: 100%; border-radius: 12px; padding: 10px 12px; font: 400 1rem/1.55 inherit; resize: vertical; min-height: 84px; }
+.adm-root .fx-loading { display: grid; gap: 10px; }
+.adm-root .fx-loading span { height: 110px; border-radius: 16px; background: linear-gradient(90deg, var(--surface-2), var(--surface-3), var(--surface-2)); background-size: 200% 100%; animation: fx-sh 1.2s linear infinite; }
+@keyframes fx-sh { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .adm-root .fx-loading span { animation: none; } }
+@media (max-width: 560px) {
+  .adm-root .fx-top { padding: 14px 12px; border-radius: 16px; }
+  .adm-root .fx-tools { gap: 8px; }
+  .adm-root .fx-filters { flex-basis: 100%; margin-inline: -12px; padding-inline: 12px; }
+  .adm-root .fx-topic { flex: 1; } .adm-root .fx-topic select { width: 100%; max-width: none; }
+  .adm-root .fx-item { padding: 12px 12px 10px 12px; border-radius: 14px; }
+  .adm-root .fx-actions .abtn { flex: 1 1 auto; justify-content: center; }
+  .adm-root .bnav a span { font-size: .62rem; }
 }

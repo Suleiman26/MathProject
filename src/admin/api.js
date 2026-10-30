@@ -4,6 +4,7 @@
    Not yet    → PREVIEW mode: clearly-labelled sample data, kept in this
                 browser only. */
 import { mpData } from "@/lib/mp-data";
+import FIX_SEED from "./fixes-seed.json";
 
 export const isPreview = () => !mpData.ready;
 
@@ -52,6 +53,7 @@ const DEFAULT_CATALOG = (() => {
 const HARD = { "pythagoras.html": 0.52, "similar-triangles.html": 0.55, "quadratic-solver.html": 0.58, "equations-advanced.html": 0.6, "parabola-practice.html": 0.63, "intersection.html": 0.62, "solids3d.html": 0.66, "inequalities.html": 0.7, "powers-roots.html": 0.72, "circle.html": 0.71, "triangles.html": 0.76, "quadrilaterals.html": 0.78, "linear-function.html": 0.74, "ratio-percent.html": 0.8, "angles-parallel.html": 0.83, "directed-numbers.html": 0.86, "equation-solver.html": 0.84 };
 const CH = ["פרק א׳", "פרק ב׳", "פרק ג׳", "פרק ד׳"];
 const LS = "mp:demo-catalog";
+const LSF = "mp:demo-fixes";
 const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const listOf = { grade: "grades", category: "categories", topic: "topics", plan: "plans" };
@@ -170,6 +172,43 @@ const demo = {
   // preview: the switch affects this browser only (same key the site reads)
   admin_set_setting({ k, v }) { try { localStorage.setItem("mp:set:" + k, v ? "on" : "off"); } catch {} return { ok: true, key: k, value: v }; },
   admin_logout: () => null,
+  // fixes board: kept in this browser only until the database is connected
+  admin_fixes() {
+    let d = load(LSF);
+    if (!d) {
+      let id = 0, cid = 0;
+      const t0 = "2026-10-29T18:00:00.000Z";
+      d = FIX_SEED.map(([topic, section, body, status, note]) => ({
+        id: ++id, topic, section: section || null, body, status, author: "סולימאן", created_at: t0, updated_at: t0,
+        comments: note ? [{ id: ++cid, author: "Claude", body: note, status: "review", created_at: new Date().toISOString() }] : [],
+      }));
+      save(LSF, d);
+    }
+    return [...d].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  },
+  admin_fix_add({ topic, section, body, author }) {
+    if (!String(body || "").trim()) return { error: "empty" };
+    const d = demo.admin_fixes(), now = new Date().toISOString();
+    const it = { id: Math.max(0, ...d.map((x) => x.id)) + 1, topic, section: section || null, body: body.trim(), status: "new", author, created_at: now, updated_at: now, comments: [] };
+    save(LSF, [it, ...d]);
+    return it;
+  },
+  admin_fix_comment({ item_id, author, body, new_status }) {
+    const d = demo.admin_fixes(), it = d.find((x) => x.id === item_id), now = new Date().toISOString();
+    if (!it) return { error: "missing" };
+    it.comments.push({ id: Date.now(), author, body: (body || "").trim(), status: new_status || null, created_at: now });
+    if (new_status) it.status = new_status;
+    it.updated_at = now;
+    save(LSF, d);
+    return { ok: true };
+  },
+  admin_fix_edit({ item_id, topic, section, body }) {
+    const d = demo.admin_fixes(), it = d.find((x) => x.id === item_id);
+    Object.assign(it, { topic, section: section || null, body, updated_at: new Date().toISOString() });
+    save(LSF, d);
+    return { ok: true };
+  },
+  admin_fix_delete({ item_id }) { save(LSF, demo.admin_fixes().filter((x) => x.id !== item_id)); return { ok: true }; },
 };
 
 /* ── public API ──────────────────────────────────────────────────────────── */
