@@ -274,10 +274,10 @@ html[data-page="parabola-practice"] #root .card button { min-height: 40px; }
 /* ── 3D shapes (2026-10-31): the 3D view that replaces the flat sketches ── */
 html[data-page="solids3d"] .s3d {
   position: relative; width: min(100%, 480px); height: clamp(260px, 64vw, 330px);
-  margin-inline: auto; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none;
+  margin-inline: auto; touch-action: none; cursor: grab; overscroll-behavior: contain; user-select: none; -webkit-user-select: none;
 }
 html[data-page="solids3d"] .s3d:active { cursor: grabbing; }
-html[data-page="solids3d"] .s3d canvas, html[data-page="solids3d"] .s3d > div { touch-action: pan-y !important; }
+html[data-page="solids3d"] .s3d canvas, html[data-page="solids3d"] .s3d > div { touch-action: none !important; }
 html[data-page="solids3d"] .s3d-loading { display: grid; place-items: center; }
 html[data-page="solids3d"] .s3d-loading span {
   width: 26px; height: 26px; border-radius: 50%;
@@ -291,8 +291,9 @@ html[data-page="solids3d"] .s3d-tag {
   background: rgb(255 255 255 / .94); border: 1px solid var(--line, #e2e8f0);
   box-shadow: 0 1px 2px rgb(0 0 0 / .06); font-size: 13px; font-weight: 700; line-height: 1.35;
 }
+html[data-page="solids3d"] .s3d { margin-bottom: 28px; }
 html[data-page="solids3d"] .s3d-hint {
-  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%);
   padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
   color: var(--ink-3, #64748b); background: rgb(255 255 255 / .85); border: 1px solid var(--line, #e2e8f0);
   pointer-events: none; transition: opacity .4s ease;

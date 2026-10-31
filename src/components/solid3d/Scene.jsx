@@ -236,40 +236,130 @@ function labelsFor(kind, p, activePart) {
   return [];
 }
 
-function Tracker({ tags, spans, hint }) {
+/* Moves the label tags to follow the shape. Steady by design: each label
+   glides toward its spot (no jumps), an edge label changes sides only after
+   its edge has clearly crossed over, and labels dodge each other always in
+   the same direction. */
+/* The visible lines of each shape (3D segments), so labels can keep off all of them */
+function linesFor(kind, p) {
+  const seg = []; const add = (a, b) => seg.push([a, b]);
+  const ring = (R, y, n = 24) => { const c = circle(R, y, n); for (let i = 0; i < n; i++) add(c[i], c[i + 1]); };
+  if (kind === "cube" || kind === "box") {
+    const l = kind === "cube" ? p.a : p.l, w = kind === "cube" ? p.a : p.w, h = kind === "cube" ? p.a : p.h;
+    const s = SIZE / Math.max(l, w, h), X = l * s / 2, Y = h * s / 2, Z = w * s / 2;
+    const A = [-X, -Y, Z], B = [X, -Y, Z], C = [X, -Y, -Z], D = [-X, -Y, -Z], E = [-X, Y, Z], F = [X, Y, Z], G = [X, Y, -Z], H = [-X, Y, -Z];
+    [[A, B], [B, C], [C, D], [D, A], [E, F], [F, G], [G, H], [H, E], [A, E], [B, F], [C, G], [D, H]].forEach(([a, b]) => add(a, b));
+  } else if (kind === "cylinder" || kind === "cone") {
+    const s = SIZE / Math.max(2 * p.r, p.h), R = p.r * s, H = p.h * s;
+    ring(R, -H / 2); add([0, -H / 2, 0], [0, H / 2, 0]); add([0, kind === "cone" ? -H / 2 : H / 2, 0], [R, kind === "cone" ? -H / 2 : H / 2, 0]);
+    if (kind === "cylinder") { ring(R, H / 2); add([R, -H / 2, 0], [R, H / 2, 0]); add([-R, -H / 2, 0], [-R, H / 2, 0]); }
+    else { for (let k = 0; k < 8; k++) { const t = (k / 8) * Math.PI * 2; add([0, H / 2, 0], [R * Math.cos(t), -H / 2, R * Math.sin(t)]); } }
+  } else if (kind === "pyrSq" || kind === "pyrTri") {
+    const s = SIZE / Math.max(p.b, p.h), Bs = p.b * s, H = p.h * s;
+    const base = kind === "pyrTri"
+      ? [90, 210, 330].map((d) => { const t = (d * Math.PI) / 180, R = Bs / Math.sqrt(3); return [R * Math.cos(t), -H / 2, R * Math.sin(t)]; })
+      : [[-Bs / 2, -H / 2, Bs / 2], [Bs / 2, -H / 2, Bs / 2], [Bs / 2, -H / 2, -Bs / 2], [-Bs / 2, -H / 2, -Bs / 2]];
+    base.forEach((q, i) => { add(q, base[(i + 1) % base.length]); add(q, [0, H / 2, 0]); });
+    add([0, -H / 2, 0], [0, H / 2, 0]);
+  } else if (kind === "sphere") {
+    ring(SIZE / 2, 0); add([0, 0, 0], [SIZE / 2, 0, 0]);
+  } else if (kind === "composite") {
+    const s = SIZE / Math.max(2 * p.r, p.h1 + p.h2), R = p.r * s, H1 = p.h1 * s, H2 = p.h2 * s;
+    const y0 = -(H1 + H2) / 2, y1 = y0 + H1, y2 = y1 + H2;
+    ring(R, y0); ring(R, y1); add([0, y0, 0], [0, y2, 0]); add([0, y0, 0], [R, y0, 0]);
+    add([R, y0, 0], [R, y1, 0]); add([-R, y0, 0], [-R, y1, 0]); add([R, y1, 0], [0, y2, 0]); add([-R, y1, 0], [0, y2, 0]);
+  }
+  return seg;
+}
+
+function Tracker({ tags, spans, segs }) {
   const ref = useRef(); const v = useMemo(() => new THREE.Vector3(), []);
-  useFrame(({ camera, size }) => {
+  const st = useRef({ tags: null, pos: [], side: [], extra: [] });
+  useFrame(({ camera, size, invalidate }) => {
     const g = ref.current; if (!g) return;
     g.updateWorldMatrix(true, false);
     const scr = (q) => { v.set(q[0], q[1], q[2]).applyMatrix4(g.matrixWorld).project(camera); return [(v.x + 1) / 2 * size.width, (1 - v.y) / 2 * size.height]; };
+    if (st.current.tags !== tags) st.current = { tags, pos: [], side: [], extra: [], dir: [], coll: [] };
+    const S = st.current;
     const box = [];
-    // the drag hint at the bottom is off limits while it shows
-    const hn = hint.current;
-    if (hn && !hn.classList.contains("gone")) box.push({ x: size.width / 2, y: size.height - 4 - hn.offsetHeight / 2, w: hn.offsetWidth + 6, h: hn.offsetHeight + 4 });
     const c0 = scr([0, 0, 0]);
+    const lines2d = segs.map(([a, b]) => [scr(a), scr(b)]);
+    const touchesLine = (x, y, w, h) => {
+      const L = x - w / 2, R = x + w / 2, T = y - h / 2, B = y + h / 2;
+      return lines2d.some(([a, b]) => {
+        const n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3));
+        for (let k = 0; k <= n; k++) { const px = a[0] + (b[0] - a[0]) * k / n, py = a[1] + (b[1] - a[1]) * k / n; if (px > L && px < R && py > T && py < B) return true; }
+        return false;
+      });
+    };
+    let settling = false;
+    if (typeof window !== "undefined" && window.__s3dProbe && lines2d[0]) window.__s3dProbe.push(lines2d[0][0]); // used by the steadiness test only
     tags.forEach((t, i) => {
       const el = spans.current[i]; if (!el) return;
       const w = el.offsetWidth + 4, h = el.offsetHeight + 3;
       let x, y;
       if (t.edge) {
-        // beside the edge as it looks on screen, on the side away from the shape
         const a = scr(t.edge[0]), b2 = scr(t.edge[1]);
         const mx = (a[0] + b2[0]) / 2, my = (a[1] + b2[1]) / 2;
         let nx = -(b2[1] - a[1]), ny = b2[0] - a[0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-        if (nx * (mx - c0[0]) + ny * (my - c0[1]) < 0) { nx = -nx; ny = -ny; }
-        const off = Math.abs(nx) * w / 2 + Math.abs(ny) * h / 2 + 5;
-        x = mx + nx * off; y = my + ny * off;
-      } else { [x, y] = scr(t.p); }
-      // never on top of another label: step down (or up) until clear
-      for (let k = 0; k < 6; k++) {
-        const hit = box.find((o) => Math.abs(o.x - x) < (o.w + w) / 2 && Math.abs(o.y - y) < (o.h + h) / 2);
-        if (!hit) break;
-        y = y >= hit.y ? hit.y + (hit.h + h) / 2 : hit.y - (hit.h + h) / 2;
+        const out = nx * (mx - c0[0]) + ny * (my - c0[1]);
+        const base = Math.abs(nx) * w / 2 + Math.abs(ny) * h / 2 + 5;
+        // a label picks its side once (away from the shape) and keeps it
+        let side = S.side[i];
+        if (side === undefined) side = out >= 0 ? 1 : -1;
+        S.side[i] = side; nx *= side; ny *= side;
+        // still touching a line (another edge close by)? step further out.
+        // Steps out at once, comes back slowly: no flicker while turning.
+        let need = 0;
+        while (need < 110 && touchesLine(mx + nx * (base + need), my + ny * (base + need), w, h)) need += 3;
+        const ex = S.extra[i] || 0, extra = need >= ex ? need : Math.max(need, ex - 0.8);
+        S.extra[i] = extra; if (extra !== need) settling = true;
+        x = mx + nx * (base + extra); y = my + ny * (base + extra);
+      } else {
+        const q = scr(t.p);
+        // try a few directions (away from the shape, up, down, sideways),
+        // keep the chosen one unless another is clearly freer
+        let ax = q[0] - c0[0], ay = q[1] - c0[1]; const al = Math.hypot(ax, ay) || 1; ax /= al; ay /= al;
+        const dirs = [[ax, ay], [0, -1], [0, 1], [-ay, ax], [ay, -ax]];
+        const needOf = ([ux, uy]) => { let n = 0; while (n < 90 && touchesLine(q[0] + ux * n, q[1] + uy * n, w, h)) n += 3; return n; };
+        const needs = dirs.map(needOf);
+        let di = (S.dir || (S.dir = []))[i];
+        const best = needs.indexOf(Math.min(...needs));
+        if (di === undefined || needs[di] > needs[best] + 12) di = best;
+        S.dir[i] = di;
+        const dx = dirs[di][0], dy = dirs[di][1], need = needs[di];
+        const ex = S.extra[i] || 0, extra = need >= ex ? need : Math.max(need, ex - 0.8);
+        S.extra[i] = extra; if (extra !== need) settling = true;
+        x = q[0] + dx * extra; y = q[1] + dy * extra;
       }
+      // keep inside the frame
+      x = Math.max(w / 2 + 2, Math.min(size.width - w / 2 - 2, x));
+      y = Math.max(h / 2 + 2, Math.min(size.height - h / 2 - 2, y));
+      // never on top of another label: move down past it (moves away at once,
+      // comes back slowly, so two labels never flicker around each other)
+      let yy = y;
+      for (let k = 0; k < 6; k++) {
+        const hit = box.find((o) => Math.abs(o.x - x) < (o.w + w) / 2 && Math.abs(o.y - yy) < (o.h + h) / 2);
+        if (!hit) break;
+        yy = hit.y + (hit.h + h) / 2;
+      }
+      const needD = yy - y, cw = (S.coll || (S.coll = []))[i] || 0;
+      const dodge = needD >= cw ? needD : Math.max(needD, cw - 0.8);
+      S.coll[i] = dodge; if (dodge !== needD) settling = true;
+      y += dodge;
       box.push({ x, y, w, h });
-      el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)`;
+      // glide toward the spot
+      const prev = S.pos[i];
+      let px = x, py = y;
+      if (prev) {
+        px = prev[0] + (x - prev[0]) * 0.3; py = prev[1] + (y - prev[1]) * 0.3;
+        if (Math.hypot(x - px, y - py) > 0.3) settling = true; else { px = x; py = y; }
+      }
+      S.pos[i] = [px, py];
+      el.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) translate(-50%, -50%)`;
       el.style.opacity = "1";
     });
+    if (settling) invalidate();
   });
   return <group ref={ref} />;
 }
@@ -304,6 +394,11 @@ function Rig({ ctl, children }) {
   useEffect(() => { ctl.current.invalidate = invalidate; }, [ctl, invalidate]);
   useFrame((state) => {
     const c = ctl.current; if (!g.current) return;
+    // after a flick the shape keeps turning a little and slows down
+    if (!c.dragging && (Math.abs(c.vy) > 1e-5 || Math.abs(c.vp) > 1e-5)) {
+      c.yaw += c.vy * 16; c.pitch = Math.max(-0.9, Math.min(0.9, c.pitch + c.vp * 16));
+      c.vy *= 0.9; c.vp *= 0.9; invalidate();
+    }
     let ty = c.yaw, tp = c.pitch;
     if (!c.touched && !c.still) { ty += Math.sin(state.clock.elapsedTime * 0.55) * 0.32; }
     const r = g.current.rotation;
@@ -316,7 +411,7 @@ function Rig({ ctl, children }) {
 
 export default function Scene({ kind, activePart, ...p }) {
   const wrap = useRef(null);
-  const ctl = useRef({ yaw: 0, pitch: 0, touched: false, still: false, invalidate: null });
+  const ctl = useRef({ yaw: 0, pitch: 0, vy: 0, vp: 0, dragging: false, touched: false, still: false, invalidate: null });
   const [visible, setVisible] = useState(true);
   const [touched, setTouched] = useState(false);
   const color = useMemo(accent, []);
@@ -329,20 +424,30 @@ export default function Scene({ kind, activePart, ...p }) {
     io.observe(el); return () => io.disconnect();
   }, []);
 
+  // touching the shape only turns it (any direction); the page stays still
   function down(e) {
-    drag.current = { x: e.clientX, y: e.clientY, yaw: ctl.current.yaw, pitch: ctl.current.pitch, mouse: e.pointerType !== "touch" };
+    const c = ctl.current;
+    drag.current = { x: e.clientX, y: e.clientY, yaw: c.yaw, pitch: c.pitch, t: performance.now(), lx: e.clientX, ly: e.clientY };
+    c.dragging = true; c.vy = 0; c.vp = 0;
     e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId);
   }
   function move(e) {
     const d = drag.current; if (!d) return;
-    const c = ctl.current;
+    e.preventDefault();
+    const c = ctl.current, now = performance.now(), dt = Math.max(8, now - d.t);
     c.yaw = d.yaw + (e.clientX - d.x) * 0.011;
-    if (d.mouse) c.pitch = Math.max(-0.45, Math.min(0.6, d.pitch + (e.clientY - d.y) * 0.008));
-    if (!c.touched && Math.abs(e.clientX - d.x) > 4) { c.touched = true; setTouched(true); }
+    c.pitch = Math.max(-0.9, Math.min(0.9, d.pitch + (e.clientY - d.y) * 0.008));
+    c.vy = ((e.clientX - d.lx) * 0.011) / dt; c.vp = ((e.clientY - d.ly) * 0.008) / dt;
+    d.t = now; d.lx = e.clientX; d.ly = e.clientY;
+    if (!c.touched && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) { c.touched = true; setTouched(true); }
     c.invalidate && c.invalidate();
   }
-  function up() { drag.current = null; }
-  function reset() { const c = ctl.current; c.yaw = 0; c.pitch = 0; c.invalidate && c.invalidate(); }
+  function up() {
+    const c = ctl.current, d = drag.current;
+    if (d && performance.now() - d.t > 80) { c.vy = 0; c.vp = 0; } // held still before letting go: no glide
+    drag.current = null; c.dragging = false; c.invalidate && c.invalidate();
+  }
+  function reset() { const c = ctl.current; c.yaw = 0; c.pitch = 0; c.vy = 0; c.vp = 0; c.invalidate && c.invalidate(); }
 
   const shapeEl = {
     cube: <BoxShape l={p.a} w={p.a} h={p.a} cube activePart={activePart} showBaseDiag={p.showBaseDiag} showSpaceDiag={p.showSpaceDiag} color={color} />,
@@ -357,8 +462,8 @@ export default function Scene({ kind, activePart, ...p }) {
   const tags = useMemo(() => labelsFor(kind, p, activePart),
     [kind, activePart, JSON.stringify(p)]); // eslint-disable-line react-hooks/exhaustive-deps
   const spans = useRef([]);
-  const hintRef = useRef(null);
-  // new labels (another part chosen) get placed on the next frame
+  const segs = useMemo(() => linesFor(kind, p), [kind, JSON.stringify(p)]); // eslint-disable-line react-hooks/exhaustive-deps
+    // new labels (another part chosen) get placed on the next frame
   useEffect(() => { const c = ctl.current; c.invalidate && c.invalidate(); }, [tags]);
 
   return (
@@ -371,12 +476,12 @@ export default function Scene({ kind, activePart, ...p }) {
         <directionalLight position={[3, 6, 4]} intensity={1.25} />
         <directionalLight position={[-4, 2, -3]} intensity={0.35} />
         <CameraFit r={reach(kind, p)} />
-        <Rig ctl={ctl}>{shapeEl}<Tracker tags={tags} spans={spans} hint={hintRef} /></Rig>
+        <Rig ctl={ctl}>{shapeEl}<Tracker tags={tags} spans={spans} segs={segs} /></Rig>
       </Canvas>
       <div className="s3d-tags" aria-hidden="true">
         {tags.map((t, i) => <span key={i} ref={(el) => (spans.current[i] = el)} className="s3d-tag" style={{ color: t.color }}>{t.text}</span>)}
       </div>
-      <span ref={hintRef} className={"s3d-hint" + (touched ? " gone" : "")} aria-hidden="true">גררו לסיבוב ↔</span>
+      <span className={"s3d-hint" + (touched ? " gone" : "")} aria-hidden="true">גררו לסיבוב</span>
       <button type="button" className="s3d-reset" onClick={reset} onPointerDown={(e) => e.stopPropagation()} aria-label="חזרה למבט הרגיל">↺</button>
     </div>
   );
