@@ -105,6 +105,27 @@ function TermPill({term,index}){
   );
 }
 
+/* ── Live preview: only digits and one leading minus; the pending operation is
+     drawn faintly on both sides while typing (nothing changes until ✓) ── */
+function cleanNum(v){
+  v=v.replace(/[−–]/g,'-').replace(/[^\d-]/g,'');
+  const neg=v.startsWith('-');
+  return(neg?'-':'')+v.replace(/-/g,'').replace(/^0+(?=\d)/,'').slice(0,3);
+}
+function PreviewSide({terms,opType,k,isX}){
+  const pills=terms.map((t,i)=><TermPill key={t.id} term={t} index={i}/>);
+  if(k===null)return pills;
+  if(opType==='+'||opType==='−'){
+    const g={type:isX?'x':'const',num:opType==='+'?k:-k,den:1};
+    return<>{pills}<span className="pv-ghost"><TermPill term={g} index={1}/></span></>;
+  }
+  const many=terms.length>1;
+  return<>
+    {many?<span className="pv-group"><span className="pv-ghost pv-par">(</span>{pills}<span className="pv-ghost pv-par">)</span></span>:pills}
+    <span className="pv-ghost"><span className="tp"><span className="ts">{opType==='×'?'·':'÷'}</span><span className="tv">{k<0?`(−${-k})`:k}</span></span></span>
+  </>;
+}
+
 /* ── Operation box (two rendered instances share the same state → mirrored) ── */
 const OPS=['+','−','×','÷'];
 function OpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX}){
@@ -114,7 +135,7 @@ function OpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX}){
       <div className="op-btns">
         {OPS.map(op=><button key={op} className={`op-btn ${opType===op?'active':''}`} onClick={()=>onOpType(op)}>{op}</button>)}
       </div>
-      <input className="op-input" value={opVal} onChange={e=>onOpVal(e.target.value)} placeholder="מס׳" inputMode="numeric"/>
+      <input className="op-input" value={opVal} onChange={e=>onOpVal(cleanNum(e.target.value))} placeholder="מס׳" inputMode="numeric"/>
       {allowX&&<button className={`op-x-btn ${opIsX?'active':''}`} onClick={onToggleX} title="הוספה/חיסור של כפולת x">x</button>}
     </div>
   );
@@ -158,6 +179,8 @@ function App(){
   function resetEq(){setApp(s=>({...s,current:s.initial,history:[]}));setOpVal('');setOpErr('');setOpType('+');setOpIsX(false)}
 
   const renderTerms=(terms)=>terms.map((t,i)=><TermPill key={t.id} term={t} index={i}/>);
+  const pvK=/^-?\d+$/.test(opVal)&&parseInt(opVal,10)!==0?parseInt(opVal,10):null;
+  const pvX=opIsX&&(opType==='+'||opType==='−');
 
   return(
     <div>
@@ -184,9 +207,9 @@ function App(){
               <div className="g-right"><OpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
             </>}
 
-            <div className="g-left side-zone">{renderTerms(cur.left)}</div>
+            <div className="g-left side-zone"><PreviewSide terms={cur.left} opType={opType} k={solved===null?pvK:null} isX={pvX}/></div>
             <span className="g-mid eq-sign">=</span>
-            <div className="g-right side-zone">{renderTerms(cur.right)}</div>
+            <div className="g-right side-zone"><PreviewSide terms={cur.right} opType={opType} k={solved===null?pvK:null} isX={pvX}/></div>
           </div>
 
           {opErr&&<div className="fb err">{opErr}</div>}

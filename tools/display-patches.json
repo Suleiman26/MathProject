@@ -25,6 +25,30 @@
       "old": "history:[...s.history,{eq:s.current,desc:'פישוט'}]",
       "new": "history:[...s.history,{eq:{left,right},desc:'פישוט'}]",
       "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): the number box takes only digits and one leading minus, and the action being typed shows faintly on both sides of the equation, live, before ✓. The math and the ✓ step are unchanged.",
+      "old": "/* ── Operation box (two rendered instances share the same state → mirrored) ── */\n",
+      "new": "/* ── Live preview: only digits and one leading minus; the pending operation is\n     drawn faintly on both sides while typing (nothing changes until ✓) ── */\nfunction cleanNum(v){\n  v=v.replace(/[−–]/g,'-').replace(/[^\\d-]/g,'');\n  const neg=v.startsWith('-');\n  return(neg?'-':'')+v.replace(/-/g,'').replace(/^0+(?=\\d)/,'').slice(0,3);\n}\nfunction PreviewSide({terms,opType,k,isX}){\n  const pills=terms.map((t,i)=><TermPill key={t.id} term={t} index={i}/>);\n  if(k===null)return pills;\n  if(opType==='+'||opType==='−'){\n    const g={type:isX?'x':'const',num:opType==='+'?k:-k,den:1};\n    return<>{pills}<span className=\"pv-ghost\"><TermPill term={g} index={1}/></span></>;\n  }\n  const many=terms.length>1;\n  return<>\n    {many?<span className=\"pv-group\"><span className=\"pv-ghost pv-par\">(</span>{pills}<span className=\"pv-ghost pv-par\">)</span></span>:pills}\n    <span className=\"pv-ghost\"><span className=\"tp\"><span className=\"ts\">{opType==='×'?'·':'÷'}</span><span className=\"tv\">{k<0?`(−${-k})`:k}</span></span></span>\n  </>;\n}\n\n/* ── Operation box (two rendered instances share the same state → mirrored) ── */\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): the number box takes only digits and one leading minus, and the action being typed shows faintly on both sides of the equation, live, before ✓. The math and the ✓ step are unchanged.",
+      "old": "      <input className=\"op-input\" value={opVal} onChange={e=>onOpVal(e.target.value)} placeholder=\"מס׳\" inputMode=\"numeric\"/>\n",
+      "new": "      <input className=\"op-input\" value={opVal} onChange={e=>onOpVal(cleanNum(e.target.value))} placeholder=\"מס׳\" inputMode=\"numeric\"/>\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): the number box takes only digits and one leading minus, and the action being typed shows faintly on both sides of the equation, live, before ✓. The math and the ✓ step are unchanged.",
+      "old": "\n  return(\n    <div>\n",
+      "new": "  const pvK=/^-?\\d+$/.test(opVal)&&parseInt(opVal,10)!==0?parseInt(opVal,10):null;\n  const pvX=opIsX&&(opType==='+'||opType==='−');\n\n  return(\n    <div>\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): the number box takes only digits and one leading minus, and the action being typed shows faintly on both sides of the equation, live, before ✓. The math and the ✓ step are unchanged.",
+      "old": "            <div className=\"g-left side-zone\">{renderTerms(cur.left)}</div>\n            <span className=\"g-mid eq-sign\">=</span>\n            <div className=\"g-right side-zone\">{renderTerms(cur.right)}</div>\n",
+      "new": "            <div className=\"g-left side-zone\"><PreviewSide terms={cur.left} opType={opType} k={solved===null?pvK:null} isX={pvX}/></div>\n            <span className=\"g-mid eq-sign\">=</span>\n            <div className=\"g-right side-zone\"><PreviewSide terms={cur.right} opType={opType} k={solved===null?pvK:null} isX={pvX}/></div>\n",
+      "count": 1
     }
   ],
   "triangles": [

@@ -242,4 +242,29 @@ html[data-page="parabola-practice"] .pp-rv { width: 64px; height: 40px; text-ali
 
 /* ── Intersection (Sulaiman's fix list, 2026-10-30): arranged equation stays visible ── */
 html[data-page="intersection"] .isx-eq { text-align: center; font-size: 20px; font-weight: 800; margin: 4px 0 10px; padding: 8px 12px; border-radius: 10px; background: var(--surface, #fff); border: 1px solid var(--a-200, #bfdbfe); color: var(--a-900, #1e3a8a); }
+
+/* ── Equation solver (Abed, 2026-10-31): the action being typed shows faintly
+   on BOTH sides, live, before ✓. It only appears while typing. ── */
+html[data-page="equation-solver"] .pv-ghost { display: inline-flex; align-items: center; opacity: .5; animation: pv-in .18s ease-out; }
+html[data-page="equation-solver"] .pv-ghost .tv,
+html[data-page="equation-solver"] .pv-ghost .tv-x,
+html[data-page="equation-solver"] .pv-ghost .ts { color: var(--a-600, #0d9488); }
+html[data-page="equation-solver"] .pv-ghost .tp { border-bottom: 2px dashed var(--a-300, #5eead4); border-radius: 0; padding: 4px 2px; }
+html[data-page="equation-solver"] .pv-ghost :is(.tv, .tv-x) { font-size: 1.5rem; }
+html[data-page="equation-solver"] .pv-ghost .ts { font-size: 1.2rem; }
+html[data-page="equation-solver"] .pv-group { display: inline-flex; align-items: center; }
+html[data-page="equation-solver"] .pv-par { font-size: 1.7rem; font-weight: 300; color: var(--a-600, #0d9488); padding: 0 2px; line-height: 1; }
+@media (max-width: 640px) {
+  html[data-page="equation-solver"] .solve-grid:has(.pv-group > :nth-child(4)) > .side-zone { zoom: .68; }
+  html[data-page="equation-solver"] .solve-grid:has(.pv-group > :nth-child(5)) > .side-zone { zoom: .6; }
+}
+@media (max-width: 360px) {
+  html[data-page="equation-solver"] .solve-grid:has(.pv-ghost):has(> .side-zone > :nth-child(3)) > .side-zone { zoom: .76; }
+  html[data-page="equation-solver"] .solve-grid:has(.pv-ghost):has(> .side-zone > :nth-child(4)) > .side-zone { zoom: .64; }
+  html[data-page="equation-solver"] .solve-grid:has(.pv-ghost):has(> .side-zone > :nth-child(5)) > .side-zone { zoom: .55; }
+  html[data-page="equation-solver"] .solve-grid:has(.pv-group > :nth-child(4)) > .side-zone { zoom: .6; }
+  html[data-page="equation-solver"] .solve-grid:has(.pv-group > :nth-child(5)) > .side-zone { zoom: .52; }
+}
+@keyframes pv-in { from { opacity: 0; } to { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { html[data-page="equation-solver"] .pv-ghost { animation: none; } }
 }
