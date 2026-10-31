@@ -49,6 +49,25 @@ export default function TopicView({ slug }) {
     return () => { alive = false; window.removeEventListener("mp:win", onWin); mo.disconnect(); };
   }, [loaded, account && account.id, slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ?ch=<chapter name> (from the railway or the topic sheet): open that chapter
+  useEffect(() => {
+    if (!loaded) return;
+    const want = new URLSearchParams(window.location.search).get("ch");
+    if (!want) return;
+    const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
+    let tries = 0;
+    const iv = setInterval(() => {
+      const btn = [...document.querySelectorAll("#root :is(.ch-btn, .nav-btn, .ph)")].find((b) => norm(b.textContent) === norm(want));
+      if (btn || ++tries > 20) {
+        clearInterval(iv);
+        if (btn && !btn.classList.contains("active")) btn.click();
+        // keep the address clean, so a refresh does not jump again
+        const u = new URL(window.location.href); u.searchParams.delete("ch"); window.history.replaceState(null, "", u.pathname + u.search + u.hash);
+      }
+    }, 100);
+    return () => clearInterval(iv);
+  }, [loaded]);
+
   const Topic = loaded && loaded.Topic;
   return (
     <>

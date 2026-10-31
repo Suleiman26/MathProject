@@ -359,10 +359,10 @@ export function Railway({ topics, progress, account, gradeName }) {
 
           {/* chapter stops */}
           {geo.segs.map((s, i) => s.stops.map(({ ch, at }) => (
-            <span key={i + ":" + ch.i} className={"jr-stop " + ch.state} data-topic={stations[i].color} style={{ left: at[0], top: at[1], "--k": i }}
-              data-tip={chapterTitle(ch.name) + (ch.win ? ` · ${fmt(ch.win)} נפתרו` : ch.n ? " · התחלת" : "")}>
+            <Link key={i + ":" + ch.i} href={`/topics/${stations[i].slug}?ch=${encodeURIComponent(ch.name)}`} className={"jr-stop " + ch.state} data-topic={stations[i].color} style={{ left: at[0], top: at[1], "--k": i }}
+              data-tip={chapterTitle(ch.name) + (ch.win ? ` · ${fmt(ch.win)} נפתרו` : ch.n ? " · התחלת" : "")} aria-label={`${stations[i].name}: ${chapterTitle(ch.name)}`}>
               {ch.state === "solved" && <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" /></svg>}
-            </span>
+            </Link>
           )))}
 
           {/* half way sign */}
@@ -489,10 +489,13 @@ function StationSheet({ st, why, onClose, mode, pos }) {
               const isWeak = st.weakest && st.weakest.name === c.name;
               return (
                 <li key={c.name} className={c.state + (isWeak ? " weak" : "")}>
-                  <i className={"jr-stop mini " + c.state} aria-hidden="true">{c.state === "solved" && <svg viewBox="0 0 12 12"><path d="M3 6.2l2 2 4-4.4" /></svg>}</i>
-                  <span className="nm">{chapterTitle(c.name)}{isWeak && <em>כדאי לחזק</em>}</span>
-                  <span className="bar" aria-hidden="true"><i style={{ width: Math.round(pct * 100) + "%" }} /></span>
-                  <small>{c.win ? (c.win === 1 ? "נפתר 1" : `${fmt(c.win)} נפתרו`) : c.n ? "התחלת" : "—"}{c.acc != null ? ` · ${c.acc}%` : ""}</small>
+                  <Link href={`/topics/${st.slug}?ch=${encodeURIComponent(c.name)}`} aria-label={`לפתוח את הפרק ${chapterTitle(c.name)}`}>
+                    <i className={"jr-stop mini " + c.state} aria-hidden="true">{c.state === "solved" && <svg viewBox="0 0 12 12"><path d="M3 6.2l2 2 4-4.4" /></svg>}</i>
+                    <span className="nm">{chapterTitle(c.name)}{isWeak && <em>כדאי לחזק</em>}</span>
+                    <span className="bar" aria-hidden="true"><i style={{ width: Math.round(pct * 100) + "%" }} /></span>
+                    <small>{c.win ? (c.win === 1 ? "נפתר 1" : `${fmt(c.win)} נפתרו`) : c.n ? "התחלת" : "—"}{c.acc != null ? ` · ${c.acc}%` : ""}</small>
+                    <svg className="go" viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 3L4.5 6l3 3" /></svg>
+                  </Link>
                 </li>
               );
             })}

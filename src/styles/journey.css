@@ -274,11 +274,21 @@
 .jr-sh-ch { margin-top: 14px; }
 .jr-sh-ch h4 { margin: 0 0 6px; font-size: .82rem; font-weight: 700; color: var(--ink-3); letter-spacing: .02em; }
 .jr-sh-ch ol { list-style: none; margin: 0; padding: 0; display: grid; }
-.jr-sh-ch li { display: grid; grid-template-columns: 20px minmax(0, 1fr) 64px auto; align-items: center; gap: 10px; padding: 7px 4px; border-top: 1px solid var(--line); }
+.jr-sh-ch li { display: grid; grid-template-columns: 20px minmax(0, 1fr) 64px auto 12px; align-items: center; gap: 10px; padding: 9px 6px; min-height: 40px; border-top: 1px solid var(--line); }
 .jr-sh-ch li:first-child { border-top: 0; }
 .jr-sh-ch li.weak { background: #fff8e6; border-radius: 10px; border-top-color: transparent; padding-inline: 6px; }
 .jr-sh-ch li.weak + li { border-top-color: transparent; }
 .jr-stop.mini { position: relative; margin: 0; animation: none; justify-self: center; }
+.jr-stop.mini::after { content: none !important; }  /* the railway's hover tip has no text here */
+/* chapter rows open their chapter */
+.jr-sh-ch li > a { display: contents; color: inherit; text-decoration: none; }
+.jr-sh-ch li:has(> a) { cursor: pointer; border-radius: 10px; transition: background-color 140ms ease; }
+@media (hover: hover) and (pointer: fine) { .jr-sh-ch li:has(> a):hover { background: var(--a-50); } }
+.jr-sh-ch li:has(> a):active { background: var(--a-100); }
+.jr-sh-ch .go { width: 12px; height: 12px; align-self: center; fill: none; stroke: var(--ink-3); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* railway chapter stops are links too: a bigger invisible area for fingers */
+a.jr-stop { cursor: pointer; }
+a.jr-stop::before { content: ""; position: absolute; inset: -11px; border-radius: 50%; }
 .jr-sh-ch .nm { font-size: .9rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
 .jr-sh-ch li.off .nm { color: var(--ink-3); }
 .jr-sh-ch .nm em { font-style: normal; flex: none; font-size: .66rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #ffe7a3; color: #6b4600; }
