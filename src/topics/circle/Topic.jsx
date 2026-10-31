@@ -51,7 +51,7 @@ function ExplorerSVG({sel}){
     <line x1={cx} y1={cy} x2={pR.x} y2={pR.y} stroke={c('רדיוס')} strokeWidth={sw('רדיוס')}/>
     {sel==='רדיוס'&&<text x={(cx+pR.x)/2+10} y={(cy+pR.y)/2-6} fontSize="14" fontWeight="700" fill="#0369a1">r</text>}
     <circle cx={cx} cy={cy} r={sel==='מרכז'?6:3} fill={c('מרכז')}/>
-    <text x={cx+10} y={cy+5} fontSize="14" fontWeight="700" fill="#334155">O</text>
+    <text x={cx-7} y={cy-7} textAnchor="end" fontSize="14" fontWeight="700" fill="#334155">O</text>
   </svg>;
 }
 
@@ -73,19 +73,19 @@ function genCh1(){
 function IdentifySVG({mapping}){
   const W=320,H=280,cx=160,cy=140,r=80;
   const positions=[
-    {x1:cx,y1:cy,x2:pt(cx,cy,r,35).x,y2:pt(cx,cy,r,35).y,lx:(cx+pt(cx,cy,r,35).x)/2+12,ly:(cy+pt(cx,cy,r,35).y)/2-10},
-    {x1:pt(cx,cy,r,180).x,y1:pt(cx,cy,r,180).y,x2:pt(cx,cy,r,0).x,y2:pt(cx,cy,r,0).y,lx:cx,ly:cy-12},
-    {x1:pt(cx,cy,r,120).x,y1:pt(cx,cy,r,120).y,x2:pt(cx,cy,r,210).x,y2:pt(cx,cy,r,210).y,lx:(pt(cx,cy,r,120).x+pt(cx,cy,r,210).x)/2-15,ly:(pt(cx,cy,r,120).y+pt(cx,cy,r,210).y)/2},
-    {x1:pt(cx,cy,r,90).x-50,y1:pt(cx,cy,r,90).y,x2:pt(cx,cy,r,90).x+50,y2:pt(cx,cy,r,90).y,lx:pt(cx,cy,r,90).x+55,ly:pt(cx,cy,r,90).y+5}
+    {x1:cx,y1:cy,x2:pt(cx,cy,r,35).x,y2:pt(cx,cy,r,35).y,lx:(cx+pt(cx,cy,r,35).x)/2-10,ly:(cy+pt(cx,cy,r,35).y)/2-14},
+    {x1:pt(cx,cy,r,180).x,y1:pt(cx,cy,r,180).y,x2:pt(cx,cy,r,0).x,y2:pt(cx,cy,r,0).y,lx:cx+45,ly:cy+14},
+    {x1:pt(cx,cy,r,120).x,y1:pt(cx,cy,r,120).y,x2:pt(cx,cy,r,210).x,y2:pt(cx,cy,r,210).y,lx:(pt(cx,cy,r,120).x+pt(cx,cy,r,210).x)/2+16,ly:(pt(cx,cy,r,120).y+pt(cx,cy,r,210).y)/2-2},
+    {x1:pt(cx,cy,r,90).x-50,y1:pt(cx,cy,r,90).y,x2:pt(cx,cy,r,90).x+50,y2:pt(cx,cy,r,90).y,lx:pt(cx,cy,r,90).x+62,ly:pt(cx,cy,r,90).y}
   ];
   const cols=['#dc2626','#16a34a','#ea580c','#7c3aed'];
   return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(320,W),height:'auto',direction:'ltr'}}>
     <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
     <circle cx={cx} cy={cy} r={3} fill="#334155"/>
-    <text x={cx+10} y={cy+5} fontSize="13" fontWeight="700" fill="#334155">O</text>
+    <text x={cx-7} y={cy-7} textAnchor="end" fontSize="13" fontWeight="700" fill="#334155">O</text>
     {mapping.map((m,i)=><g key={i}>
       <line x1={positions[i].x1} y1={positions[i].y1} x2={positions[i].x2} y2={positions[i].y2} stroke={cols[i]} strokeWidth={2.5}/>
-      <text x={positions[i].lx} y={positions[i].ly} fontSize="16" fontWeight="700" fill={cols[i]} textAnchor="middle">{m.label}</text>
+      <text x={positions[i].lx} y={positions[i].ly} fontSize="16" fontWeight="700" fill={cols[i]} textAnchor="middle" dominantBaseline="central">{m.label}</text>
     </g>)}
   </svg>;
 }
@@ -140,7 +140,7 @@ function Ch1(){
           <svg viewBox="0 0 280 200" style={{width:280,height:'auto',direction:'ltr'}}>
             <circle cx={140} cy={100} r={70} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
             <circle cx={140} cy={100} r={3} fill="#334155"/>
-            <text x={148} y={105} fontSize="13" fontWeight="700" fill="#334155">O</text>
+            <text x={133} y={117} textAnchor="end" fontSize="13" fontWeight="700" fill="#334155">O</text>
             {ex.isRtoD?<>
               <line x1={140} y1={100} x2={210} y2={100} stroke="#dc2626" strokeWidth={2.5}/>
               <text x={175} y={92} fontSize="14" fontWeight="700" fill="#dc2626">r = {ex.r}</text>
@@ -174,14 +174,14 @@ function CircleSVG({r,rVal,label,arcHighlight,sectorAngle,sectorColor,showDiam,d
     {arcHighlight&&<path d={arcD(cx,cy,sr+2,arcHighlight[0],arcHighlight[1])} fill="none" stroke="#ea580c" strokeWidth={5}/>}
     <circle cx={cx} cy={cy} r={sr} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
     <circle cx={cx} cy={cy} r={3} fill="#334155"/>
-    <text x={cx+8} y={cy+5} fontSize="13" fontWeight="700" fill="#334155">O</text>
+    <text x={cx-7} y={sectorAngle&&!showDiam?cy+18:cy-7} textAnchor="end" fontSize="13" fontWeight="700" fill="#334155">O</text>
     <line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#dc2626" strokeWidth={2}/>
-    <text x={cx+sr/2} y={cy-8} fontSize="14" fontWeight="700" fill="#dc2626" textAnchor="middle">{rVal!=null?'r = '+rVal:'r'}</text>
+    <text x={cx+sr/2} y={sectorAngle&&!showDiam?cy+16:cy-8} dominantBaseline={sectorAngle&&!showDiam?'central':undefined} fontSize="14" fontWeight="700" fill="#dc2626" textAnchor="middle">{rVal!=null?'r = '+rVal:'r'}</text>
     {showDiam&&<><line x1={cx-sr} y1={cy} x2={cx+sr} y2={cy} stroke="#16a34a" strokeWidth={2}/>
       <text x={cx} y={cy+20} fontSize="14" fontWeight="700" fill="#16a34a" textAnchor="middle">{dVal!=null?'d = '+dVal:'d'}</text></>}
     {sectorAngle&&<>
       <line x1={cx} y1={cy} x2={pt(cx,cy,sr,sectorAngle).x} y2={pt(cx,cy,sr,sectorAngle).y} stroke="#dc2626" strokeWidth={2}/>
-      {label&&<text x={cx+25} y={cy-15} fontSize="13" fontWeight="700" fill="#ea580c">{label}</text>}
+      {label&&<text x={pt(cx,cy,sr*0.62,sectorAngle/2).x} y={pt(cx,cy,sr*0.62,sectorAngle/2).y} textAnchor="middle" dominantBaseline="central" fontSize="13" fontWeight="700" fill="#ea580c">{label}</text>}
     </>}
     {extra}
   </svg>;
@@ -498,11 +498,11 @@ function Ch5(){
       <circle cx={cx} cy={cy} r={sr1} fill="rgba(3,105,161,0.15)" stroke="#2563eb" strokeWidth={2.5}/>
       <circle cx={cx} cy={cy} r={sr2} fill="#fff" stroke="#0369a1" strokeWidth={2}/>
       <circle cx={cx} cy={cy} r={3} fill="#334155"/>
-      <text x={cx+8} y={cy+5} fontSize="13" fontWeight="700" fill="#334155">O</text>
+      <text x={cx-7} y={cy+18} textAnchor="end" fontSize="13" fontWeight="700" fill="#334155">O</text>
       <line x1={cx} y1={cy} x2={cx+sr1} y2={cy} stroke="#dc2626" strokeWidth={2}/>
-      <text x={cx+sr1/2} y={cy-8} fontSize="12" fontWeight="700" fill="#dc2626" textAnchor="middle">R = {ex.R}</text>
+      <text x={cx+(sr1+sr2)/2} y={cy+14} dominantBaseline="central" fontSize="12" fontWeight="700" fill="#dc2626" textAnchor="middle">R = {ex.R}</text>
       <line x1={cx} y1={cy} x2={cx} y2={cy-sr2} stroke="#ea580c" strokeWidth={2}/>
-      <text x={cx+12} y={cy-sr2/2} fontSize="12" fontWeight="700" fill="#ea580c">r = {ex.r}</text>
+      <text x={cx-6} y={sr2>=30?cy-sr2/2:cy-sr2-10} dominantBaseline="central" textAnchor="end" fontSize="12" fontWeight="700" fill="#ea580c">r = {ex.r}</text>
     </svg>;
   }
 

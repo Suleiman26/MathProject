@@ -60,6 +60,31 @@ function angleArcAtVertex(vx,vy,p1,p2,radius){
 }
 
 /* ═══════════════════ Generic quadrilateral SVG ═══════════════════ */
+// Place an angle's value inside its angle, clear of both sides and the arc
+// (measured, not a fixed offset). Too-sharp corners get it just outside.
+function fitAngleLabel(vert,p1,p2,arcR,txt,size,maxD,centroid,diagTo,letter){
+  maxD=Math.min(maxD,arcR+34);
+  const u=(p)=>{const dx=p.x-vert.x,dy=p.y-vert.y,m=Math.hypot(dx,dy)||1;return{x:dx/m,y:dy/m};};
+  let u1=u(p1),u2=u(p2);
+  // a diagonal from this corner splits the angle: use the wider of the two parts
+  if(diagTo){const g=u(diagTo);const ang=(a,b)=>Math.acos(Math.max(-1,Math.min(1,a.x*b.x+a.y*b.y)));
+    if(ang(u1,g)>=ang(g,u2))u2=g;else u1=g;}
+  let bx=u1.x+u2.x,by=u1.y+u2.y;const bm=Math.hypot(bx,by)||1;bx/=bm;by/=bm;
+  const half=Math.acos(Math.max(-1,Math.min(1,u1.x*u2.x+u1.y*u2.y)))/2;
+  const sinH=Math.max(Math.sin(half),0.05);
+  for(const s of [size,size*0.88,Math.max(9.5,size*0.78)]){
+    const w=txt.length*s*0.6,h=s*0.95;
+    const ext=(nx,ny)=>Math.abs(nx)*w/2+Math.abs(ny)*h/2;
+    const dEdge=Math.max(ext(-u1.y,u1.x),ext(-u2.y,u2.x))+4;
+    const d=Math.max(dEdge/sinH,arcR+ext(bx,by)+4);
+    if(d<=maxD)return{x:vert.x+bx*d,y:vert.y+by*d,size:s};
+  }
+  // no room inside: right beside the corner letter, on its outer side ("B 60°")
+  const s=Math.max(9,size*0.9),w=txt.length*s*0.6;
+  const side=vert.x>=centroid.x?1:-1;
+  return{x:letter.x+side*(7+w/2),y:letter.y-4,size:s};
+}
+
 function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[]}){
   const n=order.length;
   const pts=order.map(k=>verts[k]);
@@ -123,7 +148,8 @@ function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={
           ):(
             <path d={arc.path} fill="none" stroke={active?'#7c3aed':'#94a3b8'} strokeWidth={active?3:1.5}/>
           )}
-          {angleLabels[k]!=null&&<text x={v.x+labelDx*0.75} y={v.y+labelDy*0.75} textAnchor="middle" fontSize="12" fontWeight="700" fill={active?'#7c3aed':'#475569'}>{angleLabels[k]}</text>}
+          {angleLabels[k]!=null&&(()=>{const f=fitAngleLabel(v,prev,next,isRight?16:20,String(angleLabels[k]),12.5,Math.hypot(v.x-cx,v.y-cy)*0.72,{x:cx,y:cy},(()=>{const dg=diagonals.find(d=>d.includes(k));return dg?verts[dg[0]===k?dg[1]:dg[0]]:null;})(),{x:v.x+labelDx,y:v.y+labelDy});
+            return <text x={f.x} y={f.y} textAnchor="middle" dominantBaseline="central" fontSize={f.size} fontWeight="700" fill={active?'#7c3aed':'#475569'}>{angleLabels[k]}</text>;})()}
           <text x={v.x+labelDx} y={v.y+labelDy} textAnchor="middle" fontSize="12" fontWeight="700" fill="#1e293b">{k}</text>
         </g>;
       })}

@@ -165,6 +165,31 @@ function angleArcAtVertex(vx,vy,p1,p2,radius,labelOffset=14,centroid){
     midX:vx+(radius+labelOffset)*Math.cos(midRad),midY:vy+(radius+labelOffset)*Math.sin(midRad)};
 }
 
+// Place an angle's value so it never touches the triangle's sides or its arc:
+// measure the label, then push it along the angle's middle line until its box
+// clears both sides (with a small gap) and sits beyond the arc. A corner too
+// sharp to hold the number inside gets it just outside the corner instead.
+function fitAngleLabel(vert,p1,p2,arcR,txt,size,maxD,scl,centroid){
+  const u=(p)=>{const dx=p.x-vert.x,dy=p.y-vert.y,m=Math.hypot(dx,dy)||1;return{x:dx/m,y:dy/m};};
+  const u1=u(p1),u2=u(p2);
+  let bx=u1.x+u2.x,by=u1.y+u2.y;const bm=Math.hypot(bx,by)||1;bx/=bm;by/=bm;
+  const half=Math.acos(Math.max(-1,Math.min(1,u1.x*u2.x+u1.y*u2.y)))/2;
+  const sinH=Math.max(Math.sin(half),0.05);
+  const pad=3*scl+1;
+  for(const s of [size,size*0.88,Math.max(8,size*0.76)]){
+    const w=txt.length*s*0.6,h=s*0.95;
+    const ext=(nx,ny)=>Math.abs(nx)*w/2+Math.abs(ny)*h/2;
+    const dEdge=Math.max(ext(-u1.y,u1.x),ext(-u2.y,u2.x))+pad;
+    const d=Math.max(dEdge/sinH,arcR+ext(bx,by)+pad);
+    if(d<=maxD)return{x:vert.x+bx*d,y:vert.y+by*d,size:s};
+  }
+  // outside: past the corner, beyond the vertex letter
+  const s=Math.max(8,size*0.88),w=txt.length*s*0.6,h=s*0.95;
+  let ox=vert.x-centroid.x,oy=vert.y-centroid.y;const om=Math.hypot(ox,oy)||1;ox/=om;oy/=om;
+  const d=34*scl+Math.abs(ox)*w/2+Math.abs(oy)*h/2;
+  return{x:vert.x+ox*d,y:vert.y+oy*d,size:s};
+}
+
 function midPt(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};}
 
 // offset the label outward from the a-b edge; if a centroid is given, the normal direction
@@ -313,11 +338,12 @@ function TriSVG({verts,labels=['A','B','C'],angleVals,sideVals,equalSides,equalA
         }
       }
       const arc=angleArcAtVertex(vert.x,vert.y,p1,p2,arcR,lblOffset,centroid);
+      const fit=fitAngleLabel(vert,p1,p2,eqCount?eqOuterR:arcR,String(v),lblFontSize,reachToIncenter[i]*0.8,scl,centroid);
       return <g key={'a'+i}>
         {!eqCount&&<path d={arc.path} fill="none" stroke={highlight===('a'+i)?'#dc2626':'#7c3aed'} strokeWidth="1.8"
           style={{cursor:onClick?'pointer':'default'}} onClick={()=>onClick&&onClick('a'+i)}/>}
-        <text x={arc.midX} y={arc.midY} textAnchor={arc.anchor} dominantBaseline={arc.baseline}
-          fontSize={lblFontSize} fontWeight="700" fill={highlight===('a'+i)?'#dc2626':'#7c3aed'}
+        <text x={fit.x} y={fit.y} textAnchor="middle" dominantBaseline="central"
+          fontSize={fit.size} fontWeight="700" fill={highlight===('a'+i)?'#dc2626':'#7c3aed'}
           style={{cursor:onClick?'pointer':'default'}} onClick={()=>onClick&&onClick('a'+i)}>
           {v}</text>
       </g>;

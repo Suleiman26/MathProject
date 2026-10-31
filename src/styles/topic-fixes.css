@@ -267,4 +267,7 @@ html[data-page="equation-solver"] .pv-par { font-size: 1.7rem; font-weight: 300;
 }
 @keyframes pv-in { from { opacity: 0; } to { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { html[data-page="equation-solver"] .pv-ghost { animation: none; } }
+
+/* Parabola: its unnamed toggle buttons were 35px; finger-sized like the rest */
+html[data-page="parabola-practice"] #root .card button { min-height: 40px; }
 }

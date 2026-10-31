@@ -685,4 +685,95 @@ input::placeholder { color: var(--ink-3); font-weight: 400; opacity: 1; }
 .mp-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
 .mp-confetti i { position: absolute; width: 7px; height: 11px; border-radius: 2px; will-change: transform, opacity; }
 
+/* ── 11. Topic page frame (v2, 2026-10-31) ─────────────────────────────────
+   One frame for every topic, whatever its own CSS says: the same page width,
+   the same header (grade chip, title, chapter rail), one style for second-
+   level tabs, finger-sized controls, and a soft dotted "stage" behind
+   drawings. Layout only; the exercises themselves are untouched. */
+:root { --page-w: 800px; }
+
+/* one page width for all topics (their own CSS set 640–1040px) */
+#root > div > :is(.content, .section-wrapper, .app, .section, .main),
+#root > .app {
+  width: 100%; max-width: var(--page-w);
+  margin-inline: auto; box-sizing: border-box;
+  padding-inline: 16px;
+}
+/* Pythagoras shows the drawing beside the questions: it keeps a wider page */
+html[data-page="pythagoras"] #root > div > .main { max-width: 960px; }
+
+/* header: grade as a small chip above the title */
+.hdr { padding-top: 30px; }
+@media (min-width: 641px) { .top-nav, .nav { padding-top: 30px; } }
+.hdr-sub {
+  order: -1; flex: 0 0 auto; margin: 0 auto -2px;
+  display: inline-flex; align-items: center;
+  padding: 4px 12px; border-radius: var(--r-pill);
+  background: var(--a-50); border: 1px solid color-mix(in srgb, var(--a-200) 80%, transparent);
+  color: var(--a-700); font-size: .78rem; font-weight: 600; letter-spacing: .01em;
+}
+.hdr:has(> .hdr-sub) h1 { margin-top: 2px; }
+
+/* chapters: one calm rail instead of loose pills (wide screens) */
+@media (min-width: 641px) {
+  .ch-nav, .ch-btns {
+    flex: 0 1 auto; width: fit-content; max-width: 100%;
+    margin: 4px auto 0; padding: 5px; gap: 4px;
+    background: color-mix(in srgb, var(--surface) 78%, transparent);
+    border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sh-1);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  .ch-nav .ch-btn, .ch-btns .ch-btn {
+    min-height: 38px; padding: 8px 16px;
+    border-color: transparent; background: transparent; box-shadow: none;
+  }
+  .ch-nav .ch-btn.active, .ch-btns .ch-btn.active { background: var(--a-600); border-color: var(--a-600); box-shadow: var(--sh-accent); }
+}
+@media (min-width: 641px) and (hover: hover) and (pointer: fine) {
+  .ch-nav .ch-btn:not(.active):hover, .ch-btns .ch-btn:not(.active):hover { background: var(--a-50); color: var(--a-800); border-color: transparent; }
+}
+/* phones: chapters stay a swipe row; give each a finger-sized height */
+@media (max-width: 640px) {
+  .ch-btn, .nav-btn { min-height: 40px; }
+}
+
+/* second-level tabs (parts of a chapter): one look everywhere */
+:is(.sub-tabs, .tabs, .parts-row):has(> :is(.tab, .sub-tab, .sub-btn, .diff-btn, .part-btn)) {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+}
+:is(.tab, .sub-tab, .sub-btn, .diff-btn, .part-btn) {
+  min-height: 40px; padding: 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink-2); font-size: .875rem; font-weight: 500; line-height: 1.2;
+  box-shadow: none;
+}
+:is(.tab, .sub-tab, .sub-btn, .diff-btn, .part-btn).active {
+  background: var(--a-50); border-color: var(--a-300); color: var(--a-800); font-weight: 600;
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(.tab, .sub-tab, .sub-btn, .diff-btn, .part-btn):not(.active):hover { border-color: var(--line-strong); color: var(--ink); }
+}
+/* other small controls and answer boxes: at least 40px to press */
+.op-btn, .prop-btn { min-height: 40px; }
+#root input:not([type="range"]):not([type="checkbox"]):not([type="radio"]) { min-height: 40px; }
+
+/* cards: the same breathing room in every topic */
+#root .card { padding: clamp(18px, 2.4vw, 28px); }
+#root :is(.content, .section-wrapper, .app, .section, .main) > :is(.card, .info-box, .info) + :is(.card, .info-box, .info) { margin-top: 16px; }
+
+/* drawings: a faint dotted stage that fades out (no box, no border).
+   Coordinate graphs already carry their own grid, so they skip it. */
+#root :is(.svg-wrap, .graph-wrap, .quad-wrap, .tri-wrap) { position: relative; isolation: isolate; }
+#root :is(.svg-wrap, .graph-wrap, .quad-wrap, .tri-wrap)::before {
+  content: ""; position: absolute; inset: -6px -10px; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--a-500) 30%, transparent) 1.1px, transparent 1.6px);
+  background-size: 18px 18px; background-position: center;
+  -webkit-mask-image: radial-gradient(closest-side, #000 45%, transparent 100%);
+          mask-image: radial-gradient(closest-side, #000 45%, transparent 100%);
+}
+html:is([data-page="intersection"], [data-page="linear-function"]) #root .svg-wrap::before,
+html:is([data-page="intersection"], [data-page="linear-function"]) #root .graph-wrap::before { content: none; }
+
 } /* end @layer mp */

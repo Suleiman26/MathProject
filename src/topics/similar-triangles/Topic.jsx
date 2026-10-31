@@ -116,7 +116,10 @@ function Tri({verts, order, sideLabels={}, angleLabels={}, angleGroup={}, rightA
         const group=angleGroup[k]||0;
         const arcRef=angleArcAtVertex(v.x,v.y,prev,next,20);
         const bis=arcRef.midAngle;
-        const inX=v.x+32*Math.cos(bis), inY=v.y+32*Math.sin(bis)+4;
+        // push the value far enough along the angle's middle that it clears both sides
+        const lblW=String(angleLabels[k]??'').length*7.2, halfA=Math.abs(Math.atan2(Math.sin(Math.atan2(prev.y-v.y,prev.x-v.x)-Math.atan2(next.y-v.y,next.x-v.x)),Math.cos(Math.atan2(prev.y-v.y,prev.x-v.x)-Math.atan2(next.y-v.y,next.x-v.x))))/2;
+        const inD=Math.max(32,(Math.max(lblW/2,7)+4)/Math.max(Math.sin(halfA),0.2));
+        const inX=v.x+inD*Math.cos(bis), inY=v.y+inD*Math.sin(bis)+4;
         const outX=v.x-17*Math.cos(bis), outY=v.y-17*Math.sin(bis)+4;
         return <g key={k} style={{cursor:onAngle?'pointer':'default'}} onClick={()=>onAngle&&onAngle(k)}>
           <circle cx={v.x} cy={v.y} r={24} fill="transparent"/>

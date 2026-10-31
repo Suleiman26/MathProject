@@ -307,7 +307,7 @@ export function initRuntime() {
     if (!t || t.closest(".mp-topbar")) return;
     if (t.matches("select")) return;
     var name = t.matches(SEL.chip) ? "select" : "tap";
-    if (t.closest(".ch-nav, .ch-btns") && t.scrollIntoView) {
+    if (t.closest(".ch-nav, .ch-btns, .top-nav, .nav") && t.matches(".ch-btn, .nav-btn") && t.scrollIntoView) {
       // keep the chosen chapter in view on phones
       try { t.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduceMotion ? "auto" : "smooth" }); } catch (err) {}
     }

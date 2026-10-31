@@ -189,7 +189,9 @@ function QuadSVG({ quad, selected, onClickVertex, clickMode, activeTri, showAns 
   const dlMx = (dl0.x + dl1.x) / 2, dlMy = (dl0.y + dl1.y) / 2;
   const ddx = dl1.x - dl0.x, ddy = dl1.y - dl0.y, dlen = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
   let dnx = -ddy / dlen * 22, dny = ddx / dlen * 22;
-  if (dny > 0) { dnx = -dnx; dny = -dny; }
+  const toMid = dnx * (cx - dlMx) + dny * (cy - dlMy);
+  if (Math.abs(toMid) > 4) { if (toMid < 0) { dnx = -dnx; dny = -dny; } }
+  else if (dny > 0) { dnx = -dnx; dny = -dny; }
 
   /* side labels (outside shape via perpendicular from center) */
   const sides = [];

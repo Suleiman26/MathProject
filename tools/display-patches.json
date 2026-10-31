@@ -165,6 +165,24 @@
       "old": "          {expandedTheorem===t&&<p>{theoremNames[t]}</p>}\n        </div>)}\n      </div>",
       "new": "          {expandedTheorem===t&&<p>{theoremNames[t]}</p>}\n        </div>)}\n      </div>\n      {expandedTheorem?<TheoremExample t={expandedTheorem}/>:<p className=\"hint\" style={{textAlign:'center'}}>לחצו על משפט כדי לראות דוגמה</p>}",
       "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "function midPt(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};}\n",
+      "new": "// Place an angle's value so it never touches the triangle's sides or its arc:\n// measure the label, then push it along the angle's middle line until its box\n// clears both sides (with a small gap) and sits beyond the arc. A corner too\n// sharp to hold the number inside gets it just outside the corner instead.\nfunction fitAngleLabel(vert,p1,p2,arcR,txt,size,maxD,scl,centroid){\n  const u=(p)=>{const dx=p.x-vert.x,dy=p.y-vert.y,m=Math.hypot(dx,dy)||1;return{x:dx/m,y:dy/m};};\n  const u1=u(p1),u2=u(p2);\n  let bx=u1.x+u2.x,by=u1.y+u2.y;const bm=Math.hypot(bx,by)||1;bx/=bm;by/=bm;\n  const half=Math.acos(Math.max(-1,Math.min(1,u1.x*u2.x+u1.y*u2.y)))/2;\n  const sinH=Math.max(Math.sin(half),0.05);\n  const pad=3*scl+1;\n  for(const s of [size,size*0.88,Math.max(8,size*0.76)]){\n    const w=txt.length*s*0.6,h=s*0.95;\n    const ext=(nx,ny)=>Math.abs(nx)*w/2+Math.abs(ny)*h/2;\n    const dEdge=Math.max(ext(-u1.y,u1.x),ext(-u2.y,u2.x))+pad;\n    const d=Math.max(dEdge/sinH,arcR+ext(bx,by)+pad);\n    if(d<=maxD)return{x:vert.x+bx*d,y:vert.y+by*d,size:s};\n  }\n  // outside: past the corner, beyond the vertex letter\n  const s=Math.max(8,size*0.88),w=txt.length*s*0.6,h=s*0.95;\n  let ox=vert.x-centroid.x,oy=vert.y-centroid.y;const om=Math.hypot(ox,oy)||1;ox/=om;oy/=om;\n  const d=34*scl+Math.abs(ox)*w/2+Math.abs(oy)*h/2;\n  return{x:vert.x+ox*d,y:vert.y+oy*d,size:s};\n}\n\nfunction midPt(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};}\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "      return <g key={'a'+i}>\n",
+      "new": "      const fit=fitAngleLabel(vert,p1,p2,eqCount?eqOuterR:arcR,String(v),lblFontSize,reachToIncenter[i]*0.8,scl,centroid);\n      return <g key={'a'+i}>\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "        <text x={arc.midX} y={arc.midY} textAnchor={arc.anchor} dominantBaseline={arc.baseline}\n          fontSize={lblFontSize} fontWeight=\"700\" fill={highlight===('a'+i)?'#dc2626':'#7c3aed'}\n",
+      "new": "        <text x={fit.x} y={fit.y} textAnchor=\"middle\" dominantBaseline=\"central\"\n          fontSize={fit.size} fontWeight=\"700\" fill={highlight===('a'+i)?'#dc2626':'#7c3aed'}\n",
+      "count": 1
     }
   ],
   "powers-roots": [
@@ -782,6 +800,80 @@
       "why": "Sulaiman's fix list (2026-10-30), approved by Abed: intersection. The arranged equation stays visible after step 2 and above the coefficient inputs; coefficients are accepted for the equation exactly as the student arranged it.",
       "old": "        {phase==='coefs'?<>\n",
       "new": "        {phase==='coefs'&&<div className=\"isx-eq\" dir=\"ltr\">{arrangedStr}</div>}\n        {phase==='coefs'?<>\n",
+      "count": 1
+    }
+  ],
+  "circle": [
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "    <text x={cx+10} y={cy+5} fontSize=\"14\" fontWeight=\"700\" fill=\"#334155\">O</text>\n",
+      "new": "    <text x={cx-7} y={cy-7} textAnchor=\"end\" fontSize=\"14\" fontWeight=\"700\" fill=\"#334155\">O</text>\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "    {x1:cx,y1:cy,x2:pt(cx,cy,r,35).x,y2:pt(cx,cy,r,35).y,lx:(cx+pt(cx,cy,r,35).x)/2+12,ly:(cy+pt(cx,cy,r,35).y)/2-10},\n    {x1:pt(cx,cy,r,180).x,y1:pt(cx,cy,r,180).y,x2:pt(cx,cy,r,0).x,y2:pt(cx,cy,r,0).y,lx:cx,ly:cy-12},\n    {x1:pt(cx,cy,r,120).x,y1:pt(cx,cy,r,120).y,x2:pt(cx,cy,r,210).x,y2:pt(cx,cy,r,210).y,lx:(pt(cx,cy,r,120).x+pt(cx,cy,r,210).x)/2-15,ly:(pt(cx,cy,r,120).y+pt(cx,cy,r,210).y)/2},\n    {x1:pt(cx,cy,r,90).x-50,y1:pt(cx,cy,r,90).y,x2:pt(cx,cy,r,90).x+50,y2:pt(cx,cy,r,90).y,lx:pt(cx,cy,r,90).x+55,ly:pt(cx,cy,r,90).y+5}\n",
+      "new": "    {x1:cx,y1:cy,x2:pt(cx,cy,r,35).x,y2:pt(cx,cy,r,35).y,lx:(cx+pt(cx,cy,r,35).x)/2-10,ly:(cy+pt(cx,cy,r,35).y)/2-14},\n    {x1:pt(cx,cy,r,180).x,y1:pt(cx,cy,r,180).y,x2:pt(cx,cy,r,0).x,y2:pt(cx,cy,r,0).y,lx:cx+45,ly:cy+14},\n    {x1:pt(cx,cy,r,120).x,y1:pt(cx,cy,r,120).y,x2:pt(cx,cy,r,210).x,y2:pt(cx,cy,r,210).y,lx:(pt(cx,cy,r,120).x+pt(cx,cy,r,210).x)/2+16,ly:(pt(cx,cy,r,120).y+pt(cx,cy,r,210).y)/2-2},\n    {x1:pt(cx,cy,r,90).x-50,y1:pt(cx,cy,r,90).y,x2:pt(cx,cy,r,90).x+50,y2:pt(cx,cy,r,90).y,lx:pt(cx,cy,r,90).x+62,ly:pt(cx,cy,r,90).y}\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "    <text x={cx+10} y={cy+5} fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n    {mapping.map((m,i)=><g key={i}>\n      <line x1={positions[i].x1} y1={positions[i].y1} x2={positions[i].x2} y2={positions[i].y2} stroke={cols[i]} strokeWidth={2.5}/>\n      <text x={positions[i].lx} y={positions[i].ly} fontSize=\"16\" fontWeight=\"700\" fill={cols[i]} textAnchor=\"middle\">{m.label}</text>\n",
+      "new": "    <text x={cx-7} y={cy-7} textAnchor=\"end\" fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n    {mapping.map((m,i)=><g key={i}>\n      <line x1={positions[i].x1} y1={positions[i].y1} x2={positions[i].x2} y2={positions[i].y2} stroke={cols[i]} strokeWidth={2.5}/>\n      <text x={positions[i].lx} y={positions[i].ly} fontSize=\"16\" fontWeight=\"700\" fill={cols[i]} textAnchor=\"middle\" dominantBaseline=\"central\">{m.label}</text>\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "            <text x={148} y={105} fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n",
+      "new": "            <text x={133} y={117} textAnchor=\"end\" fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "    <text x={cx+8} y={cy+5} fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n    <line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke=\"#dc2626\" strokeWidth={2}/>\n    <text x={cx+sr/2} y={cy-8} fontSize=\"14\" fontWeight=\"700\" fill=\"#dc2626\" textAnchor=\"middle\">{rVal!=null?'r = '+rVal:'r'}</text>\n",
+      "new": "    <text x={cx-7} y={sectorAngle&&!showDiam?cy+18:cy-7} textAnchor=\"end\" fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n    <line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke=\"#dc2626\" strokeWidth={2}/>\n    <text x={cx+sr/2} y={sectorAngle&&!showDiam?cy+16:cy-8} dominantBaseline={sectorAngle&&!showDiam?'central':undefined} fontSize=\"14\" fontWeight=\"700\" fill=\"#dc2626\" textAnchor=\"middle\">{rVal!=null?'r = '+rVal:'r'}</text>\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "      {label&&<text x={cx+25} y={cy-15} fontSize=\"13\" fontWeight=\"700\" fill=\"#ea580c\">{label}</text>}\n",
+      "new": "      {label&&<text x={pt(cx,cy,sr*0.62,sectorAngle/2).x} y={pt(cx,cy,sr*0.62,sectorAngle/2).y} textAnchor=\"middle\" dominantBaseline=\"central\" fontSize=\"13\" fontWeight=\"700\" fill=\"#ea580c\">{label}</text>}\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "      <text x={cx+8} y={cy+5} fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n      <line x1={cx} y1={cy} x2={cx+sr1} y2={cy} stroke=\"#dc2626\" strokeWidth={2}/>\n      <text x={cx+sr1/2} y={cy-8} fontSize=\"12\" fontWeight=\"700\" fill=\"#dc2626\" textAnchor=\"middle\">R = {ex.R}</text>\n      <line x1={cx} y1={cy} x2={cx} y2={cy-sr2} stroke=\"#ea580c\" strokeWidth={2}/>\n      <text x={cx+12} y={cy-sr2/2} fontSize=\"12\" fontWeight=\"700\" fill=\"#ea580c\">r = {ex.r}</text>\n",
+      "new": "      <text x={cx-7} y={cy+18} textAnchor=\"end\" fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n      <line x1={cx} y1={cy} x2={cx+sr1} y2={cy} stroke=\"#dc2626\" strokeWidth={2}/>\n      <text x={cx+(sr1+sr2)/2} y={cy+14} dominantBaseline=\"central\" fontSize=\"12\" fontWeight=\"700\" fill=\"#dc2626\" textAnchor=\"middle\">R = {ex.R}</text>\n      <line x1={cx} y1={cy} x2={cx} y2={cy-sr2} stroke=\"#ea580c\" strokeWidth={2}/>\n      <text x={cx-6} y={sr2>=30?cy-sr2/2:cy-sr2-10} dominantBaseline=\"central\" textAnchor=\"end\" fontSize=\"12\" fontWeight=\"700\" fill=\"#ea580c\">r = {ex.r}</text>\n",
+      "count": 1
+    }
+  ],
+  "quadrilaterals": [
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[]}){\n",
+      "new": "// Place an angle's value inside its angle, clear of both sides and the arc\n// (measured, not a fixed offset). Too-sharp corners get it just outside.\nfunction fitAngleLabel(vert,p1,p2,arcR,txt,size,maxD,centroid,diagTo,letter){\n  maxD=Math.min(maxD,arcR+34);\n  const u=(p)=>{const dx=p.x-vert.x,dy=p.y-vert.y,m=Math.hypot(dx,dy)||1;return{x:dx/m,y:dy/m};};\n  let u1=u(p1),u2=u(p2);\n  // a diagonal from this corner splits the angle: use the wider of the two parts\n  if(diagTo){const g=u(diagTo);const ang=(a,b)=>Math.acos(Math.max(-1,Math.min(1,a.x*b.x+a.y*b.y)));\n    if(ang(u1,g)>=ang(g,u2))u2=g;else u1=g;}\n  let bx=u1.x+u2.x,by=u1.y+u2.y;const bm=Math.hypot(bx,by)||1;bx/=bm;by/=bm;\n  const half=Math.acos(Math.max(-1,Math.min(1,u1.x*u2.x+u1.y*u2.y)))/2;\n  const sinH=Math.max(Math.sin(half),0.05);\n  for(const s of [size,size*0.88,Math.max(9.5,size*0.78)]){\n    const w=txt.length*s*0.6,h=s*0.95;\n    const ext=(nx,ny)=>Math.abs(nx)*w/2+Math.abs(ny)*h/2;\n    const dEdge=Math.max(ext(-u1.y,u1.x),ext(-u2.y,u2.x))+4;\n    const d=Math.max(dEdge/sinH,arcR+ext(bx,by)+4);\n    if(d<=maxD)return{x:vert.x+bx*d,y:vert.y+by*d,size:s};\n  }\n  // no room inside: right beside the corner letter, on its outer side (\"B 60°\")\n  const s=Math.max(9,size*0.9),w=txt.length*s*0.6;\n  const side=vert.x>=centroid.x?1:-1;\n  return{x:letter.x+side*(7+w/2),y:letter.y-4,size:s};\n}\n\nfunction QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[]}){\n",
+      "count": 1
+    },
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "          {angleLabels[k]!=null&&<text x={v.x+labelDx*0.75} y={v.y+labelDy*0.75} textAnchor=\"middle\" fontSize=\"12\" fontWeight=\"700\" fill={active?'#7c3aed':'#475569'}>{angleLabels[k]}</text>}\n",
+      "new": "          {angleLabels[k]!=null&&(()=>{const f=fitAngleLabel(v,prev,next,isRight?16:20,String(angleLabels[k]),12.5,Math.hypot(v.x-cx,v.y-cy)*0.72,{x:cx,y:cy},(()=>{const dg=diagonals.find(d=>d.includes(k));return dg?verts[dg[0]===k?dg[1]:dg[0]]:null;})(),{x:v.x+labelDx,y:v.y+labelDy});\n            return <text x={f.x} y={f.y} textAnchor=\"middle\" dominantBaseline=\"central\" fontSize={f.size} fontWeight=\"700\" fill={active?'#7c3aed':'#475569'}>{angleLabels[k]}</text>;})()}\n",
+      "count": 1
+    }
+  ],
+  "pythagoras": [
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "  if (dny > 0) { dnx = -dnx; dny = -dny; }\n",
+      "new": "  const toMid = dnx * (cx - dlMx) + dny * (cy - dlMy);\n  if (Math.abs(toMid) > 4) { if (toMid < 0) { dnx = -dnx; dny = -dny; } }\n  else if (dny > 0) { dnx = -dnx; dny = -dny; }\n",
+      "count": 1
+    }
+  ],
+  "similar-triangles": [
+    {
+      "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
+      "old": "        const inX=v.x+32*Math.cos(bis), inY=v.y+32*Math.sin(bis)+4;\n",
+      "new": "        // push the value far enough along the angle's middle that it clears both sides\n        const lblW=String(angleLabels[k]??'').length*7.2, halfA=Math.abs(Math.atan2(Math.sin(Math.atan2(prev.y-v.y,prev.x-v.x)-Math.atan2(next.y-v.y,next.x-v.x)),Math.cos(Math.atan2(prev.y-v.y,prev.x-v.x)-Math.atan2(next.y-v.y,next.x-v.x))))/2;\n        const inD=Math.max(32,(Math.max(lblW/2,7)+4)/Math.max(Math.sin(halfA),0.2));\n        const inX=v.x+inD*Math.cos(bis), inY=v.y+inD*Math.sin(bis)+4;\n",
       "count": 1
     }
   ]

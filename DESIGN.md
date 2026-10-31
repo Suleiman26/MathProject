@@ -118,3 +118,16 @@ Also run `npx next build`.
 
 Next.js 16.3.8, React 19.2.8 (exact versions in package.json). Upgrade on
 purpose, then test every topic.
+
+## Page frame (v2, 2026-10-31)
+
+`mp.css` section 11 gives every topic the same frame: page width `--page-w`
+(800px; Pythagoras 960px for its side-by-side layout), the grade as a chip
+above the title, chapters in one rail (a swipe row on phones), one style for
+second-level tabs (`.tab`, `.sub-tab`, `.sub-btn`, `.diff-btn`, `.part-btn`),
+40px minimum for anything pressed, and a faint dotted stage behind drawings
+(`.svg-wrap`, `.graph-wrap`, `.quad-wrap`, `.tri-wrap`; coordinate graphs skip it).
+
+Labels in drawings never sit on a line: angle values are placed by measuring
+the text (inside the angle, clear of sides, arcs and diagonals; beside the
+corner letter when the corner is too sharp). New drawings should do the same.
