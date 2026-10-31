@@ -139,4 +139,4 @@ The solids topic shows each shape in real 3D: `src/components/solid3d/`
 in `src/topics/solids3d/Topic.jsx` hands over in one line (`if(has3D())…`);
 no WebGL, or `?flat=1`, keeps the flat drawing. Sideways drag turns the shape
 (a finger's up/down swipe still scrolls the page); labels are page elements
-placed beside their edge on screen and nudged apart, never on a line.
+pinned to the middle of the line they measure (that line drawn in their colour); overlapping numbers slide along their own line.

@@ -1,8 +1,9 @@
 'use client';
-/* The 3D scene for one solid. Turn it with a sideways drag (a finger's up/down
-   swipe still scrolls the page). Measures are small tags floating beside their
-   edge; the part chosen below the drawing lights up green, as in the flat
-   drawings. Renders only when something changes, and never while off screen. */
+/* The 3D scene for one solid. Touching it only turns it (the page stays
+   still). Each measure's line is drawn in its colour and its number is pinned
+   to the middle of that line, so it turns with the shape and stays put. The part chosen below lights up green,
+   as in the flat drawings. Renders only when something changes, and never
+   while off screen. */
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -74,7 +75,11 @@ function BoxShape({ l, w, h, cube, activePart, showBaseDiag, showSpaceDiag, show
           <meshBasicMaterial color={HI} transparent opacity={0.45} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
       )}
-      {edges.map(([a, b], i) => <Edge key={i} a={a} b={b} hi={eHi} />)}
+      {edges.map(([a, b], i) => {
+        // the three measured edges (one per direction, meeting at B) carry their colour
+        const mc = { 0: cube ? BLUE : BLUE, 1: cube ? BLUE : ORANGE, 9: cube ? BLUE : VIOLET }[i];
+        return <Edge key={i} a={a} b={b} hi={eHi} color={mc || INK} width={mc ? 3.2 : 2.2} />;
+      })}
       {[A, B, C, D, E, F, G, H].map((p, i) => <Dot key={i} p={p} hi={activePart === "vertex"} />)}
       {showBaseDiag && <Edge a={E} b={G} color={BLUE} width={3} dashed />}
       {(showSpaceDiag || showDiag) && <Edge a={A} b={G} color={RED} width={3} />}
@@ -119,7 +124,7 @@ function ConeShape({ r, h, activePart, color }) {
       <Loop pts={circle(R, -H / 2)} hi={baseHi} />
       <Edge a={bc} b={apex} color={ORANGE} dashed hi={activePart === "height"} />
       <Edge a={bc} b={rim} color={BLUE} hi={activePart === "radius"} />
-      <Edge a={apex} b={rim} color={activePart === "slant" ? RED : SOFT} width={activePart === "slant" ? 3.2 : 1.8} />
+      <Edge a={apex} b={rim} color={activePart === "slant" ? RED : "#64748b"} width={activePart === "slant" ? 3.4 : 2.4} />
       <Dot p={apex} r={0.04} />
     </group>
   );
@@ -151,6 +156,7 @@ function PyramidShape({ b, h, tri, activePart, color }) {
       <Body geo={geo} color={color} opacity={0.2} />
       {baseHi && <mesh geometry={baseGeo} renderOrder={2}><meshBasicMaterial color={HI} transparent opacity={0.45} side={THREE.DoubleSide} depthWrite={false} /></mesh>}
       {base.map((p, i) => <Edge key={"b" + i} a={p} b={base[(i + 1) % base.length]} hi={baseHi} />)}
+      <Edge a={front[0]} b={front[1]} color={BLUE} width={3.2} hi={baseHi} />
       {base.map((p, i) => <Edge key={"s" + i} a={p} b={apex} />)}
       <Edge a={bc} b={apex} color={ORANGE} dashed hi={activePart === "height"} />
       <Edge a={apex} b={fm} color={activePart === "apothem" ? RED : SOFT} width={activePart === "apothem" ? 3.2 : 1.6} dashed={activePart !== "apothem"} />
@@ -196,170 +202,76 @@ function CompositeShape({ r, h1, h2, activePart, color }) {
   );
 }
 
-/* Labels of each shape: where they sit (beside their edge, never on it) and
-   what they say. Drawn as page elements over the canvas (see Tracker). */
-function labelsFor(kind, p, activePart) {
-  const T = (pos, text, color = INK) => ({ p: pos, text: String(text), color });
-  const E = (a, b, text, color = INK) => ({ edge: [a, b], text: String(text), color }); // beside an edge, on screen
+/* Each number is pinned to the middle of the line it measures (that line is
+   drawn in the number's colour). A pin is a fixed point on the shape, so the
+   number turns with the shape and always stays on its own line. */
+function pinsFor(kind, p, activePart) {
+  const P = (a, b, text, color) => ({ a, b, text: String(text), color });
   if (kind === "cube" || kind === "box") {
     const cube = kind === "cube", l = cube ? p.a : p.l, w = cube ? p.a : p.w, h = cube ? p.a : p.h;
-    const s = SIZE / Math.max(l, w, h), X = l * s, Y = h * s, Z = w * s;
-    const A = [-X / 2, -Y / 2, Z / 2], B = [X / 2, -Y / 2, Z / 2], C = [X / 2, -Y / 2, -Z / 2], F = [X / 2, Y / 2, Z / 2];
-    return [E(A, B, cube ? l : `l=${l}`, cube ? INK : BLUE), E(B, C, cube ? w : `w=${w}`, cube ? INK : ORANGE), E(B, F, cube ? h : `h=${h}`, cube ? INK : VIOLET)];
+    const s = SIZE / Math.max(l, w, h), X = l * s / 2, Y = h * s / 2, Z = w * s / 2;
+    const A = [-X, -Y, Z], B = [X, -Y, Z], C = [X, -Y, -Z], F = [X, Y, Z];
+    return [P(A, B, cube ? l : `l=${l}`, BLUE), P(B, C, cube ? w : `w=${w}`, cube ? BLUE : ORANGE), P(B, F, cube ? h : `h=${h}`, cube ? BLUE : VIOLET)];
   }
-  if (kind === "cylinder") {
+  if (kind === "cylinder" || kind === "cone") {
     const s = SIZE / Math.max(2 * p.r, p.h), R = p.r * s, H = p.h * s;
-    return [T([-(R + 0.34), 0, 0], `h=${p.h}`, ORANGE), T([R / 2, H / 2 + 0.24, 0], `r=${p.r}`, BLUE)];
-  }
-  if (kind === "cone") {
-    const s = SIZE / Math.max(2 * p.r, p.h), R = p.r * s, H = p.h * s;
-    return [T([-(R / 2 + 0.4), 0, 0], `h=${p.h}`, ORANGE), T([R / 2, -H / 2 - 0.26, 0.12], `r=${p.r}`, BLUE),
-      E([0, H / 2, 0], [R, -H / 2, 0], "l", activePart === "slant" ? RED : "#64748b")];
-  }
-  if (kind === "pyrSq" || kind === "pyrTri") {
-    const tri = kind === "pyrTri", s = SIZE / Math.max(p.b, p.h), Bs = p.b * s, H = p.h * s;
-    const base = tri
-      ? [90, 210, 330].map((d) => { const t = (d * Math.PI) / 180, R = Bs / Math.sqrt(3); return [R * Math.cos(t), -H / 2, R * Math.sin(t)]; })
-      : [[-Bs / 2, -H / 2, Bs / 2], [Bs / 2, -H / 2, Bs / 2]];
-    const front = tri ? [base[0], base[2]] : [base[0], base[1]];
-    const half = tri ? Bs / Math.sqrt(3) / 2 : Bs / 4;
-    const out = [E(front[0], front[1], `b=${p.b}`), T([-(half + 0.42), 0, 0], `h=${p.h}`, ORANGE)];
-    if (activePart === "apothem") out.push(E([0, H / 2, 0], mid(front[0], front[1]), "m", RED));
+    const ry = kind === "cone" ? -H / 2 : H / 2;
+    const out = [P([0, -H / 2, 0], [0, H / 2, 0], `h=${p.h}`, ORANGE), P([0, ry, 0], [R, ry, 0], `r=${p.r}`, BLUE)];
+    if (kind === "cone") out.push(P([0, H / 2, 0], [R, -H / 2, 0], "l", activePart === "slant" ? RED : "#64748b"));
     return out;
   }
-  if (kind === "sphere") return [T([SIZE / 4, 0.26, 0], `r=${p.r}`, BLUE)];
+  if (kind === "pyrSq" || kind === "pyrTri") {
+    const s = SIZE / Math.max(p.b, p.h), Bs = p.b * s, H = p.h * s;
+    const base = kind === "pyrTri"
+      ? [90, 210, 330].map((d) => { const t = (d * Math.PI) / 180, R = Bs / Math.sqrt(3); return [R * Math.cos(t), -H / 2, R * Math.sin(t)]; })
+      : [[-Bs / 2, -H / 2, Bs / 2], [Bs / 2, -H / 2, Bs / 2]];
+    const f = kind === "pyrTri" ? [base[0], base[2]] : [base[0], base[1]];
+    const out = [P(f[0], f[1], `b=${p.b}`, BLUE), P([0, -H / 2, 0], [0, H / 2, 0], `h=${p.h}`, ORANGE)];
+    if (activePart === "apothem") out.push(P([0, H / 2, 0], mid(f[0], f[1]), "m", RED));
+    return out;
+  }
+  if (kind === "sphere") return [P([0, 0, 0], [SIZE / 2, 0, 0], `r=${p.r}`, BLUE)];
   if (kind === "composite") {
     const s = SIZE / Math.max(2 * p.r, p.h1 + p.h2), R = p.r * s, H1 = p.h1 * s, H2 = p.h2 * s;
     const y0 = -(H1 + H2) / 2, y1 = y0 + H1, y2 = y1 + H2;
-    return [T([-(R + 0.4), (y0 + y1) / 2, 0], `h1=${p.h1}`, ORANGE), T([R / 2 + 0.42, (y1 + y2) / 2, 0], `h2=${p.h2}`, VIOLET), T([R / 2, y0 - 0.26, 0.12], `r=${p.r}`, BLUE)];
+    return [P([0, y0, 0], [0, y1, 0], `h1=${p.h1}`, ORANGE), P([0, y1, 0], [0, y2, 0], `h2=${p.h2}`, VIOLET), P([0, y0, 0], [R, y0, 0], `r=${p.r}`, BLUE)];
   }
   return [];
 }
 
-/* Moves the label tags to follow the shape. Steady by design: each label
-   glides toward its spot (no jumps), an edge label changes sides only after
-   its edge has clearly crossed over, and labels dodge each other always in
-   the same direction. */
-/* The visible lines of each shape (3D segments), so labels can keep off all of them */
-function linesFor(kind, p) {
-  const seg = []; const add = (a, b) => seg.push([a, b]);
-  const ring = (R, y, n = 24) => { const c = circle(R, y, n); for (let i = 0; i < n; i++) add(c[i], c[i + 1]); };
-  if (kind === "cube" || kind === "box") {
-    const l = kind === "cube" ? p.a : p.l, w = kind === "cube" ? p.a : p.w, h = kind === "cube" ? p.a : p.h;
-    const s = SIZE / Math.max(l, w, h), X = l * s / 2, Y = h * s / 2, Z = w * s / 2;
-    const A = [-X, -Y, Z], B = [X, -Y, Z], C = [X, -Y, -Z], D = [-X, -Y, -Z], E = [-X, Y, Z], F = [X, Y, Z], G = [X, Y, -Z], H = [-X, Y, -Z];
-    [[A, B], [B, C], [C, D], [D, A], [E, F], [F, G], [G, H], [H, E], [A, E], [B, F], [C, G], [D, H]].forEach(([a, b]) => add(a, b));
-  } else if (kind === "cylinder" || kind === "cone") {
-    const s = SIZE / Math.max(2 * p.r, p.h), R = p.r * s, H = p.h * s;
-    ring(R, -H / 2); add([0, -H / 2, 0], [0, H / 2, 0]); add([0, kind === "cone" ? -H / 2 : H / 2, 0], [R, kind === "cone" ? -H / 2 : H / 2, 0]);
-    if (kind === "cylinder") { ring(R, H / 2); add([R, -H / 2, 0], [R, H / 2, 0]); add([-R, -H / 2, 0], [-R, H / 2, 0]); }
-    else { for (let k = 0; k < 8; k++) { const t = (k / 8) * Math.PI * 2; add([0, H / 2, 0], [R * Math.cos(t), -H / 2, R * Math.sin(t)]); } }
-  } else if (kind === "pyrSq" || kind === "pyrTri") {
-    const s = SIZE / Math.max(p.b, p.h), Bs = p.b * s, H = p.h * s;
-    const base = kind === "pyrTri"
-      ? [90, 210, 330].map((d) => { const t = (d * Math.PI) / 180, R = Bs / Math.sqrt(3); return [R * Math.cos(t), -H / 2, R * Math.sin(t)]; })
-      : [[-Bs / 2, -H / 2, Bs / 2], [Bs / 2, -H / 2, Bs / 2], [Bs / 2, -H / 2, -Bs / 2], [-Bs / 2, -H / 2, -Bs / 2]];
-    base.forEach((q, i) => { add(q, base[(i + 1) % base.length]); add(q, [0, H / 2, 0]); });
-    add([0, -H / 2, 0], [0, H / 2, 0]);
-  } else if (kind === "sphere") {
-    ring(SIZE / 2, 0); add([0, 0, 0], [SIZE / 2, 0, 0]);
-  } else if (kind === "composite") {
-    const s = SIZE / Math.max(2 * p.r, p.h1 + p.h2), R = p.r * s, H1 = p.h1 * s, H2 = p.h2 * s;
-    const y0 = -(H1 + H2) / 2, y1 = y0 + H1, y2 = y1 + H2;
-    ring(R, y0); ring(R, y1); add([0, y0, 0], [0, y2, 0]); add([0, y0, 0], [R, y0, 0]);
-    add([R, y0, 0], [R, y1, 0]); add([-R, y0, 0], [-R, y1, 0]); add([R, y1, 0], [0, y2, 0]); add([-R, y1, 0], [0, y2, 0]);
-  }
-  return seg;
-}
-
-function Tracker({ tags, spans, segs }) {
+/* Keeps every number on its own line, every frame: at the middle of the line,
+   or, if that spot is taken by another number, slid along the same line to the
+   nearest free spot. A spot is kept until it stops being free (no flicker). */
+const SPOTS = [0.5, 0.35, 0.65, 0.22, 0.78];
+function Pins({ pins, spans }) {
   const ref = useRef(); const v = useMemo(() => new THREE.Vector3(), []);
-  const st = useRef({ tags: null, pos: [], side: [], extra: [] });
+  const st = useRef({ pins: null, k: [], pos: [] });
   useFrame(({ camera, size, invalidate }) => {
     const g = ref.current; if (!g) return;
     g.updateWorldMatrix(true, false);
-    const scr = (q) => { v.set(q[0], q[1], q[2]).applyMatrix4(g.matrixWorld).project(camera); return [(v.x + 1) / 2 * size.width, (1 - v.y) / 2 * size.height]; };
-    if (st.current.tags !== tags) st.current = { tags, pos: [], side: [], extra: [], dir: [], coll: [] };
+    if (st.current.pins !== pins) st.current = { pins, k: [], pos: [] };
     const S = st.current;
-    const box = [];
-    const c0 = scr([0, 0, 0]);
-    const lines2d = segs.map(([a, b]) => [scr(a), scr(b)]);
-    const touchesLine = (x, y, w, h) => {
-      const L = x - w / 2, R = x + w / 2, T = y - h / 2, B = y + h / 2;
-      return lines2d.some(([a, b]) => {
-        const n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3));
-        for (let k = 0; k <= n; k++) { const px = a[0] + (b[0] - a[0]) * k / n, py = a[1] + (b[1] - a[1]) * k / n; if (px > L && px < R && py > T && py < B) return true; }
-        return false;
-      });
-    };
-    let settling = false;
-    if (typeof window !== "undefined" && window.__s3dProbe && lines2d[0]) window.__s3dProbe.push(lines2d[0][0]); // used by the steadiness test only
-    tags.forEach((t, i) => {
+    const scr = (q) => { v.set(q[0], q[1], q[2]).applyMatrix4(g.matrixWorld).project(camera); return [(v.x + 1) / 2 * size.width, (1 - v.y) / 2 * size.height]; };
+    const placed = []; let moving = false;
+    pins.forEach((t, i) => {
       const el = spans.current[i]; if (!el) return;
-      const w = el.offsetWidth + 4, h = el.offsetHeight + 3;
-      let x, y;
-      if (t.edge) {
-        const a = scr(t.edge[0]), b2 = scr(t.edge[1]);
-        const mx = (a[0] + b2[0]) / 2, my = (a[1] + b2[1]) / 2;
-        let nx = -(b2[1] - a[1]), ny = b2[0] - a[0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-        const out = nx * (mx - c0[0]) + ny * (my - c0[1]);
-        const base = Math.abs(nx) * w / 2 + Math.abs(ny) * h / 2 + 5;
-        // a label picks its side once (away from the shape) and keeps it
-        let side = S.side[i];
-        if (side === undefined) side = out >= 0 ? 1 : -1;
-        S.side[i] = side; nx *= side; ny *= side;
-        // still touching a line (another edge close by)? step further out.
-        // Steps out at once, comes back slowly: no flicker while turning.
-        let need = 0;
-        while (need < 110 && touchesLine(mx + nx * (base + need), my + ny * (base + need), w, h)) need += 3;
-        const ex = S.extra[i] || 0, extra = need >= ex ? need : Math.max(need, ex - 0.8);
-        S.extra[i] = extra; if (extra !== need) settling = true;
-        x = mx + nx * (base + extra); y = my + ny * (base + extra);
-      } else {
-        const q = scr(t.p);
-        // try a few directions (away from the shape, up, down, sideways),
-        // keep the chosen one unless another is clearly freer
-        let ax = q[0] - c0[0], ay = q[1] - c0[1]; const al = Math.hypot(ax, ay) || 1; ax /= al; ay /= al;
-        const dirs = [[ax, ay], [0, -1], [0, 1], [-ay, ax], [ay, -ax]];
-        const needOf = ([ux, uy]) => { let n = 0; while (n < 90 && touchesLine(q[0] + ux * n, q[1] + uy * n, w, h)) n += 3; return n; };
-        const needs = dirs.map(needOf);
-        let di = (S.dir || (S.dir = []))[i];
-        const best = needs.indexOf(Math.min(...needs));
-        if (di === undefined || needs[di] > needs[best] + 12) di = best;
-        S.dir[i] = di;
-        const dx = dirs[di][0], dy = dirs[di][1], need = needs[di];
-        const ex = S.extra[i] || 0, extra = need >= ex ? need : Math.max(need, ex - 0.8);
-        S.extra[i] = extra; if (extra !== need) settling = true;
-        x = q[0] + dx * extra; y = q[1] + dy * extra;
-      }
-      // keep inside the frame
-      x = Math.max(w / 2 + 2, Math.min(size.width - w / 2 - 2, x));
-      y = Math.max(h / 2 + 2, Math.min(size.height - h / 2 - 2, y));
-      // never on top of another label: move down past it (moves away at once,
-      // comes back slowly, so two labels never flicker around each other)
-      let yy = y;
-      for (let k = 0; k < 6; k++) {
-        const hit = box.find((o) => Math.abs(o.x - x) < (o.w + w) / 2 && Math.abs(o.y - yy) < (o.h + h) / 2);
-        if (!hit) break;
-        yy = hit.y + (hit.h + h) / 2;
-      }
-      const needD = yy - y, cw = (S.coll || (S.coll = []))[i] || 0;
-      const dodge = needD >= cw ? needD : Math.max(needD, cw - 0.8);
-      S.coll[i] = dodge; if (dodge !== needD) settling = true;
-      y += dodge;
-      box.push({ x, y, w, h });
-      // glide toward the spot
+      const w = el.offsetWidth + 2, h = el.offsetHeight + 2;
+      const A = scr(t.a), B = scr(t.b);
+      const at = (u) => [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u];
+      const free = (q) => !placed.some((o) => Math.abs(o[0] - q[0]) < (o[2] + w) / 2 && Math.abs(o[1] - q[1]) < (o[3] + h) / 2);
+      let k = S.k[i] ?? 0;
+      if (!free(at(SPOTS[k]))) { const nk = SPOTS.findIndex((u) => free(at(u))); if (nk >= 0) k = nk; }
+      else if (k !== 0 && free(at(SPOTS[0]))) k = 0;      // back to the middle once it is free
+      S.k[i] = k;
+      let [x, y] = at(SPOTS[k]);
       const prev = S.pos[i];
-      let px = x, py = y;
-      if (prev) {
-        px = prev[0] + (x - prev[0]) * 0.3; py = prev[1] + (y - prev[1]) * 0.3;
-        if (Math.hypot(x - px, y - py) > 0.3) settling = true; else { px = x; py = y; }
-      }
-      S.pos[i] = [px, py];
-      el.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) translate(-50%, -50%)`;
+      if (prev && Math.hypot(x - prev[0], y - prev[1]) > 0.4) { x = prev[0] + (x - prev[0]) * 0.35; y = prev[1] + (y - prev[1]) * 0.35; moving = true; }
+      S.pos[i] = [x, y];
+      placed.push([x, y, w, h]);
+      el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -50%)`;
       el.style.opacity = "1";
     });
-    if (settling) invalidate();
+    if (moving) invalidate();
   });
   return <group ref={ref} />;
 }
@@ -459,15 +371,14 @@ export default function Scene({ kind, activePart, ...p }) {
     sphere: <SphereShape r={p.r} activePart={activePart} color={color} />,
     composite: <CompositeShape r={p.r} h1={p.h1} h2={p.h2} activePart={activePart} color={color} />,
   }[kind];
-  const tags = useMemo(() => labelsFor(kind, p, activePart),
+  const ms = useMemo(() => pinsFor(kind, p, activePart),
     [kind, activePart, JSON.stringify(p)]); // eslint-disable-line react-hooks/exhaustive-deps
   const spans = useRef([]);
-  const segs = useMemo(() => linesFor(kind, p), [kind, JSON.stringify(p)]); // eslint-disable-line react-hooks/exhaustive-deps
     // new labels (another part chosen) get placed on the next frame
-  useEffect(() => { const c = ctl.current; c.invalidate && c.invalidate(); }, [tags]);
+  useEffect(() => { const c = ctl.current; c.invalidate && c.invalidate(); }, [ms]);
 
   return (
-    <div ref={wrap} className="s3d" role="img" aria-label={NAMES[kind] || ""}
+    <div ref={wrap} className="s3d" role="img" aria-label={(NAMES[kind] || "") + (ms.length ? " — " + ms.map((m) => m.text).join(", ") : "")}
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
       <Canvas frameloop={visible ? "demand" : "never"} dpr={[1, 2]} gl={{ antialias: true, alpha: true }}
         camera={{ position: [5.5, 4.1, 7.2], fov: 30, near: 0.1, far: 60 }}
@@ -476,10 +387,10 @@ export default function Scene({ kind, activePart, ...p }) {
         <directionalLight position={[3, 6, 4]} intensity={1.25} />
         <directionalLight position={[-4, 2, -3]} intensity={0.35} />
         <CameraFit r={reach(kind, p)} />
-        <Rig ctl={ctl}>{shapeEl}<Tracker tags={tags} spans={spans} segs={segs} /></Rig>
+        <Rig ctl={ctl}>{shapeEl}<Pins pins={ms} spans={spans} /></Rig>
       </Canvas>
       <div className="s3d-tags" aria-hidden="true">
-        {tags.map((t, i) => <span key={i} ref={(el) => (spans.current[i] = el)} className="s3d-tag" style={{ color: t.color }}>{t.text}</span>)}
+        {ms.map((m, i) => <span key={i} ref={(el) => (spans.current[i] = el)} className="s3d-tag" style={{ color: m.color, borderColor: m.color }}>{String(m.text)}</span>)}
       </div>
       <span className={"s3d-hint" + (touched ? " gone" : "")} aria-hidden="true">גררו לסיבוב</span>
       <button type="button" className="s3d-reset" onClick={reset} onPointerDown={(e) => e.stopPropagation()} aria-label="חזרה למבט הרגיל">↺</button>
