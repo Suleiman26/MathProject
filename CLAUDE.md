@@ -13,7 +13,8 @@ for this project on Abed's personal accounts.
 ## Never without an explicit request
 - Don't change the math, the exercises or any Hebrew text a student sees.
   They live in `src/topics/<topic>/Topic.jsx` between `BEGIN ORIGINAL` and `END ORIGINAL`.
-- Don't push to `main`: it goes live for students immediately.
+- `main` goes live for students immediately. While the site is being built,
+  Abed allows pushing each finished, checked batch (verify-logic + build first).
 
 ## Where things are
 | What | Where |
@@ -61,6 +62,14 @@ URLs: `/topics/<topic>`. Old `/<topic>.html` links redirect (next.config.ts).
 - Signed-in home (`src/home/Journey.jsx`, `src/styles/journey.css`): only the
   student's grade, as a railway of topics with levels, plus strengths and
   chapters worth strengthening (from `account_progress` → `chapters`).
+- Progress v2 (2026-10-31): chapter stops on the railway come from
+  `src/home/chapters.js` (names must match each topic's chapter buttons; update
+  it when Sulaiman adds/renames a chapter). Station sheet, color zones, next step,
+  level-up confetti are in `Journey.jsx`. Profile extras (points/level, weekly goal,
+  7-day chart, badges, records) in `src/account/ProgressV2.jsx`; one topic at
+  `/profile/<topic>` (`src/account/TopicDetail.jsx`). Shared rules (levels, points,
+  badge names) in `src/lib/progress.js`; database: `account_achievements`,
+  `account_topic`, `account_set_goal` (`20261031120000_progress_v2.sql`).
 
 ## Display fixes vs logic
 Prefer CSS in `src/styles/topic-fixes.css` for anything visual. Only touch

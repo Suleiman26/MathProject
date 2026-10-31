@@ -83,6 +83,9 @@ export const accountApi = {
     return r;
   },
   progress: () => rpc("account_progress", { tok: state.tok }),
+  achievements: () => rpc("account_achievements", { tok: state.tok }),
+  topic: (slug) => rpc("account_topic", { tok: state.tok, page: slug + ".html" }),
+  setGoal: (goal) => rpc("account_set_goal", { tok: state.tok, goal }).then((a) => { if (a && a.id) { save(state.tok, a); set({ account: a }); } return a; }),
   contact: ({ name, replyTo, body }) => rpc("contact_send", { name, reply_to: replyTo, body, device: device() }),
 };
 

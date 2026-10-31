@@ -64,7 +64,7 @@ function SignedIn({ account, data, myGrade }) {
   const [saving, setSaving] = useState(false);
   useEffect(() => { accountApi.progress().then(setP).catch(() => setP(false)); }, [account.id]);
   const gradeObj = data.grades.find((x) => x.id === myGrade);
-  const all = data.sections.flatMap((s) => s.topics.filter((t) => t.slug));
+  const all = data.sections.flatMap((s) => s.topics.filter((t) => t.slug).map((t) => ({ ...t, zone: { id: s.id, name: s.name, color: s.color } })));
   const mine = myGrade ? all.filter((t) => t.g.includes(myGrade)) : [];
   const rest = myGrade ? all.filter((t) => !t.g.includes(myGrade)) : [];
 

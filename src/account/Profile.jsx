@@ -7,6 +7,7 @@ import { accountApi, AVATARS, passChecks, PASS_PROBLEM, useAccount } from "@/lib
 import { iconSvg } from "@/lib/icons";
 import { CATEGORIES, TOPICS } from "@/home/catalog";
 import { AcctShell, Avatar, PasswordInput, Spinner } from "./ui";
+import { WeekGoal, LastDays, Achievements, Records, XpBar } from "./ProgressV2";
 
 const LEVELS = [
   { min: 0, name: "עוד לא התחלת" },
@@ -45,6 +46,7 @@ export default function Profile() {
   const router = useRouter();
   const { ready, account } = useAccount();
   const [data, setData] = useState(null);
+  const [ach, setAch] = useState(null);
   const [err, setErr] = useState("");
   const [welcome, setWelcome] = useState(false);
   const leaving = useRef(false);
@@ -58,6 +60,7 @@ export default function Profile() {
   useEffect(() => {
     if (!ready || !account) return;
     accountApi.progress().then(setData).catch((e) => setErr(e.message === "not-connected" ? "אין חיבור למסד." : "לא הצלחנו לטעון את ההתקדמות. נסו לרענן."));
+    accountApi.achievements().then(setAch).catch(() => setAch(false));
   }, [ready, account && account.id]);
 
   if (!ready || !account) return <AcctShell wide><div className="pf-loading"><Spinner /></div></AcctShell>;
@@ -70,9 +73,15 @@ export default function Profile() {
         {err && <div className="acct-alert" role="alert">{err}</div>}
         {!data && !err ? <Skeleton /> : data && <>
           {(data.totals.ok + data.totals.bad + data.totals.win) === 0
-            ? <EmptyStart grade={account.grade} />
+            ? <><EmptyStart grade={account.grade} /><Achievements ach={ach} /></>
             : <>
               <Kpis data={data} />
+              <div className="pf-cols even">
+                <WeekGoal account={account} data={data} />
+                <LastDays data={data} />
+              </div>
+              <Achievements ach={ach} />
+              <Records ach={ach} data={data} />
               <Calendar days={data.days} today={data.today} />
               <div className="pf-cols">
                 <TopicProgress topics={data.topics} grade={account.grade} />
@@ -95,6 +104,7 @@ function ProfileHero({ account, data }) {
       <div className="pf-id">
         <h1 className={account.username.length > 12 ? "long" : ""}>{breakable(account.username)}</h1>
         <p>{account.grade ? GRADE_NAME[account.grade] + " · " : ""}איתנו מאז {since}</p>
+        {data && <XpBar totals={data.totals} />}
       </div>
       {data && data.streak > 0 && <div className="pf-streak" title="ימים ברצף"><span aria-hidden="true">🔥</span><b>{data.streak}</b><small>{data.streak === 1 ? "יום ברצף" : "ימים ברצף"}</small></div>}
     </section>
@@ -233,7 +243,7 @@ function TopicProgress({ topics, grade }) {
           return (
             <li key={t.slug} className="pf-trow" data-topic={t.color} style={{ "--i": i }}>
               <TopicIcon k={t.icon} />
-              <div className="pf-tmain">
+              <Link className="pf-tmain" href={`/profile/${t.slug}`}>
                 <div className="pf-tname"><b>{t.name}</b><span className={"pf-lv l" + lv.i}>{lv.name}</span></div>
                 <div className="pf-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={lv.pct}
                   aria-label={lv.next ? `עד הרמה הבאה (${lv.next.name}): ${lv.pct}%` : "הרמה הגבוהה ביותר"}><i style={{ width: lv.pct + "%" }} /></div>
@@ -243,7 +253,8 @@ function TopicProgress({ topics, grade }) {
                   <span>{ago(s.last)}</span>
                   {lv.next && <span className="pf-next">עוד {fmt(lv.next.min - s.win)} ל{lv.next.name}</span>}
                 </div>
-              </div>
+              </Link>
+              <Link className="pf-det" href={`/profile/${t.slug}`} tabIndex={-1} aria-hidden="true">פרטים</Link>
               <Link className="pf-go" href={`/topics/${t.slug}`} aria-label={`להמשיך לתרגל ${t.name}`}>
                 <span>להמשיך</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
               </Link>
