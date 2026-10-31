@@ -304,4 +304,9 @@ html[data-page="solids3d"] .s3d-reset {
   border-radius: 50%; border: 1px solid var(--line, #e2e8f0); background: rgb(255 255 255 / .9);
   color: var(--ink-2, #475569); font-size: 18px; line-height: 1; box-shadow: var(--sh-1);
 }
+
+/* Powers & roots: exponents and the small "base / exponent" labels were
+   8.7–11px; readable on a phone now (at least 12px). */
+html[data-page="powers-roots"] #root sup { font-size: max(.72em, 12px); }
+html[data-page="powers-roots"] #root :is(.be-b, .be-e) > em { font-size: 12px; }
 }

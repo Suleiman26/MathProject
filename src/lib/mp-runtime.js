@@ -351,6 +351,10 @@ export function initRuntime() {
           if (pendingTap) { clearTimeout(pendingTap); pendingTap = null; }
           if (nudgeEmpty(bad)) return;
           play("bad"); animate(bad, "bad"); track("bad", bad);
+        } else if (emptyPress && emptyPress.box === box) {
+          // nothing typed and the exercise shows nothing: point to the empty box
+          if (pendingTap) { clearTimeout(pendingTap); pendingTap = null; }
+          nudgeEmpty(box);
         }
       }, 160);
     }

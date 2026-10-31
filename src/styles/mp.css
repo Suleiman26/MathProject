@@ -725,7 +725,7 @@ html[data-page="pythagoras"] #root > div > .main { max-width: 960px; }
     -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   }
   .ch-nav .ch-btn, .ch-btns .ch-btn {
-    min-height: 38px; padding: 8px 16px;
+    min-height: 40px; padding: 8px 16px;
     border-color: transparent; background: transparent; box-shadow: none;
   }
   .ch-nav .ch-btn.active, .ch-btns .ch-btn.active { background: var(--a-600); border-color: var(--a-600); box-shadow: var(--sh-accent); }
@@ -769,7 +769,7 @@ html[data-page="pythagoras"] #root > div > .main { max-width: 960px; }
   :is(.tab, .sub-tab, .sub-btn, .diff-btn, .part-btn):not(.active):hover { border-color: var(--line-strong); color: var(--ink); }
 }
 /* other small controls and answer boxes: at least 40px to press */
-.op-btn, .prop-btn { min-height: 40px; }
+.op-btn, .prop-btn, .btn-formula, .nav-btn { min-height: 40px; }
 #root input:not([type="range"]):not([type="checkbox"]):not([type="radio"]) { min-height: 40px; }
 
 /* cards: the same breathing room in every topic */
