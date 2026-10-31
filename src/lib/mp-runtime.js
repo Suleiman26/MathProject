@@ -185,9 +185,10 @@ export function initRuntime() {
     setTimeout(function () { layer.remove(); }, longest + 100);
   }
 
-  /* ── Anonymous answer stats (only when the database is connected) ────── */
+  /* ── Answer stats (only when the database is connected) ─────────────── */
   // Sends: page, chapter, step, correct/wrong/solved, phone or not, and a
-  // random device number. Never names, emails or anything typed.
+  // random device number. Never names, emails or anything typed. When a
+  // student is signed in, the same rows go to their own progress.
   function clean(s, max) { return (s || "").replace(/\s+/g, " ").trim().slice(0, max) || null; }
   function textOf(sel, root) { var el = (root || doc).querySelector(sel); return el ? el.textContent : ""; }
   function chapterOf() {
@@ -215,7 +216,12 @@ export function initRuntime() {
     function flush(leaving) {
       clearTimeout(timer); timer = null;
       if (!queue.length) return;
-      D.insert("events", queue.splice(0), { keepalive: !!leaving });
+      var rows = queue.splice(0);
+      // signed in: the answers go to the student's own progress; otherwise anonymous
+      var tok = null;
+      try { var s = JSON.parse(localStorage.getItem("mp:account")); tok = s && s.tok; } catch (e) {}
+      if (tok) D.rpc("account_track", { tok: tok, rows: rows }, { keepalive: !!leaving }).catch(function () { D.insert("events", rows, { keepalive: !!leaving }); });
+      else D.insert("events", rows, { keepalive: !!leaving });
     }
     window.addEventListener("pagehide", function () { flush(true); });
     doc.addEventListener("visibilitychange", function () { if (doc.visibilityState === "hidden") flush(true); });

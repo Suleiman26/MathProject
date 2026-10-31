@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Rubik } from "next/font/google";
 import "@/styles/mp.css";
 import "@/styles/globals.css";
+import "@/styles/account.css";
 
 const rubik = Rubik({ subsets: ["hebrew", "latin"], weight: ["400", "500", "600", "700"], variable: "--font-rubik", display: "swap" });
 

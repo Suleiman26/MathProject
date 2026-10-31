@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from "react";
-import { Lock, DownloadSimple, ShieldCheck, Database, Keyboard } from "@phosphor-icons/react";
+import { Lock, DownloadSimple, ShieldCheck, Database, Keyboard, UsersThree, Envelope, CheckCircle } from "@phosphor-icons/react";
 import { useAdmin, PageHead } from "../AdminShell";
 import { Card, Seg, Switch, useToast, fmt } from "../ui";
 import { getSetting } from "../api";
@@ -52,6 +52,7 @@ export default function Settings() {
     <>
       <PageHead />
       <div className="bento" style={{ alignItems: "start" }}>
+        <AccountsCard a={a} toast={toast} />
         <Card title="מקלדת מתמטית" className="span-6" action={keypad == null ? null : <Switch on={keypad} onChange={toggleKeypad} label="מקלדת מתמטית" />}>
           <div className="stat-line"><span><Keyboard size={16} /> בטלפון ובטאבלט</span><b>{keypad == null ? "…" : keypad ? "פועלת" : "כבויה"}</b></div>
           <p className="note">מקלדת עם מספרים, x, חזקה, שורש ושברים במקום מקלדת הטלפון. כשהיא כבויה, התלמידים מקבלים את מקלדת הטלפון הרגילה. במחשב אין שינוי.{a.preview && " (במצב תצוגה השינוי חל רק על המכשיר הזה. לכל התלמידים – אחרי חיבור המסד.)"}</p>
@@ -86,5 +87,51 @@ export default function Settings() {
         </Card>
       </div>
     </>
+  );
+}
+
+/* Student accounts + contact messages + password reset */
+function AccountsCard({ a, toast }) {
+  const [d, setD] = useState(null);
+  const [reset, setReset] = useState({ username: "", pw: "" });
+  const load = () => a.run("admin_contact", {}).then(setD).catch(() => setD({ accounts: 0, accounts_7d: 0, messages: [] }));
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  async function done(m) {
+    try { await a.run("admin_contact_done", { msg_id: m.id, done: !m.handled }); load(); } catch (e) { toast(e.message, true); }
+  }
+  async function doReset() {
+    if (!reset.username.trim() || reset.pw.length < 8) return toast("שם משתמש וסיסמה חדשה (8 תווים לפחות, אותיות וספרות)", true);
+    try {
+      const r = await a.run("admin_account_reset", { username: reset.username, new_password: reset.pw });
+      if (r && r.ok) { toast("הסיסמה של " + reset.username + " הוחלפה"); setReset({ username: "", pw: "" }); }
+      else toast(r && r.error === "missing" ? "אין משתמש בשם הזה" : r && r.error === "preview" ? "זמין אחרי חיבור המסד" : "הסיסמה צריכה 8 תווים לפחות, עם אותיות וספרות", true);
+    } catch (e) { toast(e.message, true); }
+  }
+  const open = d ? d.messages.filter((m) => !m.handled).length : 0;
+  return (
+    <Card title="חשבונות ופניות" className="span-12" action={<UsersThree size={18} className="muted" />}>
+      <div className="stat-line"><span><UsersThree size={16} /> חשבונות תלמידים</span><b>{d ? fmt(d.accounts) : "…"}{d && d.accounts_7d ? ` (+${fmt(d.accounts_7d)} השבוע)` : ""}</b></div>
+      <div className="stat-line"><span><Envelope size={16} /> פניות מטופס יצירת קשר</span><b>{d ? (open ? open + " חדשות" : "אין חדשות") : "…"}</b></div>
+      {d && d.messages.length > 0 && (
+        <ul className="msg-list">
+          {d.messages.slice(0, 20).map((m) => (
+            <li key={m.id} className={m.handled ? "done" : ""}>
+              <div className="msg-h"><b>{m.name || "ללא שם"}</b>{m.reply_to && <span className="ltr">{m.reply_to}</span>}<time>{new Date(m.created_at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" })}</time></div>
+              <p>{m.body}</p>
+              <button type="button" className="abtn sm" onClick={() => done(m)}><CheckCircle size={16} />{m.handled ? "סמן כלא טופל" : "טופל"}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="reset-box">
+        <b>איפוס סיסמה לתלמיד/ה ששכח/ה</b>
+        <p className="note">אחרי שהתלמיד/ה פנה/תה בטופס יצירת קשר. כל המכשירים שלו/ה ינותקו.</p>
+        <div className="toolbar">
+          <label className="field" style={{ margin: 0 }}><span>שם משתמש</span><input type="text" value={reset.username} onChange={(e) => setReset({ ...reset, username: e.target.value })} autoComplete="off" /></label>
+          <label className="field" style={{ margin: 0 }}><span>סיסמה חדשה</span><input type="text" value={reset.pw} onChange={(e) => setReset({ ...reset, pw: e.target.value })} autoComplete="off" /></label>
+          <button type="button" className="abtn pri" onClick={doReset}>איפוס</button>
+        </div>
+      </div>
+    </Card>
   );
 }

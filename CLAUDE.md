@@ -44,6 +44,21 @@ URLs: `/topics/<topic>`. Old `/<topic>.html` links redirect (next.config.ts).
   uses it automatically. `?live=0` makes localhost use the REAL database (so
   test answers become real stats); `?live=1` switches back.
 
+## Student accounts (since 2026-10-31)
+- Username + password, no email/phone. Our own auth in the database (not
+  Supabase Auth): `supabase/migrations/20261031100000_accounts.sql`. bcrypt
+  passwords, random session tokens stored as SHA-256, 5 wrong tries = 15 min lock.
+- Site: `src/lib/account.js` (session + calls), pages in `src/account/`
+  (Signup, Login, Profile) and `src/legal/` (terms, privacy, accessibility,
+  contact). Styles: `src/styles/account.css`. Routes: /signup /login /profile
+  /terms /privacy /accessibility /contact.
+- Practising stays open without an account. Signed-in answers go through
+  `account_track`; sign-up moves the device's earlier practice into the account.
+- Changing the terms or privacy policy: bump `account_terms_version()` (new
+  migration) AND `TERMS_VERSION` in `src/lib/account.js`; everyone re-accepts.
+- Forgotten password: student writes via /contact; admin → Settings resets it.
+- Legal operator name: `OPERATOR` in `src/legal/Legal.jsx`.
+
 ## Display fixes vs logic
 Prefer CSS in `src/styles/topic-fixes.css` for anything visual. Only touch
 `Topic.jsx` for display if CSS truly can't do it, and say so:

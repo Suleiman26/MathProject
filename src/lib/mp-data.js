@@ -26,8 +26,10 @@ export const mpData = {
   async rpc(fn, args, opts) {
     const { base, key, ready } = conn();
     if (!ready) throw new Error("not-connected");
-    const res = await fetch(base + "/rest/v1/rpc/" + fn, { method: "POST", headers: headers(key), body: JSON.stringify(args || {}), signal: opts && opts.signal });
-    return res.ok ? res.json() : fail(res);
+    const res = await fetch(base + "/rest/v1/rpc/" + fn, { method: "POST", headers: headers(key), body: JSON.stringify(args || {}), signal: opts && opts.signal, keepalive: !!(opts && opts.keepalive) });
+    if (!res.ok) return fail(res);
+    const text = await res.text();               // functions that return nothing answer 204 with no body
+    return text ? JSON.parse(text) : null;
   },
   /** read a table: mpData.select("topics", "select=*&order=position") */
   async select(table, query) {

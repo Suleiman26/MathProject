@@ -2,6 +2,7 @@
 /* Top bar on every topic: back to all topics · topic title (after scrolling) · sound on/off */
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AccountButton } from "@/account/ui";
 
 export default function TopBar({ title }) {
   const [scrolled, setScrolled] = useState(false);
@@ -25,10 +26,11 @@ export default function TopBar({ title }) {
         <span>כל הנושאים</span>
       </Link>
       <div className="mp-topbar-title">{title}</div>
+      <div className="mp-topbar-end"><AccountButton compact />
       <button type="button" className="mp-sound" aria-label="צלילים" aria-pressed={sound} title={sound ? "השתקה" : "הפעלת צלילים"} onClick={toggle}>
         <svg className="mp-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor" fillOpacity=".12" /><path d="M15.5 9a4 4 0 010 6" /><path d="M18 6.5a7.5 7.5 0 010 11" /></svg>
         <svg className="mp-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor" fillOpacity=".12" /><path d="M16 9.5l5 5M21 9.5l-5 5" /></svg>
-      </button>
+      </button></div>
     </header>
   );
 }

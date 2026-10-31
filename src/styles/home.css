@@ -113,4 +113,10 @@
     .home main { padding-top: 40px; }
     .home .g { grid-template-columns: 1fr; gap: 10px; }
   }
+
+  /* account button, top corner */
+  .home .home-acct { position: absolute; top: calc(14px + env(safe-area-inset-top)); inset-inline-end: 16px; z-index: 5; }
+  .home .acct-foot { padding-top: 0; }
+  .home .home-note { display: flex; align-items: center; gap: 10px; max-width: 560px; margin: -8px auto 20px; padding: 12px 14px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); font-size: .94rem; color: var(--ink-2); }
+  .home .home-note button { margin-inline-start: auto; border: 0; background: none; color: var(--ink-3); cursor: pointer; font-size: 15px; width: 30px; height: 30px; border-radius: 50%; box-shadow: none; padding: 0; }
 }

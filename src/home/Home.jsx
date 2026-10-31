@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { mpData } from "@/lib/mp-data";
 import { iconSvg } from "@/lib/icons";
 import { HERO, GRADES, TOPICS, CATEGORIES } from "./catalog";
+import { AccountButton, LegalFooter } from "@/account/ui";
 
 const KEY = "mp:grade";
 const Go = () => (
@@ -36,9 +37,16 @@ function fromDb(d) {
 export default function Home() {
   const [data, setData] = useState({ grades: GRADES, sections: CATEGORIES.map((c) => ({ ...c, topics: TOPICS.filter((t) => t.cat === c.id) })) });
   const [grade, setGrade] = useState("all");
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     try { setGrade(localStorage.getItem(KEY) || "all"); } catch {}
+    try {
+      if (new URLSearchParams(location.search).has("deleted")) {
+        setNote("החשבון וכל ההתקדמות נמחקו. אפשר להמשיך לתרגל גם בלי חשבון.");
+        history.replaceState(null, "", "/");
+      }
+    } catch {}
     if (!mpData.ready) return;
     try { const c = JSON.parse(localStorage.getItem("mp:catalog2")); if (c) setData(c); } catch {}
     Promise.all([
@@ -60,12 +68,13 @@ export default function Home() {
   const grouped = useMemo(() => data.sections.length > 1 || data.sections[0].name, [data]);
 
   return (
-    <div className="home"><main>
+    <div className="home"><div className="home-acct"><AccountButton /></div><main>
       <header className="hero">
         <img className="mark" src="/icon.png" alt="" width={64} height={64} />
         <h1>{HERO.title}</h1><p className="s">{HERO.sub}</p>
       </header>
 
+      {note && <div className="home-note" role="status">{note}<button type="button" onClick={() => setNote("")} aria-label="סגירה">✕</button></div>}
       <div id="catalog">
         <nav className="filters" aria-label="סינון לפי כיתה">
           <button type="button" aria-pressed={g === "all"} onClick={() => pick("all")}>הכל</button>
@@ -92,6 +101,6 @@ export default function Home() {
       </div>
 
       <p className="foot"><a href="/classic/project-hub.html">{HERO.hub}</a></p>
-    </main></div>
+    </main><LegalFooter /></div>
   );
 }

@@ -208,6 +208,9 @@ const demo = {
     save(LSF, d);
     return { ok: true };
   },
+  admin_contact: () => ({ accounts: 0, accounts_7d: 0, messages: [] }),
+  admin_contact_done: () => ({ ok: true }),
+  admin_account_reset: () => ({ error: "preview" }),
   admin_fix_delete({ item_id }) { save(LSF, demo.admin_fixes().filter((x) => x.id !== item_id)); return { ok: true }; },
 };
 
