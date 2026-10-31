@@ -270,4 +270,37 @@ html[data-page="equation-solver"] .pv-par { font-size: 1.7rem; font-weight: 300;
 
 /* Parabola: its unnamed toggle buttons were 35px; finger-sized like the rest */
 html[data-page="parabola-practice"] #root .card button { min-height: 40px; }
+
+/* ── 3D shapes (2026-10-31): the 3D view that replaces the flat sketches ── */
+html[data-page="solids3d"] .s3d {
+  position: relative; width: min(100%, 480px); height: clamp(260px, 64vw, 330px);
+  margin-inline: auto; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none;
+}
+html[data-page="solids3d"] .s3d:active { cursor: grabbing; }
+html[data-page="solids3d"] .s3d canvas, html[data-page="solids3d"] .s3d > div { touch-action: pan-y !important; }
+html[data-page="solids3d"] .s3d-loading { display: grid; place-items: center; }
+html[data-page="solids3d"] .s3d-loading span {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2.5px solid color-mix(in srgb, var(--a-600) 18%, transparent); border-top-color: var(--a-600);
+  animation: mp-spin 700ms linear infinite;
+}
+html[data-page="solids3d"] .s3d-tags { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+html[data-page="solids3d"] .s3d-tag {
+  position: absolute; top: 0; left: 0; opacity: 0; will-change: transform;
+  display: inline-block; padding: 2px 8px; border-radius: 999px; direction: ltr; white-space: nowrap;
+  background: rgb(255 255 255 / .94); border: 1px solid var(--line, #e2e8f0);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .06); font-size: 13px; font-weight: 700; line-height: 1.35;
+}
+html[data-page="solids3d"] .s3d-hint {
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  color: var(--ink-3, #64748b); background: rgb(255 255 255 / .85); border: 1px solid var(--line, #e2e8f0);
+  pointer-events: none; transition: opacity .4s ease;
+}
+html[data-page="solids3d"] .s3d-hint.gone { opacity: 0; }
+html[data-page="solids3d"] .s3d-reset {
+  position: absolute; top: 4px; inset-inline-start: 4px; width: 40px; height: 40px; min-height: 40px; padding: 0;
+  border-radius: 50%; border: 1px solid var(--line, #e2e8f0); background: rgb(255 255 255 / .9);
+  color: var(--ink-2, #475569); font-size: 18px; line-height: 1; box-shadow: var(--sh-1);
+}
 }

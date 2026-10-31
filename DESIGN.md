@@ -131,3 +131,12 @@ second-level tabs (`.tab`, `.sub-tab`, `.sub-btn`, `.diff-btn`, `.part-btn`),
 Labels in drawings never sit on a line: angle values are placed by measuring
 the text (inside the angle, clear of sides, arcs and diagonals; beside the
 corner letter when the corner is too sharp). New drawings should do the same.
+
+## 3D shapes (2026-10-31)
+
+The solids topic shows each shape in real 3D: `src/components/solid3d/`
+(three.js via @react-three/fiber, loaded only on that page). Each flat drawing
+in `src/topics/solids3d/Topic.jsx` hands over in one line (`if(has3D())…`);
+no WebGL, or `?flat=1`, keeps the flat drawing. Sideways drag turns the shape
+(a finger's up/down swipe still scrolls the page); labels are page elements
+placed beside their edge on screen and nudged apart, never on a line.

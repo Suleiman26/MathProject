@@ -5,6 +5,7 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Solid3D, has3D } from '@/components/solid3d'; // added: 3D view (flat drawings stay as fallback)
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useEffect,useRef} = React;
@@ -150,6 +151,7 @@ const CUBE_PARTS=[
   {id:'spacediag',label:'אלכסון מרחבי',def:'קטע המחבר שני קודקודים נגדיים דרך תוך הגוף; אורכו a√3.'},
 ];
 function CubeSVG({a,activePart,showBaseDiag,showSpaceDiag}){
+  if(has3D())return <Solid3D kind="cube" a={a} activePart={activePart} showBaseDiag={showBaseDiag} showSpaceDiag={showSpaceDiag}/>;
   const s=1; // unit cube, projector scales anyway
   const pts={
     A:{x:0,y:0,z:0}, B:{x:s,y:0,z:0}, C:{x:s,y:s,z:0}, D:{x:0,y:s,z:0},
@@ -293,6 +295,7 @@ const BOX_PARTS=[
   {id:'diag',label:'אלכסון מרחבי',def:'קטע המחבר שני קודקודים נגדיים דרך תוך הגוף; d = √(l²+w²+h²).'},
 ];
 function BoxSVG({l,w,h,activePart,showDiag}){
+  if(has3D())return <Solid3D kind="box" l={l} w={w} h={h} activePart={activePart} showDiag={showDiag}/>;
   const pts={
     A:{x:0,y:0,z:0}, B:{x:l,y:0,z:0}, C:{x:l,y:w,z:0}, D:{x:0,y:w,z:0},
     E:{x:0,y:0,z:h}, F:{x:l,y:0,z:h}, G:{x:l,y:w,z:h}, H:{x:0,y:w,z:h},
@@ -455,6 +458,7 @@ const CYL_PARTS=[
   {id:'lateral',label:'המעטפת',def:'המשטח המעוגל המחבר בין שני הבסיסים; כשפורשים אותו מתקבל מלבן שרוחבו 2πr וגובהו h.'},
 ];
 function CylinderSVG({r,h,activePart}){
+  if(has3D())return <Solid3D kind="cylinder" r={r} h={h} activePart={activePart}/>;
   const n=40;
   const bottom3=circlePts3D(r,0,n), top3=circlePts3D(r,h,n);
   const allPts=[...bottom3,...top3,{x:0,y:0,z:0},{x:0,y:0,z:h}];
@@ -606,6 +610,7 @@ const CONE_PARTS=[
   {id:'slant',label:'גובה אלכסוני (l)',def:'המרחק מהקודקוד להיקף הבסיס; l = √(r²+h²).'},
 ];
 function ConeSVG({r,h,activePart}){
+  if(has3D())return <Solid3D kind="cone" r={r} h={h} activePart={activePart}/>;
   const n=40;
   const base3=circlePts3D(r,0,n);
   const allPts=[...base3,{x:0,y:0,z:0},{x:0,y:0,z:h}];
@@ -754,6 +759,7 @@ const PYR_PARTS=[
   {id:'apothem',label:'אפותם (m)',def:'גובה הפאה הצדדית — המרחק מהקודקוד העליון לאמצע צלע הבסיס; m = √(h²+(חצי-צלע)²).'},
 ];
 function PyramidSquareSVG({b,h,activePart}){
+  if(has3D())return <Solid3D kind="pyrSq" b={b} h={h} activePart={activePart}/>;
   const half=b/2;
   const pts={A:{x:0,y:0,z:0},B:{x:b,y:0,z:0},C:{x:b,y:b,z:0},D:{x:0,y:b,z:0},Apex:{x:half,y:half,z:h}};
   const p3=makeProjector(Object.values(pts),260,220,26);
@@ -781,6 +787,7 @@ function PyramidSquareSVG({b,h,activePart}){
   </svg>;
 }
 function PyramidTriSVG({b,h,activePart}){
+  if(has3D())return <Solid3D kind="pyrTri" b={b} h={h} activePart={activePart}/>;
   const H=b*Math.sqrt(3)/2;
   const pts={A:{x:0,y:0,z:0},B:{x:b,y:0,z:0},C:{x:b/2,y:H,z:0},Apex:{x:b/2,y:H/3,z:h}};
   const p3=makeProjector(Object.values(pts),260,220,26);
@@ -989,6 +996,7 @@ const SPHERE_PARTS=[
   {id:'surface',label:'פני השטח',def:'המשטח המעוגל התוחם את הכדור; שטחו S = 4πr².'},
 ];
 function SphereSVG({r,activePart}){
+  if(has3D())return <Solid3D kind="sphere" r={r} activePart={activePart}/>;
   const W=220,Hh=220,cx=W/2,cy=Hh/2,rad=80;
   const surfHi = activePart==='surface' ? '#16a34a':'#334155';
   const centerHi = activePart==='center' ? '#16a34a':'#334155';
@@ -1125,6 +1133,7 @@ const COMP_PARTS=[
   {id:'cone',label:'החלק החרוטי',def:'החרוט העליון, על אותו בסיס — נפחו (1/3)πr²h, ומעטפתו πrl.'},
 ];
 function CompositeSVG({r,h1,h2,activePart}){
+  if(has3D())return <Solid3D kind="composite" r={r} h1={h1} h2={h2} activePart={activePart}/>;
   const n=40;
   const bottom3=circlePts3D(r,0,n), mid3=circlePts3D(r,h1,n);
   const allPts=[...bottom3,...mid3,{x:0,y:0,z:0},{x:0,y:0,z:h1+h2}];
