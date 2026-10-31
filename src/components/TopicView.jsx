@@ -6,6 +6,8 @@ import { TOPICS, LOADERS, STYLES } from "@/topics/registry";
 import { initRuntime } from "@/lib/mp-runtime";
 import TopBar from "./TopBar";
 import Keypad from "./Keypad";
+import { accountApi, useAccount } from "@/lib/account";
+import { chapterStats } from "@/home/chapters";
 
 export default function TopicView({ slug }) {
   const meta = TOPICS[slug];
@@ -21,8 +23,31 @@ export default function TopicView({ slug }) {
       if (alive) setLoaded({ Topic: m.default, css: s.default });
     });
     const t = setTimeout(() => window.MP && window.MP.view(), 1800);
+    // remembered on this device, for the home page's "continue" button
+    try { localStorage.setItem("mp:last", JSON.stringify({ slug, at: Date.now() })); } catch (e) {}
     return () => { alive = false; clearTimeout(t); delete html.dataset.topic; delete html.dataset.page; };
   }, [slug, meta.topic]);
+
+  // signed-in students: a ✓ on every chapter tab they already solved an exercise in
+  const { account } = useAccount();
+  useEffect(() => {
+    if (!loaded || !account) return;
+    let alive = true; const solved = new Set();
+    const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
+    const mark = () => document.querySelectorAll("#root :is(.ch-btn, .nav-btn, .ph)").forEach((b) => {
+      const on = solved.has(norm(b.textContent));
+      if (b.hasAttribute("data-solved") !== on) b.toggleAttribute("data-solved", on);
+    });
+    accountApi.topic(slug).then((d) => {
+      if (!alive || !d) return;
+      chapterStats(slug, d.chapters).filter((c) => c.win > 0).forEach((c) => solved.add(c.name)); mark();
+    }).catch(() => {});
+    const onWin = (e) => { const main = norm((e.detail && e.detail.chapter || "").split(" › ")[0]); if (main) { solved.add(main); mark(); } };
+    window.addEventListener("mp:win", onWin);
+    const root = document.getElementById("root");
+    const mo = new MutationObserver(mark); if (root) mo.observe(root, { childList: true, subtree: true });
+    return () => { alive = false; window.removeEventListener("mp:win", onWin); mo.disconnect(); };
+  }, [loaded, account && account.id, slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const Topic = loaded && loaded.Topic;
   return (

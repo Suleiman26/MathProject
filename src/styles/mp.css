@@ -738,6 +738,19 @@ html[data-page="pythagoras"] #root > div > .main { max-width: 960px; }
   .ch-btn, .nav-btn { min-height: 40px; }
 }
 
+/* "check" pressed with an empty box: the box glows softly to show where to type */
+@keyframes mp-need { 0%, 100% { box-shadow: 0 0 0 0 rgb(245 158 11 / 0); } 30% { box-shadow: 0 0 0 5px rgb(245 158 11 / .35); } }
+#root .mp-need { border-color: #f59e0b !important; animation: mp-need 1.2s ease-out 1; }
+
+/* a chapter the signed-in student already solved: a small ✓ before its name */
+:is(.ch-btn, .nav-btn, .ph)[data-solved]::before {
+  content: "✓"; display: inline-grid; place-items: center;
+  width: 16px; height: 16px; margin-inline-end: 6px; border-radius: 50%;
+  font-size: 10px; font-weight: 700; line-height: 1; vertical-align: 1px;
+  background: var(--ok-600, #16a34a); color: #fff;
+}
+:is(.ch-btn, .nav-btn).active[data-solved]::before { background: #fff; color: var(--a-700); }
+
 /* second-level tabs (parts of a chapter): one look everywhere */
 :is(.sub-tabs, .tabs, .parts-row):has(> :is(.tab, .sub-tab, .sub-btn, .diff-btn, .part-btn)) {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;

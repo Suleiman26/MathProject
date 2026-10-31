@@ -49,7 +49,13 @@ export default function Signup() {
   async function submit(e) {
     e.preventDefault();
     setTouched({ username: true, password: true, password2: true, consent: true });
-    if (!canSubmit) return;
+    if (!canSubmit) {
+      // take the student straight to the first thing that still needs attention
+      const first = !nameOk ? "su-user" : !passOk ? "su-pw" : !matchOk ? "su-pw2" : null;
+      const el = first ? document.getElementById(first) : e.currentTarget.querySelector('input[type="checkbox"]:not(:checked)');
+      if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: "center", behavior: "smooth" }); }
+      return;
+    }
     setBusy(true);
     justSigned.current = true;
     try {
@@ -75,6 +81,7 @@ export default function Signup() {
     : nameState === "free" ? { t: "השם פנוי ✓", k: "ok" }
     : nameState === "taken" ? { t: "השם תפוס. נסו שם אחר", k: "bad" }
     : nameState && NAME_PROBLEM[nameState] ? { t: NAME_PROBLEM[nameState], k: touched.username || f.username.length > 2 ? "bad" : "hint" }
+    : touched.username && !f.username.trim() ? { t: "צריך לבחור שם משתמש", k: "bad" }
     : { t: "אפשר בעברית או באנגלית. עדיף לא שם מלא אמיתי.", k: "hint" };
 
   return (

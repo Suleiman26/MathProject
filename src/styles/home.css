@@ -37,6 +37,40 @@
     animation: mp-rise 420ms 80ms var(--ease-out) backwards;
   }
 
+  /* signed-out hero: one clear start, one way to keep progress, three reasons */
+  .home .hero-act { display: flex; flex-direction: column; align-items: center; gap: 18px; margin: -6px 0 34px; animation: mp-rise 420ms 110ms var(--ease-out) backwards; }
+  .home .cta { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .home .cta a {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 26px;
+    border-radius: var(--r-pill); font-weight: 600; font-size: 1.02rem; text-decoration: none;
+    transition: transform 160ms var(--ease-out), box-shadow 200ms ease, background-color 200ms ease;
+  }
+  .home .cta-go { background: var(--ink); color: #fff; box-shadow: 0 8px 22px -10px rgb(28 27 25 / .55); }
+  .home .cta-acct { background: var(--surface); color: var(--ink); box-shadow: var(--sh-1), inset 0 0 0 1px var(--line); }
+  .home .cta a:active { transform: scale(.97); }
+  @media (hover: hover) and (pointer: fine) {
+    .home .cta-go:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -12px rgb(28 27 25 / .6); }
+    .home .cta-acct:hover { box-shadow: var(--sh-2), inset 0 0 0 1px var(--line-strong); }
+  }
+  .home .cta-last {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px;
+    border-radius: var(--r-pill); background: rgb(13 148 136 / .08); color: #0f766e;
+    font-size: .92rem; text-decoration: none; box-shadow: inset 0 0 0 1px rgb(13 148 136 / .22);
+  }
+  .home .cta-last b { font-weight: 700; }
+  .home .cta-last i { font-style: normal; transition: transform 160ms var(--ease-out); }
+  @media (hover: hover) and (pointer: fine) { .home .cta-last:hover i { transform: translateX(-3px); } }
+  .home .perks { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px 20px; flex-wrap: wrap; justify-content: center; color: var(--ink-2); font-size: .9rem; }
+  .home .perks li { display: inline-flex; align-items: center; gap: 6px; }
+  .home .perks svg { width: 18px; height: 18px; fill: none; stroke: #0d9488; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .home #catalog { scroll-margin-top: 16px; }
+  .home .nch { color: var(--ink-3); }
+  @media (max-width: 480px) {
+    .home .cta { width: 100%; }
+    .home .cta a { flex: 1 1 0; padding: 0 14px; }
+    .home .perks { flex-direction: column; align-items: center; gap: 6px; }
+  }
+
   /* grade filter */
   .home .filters {
     display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;

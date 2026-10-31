@@ -227,6 +227,8 @@ export function initRuntime() {
     doc.addEventListener("visibilitychange", function () { if (doc.visibilityState === "hidden") flush(true); });
     return function (kind, el) {
       queue.push({ device: dev, page: pageKey(), chapter: chapterOf(), step: kind === "view" ? null : stepOf(el), kind: kind, mobile: mobile });
+      // let the page mark the chapter as solved right away (✓ on its tab)
+      if (kind === "win") { try { window.dispatchEvent(new CustomEvent("mp:win", { detail: { chapter: chapterOf() } })); } catch (e) {} }
       if (queue.length >= 20) flush(false);
       else if (!timer) timer = setTimeout(function () { flush(false); }, 2500);
     };
@@ -287,10 +289,25 @@ export function initRuntime() {
     if (found) {
       if (pendingTap) { clearTimeout(pendingTap); pendingTap = null; }
       pendingCheck = null;
+      if (found.kind === "bad" && nudgeEmpty(found.el)) return;
       play(found.kind);
       animate(found.el, found.kind);
       track(found.kind, found.el);
     }
+  }
+
+  // "Check" pressed with nothing typed: no wrong sound, not counted as a
+  // mistake; the empty box is focused and glows softly instead.
+  var emptyPress = null;
+  function nudgeEmpty(el) {
+    var e = emptyPress;
+    if (!e || performance.now() > e.until || !(e.box.contains(el) || e.box === doc.getElementById("root"))) return false;
+    emptyPress = null;
+    play("tap");
+    try { e.input.focus({ preventScroll: true }); } catch (err) {}
+    e.input.classList.remove("mp-need"); void e.input.offsetWidth; e.input.classList.add("mp-need");
+    setTimeout(function () { e.input.classList.remove("mp-need"); }, 1400);
+    return true;
   }
 
   function watch() {
@@ -319,6 +336,11 @@ export function initRuntime() {
     // A "check" press that changes nothing while a wrong-answer message is
     // still showing = the same wrong answer again. Say so (and count it).
     if (isCheck) {
+      // all answer boxes of this step still empty? Then it is not a wrong answer.
+      var stepBox = t.closest(".step-card, .card, .eq-card, .section, .tri-box, .history") || doc.getElementById("root");
+      var boxes = stepBox ? [].filter.call(stepBox.querySelectorAll('input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), textarea'), function (x) { return x.offsetParent !== null && !x.disabled; }) : [];
+      emptyPress = boxes.length && boxes.every(function (x) { return !String(x.value || "").trim(); })
+        ? { box: stepBox, input: boxes[0], until: performance.now() + 1600 } : null;
       var mine = pendingCheck = { btn: t };
       setTimeout(function () {
         if (pendingCheck !== mine) return;
@@ -327,6 +349,7 @@ export function initRuntime() {
         var bad = box && box.querySelector(SEL.bad);
         if (bad && bad.offsetParent !== null && visibleText(bad)) {
           if (pendingTap) { clearTimeout(pendingTap); pendingTap = null; }
+          if (nudgeEmpty(bad)) return;
           play("bad"); animate(bad, "bad"); track("bad", bad);
         }
       }, 160);

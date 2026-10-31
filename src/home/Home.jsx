@@ -9,6 +9,7 @@ import { HERO, GRADES, TOPICS, CATEGORIES } from "./catalog";
 import { AccountButton, LegalFooter, Avatar } from "@/account/ui";
 import { useAccount, accountApi } from "@/lib/account";
 import { Railway, Insights } from "./Journey";
+import { CHAPTERS } from "./chapters";
 
 const KEY = "mp:grade";
 const Go = () => (
@@ -147,6 +148,15 @@ export default function Home() {
   useEffect(() => { if (myGrade && !switched) setGrade(myGrade); }, [myGrade, switched]);
   const g = data.grades.some((x) => x.id === grade) ? grade : "all";
   const pick = (id) => { setGrade(id); setSwitched(true); try { localStorage.setItem(KEY, id); } catch {} };
+  // last topic opened on this device (signed-out visitors), for a "continue" button
+  const [last, setLast] = useState(null);
+  useEffect(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem("mp:last") || "null");
+      const t = v && TOPICS.find((x) => x.slug === v.slug);
+      if (t && Date.now() - v.at < 1000 * 60 * 60 * 24 * 60) setLast({ slug: t.slug, name: t.name });
+    } catch (e) {}
+  }, []);
   const show = (t) => g === "all" || t.g.includes(g);
   let i = 0;
   const grouped = useMemo(() => data.sections.length > 1 || data.sections[0].name, [data]);
@@ -160,7 +170,18 @@ export default function Home() {
         <img className="mark" src="/icon.png" alt="" width={64} height={64} />
         <h1>{HERO.title}</h1><p className="s">{HERO.sub}</p>
       </header>
-      {ready && !account && <p className="join"><Link href="/signup">פתחו חשבון</Link> כדי לשמור את ההתקדמות, הרצף והרמות שלכם. בחינם, בלי מייל.</p>}
+      {ready && !account && <div className="hero-act">
+        {last && <Link className="cta-last" href={`/topics/${last.slug}`}><span>להמשיך מאיפה שעצרתי:</span> <b>{last.name}</b> <i aria-hidden="true">←</i></Link>}
+        <div className="cta">
+          <a className="cta-go" href="#catalog" onClick={(e) => { e.preventDefault(); document.getElementById("catalog").scrollIntoView({ behavior: "smooth", block: "start" }); }}>להתחיל לתרגל</a>
+          <Link className="cta-acct" href="/signup">פתיחת חשבון</Link>
+        </div>
+        <ul className="perks" aria-label="מה מקבלים">
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" /></svg>משוב מיידי על כל צעד</li>
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 15l4.5-5 3.5 3 6-7" /></svg>ההתקדמות נשמרת בחשבון</li>
+          <li><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2" /><path d="M7 9V6.5a3 3 0 016 0V9" /></svg>בחינם, בלי מייל ובלי פרסומות</li>
+        </ul>
+      </div>}
 
       {note && <div className="home-note" role="status">{note}<button type="button" onClick={() => setNote("")} aria-label="סגירה">✕</button></div>}
       <div id="catalog">
@@ -175,7 +196,8 @@ export default function Home() {
             <div className="g">
               {list.map((t) => {
                 const style = { "--i": i++ };
-                const inner = <><Icon k={t.icon} /><span className="tx"><span className="nm">{t.name}</span><small>{t.grades}</small></span></>;
+                const nCh = t.slug && CHAPTERS[t.slug] ? CHAPTERS[t.slug].length : 0;
+                const inner = <><Icon k={t.icon} /><span className="tx"><span className="nm">{t.name}</span><small>{t.grades}{nCh > 1 ? <span className="nch"> · {nCh} פרקים</span> : null}</small></span></>;
                 return t.slug
                   ? <Link key={t.name} className="topic" style={style} data-topic={t.color} href={`/topics/${t.slug}`}>{inner}<Go /></Link>
                   : <div key={t.name} className="topic soon" style={style} data-topic={t.color} aria-disabled="true">{inner}<span className="soon-b">בקרוב</span></div>;

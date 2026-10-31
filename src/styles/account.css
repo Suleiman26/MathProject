@@ -623,3 +623,8 @@ a.pf-tmain:focus-visible { outline: 2px solid var(--a-500); outline-offset: 4px;
   .lg-cards { grid-template-columns: minmax(0, 1fr); }
 }
 }
+.td-empty { text-align: center; padding: 34px 22px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.td-empty-ic { font-size: 30px; line-height: 1; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 20px; background: var(--a-50); box-shadow: inset 0 0 0 1px var(--a-200); margin-bottom: 4px; }
+.td-empty h2 { margin: 0; font-size: 1.15rem; }
+.td-empty p { margin: 0 0 8px; color: var(--ink-2); max-width: 420px; line-height: 1.6; }
+.td-empty .td-go { background: var(--a-600); color: #fff; }

@@ -71,7 +71,14 @@ function Detail({ t, d }) {
         ))}
       </section>}
 
-      <div className="pf-cols even">
+      {!started && <section className="pf-card td-empty">
+        <span className="td-empty-ic" aria-hidden="true">✏️</span>
+        <h2>עוד לא תרגלת בנושא הזה</h2>
+        <p>אחרי התרגיל הראשון יופיעו כאן הפרקים שלך, איפה כדאי לחזק, וגרף של 30 הימים האחרונים.</p>
+        <Link href={`/topics/${t.slug}`} className="td-go">להתחיל לתרגל</Link>
+      </section>}
+
+      {started && <><div className="pf-cols even">
         {ch.length > 0 && <section className="pf-card td-ch" aria-labelledby="tdc-h">
           <div className="pf-card-h"><h2 id="tdc-h">פרקים</h2><p>{fmt(ch.filter((c) => c.win > 0).length)} מתוך {fmt(ch.filter((c) => c.known).length)} עם תרגיל פתור</p></div>
           <ol>
@@ -97,7 +104,7 @@ function Detail({ t, d }) {
         </section>}
         <Mistakes list={d.mistakes} />
       </div>
-      <History days={d.days} today={d.today} />
+      <History days={d.days} today={d.today} /></>}
     </>
   );
 }
