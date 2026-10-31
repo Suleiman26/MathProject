@@ -8,6 +8,7 @@ import { iconSvg } from "@/lib/icons";
 import { HERO, GRADES, TOPICS, CATEGORIES } from "./catalog";
 import { AccountButton, LegalFooter, Avatar } from "@/account/ui";
 import { useAccount, accountApi } from "@/lib/account";
+import { Railway, Insights } from "./Journey";
 
 const KEY = "mp:grade";
 const Go = () => (
@@ -36,24 +37,72 @@ function fromDb(d) {
 }
 
 /* Signed-in students: a greeting, the streak, and one tap back to the last topic. */
-function Resume({ account }) {
-  const [p, setP] = useState(null);
-  useEffect(() => { accountApi.progress().then(setP).catch(() => setP(false)); }, [account.id]);
+function Resume({ account, p, first }) {
   const last = p && p.topics && p.topics.find((t) => TOPICS.some((x) => x.slug === t.page.replace(/\.html$/, "") && (t.ok + t.bad + t.win) > 0));
-  const topic = last && TOPICS.find((x) => x.slug === last.page.replace(/\.html$/, ""));
+  const resumed = last && TOPICS.find((x) => x.slug === last.page.replace(/\.html$/, ""));
+  const topic = resumed || (p && first) || null;
   return (
     <section className="resume" data-topic={account.avatar} aria-label="ההתקדמות שלי">
       <Link href="/profile" className="resume-me" aria-label="לפרופיל שלי">
         <Avatar account={account} size={44} />
-        <span className="resume-hi"><b>שלום, <bdi>{account.username}</bdi></b><small>{p && p.streak > 0 ? `🔥 ${p.streak} ${p.streak === 1 ? "יום" : "ימים"} ברצף` : p && !topic ? "בחר/י נושא למטה כדי להתחיל" : p ? "בוא/י נתרגל היום" : "\u00a0"}</small></span>
+        <span className="resume-hi"><b>שלום, <bdi>{account.username}</bdi></b><small>{p && p.streak > 0 ? `🔥 ${p.streak} ${p.streak === 1 ? "יום" : "ימים"} ברצף` : p && !account.grade ? "עוד צעד אחד והמסלול שלך מוכן" : p && !resumed ? "המסלול שלך מוכן" : p ? "בוא/י נתרגל היום" : "\u00a0"}</small></span>
       </Link>
       {topic ? (
         <Link href={`/topics/${topic.slug}`} className="resume-go" data-topic={topic.color}>
-          <span className="resume-go-l"><small>להמשיך מאיפה שעצרת</small><b>{topic.name}</b></span>
+          <span className="resume-go-l"><small>{resumed ? "להמשיך מאיפה שעצרת" : "התחנה הראשונה"}</small><b>{topic.name}</b></span>
           <Go />
         </Link>
       ) : null}
     </section>
+  );
+}
+
+/* Signed-in student: only their grade, as a railway, with strengths and what to strengthen. */
+function SignedIn({ account, data, myGrade }) {
+  const [p, setP] = useState(null);
+  const [others, setOthers] = useState(false);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { accountApi.progress().then(setP).catch(() => setP(false)); }, [account.id]);
+  const gradeObj = data.grades.find((x) => x.id === myGrade);
+  const all = data.sections.flatMap((s) => s.topics.filter((t) => t.slug));
+  const mine = myGrade ? all.filter((t) => t.g.includes(myGrade)) : [];
+  const rest = myGrade ? all.filter((t) => !t.g.includes(myGrade)) : [];
+
+  if (!account.grade) {
+    return (
+      <>
+        <Resume account={account} p={p} />
+        <section className="jr-pick">
+          <h2>באיזו כיתה את/ה?</h2>
+          <p>נבנה לך מסלול עם הנושאים של הכיתה שלך.</p>
+          <div className="acct-seg" role="radiogroup" aria-label="כיתה">
+            {[["7", "ז׳"], ["8", "ח׳"], ["9", "ט׳"]].map(([v, l]) => (
+              <button key={v} type="button" role="radio" aria-checked={false} disabled={saving}
+                onClick={async () => { setSaving(true); try { await accountApi.update(v, account.avatar); } finally { setSaving(false); } }}>כיתה {l}</button>
+            ))}
+          </div>
+        </section>
+      </>
+    );
+  }
+  return (
+    <>
+      <Resume account={account} p={p} first={mine[0]} />
+      {p === null && <div className="jr-loading" aria-hidden="true"><span /><span /></div>}
+      {p === false && <p className="jr-err">לא הצלחנו לטעון את ההתקדמות. רעננו את הדף.</p>}
+      {p && <>
+        <Insights progress={p} topics={all} />
+        <Railway topics={mine} progress={p} account={account} gradeName={gradeObj ? gradeObj.name : "הכיתה שלי"} />
+      </>}
+      {rest.length > 0 && (
+        <div className="jr-more">
+          <button type="button" onClick={() => setOthers(!others)} aria-expanded={others}>{others ? "הסתרת נושאים מכיתות אחרות" : `נושאים מכיתות אחרות (${rest.length})`}</button>
+        </div>
+      )}
+      {others && <div className="g jr-others">{rest.map((t, i) => (
+        <Link key={t.slug} className="topic" style={{ "--i": i }} data-topic={t.color} href={`/topics/${t.slug}`}><Icon k={t.icon} /><span className="tx"><span className="nm">{t.name}</span><small>{t.grades}</small></span><Go /></Link>
+      ))}</div>}
+    </>
   );
 }
 
@@ -106,11 +155,11 @@ export default function Home() {
     <div className="home">
       <header className="home-top"><span className="home-top-s" /><AccountButton /></header>
       <main>
+      {account ? <SignedIn account={account} data={data} myGrade={myGrade} /> : <>
       <header className="hero">
         <img className="mark" src="/icon.png" alt="" width={64} height={64} />
         <h1>{HERO.title}</h1><p className="s">{HERO.sub}</p>
       </header>
-      {account && <Resume account={account} />}
       {ready && !account && <p className="join"><Link href="/signup">פתחו חשבון</Link> כדי לשמור את ההתקדמות, הרצף והרמות שלכם. בחינם, בלי מייל.</p>}
 
       {note && <div className="home-note" role="status">{note}<button type="button" onClick={() => setNote("")} aria-label="סגירה">✕</button></div>}
@@ -139,7 +188,8 @@ export default function Home() {
         })}
       </div>
 
-      <p className="foot"><a href="/classic/project-hub.html">{HERO.hub}</a></p>
+      </>}
+      {!account && <p className="foot"><a href="/classic/project-hub.html">{HERO.hub}</a></p>}
     </main><LegalFooter /></div>
   );
 }

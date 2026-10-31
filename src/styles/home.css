@@ -124,7 +124,7 @@
 
   /* signed-in: greeting + continue */
   .home .resume {
-    display: flex; align-items: center; gap: 12px; max-width: 640px; margin: -6px auto 22px; padding: 10px;
+    display: flex; align-items: center; gap: 12px; max-width: 860px; margin: 0 auto 16px; padding: 10px;
     border-radius: 20px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-2);
     animation: mp-rise 420ms 100ms var(--ease-out) backwards;
   }

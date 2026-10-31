@@ -58,6 +58,9 @@ URLs: `/topics/<topic>`. Old `/<topic>.html` links redirect (next.config.ts).
   migration) AND `TERMS_VERSION` in `src/lib/account.js`; everyone re-accepts.
 - Forgotten password: student writes via /contact; admin → Settings resets it.
 - Legal operator name: `OPERATOR` in `src/legal/Legal.jsx`.
+- Signed-in home (`src/home/Journey.jsx`, `src/styles/journey.css`): only the
+  student's grade, as a railway of topics with levels, plus strengths and
+  chapters worth strengthening (from `account_progress` → `chapters`).
 
 ## Display fixes vs logic
 Prefer CSS in `src/styles/topic-fixes.css` for anything visual. Only touch
