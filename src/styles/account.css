@@ -64,6 +64,20 @@
 .acct-foot a:hover { color: var(--ink); text-decoration: underline; }
 .acct-foot i { width: 3px; height: 3px; border-radius: 50%; background: var(--line-strong); }
 
+/* sign-up on wide screens: what you get (side) + the form */
+.acct-aside { display: none; }
+@media (min-width: 900px) {
+  .acct.split .acct-main { max-width: 960px; display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 48px; align-items: center; }
+  .acct-aside { display: block; padding: 8px 4px; animation: mp-rise 420ms 80ms var(--ease-out) backwards; }
+  .acct-aside img { border-radius: 16px; box-shadow: var(--sh-3); }
+  .acct-aside h2 { margin: 18px 0 22px; font-size: 2rem; line-height: 1.2; font-weight: 700; letter-spacing: -.02em; max-width: 380px; }
+  .acct-aside ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+  .acct-aside li { display: flex; gap: 14px; align-items: flex-start; }
+  .acct-aside li > span { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 13px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); font-size: 20px; }
+  .acct-aside li b { display: block; font-size: 1.02rem; }
+  .acct-aside li small { color: var(--ink-3); font-size: .92rem; }
+}
+
 /* ── card + form ──────────────────────────────────────────────────────────── */
 .acct-card {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl);
@@ -175,7 +189,8 @@
 }
 .pf-hero .acct-av { background: rgb(255 255 255 / .18); box-shadow: inset 0 0 0 2px rgb(255 255 255 / .45); position: relative; font-size: 34px; }
 .pf-id { position: relative; min-width: 0; }
-.pf-id h1 { margin: 0; font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.1rem); font-weight: 700; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.pf-id h1 { margin: 0; font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.1rem); font-weight: 700; letter-spacing: -.01em; overflow-wrap: break-word; line-height: 1.2; }
+.pf-id h1.long { font-size: clamp(1.25rem, 1.05rem + 1.1vw, 1.7rem); }
 .pf-id p { margin: 4px 0 0; opacity: .85; }
 .pf-streak {
   position: relative; margin-inline-start: auto; display: grid; justify-items: center; gap: 0; padding: 10px 16px;
@@ -220,7 +235,9 @@
 .pf-cal-box { position: relative; }
 .pf-cal-scroll { overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .pf-cal-scroll::-webkit-scrollbar { display: none; }
-.pf-cal-grid { --c: 15px; display: grid; grid-template-columns: 22px repeat(var(--w), var(--c)); grid-template-rows: 16px repeat(7, var(--c)); gap: 4px; width: max-content; margin: 0 auto; direction: rtl; }
+.pf-cal-grid { --c: 13px; display: grid; grid-template-columns: 22px repeat(var(--w), var(--c)); grid-template-rows: 16px repeat(7, var(--c)); gap: 4px; width: max-content; margin: 0 auto; direction: rtl; }
+@media (max-width: 699px) { .pf-cal-grid { gap: 3px; } }
+.pf-cell { border-radius: calc(var(--c) * .26); }
 .pf-cal-months, .pf-cal-days { display: contents; }
 .pf-cal-months span { grid-row: 1; font-size: .72rem; color: var(--ink-3); white-space: nowrap; }
 .pf-cal-days span { grid-column: 1; font-size: .7rem; color: var(--ink-3); line-height: var(--c); }
@@ -295,6 +312,7 @@
 .pf-feed-m .w { color: var(--ok-700); font-weight: 600; }
 .pf-feed-m .x { color: var(--bad-700); }
 
+.pf-more { margin-top: 8px; border: 0; background: none; padding: 6px 0; color: var(--a-700); font: 600 .88rem var(--font); cursor: pointer; box-shadow: none; }
 /* empty + skeleton */
 .pf-empty { text-align: center; padding: 34px 20px; }
 .pf-empty-art { width: 76px; height: 76px; margin: 0 auto 14px; border-radius: 22px; display: grid; place-items: center; font-size: 30px; font-weight: 700; color: #fff; background: linear-gradient(140deg, var(--a-500), var(--a-700)); box-shadow: var(--sh-accent); }
@@ -339,14 +357,11 @@
 @media (max-width: 640px) {
   .pf-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .pf-kpi-v { font-size: 1.7rem; }
-  .pf-ring { width: 30px; height: 30px; inset-inline-end: 12px; top: 14px; }
-  .pf-kpi.acc .pf-kpi-i { display: none; }
+  .pf-ring { display: none; }
   .pf-hero { padding: 20px 18px; gap: 14px; border-radius: 20px; }
   .pf-hero .acct-av { --s: 60px !important; font-size: 26px; }
-  .pf-streak { padding: 8px 12px; }
-  .pf-streak b { font-size: 1.4rem; }
+  .pf-streak { display: none; }
   .pf-card { padding: 16px 14px; border-radius: 18px; }
-  .pf-cal-grid { --c: 13px; gap: 3px; }
   .pf-trow { grid-template-columns: 40px minmax(0, 1fr) 38px; gap: 10px; }
   .pf-go { width: 38px; height: 38px; padding: 0; justify-content: center; border-radius: 12px; }
   .pf-go span { display: none; }

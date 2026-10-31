@@ -37,6 +37,8 @@ function ago(t) {
   const d = Math.round(s / 86400);
   return d === 1 ? "אתמול" : d < 7 ? `לפני ${d} ימים` : new Date(t).toLocaleDateString("he-IL", { day: "numeric", month: "short" });
 }
+// long usernames may wrap only after "_" "." "-" (never in the middle of a word)
+function breakable(name) { return name.split(/(?<=[_.-])/).flatMap((part, i) => (i ? [<wbr key={i} />, part] : [part])); }
 function TopicIcon({ k }) { return <span className="pf-ic" dangerouslySetInnerHTML={{ __html: iconSvg(k) }} />; }
 
 export default function Profile() {
@@ -67,10 +69,10 @@ export default function Profile() {
         {welcome && <Welcome claimed={data && (data.totals.ok + data.totals.bad + data.totals.win) > 0} onClose={() => { setWelcome(false); history.replaceState(null, "", "/profile"); }} />}
         {err && <div className="acct-alert" role="alert">{err}</div>}
         {!data && !err ? <Skeleton /> : data && <>
-          <Kpis data={data} />
           {(data.totals.ok + data.totals.bad + data.totals.win) === 0
             ? <EmptyStart grade={account.grade} />
             : <>
+              <Kpis data={data} />
               <Calendar days={data.days} today={data.today} />
               <div className="pf-cols">
                 <TopicProgress topics={data.topics} grade={account.grade} />
@@ -91,7 +93,7 @@ function ProfileHero({ account, data }) {
       <div className="pf-hero-bg" aria-hidden="true" />
       <Avatar account={account} size={76} />
       <div className="pf-id">
-        <h1>{account.username}</h1>
+        <h1 className={account.username.length > 12 ? "long" : ""}>{breakable(account.username)}</h1>
         <p>{account.grade ? GRADE_NAME[account.grade] + " · " : ""}איתנו מאז {since}</p>
       </div>
       {data && data.streak > 0 && <div className="pf-streak" title="ימים ברצף"><span aria-hidden="true">🔥</span><b>{data.streak}</b><small>{data.streak === 1 ? "יום ברצף" : "ימים ברצף"}</small></div>}
@@ -119,7 +121,7 @@ function Kpis({ data }) {
   const acc = tries >= 5 ? Math.round((t.ok / tries) * 100) : null;
   const items = [
     { k: "win", icon: "✓", label: "תרגילים שפתרת", value: fmt(t.win), sub: `${fmt(t.ok)} תשובות נכונות` },
-    { k: "acc", icon: "◎", label: "דיוק", value: acc == null ? "—" : acc + "%", sub: acc == null ? "אחרי 5 תשובות" : "תשובות נכונות מתוך כל הניסיונות", ring: acc },
+    { k: "acc", icon: "◎", label: "דיוק", value: acc == null ? "—" : acc + "%", sub: acc == null ? "יופיע אחרי 5 תשובות" : "מכל הניסיונות", ring: acc },
     { k: "streak", icon: "🔥", label: "רצף", value: fmt(data.streak), sub: `השיא שלך: ${fmt(data.best_streak)} ${data.best_streak === 1 ? "יום" : "ימים"}` },
     { k: "days", icon: "▦", label: "ימי תרגול", value: fmt(t.days), sub: `ב-${fmt(t.topics)} ${t.topics === 1 ? "נושא" : "נושאים"}` },
   ];
@@ -137,11 +139,25 @@ function Kpis({ data }) {
   );
 }
 
-/* Practice calendar: 18 weeks, oldest on the right (reading direction), today at the far left. */
+/* Practice calendar: as many weeks as fit the width (up to a year), oldest on the
+   right (reading direction), today at the far left. */
 function Calendar({ days, today }) {
-  const WEEKS = 18;
   const [tip, setTip] = useState(null);
+  const [WEEKS, setWeeks] = useState(18);
+  const [cell, setCell] = useState(13);
   const box = useRef(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el || !window.ResizeObserver) return;
+    // phones: as many weeks as fit with small squares; wider screens: half a year, squares grow to fill
+    const ro = new ResizeObserver(([e]) => {
+      const w = e.contentRect.width - 30;
+      if (w < 640) { setCell(13); setWeeks(Math.max(12, Math.min(26, Math.floor(w / 16)))); }
+      else { setWeeks(26); setCell(Math.max(14, Math.min(26, Math.floor(w / 26) - 4))); }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const { weeks, months, total, active } = useMemo(() => {
     const map = Object.fromEntries((days || []).map((d) => [d.day, d]));
     const end = new Date(today + "T12:00:00");
@@ -163,7 +179,7 @@ function Calendar({ days, today }) {
       weeks.push(col);
     }
     return { weeks, months, total, active };
-  }, [days, today]);
+  }, [days, today, WEEKS]);
   const lvl = (n) => (n === 0 ? 0 : n < 4 ? 1 : n < 10 ? 2 : n < 20 ? 3 : 4);
   function show(e, c) {
     if (c.future) return;
@@ -176,11 +192,11 @@ function Calendar({ days, today }) {
     <section className="pf-card pf-cal" aria-labelledby="cal-h">
       <div className="pf-card-h">
         <h2 id="cal-h">יומן תרגול</h2>
-        <p>{fmt(active)} ימי תרגול ב-18 השבועות האחרונים · {fmt(total)} תשובות</p>
+        <p>{fmt(active)} ימי תרגול {WEEKS === 26 ? "בחצי השנה האחרונה" : `ב-${WEEKS} השבועות האחרונים`} · {fmt(total)} תשובות</p>
       </div>
       <div className="pf-cal-box" ref={box} onMouseLeave={() => setTip(null)}>
         <div className="pf-cal-scroll">
-          <div className="pf-cal-grid" style={{ "--w": WEEKS }}>
+          <div className="pf-cal-grid" style={{ "--w": WEEKS, "--c": cell + "px" }}>
             <div className="pf-cal-months" aria-hidden="true">{months.map((m) => <span key={m.w} style={{ gridColumn: m.w + 2 }}>{m.label}</span>)}</div>
             <div className="pf-cal-days" aria-hidden="true">{DAY.map((d, i) => <span key={d} style={{ gridRow: i + 2 }}>{i % 2 === 0 ? d : ""}</span>)}</div>
             {weeks.map((col, w) => col.map((c, d) => (
@@ -249,12 +265,14 @@ function TopicProgress({ topics, grade }) {
 }
 
 function Recent({ recent }) {
+  const [all, setAll] = useState(false);
   if (!recent || !recent.length) return null;
+  const list = all ? recent : recent.slice(0, 5);
   return (
     <section className="pf-card pf-recent" aria-labelledby="rc-h">
       <div className="pf-card-h"><h2 id="rc-h">פעילות אחרונה</h2></div>
       <ol className="pf-feed">
-        {recent.map((r, i) => {
+        {list.map((r, i) => {
           const t = byslug[slugOf(r.page)];
           const ch = (r.chapter || "").split(" › ").pop();
           return (
@@ -264,7 +282,7 @@ function Recent({ recent }) {
                 <b>{t ? t.name : slugOf(r.page)}</b>{ch && <span className="ch">{ch}</span>}
                 <div className="pf-feed-m">
                   {r.win > 0 && <span className="w">{fmt(r.win)} נפתרו</span>}
-                  <span className="o">{fmt(r.ok)} ✓</span>
+                  {r.ok > 0 && <span className="o">{fmt(r.ok)} ✓</span>}
                   {r.bad > 0 && <span className="x">{fmt(r.bad)} ✗</span>}
                   <time>{ago(r.last)}</time>
                 </div>
@@ -273,6 +291,7 @@ function Recent({ recent }) {
           );
         })}
       </ol>
+      {recent.length > 5 && <button type="button" className="pf-more" onClick={() => setAll(!all)}>{all ? "פחות" : `עוד ${recent.length - 5}`}</button>}
     </section>
   );
 }

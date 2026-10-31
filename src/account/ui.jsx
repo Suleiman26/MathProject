@@ -33,9 +33,9 @@ export function AccountButton({ compact }) {
 }
 
 /** Frame for sign-in / sign-up / legal pages */
-export function AcctShell({ children, wide, back = "/" }) {
+export function AcctShell({ children, wide, split, back = "/" }) {
   return (
-    <div className={"acct" + (wide ? " wide" : "")}>
+    <div className={"acct" + (wide ? " wide" : "") + (split ? " split" : "")}>
       <header className="acct-top">
         <Link className="acct-home" href={back}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>

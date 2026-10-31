@@ -114,8 +114,44 @@
     .home .g { grid-template-columns: 1fr; gap: 10px; }
   }
 
-  /* account button, top corner */
-  .home .home-acct { position: absolute; top: calc(14px + env(safe-area-inset-top)); inset-inline-end: 16px; z-index: 5; }
+  /* top bar: account button (and room for more later) */
+  .home .home-top {
+    position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between;
+    max-width: 980px; margin: 0 auto; padding: calc(12px + env(safe-area-inset-top)) 16px 0;
+  }
+  .home .home-top .acct-btn { max-width: 200px; }
+  .home main { padding-top: 22px; }
+
+  /* signed-in: greeting + continue */
+  .home .resume {
+    display: flex; align-items: center; gap: 12px; max-width: 640px; margin: -6px auto 22px; padding: 10px;
+    border-radius: 20px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-2);
+    animation: mp-rise 420ms 100ms var(--ease-out) backwards;
+  }
+  .home .resume-me { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 6px; border-radius: 14px; color: inherit; text-decoration: none; }
+  .home .resume-hi { display: grid; gap: 2px; min-width: 0; }
+  .home .resume-hi b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home .resume-hi small { color: var(--ink-3); font-size: .84rem; }
+  .home .resume-go {
+    margin-inline-start: auto; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px 10px 14px;
+    border-radius: 14px; background: var(--a-600); color: #fff; text-decoration: none; box-shadow: var(--sh-accent);
+    transition: transform var(--t-fast) var(--ease-out), background var(--t-fast);
+  }
+  .home .resume-go:hover { background: var(--a-700); }
+  .home .resume-go:active { transform: scale(.97); }
+  .home .resume-go-l { display: grid; gap: 1px; min-width: 0; }
+  .home .resume-go-l small { font-size: .74rem; opacity: .85; }
+  .home .resume-go-l b { font-size: .96rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home .resume-go .go { color: #fff; }
+  .home .resume-hint { margin-inline-start: auto; padding-inline-end: 10px; color: var(--ink-3); font-size: .9rem; }
+  .home .join { text-align: center; margin: -10px auto 4px; max-width: 520px; padding: 0 12px; color: var(--ink-3); font-size: .9rem; line-height: 1.6; }
+  .home .join a { color: var(--a-700); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  .home .filters .mine { display: inline-block; width: 6px; height: 6px; margin-inline-start: 6px; border-radius: 50%; background: var(--a-500); vertical-align: 2px; }
+  @media (max-width: 640px) {
+    .home main { padding-top: 14px; }
+    .home .resume { flex-wrap: wrap; margin-top: -10px; }
+    .home .resume-go { margin-inline-start: 0; flex: 1 1 100%; justify-content: space-between; }
+  }
   .home .acct-foot { padding-top: 0; }
   .home .home-note { display: flex; align-items: center; gap: 10px; max-width: 560px; margin: -8px auto 20px; padding: 12px 14px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); font-size: .94rem; color: var(--ink-2); }
   .home .home-note button { margin-inline-start: auto; border: 0; background: none; color: var(--ink-3); cursor: pointer; font-size: 15px; width: 30px; height: 30px; border-radius: 50%; box-shadow: none; padding: 0; }

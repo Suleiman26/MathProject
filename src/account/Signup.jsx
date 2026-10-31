@@ -78,7 +78,17 @@ export default function Signup() {
     : { t: "אפשר בעברית או באנגלית. עדיף לא שם מלא אמיתי.", k: "hint" };
 
   return (
-    <AcctShell>
+    <AcctShell split>
+      <aside className="acct-aside" aria-label="מה מקבלים עם חשבון">
+        <img src="/icon.png" alt="" width={56} height={56} />
+        <h2>כל ההתקדמות שלך, במקום אחד</h2>
+        <ul>
+          <li><span aria-hidden="true">📈</span><div><b>התקדמות בכל נושא</b><small>רמות שעולות עם כל תרגיל שפותרים</small></div></li>
+          <li><span aria-hidden="true">🔥</span><div><b>רצף ימים</b><small>יומן תרגול שמראה כמה התמדת</small></div></li>
+          <li><span aria-hidden="true">↩️</span><div><b>ממשיכים מאיפה שעצרת</b><small>בטלפון, בטאבלט או במחשב</small></div></li>
+          <li><span aria-hidden="true">🔒</span><div><b>פרטי ובטוח</b><small>בלי מייל, בלי טלפון ובלי פרסומות</small></div></li>
+        </ul>
+      </aside>
       <section className="acct-card" aria-labelledby="su-h">
         <div className="acct-head">
           <h1 id="su-h">פתיחת חשבון</h1>
