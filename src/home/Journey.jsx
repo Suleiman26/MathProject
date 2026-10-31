@@ -101,8 +101,9 @@ export function Railway({ topics, progress, account, gradeName }) {
     return { ...t, s, started: s.ok + s.bad + s.win > 0, lv: levelOf(s.win), acc: n >= 5 ? Math.round((s.ok / n) * 100) : null };
   });
   // "you are here": the station practised most recently; a new student starts at the first one
+  // (only stations with real answers count: just opening a topic doesn't move you there)
   let here = 0, lastAt = 0;
-  stations.forEach((st, i) => { const t = st.s.last ? new Date(st.s.last).getTime() : 0; if (t > lastAt) { lastAt = t; here = i; } });
+  stations.forEach((st, i) => { const t = st.started && st.s.last ? new Date(st.s.last).getTime() : 0; if (t > lastAt) { lastAt = t; here = i; } });
   const furthest = stations.reduce((m, st, i) => (st.started ? i : m), -1);
   const startedCount = stations.filter((s) => s.started).length;
   const mastered = stations.filter((s) => s.lv.i >= 3).length;
