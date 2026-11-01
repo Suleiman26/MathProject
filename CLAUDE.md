@@ -70,10 +70,13 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   level-up confetti are in `Journey.jsx`. Profile extras (points/level, weekly goal,
   7-day chart, badges, records) in `src/account/ProgressV2.jsx`; one topic at
   `/profile/<topic>` (`src/account/TopicDetail.jsx`).
-- Railway v3 (2026-11-01, `src/home/Journey.jsx`): one "next step" ticket on top
+- Railway v4 (2026-11-01, `src/home/Journey.jsx`): one "next step" ticket on top
   (`planNext`: weak chapter < 65% → continue current topic → next station →
-  any unsolved chapter → level up), a mini-map (one segment per topic, tap to
-  fly there), plain-text labels, "I'm here" button. Strengths cards sit below it.
+  any unsolved chapter → level up), then ONE straight railway line: each topic a
+  station; tap it to open its chapters as numbered stops; tap a chapter to see
+  what it is about + progress + a button into it. Topic/chapter "what is it
+  about" lines: `src/home/chapterInfo.js` (keys = chapter names in chapters.js;
+  add a line when a chapter is added). Strengths cards sit below it.
   Local preview with sample students (no database needed): `npm run dev` →
   `/dev/railway?s=new|mid|pro|gold&g=7|8|9` (shows "not found" on the live site). Shared rules (levels, points,
   badge names) in `src/lib/progress.js`; database: `account_achievements`,
