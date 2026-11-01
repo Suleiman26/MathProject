@@ -27,8 +27,10 @@ for this project on Abed's personal accounts.
 | Admin (PIN 1111) | `app/admin/*`, `src/admin/*` |
 | Database (Supabase) | `supabase/migrations`; how to connect: `supabase/README.md`; settings: `src/lib/config.js` |
 | Old plain-HTML site | `public/classic/` (served at `/classic`), git tag `html-v1` |
+| 3D shapes view (solids topic) | `src/components/solid3d/` (three.js, lazy); `?flat=1` shows the old drawings |
+| Shared page frame, chapter ✓, empty-check nudge | `src/styles/mp.css` §11, `src/components/TopicView.jsx`, `src/lib/mp-runtime.js` |
 
-URLs: `/topics/<topic>`. Old `/<topic>.html` links redirect (next.config.ts).
+URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/<topic>.html` links redirect (next.config.ts).
 
 ## Admin and database
 - Connected (2026-10-30): `src/lib/config.js` holds the public URL + publishable
@@ -67,7 +69,13 @@ URLs: `/topics/<topic>`. Old `/<topic>.html` links redirect (next.config.ts).
   it when Sulaiman adds/renames a chapter). Station sheet, color zones, next step,
   level-up confetti are in `Journey.jsx`. Profile extras (points/level, weekly goal,
   7-day chart, badges, records) in `src/account/ProgressV2.jsx`; one topic at
-  `/profile/<topic>` (`src/account/TopicDetail.jsx`). Shared rules (levels, points,
+  `/profile/<topic>` (`src/account/TopicDetail.jsx`).
+- Railway v3 (2026-11-01, `src/home/Journey.jsx`): one "next step" ticket on top
+  (`planNext`: weak chapter < 65% → continue current topic → next station →
+  any unsolved chapter → level up), a mini-map (one segment per topic, tap to
+  fly there), plain-text labels, "I'm here" button. Strengths cards sit below it.
+  Local preview with sample students (no database needed): `npm run dev` →
+  `/dev/railway?s=new|mid|pro|gold&g=7|8|9` (shows "not found" on the live site). Shared rules (levels, points,
   badge names) in `src/lib/progress.js`; database: `account_achievements`,
   `account_topic`, `account_set_goal` (`20261031120000_progress_v2.sql`).
 

@@ -38,7 +38,7 @@ function fromDb(d) {
 }
 
 /* Signed-in students: a greeting, the streak, and one tap back to the last topic. */
-function Resume({ account, p, first }) {
+function Resume({ account, p, first, go = true }) {
   const last = p && p.topics && p.topics.find((t) => TOPICS.some((x) => x.slug === t.page.replace(/\.html$/, "") && (t.ok + t.bad + t.win) > 0));
   const resumed = last && TOPICS.find((x) => x.slug === last.page.replace(/\.html$/, ""));
   const topic = resumed || (p && first) || null;
@@ -48,7 +48,7 @@ function Resume({ account, p, first }) {
         <Avatar account={account} size={44} />
         <span className="resume-hi"><b>שלום, <bdi>{account.username}</bdi></b><small>{p && p.streak > 0 ? `🔥 ${p.streak} ${p.streak === 1 ? "יום" : "ימים"} ברצף` : p && !account.grade ? "עוד צעד אחד והמסלול שלך מוכן" : p && !resumed ? "המסלול שלך מוכן" : p ? "בוא/י נתרגל היום" : "\u00a0"}</small></span>
       </Link>
-      {topic ? (
+      {go && topic ? (
         <Link href={`/topics/${topic.slug}`} className="resume-go" data-topic={topic.color}>
           <span className="resume-go-l"><small>{resumed ? "להמשיך מאיפה שעצרת" : "התחנה הראשונה"}</small><b>{topic.name}</b></span>
           <Go />
@@ -88,12 +88,13 @@ function SignedIn({ account, data, myGrade }) {
   }
   return (
     <>
-      <Resume account={account} p={p} first={mine[0]} />
+      {/* the railway's own "next step" ticket is the one button here, so the greeting has none */}
+      <Resume account={account} p={p} first={mine[0]} go={!(p && mine.length)} />
       {p === null && <div className="jr-loading" aria-hidden="true"><span /><span /></div>}
       {p === false && <p className="jr-err">לא הצלחנו לטעון את ההתקדמות. רעננו את הדף.</p>}
       {p && <>
-        <Insights progress={p} topics={all} />
         <Railway topics={mine} progress={p} account={account} gradeName={gradeObj ? gradeObj.name : "הכיתה שלי"} />
+        <Insights progress={p} topics={all} />
       </>}
       {rest.length > 0 && (
         <div className="jr-more">

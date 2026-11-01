@@ -1,27 +1,31 @@
 'use client';
 /* Signed-in home: the student's grade as a railway of topics (stations).
-   v2: every chapter is a small stop on the track leading into its station,
-   the route crosses colored zones (one per category), tapping a station opens
-   its sheet, the avatar rides to "you are here", and a dashed "next step"
-   route points to what is worth practising next.
+   v3 (2026-11-01), built to read at a glance:
+   - one "next step" ticket on top: the topic, the exact chapter and why;
+   - a mini-map under it, one segment per topic (fills as chapters are solved),
+     tap a segment to fly to that station;
+   - the map: travelled track in color, the road ahead as a soft trail, every
+     chapter a stop on the way into its station, one tag per station at most,
+     stations appear as they scroll in, an "I'm here" button when scrolled away;
+   - tapping a station opens its sheet (bottom sheet on phones, popover on wide).
+   The same next step (planNext) drives the ticket, the gold trail and the tag.
    Styles: src/styles/journey.css */
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { iconSvg } from "@/lib/icons";
 import { Avatar } from "@/account/ui";
 import { CHAPTERS, chapterStats, chapterTitle } from "./chapters";
-import { LEVEL_NAME, levelOf, fmt, slugOf, ago, confettiAt } from "@/lib/progress";
+import { levelOf, fmt, slugOf, ago, confettiAt } from "@/lib/progress";
 
 export { levelOf };
 const lastPart = (ch) => (ch || "").split(" › ").pop().replace(/^[0-9א-ת]{1,2}[.)]\s*/, "");
 const Icon = ({ k }) => <span className="jr-ic" dangerouslySetInnerHTML={{ __html: iconSvg(k) }} />;
-const Stars = ({ n }) => (
-  <span className="jr-stars" aria-label={`${n} מתוך 3 כוכבים`}>
-    {[1, 2, 3].map((s) => <i key={s} className={s <= n ? "on" : ""} aria-hidden="true">★</i>)}
-  </span>
-);
+const Arrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>;
+const Check = () => <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" /></svg>;
 const useIsoLayout = typeof window === "undefined" ? useEffect : useLayoutEffect;
+const chHref = (slug, name) => `/topics/${slug}` + (name ? `?ch=${encodeURIComponent(name)}` : "");
+
 
 /* colors for the SVG track (the same values as the topic accents in mp.css) */
 const HEX = {
@@ -128,6 +132,61 @@ export function Insights({ progress, topics }) {
   );
 }
 
+/* ── the next step: one rule for the ticket, the gold trail and the tags ── */
+export function planNext(stations, here) {
+  if (!stations.length) return null;
+  const pick = (i, c, kind, why) => ({ i, ch: c ? { name: c.name, title: chapterTitle(c.name) } : null, kind, why });
+  // 1. a chapter that keeps going wrong (enough answers to be sure)
+  let weak = null;
+  stations.forEach((st, i) => st.known.forEach((c) => {
+    if (c.n >= 6 && c.acc != null && c.acc < 65 && (!weak || c.acc < weak.c.acc)) weak = { i, c };  // same bar as "worth strengthening" below
+  }));
+  if (weak) return pick(weak.i, weak.c, "weak", `כדאי לחזק · ${weak.c.acc}% נכון`);
+  // 2. keep going in the station practised last
+  const h = stations[here];
+  if (h && h.started) {
+    const c = h.known.find((x) => x.state !== "solved");
+    if (c) return pick(here, c, "go", "ממשיכים מאיפה שעצרת");
+  }
+  // 3. the next station not started yet
+  const anyStarted = stations.some((s) => s.started);
+  const after = stations.findIndex((s, i) => i >= here && !s.started);
+  const ns = after >= 0 ? after : stations.findIndex((s) => !s.started);
+  if (ns >= 0) return pick(ns, stations[ns].known[0], "new", anyStarted ? "התחנה הבאה במסלול" : "התחנה הראשונה במסלול");
+  // 4. any chapter not solved yet
+  for (let i = 0; i < stations.length; i++) {
+    const c = stations[i].known.find((x) => x.state !== "solved");
+    if (c) return pick(i, c, "go", "פרק שעוד לא פתרת");
+  }
+  // 5. level up the lowest station
+  const low = stations.map((s, i) => ({ s, i })).filter(({ s }) => s.lv.i < 4).sort((a, b) => a.s.lv.i - b.s.lv.i || a.s.s.win - b.s.s.win)[0];
+  return low ? pick(low.i, null, "level", `עוד ${fmt(low.s.lv.toNext)} תרגילים לרמת ${low.s.lv.nextName}`) : null;
+}
+const VERB = { weak: "לחזק", go: "להמשיך", new: "להתחיל", level: "לתרגל" };
+const KIND = { weak: "🎯", go: "▶", new: "✦", level: "⬆" };
+
+function Ticket({ st, next }) {
+  if (!st || !next) {
+    return (
+      <Link className="jr-tk gold" href="/profile">
+        <span className="jr-tk-ic" aria-hidden="true">🏆</span>
+        <span className="jr-tk-t"><small>כל המסלול הושלם</small><b>מדהים! כל התחנות בשליטה מלאה</b></span>
+        <span className="jr-tk-go"><span>לפרופיל</span><Arrow /></span>
+      </Link>
+    );
+  }
+  return (
+    <Link className={"jr-tk k-" + next.kind} data-topic={st.color} href={chHref(st.slug, next.ch && next.ch.name)}>
+      <span className="jr-tk-ic"><Icon k={st.icon} /></span>
+      <span className="jr-tk-t">
+        <small>הצעד הבא · {next.why}</small>
+        <b>{st.name}{next.ch ? <span> · {next.ch.title}</span> : null}</b>
+      </span>
+      <span className="jr-tk-go"><span>{VERB[next.kind]}</span><Arrow /></span>
+    </Link>
+  );
+}
+
 /* ── the railway ──────────────────────────────────────────────────────────── */
 export function Railway({ topics, progress, account, gradeName }) {
   const box = useRef(null);
@@ -135,6 +194,8 @@ export function Railway({ topics, progress, account, gradeName }) {
   const [open, setOpen] = useState(null);           // index of the station whose sheet is open
   const [toast, setToast] = useState(null);
   const [reduced, setReduced] = useState(false);
+  const [ping, setPing] = useState(null);           // station flashed after a mini-map tap
+  const [away, setAway] = useState(null);           // "up" / "down" when the student's station is off screen
   useIsoLayout(() => {
     const el = box.current;
     if (!el) return;
@@ -146,88 +207,75 @@ export function Railway({ topics, progress, account, gradeName }) {
     return () => ro.disconnect();
   }, []);
 
-  /* stations with their stats, level and chapters */
+  /* stations with their stats, level, chapters and how complete they are */
   const stats = useMemo(() => Object.fromEntries((progress.topics || []).map((t) => [slugOf(t.page), t])), [progress]);
   const stations = useMemo(() => topics.map((t) => {
     const s = stats[t.slug] || { ok: 0, bad: 0, win: 0 };
     const n = s.ok + s.bad;
     const ch = chapterStats(t.slug, progress.chapters);
     const known = ch.filter((c) => c.known);
+    const chDone = known.filter((c) => c.state === "solved").length;
+    const lv = levelOf(s.win);
+    const started = s.ok + s.bad + s.win > 0;
+    // complete = every chapter solved (topics with no chapters: the "mastery" level)
+    const comp = known.length ? chDone / known.length : Math.min(1, s.win / 15);
     const weakest = ch.filter((c) => c.acc != null && c.acc < 80).sort((a, b) => a.acc - b.acc)[0] || null;
-    return {
-      ...t, s, n, ch, known, weakest, zk: zoneKey(t.zone),
-      started: s.ok + s.bad + s.win > 0, lv: levelOf(s.win), acc: n >= 5 ? Math.round((s.ok / n) * 100) : null,
-      chDone: known.filter((c) => c.state === "solved").length,
-    };
+    return { ...t, s, n, ch, known, chDone, comp, weakest, zk: zoneKey(t.zone), started, lv, acc: n >= 5 ? Math.round((s.ok / n) * 100) : null };
   }), [topics, stats, progress]);
 
   // "you are here": the station practised most recently (only real answers count); a new student starts at the first
   let here = 0, lastAt = 0;
   stations.forEach((st, i) => { const t = st.started && st.s.last ? new Date(st.s.last).getTime() : 0; if (t > lastAt) { lastAt = t; here = i; } });
   const startedCount = stations.filter((s) => s.started).length;
-  const mastered = stations.filter((s) => s.lv.i >= 3).length;
-  const allDone = stations.length > 0 && startedCount === stations.length;
-  const allGold = stations.length > 0 && mastered === stations.length;
-  const firstGold = stations.findIndex((s) => s.lv.i >= 3);
-
-  // the next step: the weakest started topic; else the next station not started yet; else the lowest level
-  const next = useMemo(() => {
-    const weak = stations.map((s, i) => ({ s, i })).filter(({ s }) => s.started && s.acc != null && s.acc < 75).sort((a, b) => a.s.acc - b.s.acc)[0];
-    if (weak) return { i: weak.i, why: `כדאי לחזק (${weak.s.acc}% נכון)` };
-    const after = stations.findIndex((s, i) => i >= here && !s.started);
-    const any = after >= 0 ? after : stations.findIndex((s) => !s.started);
-    if (any >= 0) return { i: any, why: startedCount ? "התחנה הבאה במסלול" : "התחנה הראשונה" };
-    const low = stations.map((s, i) => ({ s, i })).filter(({ s }) => s.lv.i < 3).sort((a, b) => a.s.lv.i - b.s.lv.i || a.s.s.win - b.s.s.win)[0];
-    return low ? { i: low.i, why: `עוד ${fmt(low.s.lv.toNext)} ל${low.s.lv.nextName}` } : null;
-  }, [stations, here, startedCount]);
+  const chAll = stations.reduce((a, s) => a + s.known.length, 0);
+  const chDoneAll = stations.reduce((a, s) => a + s.chDone, 0);
+  const allDone = stations.length > 0 && stations.every((s) => s.comp >= 1);
+  const next = useMemo(() => planNext(stations, here), [stations, here]);
 
   /* geometry: stations zig-zag down, first one on the right (reading direction).
      Segment i leads INTO station i and carries that topic's chapter stops. */
   const narrow = w < 560;
-  const R = narrow ? 32 : 40;
+  const R = narrow ? 31 : 38;
   const geo = useMemo(() => {
     if (!w) return null;
-    const xs = (i) => (i % 2 === 0 ? w * (narrow ? 0.76 : 0.77) : w * (narrow ? 0.24 : 0.23));
-    const base = narrow ? 120 : 150, per = narrow ? 17 : 15, BANNER = 92;
-    const start = [w / 2, 96];
-    const pts = [], segs = [], zones = [], banners = [];
+    const xs = (i) => (i % 2 === 0 ? w * (narrow ? 0.75 : 0.74) : w * (narrow ? 0.25 : 0.26));
+    const base = narrow ? 104 : 124, per = narrow ? 14 : 13, ZONE_GAP = 66;
+    const start = [w / 2, 58];
+    const pts = [], segs = [], zones = [], labels = [];
     let y = start[1], prev = start, zoneStart = 0, zoneOf = null;
     stations.forEach((st, i) => {
-      const nCh = CHAPTERS[st.slug] ? CHAPTERS[st.slug].length : 0;
+      const nCh = st.known.length;
       const newZone = i > 0 && st.zk !== stations[i - 1].zk;
-      const h = base + Math.max(0, nCh - 2) * per + (newZone ? BANNER : 0);
-      y += h;
+      y += base + Math.max(0, nCh - 2) * per + (newZone ? ZONE_GAP : 0);
       const p = [xs(i), y];
       const c = curve(prev, p);
-      // chapter stops: evenly by length, below the previous node (and its zone banner) and above this node
-      const y0 = prev[1] + (i === 0 ? 44 : R + 26) + (newZone ? BANNER - 6 : 0), y1 = p[1] - R - 24;
+      // chapter stops: evenly by length, below the previous node (and its zone label) and above this node
+      const y0 = prev[1] + (i === 0 ? 26 : R + 18) + (newZone ? ZONE_GAP - 4 : 0), y1 = p[1] - R - 18;
       const f0 = c.fAtY(y0), f1 = c.fAtY(y1);
-      const stops = st.known.map((ch, k) => ({ ch, at: c.at(st.known.length === 1 ? (f0 + f1) / 2 : f0 + ((f1 - f0) * k) / (st.known.length - 1)) }));
+      const stops = st.known.map((ch, k) => ({ ch, at: c.at(nCh === 1 ? (f0 + f1) / 2 : f0 + ((f1 - f0) * k) / (nCh - 1)) }));
       if (newZone) {
-        const yb = prev[1] + 58;
-        zones.push({ key: zoneOf.zk, zone: zoneOf.zone, top: zoneStart, bottom: yb, from: zones.length ? zones[zones.length - 1].toIndex + 1 : 0, toIndex: i - 1 });
-        banners.push({ zone: st.zone, zk: st.zk, y: yb + 14, side: (i - 1) % 2 === 0 ? "left" : "right", count: 0, first: i });
+        const yb = prev[1] + R + 22;
+        zones.push({ key: zoneOf.zk, zone: zoneOf.zone, top: zoneStart, bottom: yb + 120 });
+        labels.push({ zone: st.zone, zk: st.zk, y: yb + 18, side: (i - 1) % 2 === 0 ? "left" : "right" });
         zoneStart = yb;
       }
-      if (i === 0) banners.push({ zone: st.zone, zk: st.zk, y: 14, side: "right", count: 0, first: 0 });
+      if (i === 0) labels.push({ zone: st.zone, zk: st.zk, y: 18, side: "right" });
       zoneOf = st;
       pts.push(p); segs.push({ ...c, stops }); prev = p;
     });
-    const flag = [w / 2, y + (narrow ? 120 : 140)];
+    const flag = [w / 2, y + (narrow ? 104 : 118)];
     const fin = curve(prev, flag);
-    const height = flag[1] + 96;
-    if (zoneOf) zones.push({ key: zoneOf.zk, zone: zoneOf.zone, top: zoneStart, bottom: height, toIndex: stations.length - 1 });
-    banners.forEach((b) => { b.count = stations.filter((s, k) => k >= b.first && s.zk === b.zk && stations.slice(b.first, k + 1).every((x) => x.zk === b.zk)).length; });
-    // floating math symbols, a few per zone (stable positions)
+    const height = flag[1] + 84;
+    if (zoneOf) zones.push({ key: zoneOf.zk, zone: zoneOf.zone, top: zoneStart, bottom: height });
+    // a few floating math symbols per zone (stable positions)
     const symbols = [];
     zones.forEach((z, zi) => {
-      const r = rand(zi + 3 + z.top), list = ZONE[z.key].sym, n = Math.max(4, Math.min(12, Math.round((z.bottom - z.top) / 95)));
+      const r = rand(zi + 3 + z.top), list = ZONE[z.key].sym, n = Math.max(3, Math.min(8, Math.round((z.bottom - z.top) / 150)));
       for (let k = 0; k < n; k++) {
-        const side = k % 2 === 0;
-        symbols.push({ t: list[k % list.length], side, x: 2 + r() * 14, y: z.top + 40 + r() * (z.bottom - z.top - 80), s: 16 + r() * 26, d: 0.08 + r() * 0.26, rot: -18 + r() * 36, zk: z.key });
+        symbols.push({ t: list[k % list.length], side: k % 2 === 0, x: 2 + r() * 12, y: z.top + 50 + r() * Math.max(10, z.bottom - z.top - 100), s: 16 + r() * 22, d: 0.08 + r() * 0.22, rot: -16 + r() * 32, zk: z.key });
       }
     });
-    return { pts, segs, fin, flag, start, height, zones, banners, symbols };
+    return { pts, segs, fin, flag, start, height, zones, labels, symbols };
   }, [w, narrow, stations, R]);
 
   /* parallax for the floating symbols (cheap: one CSS variable on scroll) */
@@ -240,6 +288,27 @@ export function Railway({ topics, progress, account, gradeName }) {
     window.addEventListener("scroll", on, { passive: true });
     return () => { window.removeEventListener("scroll", on); cancelAnimationFrame(raf); };
   }, [reduced, geo]);
+
+  /* "I'm here" button: shown while the map is on screen but the student's station is not */
+  useEffect(() => {
+    const map = box.current, node = map && map.querySelector(`[data-st="${here}"] .jr-node`);
+    if (!geo || !node || !window.IntersectionObserver) return;
+    let mapIn = false, nodeIn = true, dir = "down";
+    const upd = () => setAway(mapIn && !nodeIn ? dir : null);
+    const a = new IntersectionObserver(([e]) => { mapIn = e.isIntersecting; upd(); }, { rootMargin: "-30% 0px -30% 0px" });
+    const b = new IntersectionObserver(([e]) => { nodeIn = e.isIntersecting; dir = e.boundingClientRect.top > 0 ? "down" : "up"; upd(); });
+    a.observe(map); b.observe(node);
+    return () => { a.disconnect(); b.disconnect(); };
+  }, [geo, here]);
+
+  /* fly to a station (mini-map, "I'm here") and flash it */
+  const fly = useCallback((i) => {
+    const node = box.current && box.current.querySelector(`[data-st="${i}"] .jr-node`);
+    if (!node) return;
+    node.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    setPing(i);
+  }, [reduced]);
+  useEffect(() => { if (ping == null) return; const t = setTimeout(() => setPing(null), 1700); return () => clearTimeout(t); }, [ping]);
 
   /* level-up celebration: the first time a new level is seen on this device */
   useEffect(() => {
@@ -268,31 +337,33 @@ export function Railway({ topics, progress, account, gradeName }) {
   if (geo) {
     full = geo.segs[0].M + geo.segs.map((s) => s.C).join("") + geo.fin.C;
     ride = geo.segs[0].M + geo.segs.slice(0, here + 1).map((s) => s.C).join("");
-    if (next && next.i !== here) {
-      if (next.i > here) nextPath = `M${geo.pts[here].map((v) => v.toFixed(1)).join(",")}` + geo.segs.slice(here + 1, next.i + 1).map((s) => s.C).join("");
-      else nextPath = `M${geo.pts[here].map((v) => v.toFixed(1)).join(",")}` + geo.segs.slice(next.i + 1, here + 1).reverse().map((s) => s.R).join("");
+    if (next && next.i !== here && next.kind !== "level") {
+      const from = `M${geo.pts[here].map((v) => v.toFixed(1)).join(",")}`;
+      if (next.i > here) nextPath = from + geo.segs.slice(here + 1, next.i + 1).map((s) => s.C).join("");
+      else nextPath = from + geo.segs.slice(next.i + 1, here + 1).reverse().map((s) => s.R).join("");
     }
   }
-  const rideMs = Math.min(2600, 900 + here * 160);
-  const halfway = stations.length >= 4 ? Math.ceil(stations.length / 2) : -1;  // the sign sits on the segment into this station
-  const halfLit = halfway >= 0 && startedCount >= halfway;
+  const rideMs = Math.min(2400, 800 + here * 150);
 
   return (
     <section className="jr" aria-labelledby="jr-h">
       <header className="jr-head">
-        <div>
+        <div className="jr-head-t">
           <h2 id="jr-h">המסלול שלי · {gradeName}</h2>
-          <p>{startedCount ? `התחלת ${fmt(startedCount)} מתוך ${fmt(stations.length)} תחנות` : `${fmt(stations.length)} תחנות בדרך. התחנה הראשונה מחכה לך`}{mastered ? ` · ${fmt(mastered)} בשליטה` : ""}</p>
+          <p>{startedCount
+            ? <><b>{fmt(chDoneAll)}</b> מתוך {fmt(chAll)} פרקים · {fmt(startedCount)} מתוך {fmt(stations.length)} תחנות</>
+            : <>{fmt(stations.length)} תחנות ו־{fmt(chAll)} פרקים מחכים לך</>}</p>
         </div>
-        <div className="jr-meter" role="progressbar" aria-valuemin={0} aria-valuemax={stations.length} aria-valuenow={startedCount} aria-label="תחנות שהתחלת">
-          <i style={{ width: (stations.length ? (startedCount / stations.length) * 100 : 0) + "%" }} />
-          {halfway > 0 && <b className={halfLit ? "on" : ""} style={{ right: `${(halfway / stations.length) * 100}%` }} aria-hidden="true" />}
+        <div className="jr-mm" aria-label="התחנות במסלול. לחיצה מעבירה לתחנה">
+          {stations.map((st, i) => (
+            <button key={st.slug} type="button" className={"jr-mm-s" + (st.comp >= 1 ? " done" : st.started ? " on" : "") + (i === here ? " here" : "") + (next && next.i === i ? " nx" : "")}
+              data-topic={st.color} style={{ "--f": Math.max(st.started ? 0.08 : 0, st.comp), "--i": i }} onClick={() => fly(i)}
+              aria-label={`${st.name}: ${st.known.length ? `${fmt(st.chDone)} מתוך ${fmt(st.known.length)} פרקים` : st.lv.name}`} title={st.name}>
+              <i />
+            </button>
+          ))}
         </div>
-        <ul className="jr-legend" aria-label="מקרא">
-          <li><i className="d solved" />פרק שפתרת בו תרגיל</li>
-          <li><i className="d tried" />פרק שהתחלת</li>
-          <li><i className="d next" />הצעד הבא</li>
-        </ul>
+        <Ticket st={next ? stations[next.i] : null} next={next} />
       </header>
       {toast && (
         <div className="jr-toast" data-topic={toast.color} role="status">
@@ -303,22 +374,18 @@ export function Railway({ topics, progress, account, gradeName }) {
 
       <div className={"jr-map" + (reduced ? " still" : "")} ref={box} style={{ height: geo ? geo.height : 480, "--ride": rideMs + "ms" }}>
         {geo && <>
-          {/* zones: a colored landscape per category, hills at the top edge, floating symbols */}
+          {/* zones: a soft colored landscape per category, fading into each other */}
           {geo.zones.map((z, zi) => (
-            <div key={zi} className={"jr-zone z-" + z.key} data-topic={z.zone ? z.zone.color : "teal"} style={{ top: z.top, height: z.bottom - z.top }} aria-hidden="true">
-              {zi > 0 && <svg className="jr-hills" viewBox="0 0 400 40" preserveAspectRatio="none"><path d="M0,40 L0,22 C50,4 90,2 140,16 S240,38 300,18 S370,2 400,14 L400,40 Z" /><path className="b" d="M0,40 L0,30 C60,16 120,14 170,26 S280,40 330,28 S385,18 400,24 L400,40 Z" /></svg>}
-            </div>
+            <div key={zi} className={"jr-zone z-" + z.key + (zi ? " fade" : "")} data-topic={z.zone ? z.zone.color : "teal"} style={{ top: z.top, height: z.bottom - z.top }} aria-hidden="true" />
           ))}
           <div className="jr-syms" aria-hidden="true">
             {geo.symbols.map((s, k) => (
               <span key={k} className={"z-" + s.zk} style={{ [s.side ? "left" : "right"]: s.x + "%", top: s.y, fontSize: s.s, "--d": s.d, "--r": s.rot + "deg" }}>{s.t}</span>
             ))}
           </div>
-          {geo.banners.map((b, k) => (
-            <div key={k} className={"jr-banner " + b.side} data-topic={b.zone ? b.zone.color : "teal"} style={{ top: b.y }}>
-              <span className="g" aria-hidden="true">{ZONE[b.zk].glyph}</span>
-              <span><small>אזור</small><b>{b.zone ? b.zone.name : ""}</b></span>
-              <em>{fmt(b.count)} {b.count === 1 ? "תחנה" : "תחנות"}</em>
+          {geo.labels.map((b, k) => (
+            <div key={k} className={"jr-zl " + b.side} data-topic={b.zone ? b.zone.color : "teal"} style={{ top: b.y }}>
+              <span className="g" aria-hidden="true">{ZONE[b.zk].glyph}</span><b>{b.zone ? b.zone.name : ""}</b>
             </div>
           ))}
 
@@ -336,80 +403,70 @@ export function Railway({ topics, progress, account, gradeName }) {
                 <stop offset="0" stopColor={hex(stations[stations.length - 1].color, 1)} /><stop offset="1" stopColor="#f5b100" />
               </linearGradient>
             </defs>
-            {/* sleepers + two rails (a wide line, then a narrower one in the background color) */}
-            <path d={full} className="ties" />
-            <path d={full} className="rail" />
-            <path d={full} className="gap" />
-            {/* lit: every segment into a station that was started, drawn one after another */}
+            {/* the road ahead: a soft trail */}
+            <path d={full} className="road" />
+            <path d={full} className="trail" />
+            {/* travelled: a colored railway into every station that was started, drawn one after another */}
             {geo.segs.map((s, i) => stations[i].started && (
               <g key={i} className="lit" style={{ "--k": i }}>
-                <path d={s.M + s.C} className="ties lit" style={{ stroke: `color-mix(in srgb, ${hex(stations[i].color, 0)} 70%, transparent)` }} />
-                <path d={s.M + s.C} className="rail lit" style={{ stroke: `url(#jr-g${i})` }} pathLength="1" />
-                <path d={s.M + s.C} className="gap lit" pathLength="1" />
+                <path d={s.M + s.C} className="ties" style={{ stroke: hex(stations[i].color, 0) }} />
+                <path d={s.M + s.C} className="rail" style={{ stroke: `url(#jr-g${i})` }} pathLength="1" />
+                <path d={s.M + s.C} className="gap" pathLength="1" />
               </g>
             ))}
             {allDone && <g className="lit" style={{ "--k": stations.length }}>
-              <path d={geo.fin.M + geo.fin.C} className="rail lit" style={{ stroke: "url(#jr-gfin)" }} pathLength="1" />
-              <path d={geo.fin.M + geo.fin.C} className="gap lit" pathLength="1" />
+              <path d={geo.fin.M + geo.fin.C} className="rail" style={{ stroke: "url(#jr-gfin)" }} pathLength="1" />
+              <path d={geo.fin.M + geo.fin.C} className="gap" pathLength="1" />
             </g>}
             {nextPath && <path d={nextPath} className="next" />}
-            <circle cx={geo.start[0]} cy={geo.start[1]} r="7" className="start-dot" />
+            <circle cx={geo.start[0]} cy={geo.start[1]} r="6" className="start-dot" />
           </svg>
-          <span className="jr-start" style={{ left: geo.start[0], top: geo.start[1] - 34 }}>יציאה</span>
+          <span className="jr-start" style={{ left: geo.start[0], top: geo.start[1] - 32 }}>יציאה</span>
 
           {/* chapter stops */}
-          {geo.segs.map((s, i) => s.stops.map(({ ch, at }) => (
-            <Link key={i + ":" + ch.i} href={`/topics/${stations[i].slug}?ch=${encodeURIComponent(ch.name)}`} className={"jr-stop " + ch.state} data-topic={stations[i].color} style={{ left: at[0], top: at[1], "--k": i }}
-              data-tip={chapterTitle(ch.name) + (ch.win ? ` · ${fmt(ch.win)} נפתרו` : ch.n ? " · התחלת" : "")} aria-label={`${stations[i].name}: ${chapterTitle(ch.name)}`}>
-              {ch.state === "solved" && <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" /></svg>}
-            </Link>
-          )))}
-
-          {/* half way sign */}
-          {halfway > 0 && (() => {
-            // at the map edge, level with the middle of the segment (the track is in the center there), away from the zone banner
-            const s = geo.segs[halfway], p = s.at(0.5), right = (halfway - 1) % 2 === 0;
-            return <span className={"jr-mile" + (halfLit ? " on" : "") + (right ? " r" : " l")} style={{ top: p[1], ...(right ? { right: 12 } : { left: 12 }) }}><i aria-hidden="true">🚩</i>חצי מסלול</span>;
-          })()}
+          {geo.segs.map((s, i) => s.stops.map(({ ch, at }) => {
+            const st = stations[i], isNx = next && next.i === i && next.ch && next.ch.name === ch.name;
+            return (
+              <Link key={i + ":" + ch.i} href={chHref(st.slug, ch.name)} className={"jr-stop " + ch.state + (st.started ? "" : " far") + (isNx ? " nx" : "")} data-topic={st.color} style={{ left: at[0], top: at[1], "--k": i }}
+                data-tip={chapterTitle(ch.name) + (ch.win ? ` · ${fmt(ch.win)} נפתרו` : ch.n ? " · התחלת" : "")} aria-label={`${st.name}: ${chapterTitle(ch.name)}`}>
+                {ch.state === "solved" && <Check />}
+              </Link>
+            );
+          }))}
 
           {/* the avatar rides along the track to "you are here" */}
-          {!reduced && <span className="jr-rider" style={{ offsetPath: `path("${ride}")` }} aria-hidden="true"><Avatar account={account} size={narrow ? 30 : 34} /></span>}
+          {!reduced && <span className="jr-rider" style={{ offsetPath: `path("${ride}")` }} aria-hidden="true"><Avatar account={account} size={narrow ? 28 : 32} /></span>}
 
           {stations.map((st, i) => {
             const [x, y] = geo.pts[i];
             const right = i % 2 === 0;
-            const isHere = i === here;
+            const isHere = i === here && st.started;
             const isNext = next && next.i === i;
             const circ = 2 * Math.PI * (R + 6);
-            const state = st.lv.i >= 3 ? "gold" : st.started ? "on" : "off";
-            const labelStyle = right ? { right: w - x + R + 14, top: y - 36, maxWidth: x - R - 18 } : { left: x + R + 14, top: y - 36, maxWidth: w - (x + R + 14) - 4 };
+            const state = st.comp >= 1 ? "done" : st.started ? "on" : "off";
+            const tag = isHere ? <span className="jr-tag here">את/ה כאן</span> : isNext ? <span className="jr-tag nx">{next.kind === "new" ? "התחנה הבאה" : "הצעד הבא"}</span> : null;
+            const labelStyle = right ? { right: w - x + R + 14, top: y, maxWidth: x - R - 20 } : { left: x + R + 14, top: y, maxWidth: w - (x + R + 14) - 6 };
             return (
-              <div key={st.slug} data-st={i} className={`jr-st ${state}${isHere ? " here" : ""}${isNext ? " is-next" : ""}${open === i ? " open" : ""}`} data-topic={st.color} style={{ "--i": i }}>
+              <div key={st.slug} data-st={i} className={`jr-st ${state}${isHere ? " here" : ""}${isNext ? " is-next" : ""}${open === i ? " open" : ""}${ping === i ? " ping" : ""}`} data-topic={st.color} style={{ "--i": i }}>
                 <button type="button" className="jr-node" style={{ left: x - R, top: y - R, width: R * 2, height: R * 2 }}
                   aria-haspopup="dialog" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}
-                  aria-label={`${st.name}: ${st.lv.name}${isHere ? " (את/ה כאן)" : ""}${isNext ? " (הצעד הבא)" : ""}. פתיחת פרטי התחנה`}>
+                  aria-label={`${st.name}: ${st.started ? st.lv.name : "עוד לא התחלת"}${isHere ? " (את/ה כאן)" : ""}${isNext ? " (הצעד הבא)" : ""}. פתיחת פרטי התחנה`}>
                   <svg className="jr-ring" viewBox={`0 0 ${2 * (R + 9)} ${2 * (R + 9)}`} style={{ left: -11, top: -11, width: 2 * (R + 9), height: 2 * (R + 9) }} aria-hidden="true">
                     <circle cx={R + 9} cy={R + 9} r={R + 6} className="bg" />
-                    {st.started && <circle cx={R + 9} cy={R + 9} r={R + 6} className="fg" style={{ strokeDasharray: `${circ * st.lv.pct} ${circ}` }} />}
+                    {st.comp > 0 && <circle cx={R + 9} cy={R + 9} r={R + 6} className="fg" style={{ strokeDasharray: `${circ * st.comp} ${circ}` }} />}
                   </svg>
-                  {state === "gold" && <span className="jr-shine" aria-hidden="true" />}
                   <Icon k={st.icon} />
-                  {st.lv.i >= 3 && <span className="jr-crown" aria-hidden="true">{st.lv.i >= 4 ? "💎" : "👑"}</span>}
-                  {isHere && <span className="jr-me"><Avatar account={account} size={narrow ? 28 : 32} /></span>}
+                  {state === "done" && <span className="jr-badge" aria-hidden="true">{st.lv.i >= 4 ? "💎" : st.lv.i >= 3 ? "👑" : <Check />}</span>}
+                  {isHere && <span className="jr-me"><Avatar account={account} size={narrow ? 26 : 30} /></span>}
                 </button>
                 <div className={"jr-label " + (right ? "to-left" : "to-right")} style={labelStyle} onClick={() => setOpen(i)}>
-                  {(isHere || isNext || i === firstGold) && <span className="jr-pills">
-                    {isHere && <span className="jr-here">{st.started ? "את/ה כאן" : "מתחילים כאן"}</span>}
-                    {isNext && !(isHere && !st.started) && <span className="jr-nextp">הצעד הבא</span>}
-                    {i === firstGold && <span className="jr-gold1">🏅 שליטה ראשונה</span>}
-                  </span>}
+                  {tag}
                   <b>{st.name}</b>
-                  {st.started ? <>
-                    <span className="jr-lv"><Stars n={Math.max(0, st.lv.i - 1)} /> {st.lv.name}</span>
-                    <small>{fmt(st.s.win)} נפתרו{st.known.length ? ` · ${fmt(st.chDone)}/${fmt(st.known.length)} פרקים` : st.acc != null ? ` · ${st.acc}% נכון` : ""}</small>
-                  </> : <small className="muted">{st.known.length ? `${fmt(st.known.length)} פרקים · ` : ""}עוד לא התחלת</small>}
+                  <small>{st.started
+                    ? <><span className="lv">{st.lv.name}</span>{st.known.length ? ` · ${fmt(st.chDone)}/${fmt(st.known.length)} פרקים` : ` · ${fmt(st.s.win)} נפתרו`}</>
+                    : st.known.length ? `${fmt(st.known.length)} פרקים` : "תחנה חדשה"}</small>
                 </div>
-                {open === i && !narrow && <StationSheet st={st} why={isNext ? next.why : null} onClose={() => setOpen(null)} mode="pop"
+                {open === i && !narrow && <StationSheet st={st} next={isNext ? next : null} onClose={() => setOpen(null)} mode="pop"
                   pos={right ? { right: w - x + R + 16, top: Math.max(10, Math.min(y - 70, geo.height - 560)), width: Math.min(380, x - R - 34) }
                     : { left: x + R + 16, top: Math.max(10, Math.min(y - 70, geo.height - 560)), width: Math.min(380, w - x - R - 34) }} />}
               </div>
@@ -417,20 +474,26 @@ export function Railway({ topics, progress, account, gradeName }) {
           })}
 
           {/* finish line */}
-          <div className={"jr-flag" + (allDone ? " done" : "") + (allGold ? " gold" : "")} style={{ left: geo.flag[0] - 34, top: geo.flag[1] - 34 }}>
+          <div className={"jr-flag" + (allDone ? " done" : "")} style={{ left: geo.flag[0] - 30, top: geo.flag[1] - 30 }}>
             <span aria-hidden="true">🏆</span>
           </div>
-          <span className="jr-finish" style={{ left: geo.flag[0], top: geo.flag[1] - 54 }} aria-hidden="true" />
-          <span className="jr-flag-t" style={{ left: geo.flag[0], top: geo.flag[1] + 42 }}>{allGold ? "מושלם! כל המסלול בשליטה" : allDone ? `הגעת לסוף המסלול של ${gradeName}` : `קו הסיום של ${gradeName}`}</span>
+          <span className="jr-finish" style={{ left: geo.flag[0], top: geo.flag[1] - 48 }} aria-hidden="true" />
+          <span className="jr-flag-t" style={{ left: geo.flag[0], top: geo.flag[1] + 38 }}>{allDone ? `סיימת את כל המסלול של ${gradeName}!` : `קו הסיום של ${gradeName}`}</span>
         </>}
       </div>
-      {open != null && narrow && stations[open] && <StationSheet st={stations[open]} why={next && next.i === open ? next.why : null} onClose={() => setOpen(null)} mode="sheet" />}
+      {away && open == null && !toast && (
+        <button type="button" className={"jr-jump " + away} data-topic={account ? account.avatar : "teal"} onClick={() => fly(here)}>
+          <Avatar account={account} size={24} /><span>אני כאן</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={away === "down" ? "M6 9l6 6 6-6" : "M6 15l6-6 6 6"} /></svg>
+        </button>
+      )}
+      {open != null && narrow && stations[open] && <StationSheet st={stations[open]} next={next && next.i === open ? next : null} onClose={() => setOpen(null)} mode="sheet" />}
     </section>
   );
 }
 
 /* ── station sheet: bottom sheet on phones, popover on wider screens ───── */
-function StationSheet({ st, why, onClose, mode, pos }) {
+function StationSheet({ st, next, onClose, mode, pos }) {
   const ref = useRef(null);
   const [drag, setDrag] = useState(0);
   const startY = useRef(null);
@@ -447,6 +510,7 @@ function StationSheet({ st, why, onClose, mode, pos }) {
 
   const lv = st.lv;
   const lastT = st.s.last && st.started ? ago(st.s.last) : null;
+  const goCh = next && next.ch ? next.ch.name : (st.known.find((c) => c.state !== "solved") || {}).name;
   const body = (
     <div ref={ref} className={"jr-sh " + mode} data-topic={st.color} role="dialog" tabIndex={-1} aria-modal={mode === "sheet"} aria-labelledby={"sh-" + st.slug}
       style={mode === "pop" ? pos : { transform: drag ? `translateY(${drag}px)` : undefined, transition: drag ? "none" : undefined }}>
@@ -461,7 +525,7 @@ function StationSheet({ st, why, onClose, mode, pos }) {
         <span className="jr-sh-ic"><Icon k={st.icon} /></span>
         <div className="jr-sh-t">
           <h3 id={"sh-" + st.slug}>{st.name}</h3>
-          <span className="jr-lv">{st.started ? <><Stars n={Math.max(0, lv.i - 1)} /> {lv.name}</> : "עוד לא התחלת"}</span>
+          <span className="jr-lv">{st.started ? <>רמה: {lv.name}{st.known.length ? ` · ${fmt(st.chDone)}/${fmt(st.known.length)} פרקים` : ""}</> : st.known.length ? `${fmt(st.known.length)} פרקים · עוד לא התחלת` : "עוד לא התחלת"}</span>
         </div>
         <button type="button" className="jr-sh-x" onClick={onClose} aria-label="סגירה">✕</button>
       </div>
@@ -476,9 +540,9 @@ function StationSheet({ st, why, onClose, mode, pos }) {
           <div className="jr-sh-bar"><i style={{ width: Math.round(lv.pct * 100) + "%" }} /></div>
           <small>{lv.next ? <>עוד <b>{fmt(lv.toNext)}</b> תרגילים לרמת <b>{lv.nextName}</b></> : "הרמה הגבוהה ביותר. מדהים!"}</small>
         </div>
-      </> : <p className="jr-sh-new">{why || "תחנה חדשה"}. {st.known.length ? `${fmt(st.known.length)} פרקים מחכים לך.` : "בוא/י נתחיל."}</p>}
+      </> : null}
 
-      {why && st.started && <p className="jr-sh-why"><span aria-hidden="true">👉</span> הצעד הבא: {why}</p>}
+      {next && <p className="jr-sh-why"><span aria-hidden="true">{KIND[next.kind]}</span> הצעד הבא: {next.why}{next.ch ? ` · ${next.ch.title}` : ""}</p>}
 
       {st.ch.length > 0 && (
         <div className="jr-sh-ch">
@@ -487,11 +551,12 @@ function StationSheet({ st, why, onClose, mode, pos }) {
             {st.ch.filter((c) => c.known || c.n + c.win > 0).map((c) => {
               const pct = Math.min(1, c.win / 5);
               const isWeak = st.weakest && st.weakest.name === c.name;
+              const isNx = next && next.ch && next.ch.name === c.name;
               return (
-                <li key={c.name} className={c.state + (isWeak ? " weak" : "")}>
-                  <Link href={`/topics/${st.slug}?ch=${encodeURIComponent(c.name)}`} aria-label={`לפתוח את הפרק ${chapterTitle(c.name)}`}>
-                    <i className={"jr-stop mini " + c.state} aria-hidden="true">{c.state === "solved" && <svg viewBox="0 0 12 12"><path d="M3 6.2l2 2 4-4.4" /></svg>}</i>
-                    <span className="nm">{chapterTitle(c.name)}{isWeak && <em>כדאי לחזק</em>}</span>
+                <li key={c.name} className={c.state + (isWeak ? " weak" : "") + (isNx ? " nx" : "")}>
+                  <Link href={chHref(st.slug, c.name)} aria-label={`לפתוח את הפרק ${chapterTitle(c.name)}`}>
+                    <i className={"jr-stop mini " + c.state} aria-hidden="true">{c.state === "solved" && <Check />}</i>
+                    <span className="nm">{chapterTitle(c.name)}{isNx ? <em className="nx">הבא</em> : isWeak ? <em>כדאי לחזק</em> : null}</span>
                     <span className="bar" aria-hidden="true"><i style={{ width: Math.round(pct * 100) + "%" }} /></span>
                     <small>{c.win ? (c.win === 1 ? "נפתר 1" : `${fmt(c.win)} נפתרו`) : c.n ? "התחלת" : "—"}{c.acc != null ? ` · ${c.acc}%` : ""}</small>
                     <svg className="go" viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 3L4.5 6l3 3" /></svg>
@@ -504,9 +569,8 @@ function StationSheet({ st, why, onClose, mode, pos }) {
       )}
 
       <div className="jr-sh-acts">
-        <Link className="jr-sh-go" href={`/topics/${st.slug}`}>
-          <span>{st.started ? "להמשיך לתרגל" : "להתחיל לתרגל"}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+        <Link className="jr-sh-go" href={chHref(st.slug, goCh)}>
+          <span>{st.started ? "להמשיך לתרגל" : "להתחיל לתרגל"}</span><Arrow />
         </Link>
         {st.started && <Link className="jr-sh-more" href={`/profile/${st.slug}`}>כל הפרטים</Link>}
       </div>
