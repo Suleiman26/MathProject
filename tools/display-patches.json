@@ -845,6 +845,24 @@
       "old": "      <text x={cx+8} y={cy+5} fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n      <line x1={cx} y1={cy} x2={cx+sr1} y2={cy} stroke=\"#dc2626\" strokeWidth={2}/>\n      <text x={cx+sr1/2} y={cy-8} fontSize=\"12\" fontWeight=\"700\" fill=\"#dc2626\" textAnchor=\"middle\">R = {ex.R}</text>\n      <line x1={cx} y1={cy} x2={cx} y2={cy-sr2} stroke=\"#ea580c\" strokeWidth={2}/>\n      <text x={cx+12} y={cy-sr2/2} fontSize=\"12\" fontWeight=\"700\" fill=\"#ea580c\">r = {ex.r}</text>\n",
       "new": "      <text x={cx-7} y={cy+18} textAnchor=\"end\" fontSize=\"13\" fontWeight=\"700\" fill=\"#334155\">O</text>\n      <line x1={cx} y1={cy} x2={cx+sr1} y2={cy} stroke=\"#dc2626\" strokeWidth={2}/>\n      <text x={cx+(sr1+sr2)/2} y={cy+14} dominantBaseline=\"central\" fontSize=\"12\" fontWeight=\"700\" fill=\"#dc2626\" textAnchor=\"middle\">R = {ex.R}</text>\n      <line x1={cx} y1={cy} x2={cx} y2={cy-sr2} stroke=\"#ea580c\" strokeWidth={2}/>\n      <text x={cx-6} y={sr2>=30?cy-sr2/2:cy-sr2-10} dominantBaseline=\"central\" textAnchor=\"end\" fontSize=\"12\" fontWeight=\"700\" fill=\"#ea580c\">r = {ex.r}</text>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #52: arc solved example, sector angle label clear of the radii",
+      "old": "function CircleSVG({r,rVal,label,arcHighlight,sectorAngle,sectorColor,showDiam,dVal,extra}){\n",
+      "new": "// Where the angle's value goes along the middle of a sector: far enough out to\n// clear both radii (small angles need more room), but still inside the circle.\nfunction sectorLabelPos(angle,txt,size,sr){\n  const w=txt.length*size*0.6, h=size, half=angle*Math.PI/360;\n  const ext=(nx,ny)=>Math.abs(nx)*w/2+Math.abs(ny)*h/2;\n  const r1=ext(0,1), r2=ext(Math.sin(2*half),Math.cos(2*half));\n  const along=ext(Math.cos(half),Math.sin(half));\n  const need=(Math.max(r1,r2)+4)/Math.max(Math.sin(Math.min(half,Math.PI/2)),0.05);\n  const d=Math.max(sr*0.55, 16+along+4, need);\n  return {d:Math.min(d, sr-along-5)};\n}\nfunction Frac({n,d}){\n  return <span className=\"mp-frac\"><span className=\"mp-frac-n\">{n}</span><span className=\"mp-frac-d\">{d}</span></span>;\n}\nfunction CircleSVG({r,rVal,label,arcHighlight,sectorAngle,sectorColor,showDiam,dVal,extra}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #52: arc solved example, sector angle label clear of the radii",
+      "old": "      {label&&<text x={pt(cx,cy,sr*0.62,sectorAngle/2).x} y={pt(cx,cy,sr*0.62,sectorAngle/2).y} textAnchor=\"middle\" dominantBaseline=\"central\" fontSize=\"13\" fontWeight=\"700\" fill=\"#ea580c\">{label}</text>}\n",
+      "new": "      {label&&<path d={arcD(cx,cy,16,0,sectorAngle)} fill=\"none\" stroke=\"#ea580c\" strokeWidth={2}/>}\n      {label&&(()=>{const p=sectorLabelPos(sectorAngle,String(label),13,sr);const q=pt(cx,cy,p.d,sectorAngle/2);\n        return <text x={q.x} y={q.y} textAnchor=\"middle\" dominantBaseline=\"central\" fontSize=\"13\" fontWeight=\"700\" fill=\"#ea580c\">{label}</text>;})()}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #52: arc solved example, sector angle label clear of the radii",
+      "old": "      <div className=\"center\" style={{marginTop:6}}><button className=\"btn bp\" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>\n    </div>}\n\n    <div className=\"card\">\n      <div className=\"card-t\">{ex.sub==='arcLen'?'אורך קשת':ex.sub==='findAngle'?'מציאת זווית מקשת':'היקף גזרה'}</div>\n",
+      "new": "      <div className=\"ex-card\">\n        <h3>דוגמה פתורה</h3>\n        <div className=\"graph-wrap\"><CircleSVG rVal={6} arcHighlight={[0,60]} sectorAngle={60} label=\"60°\"/></div>\n        <p>במעגל שהרדיוס שלו <bdi>r = 6</bdi> יש זווית מרכזית <bdi>θ = 60°</bdi>. נחשב את אורך הקשת ואת היקף הגזרה.</p>\n        <ol className=\"ex-steps\">\n          <li className=\"ex-step\"><div className=\"ex-text\"><b>שלב 1 — היקף המעגל כולו:</b></div><div className=\"formula-box ex-math\">2πr = 2π · 6 = 12π</div></li>\n          <li className=\"ex-step\"><div className=\"ex-text\"><b>שלב 2 — אורך הקשת:</b> הזווית <bdi>60°</bdi> היא חלק מ-<bdi>360°</bdi>, ולכן הקשת היא אותו חלק מההיקף.</div>\n            <div className=\"formula-box ex-math\">L = <Frac n=\"60\" d=\"360\"/> · 12π = <Frac n=\"1\" d=\"6\"/> · 12π = 2π</div></li>\n          <li className=\"ex-step\"><div className=\"ex-text\"><b>שלב 3 — היקף הגזרה:</b> אורך הקשת ועוד שני רדיוסים.</div>\n            <div className=\"formula-box ex-math\">P = 2π + 2 · 6 = 2π + 12</div></li>\n        </ol>\n      </div>\n      <div className=\"center\" style={{marginTop:6}}><button className=\"btn bp\" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>\n    </div>}\n\n    <div className=\"card\">\n      <div className=\"card-t\">{ex.sub==='arcLen'?'אורך קשת':ex.sub==='findAngle'?'מציאת זווית מקשת':'היקף גזרה'}</div>\n",
+      "count": 1
     }
   ],
   "quadrilaterals": [
@@ -858,6 +876,102 @@
       "why": "Abed asked (2026-10-31): numbers and letters in drawings must never sit on a line. Labels are now placed by measuring them (inside the angle, clear of sides, arcs, diagonals and other labels). Display only: the math and the text are unchanged.",
       "old": "          {angleLabels[k]!=null&&<text x={v.x+labelDx*0.75} y={v.y+labelDy*0.75} textAnchor=\"middle\" fontSize=\"12\" fontWeight=\"700\" fill={active?'#7c3aed':'#475569'}>{angleLabels[k]}</text>}\n",
       "new": "          {angleLabels[k]!=null&&(()=>{const f=fitAngleLabel(v,prev,next,isRight?16:20,String(angleLabels[k]),12.5,Math.hypot(v.x-cx,v.y-cy)*0.72,{x:cx,y:cy},(()=>{const dg=diagonals.find(d=>d.includes(k));return dg?verts[dg[0]===k?dg[1]:dg[0]]:null;})(),{x:v.x+labelDx,y:v.y+labelDy});\n            return <text x={f.x} y={f.y} textAnchor=\"middle\" dominantBaseline=\"central\" fontSize={f.size} fontWeight=\"700\" fill={active?'#7c3aed':'#475569'}>{angleLabels[k]}</text>;})()}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[]}){\n",
+      "new": "function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[], letterOut=false}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "        const labelDx=(v.x-cx)>=0?18:-18, labelDy=(v.y-cy)>=0?18:-18;\n        return <g key={k} style={{cursor:'pointer'}} onClick={()=>onPart('angle',k)}>\n",
+      "new": "        // letterOut: the corner letter sits just outside its corner, straight out from the centre\n        const om=Math.hypot(v.x-cx,v.y-cy)||1;\n        const labelDx=letterOut?(v.x-cx)/om*17:((v.x-cx)>=0?18:-18), labelDy=letterOut?(v.y-cy)/om*17+4:((v.y-cy)>=0?18:-18);\n        return <g key={k} style={{cursor:'pointer'}} onClick={()=>onPart('angle',k)}>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "function InteractiveQuadBase({verts, order, diagonals=[], activeProp}){\n",
+      "new": "function InteractiveQuadBase({verts, order, diagonals=[], activeProp, alwaysRight=[]}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "        const showRight = active && mark==='right';\n",
+      "new": "        const showRight = (active && mark==='right') || alwaysRight.includes(k);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "          {showRight && <RightSquareMark v={v} prev={prev} next={next} active={true}/>}\n",
+      "new": "          {showRight && <RightSquareMark v={v} prev={prev} next={next} active={active && mark==='right'}/>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "function PropertyExplorer({verts, order, diagonals=[], properties}){\n",
+      "new": "function PropertyExplorer({verts, order, diagonals=[], properties, alwaysRight=[]}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "        <InteractiveQuadBase verts={verts} order={order} diagonals={diagonals} activeProp={prop||null}/>\n",
+      "new": "        <InteractiveQuadBase verts={verts} order={order} diagonals={diagonals} activeProp={prop||null} alwaysRight={alwaysRight}/>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "    </div>\n  );\n}\n\n/* ═══════════════════ Generic question components (Part B) ═══════════════════ */\n",
+      "new": "    </div>\n  );\n}\n\n/* ═══════════════════ Solved examples ═══════════════════ */\nfunction Frac({n,d}){\n  return <span className=\"mp-frac\"><span className=\"mp-frac-n\">{n}</span><span className=\"mp-frac-d\">{d}</span></span>;\n}\nfunction SolvedExample({title, visual, given, steps}){\n  return (\n    <div className=\"card ex-card\">\n      <div className=\"card-t\">{title}</div>\n      {visual&&<div className=\"quad-wrap\">{visual}</div>}\n      {given&&<div className=\"given-box\">{given}</div>}\n      <ol className=\"ex-steps\">\n        {steps.map((st,i)=>(\n          <li key={i} className=\"ex-step\">\n            <div className=\"ex-text\">{st.text}</div>\n            {st.math&&<div className=\"formula-box ex-math\">{st.math}</div>}\n          </li>\n        ))}\n      </ol>\n    </div>\n  );\n}\n\n/* ═══════════════════ Generic question components (Part B) ═══════════════════ */\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "function Ch1Square(){\n",
+      "new": "function SquareExample(){\n  return <SolvedExample title=\"דוגמה פתורה — שטח והיקף של ריבוע\"\n    visual={<SquareShape sideLabels={{AB:6}}/>}\n    given={<>נתון ריבוע ABCD שאורך הצלע שלו <bdi>a = 6</bdi>. נחשב את השטח ואת ההיקף.</>}\n    steps={[\n      {text:<><b>שטח:</b> בריבוע כל הצלעות שוות, לכן השטח הוא צלע כפול צלע.</>, math:<>S = a² = 6 · 6 = 36</>},\n      {text:<><b>היקף:</b> ההיקף הוא סכום ארבע הצלעות, וכולן שוות ל-6.</>, math:<>P = 4a = 4 · 6 = 24</>},\n    ]}/>;\n}\nfunction Ch1Square(){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "    <div className=\"card\">\n      <div className=\"card-t\">חלק ב׳ — תרגילים</div>\n      <div className=\"q-grid\">\n        <NumericQuestion title=\"שטח\" genFn={genSquareArea}/>\n",
+      "new": "    <SquareExample/>\n    <div className=\"card\">\n      <div className=\"card-t\">חלק ב׳ — תרגילים</div>\n      <div className=\"q-grid\">\n        <NumericQuestion title=\"שטח\" genFn={genSquareArea}/>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "  {id:'perp',label:'שוק ניצבה = גובה',kind:'angle',ids:['C','D'],mark:'right',def:'שוק אחת (CD) ניצבה לבסיסים — היא בעצם הגובה של הטרפז, ולכן הזוויות לידה (C ו-D) ישרות.'},\n",
+      "new": "",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "    <PropertyExplorer verts={TR_VERTS} order={T_ORDER} diagonals={[]} properties={TRAP_RIGHT_PROPS}/>\n",
+      "new": "    <PropertyExplorer verts={TR_VERTS} order={T_ORDER} diagonals={[]} properties={TRAP_RIGHT_PROPS} alwaysRight={['C','D']}/>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "function KiteShape({highlight,onPart,angleLabels={},sideLabels={}}){\n",
+      "new": "function KiteShape({highlight,onPart,angleLabels={},sideLabels={},noDiag=false}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "    diagonals={[['T','B'],['L','R']]}/>;\n",
+      "new": "    diagonals={noDiag?[]:[['T','B'],['L','R']]} letterOut/>;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "    visual:<KiteShape angleLabels={{T:a1+'°',R:a2+'°',B:a3+'°',L:'?'}}/>};\n",
+      "new": "    visual:<KiteShape noDiag angleLabels={{T:a1+'°',R:a2+'°',B:a3+'°',L:'?'}}/>};\n}\nfunction KiteAreaSVG(){\n  const {T,R,B,L}=KT_VERTS; const M={x:T.x,y:R.y};\n  const pts=(...p)=>p.map(q=>`${q.x},${q.y}`).join(' ');\n  return (\n    <svg viewBox=\"0 0 300 270\" style={{width:'100%',maxWidth:300,height:'auto',direction:'ltr'}}>\n      <polygon points={pts(T,R,L)} fill=\"#ede9fe\" stroke=\"none\"/>\n      <polygon points={pts(B,R,L)} fill=\"#ffedd5\" stroke=\"none\"/>\n      <polygon points={pts(T,R,B,L)} fill=\"none\" stroke=\"#334155\" strokeWidth={2.5} strokeLinejoin=\"round\"/>\n      <line x1={L.x} y1={L.y} x2={R.x} y2={R.y} stroke=\"#0e7490\" strokeWidth={3}/>\n      <line x1={T.x} y1={T.y} x2={M.x} y2={M.y} stroke=\"#7c3aed\" strokeWidth={2.5} strokeDasharray=\"6,4\"/>\n      <line x1={M.x} y1={M.y} x2={B.x} y2={B.y} stroke=\"#ea580c\" strokeWidth={2.5} strokeDasharray=\"6,4\"/>\n      <RightSquareMark v={M} prev={R} next={B} active={false}/>\n      <text x={M.x+12} y={(T.y+M.y)/2+6} fontSize=\"14\" fontWeight=\"700\" fill=\"#7c3aed\">h₁</text>\n      <text x={M.x+12} y={(M.y+B.y)/2+6} fontSize=\"14\" fontWeight=\"700\" fill=\"#ea580c\">h₂</text>\n      <text x={(L.x+M.x)/2} y={M.y+18} textAnchor=\"middle\" fontSize=\"14\" fontWeight=\"700\" fill=\"#0e7490\">d₂</text>\n      <text x={T.x} y={T.y-8} textAnchor=\"middle\" fontSize=\"12\" fontWeight=\"700\" fill=\"#1e293b\">T</text>\n      <text x={R.x+10} y={R.y+4} textAnchor=\"start\" fontSize=\"12\" fontWeight=\"700\" fill=\"#1e293b\">R</text>\n      <text x={B.x} y={B.y+18} textAnchor=\"middle\" fontSize=\"12\" fontWeight=\"700\" fill=\"#1e293b\">B</text>\n      <text x={L.x-10} y={L.y+4} textAnchor=\"end\" fontSize=\"12\" fontWeight=\"700\" fill=\"#1e293b\">L</text>\n    </svg>\n  );\n}\nfunction KiteAreaExplain(){\n  return <SolvedExample title=\"מאיפה מגיעה נוסחת השטח של הדלתון?\"\n    visual={<KiteAreaSVG/>}\n    steps={[\n      {text:<>האלכסון LR (באורך d₂) מחלק את הדלתון לשני משולשים שווי שוקיים עם <b>בסיס משותף</b> LR: המשולש TLR (כי <bdi>TL = TR</bdi>) והמשולש BLR (כי <bdi>BL = BR</bdi>).</>},\n      {text:<>הגובה של כל משולש לבסיס LR מונח על האלכסון הראשי TB, כי TB ניצב ל-LR. לכן שני הגבהים יחד הם האלכסון כולו:</>, math:<>h₁ + h₂ = d₁</>},\n      {text:<>מחברים את שטחי שני המשולשים (בסיס כפול גובה חלקי 2):</>, math:<>S = <Frac n=\"d₂·h₁\" d=\"2\"/> + <Frac n=\"d₂·h₂\" d=\"2\"/> = <Frac n=\"d₂·(h₁+h₂)\" d=\"2\"/></>},\n      {text:<>מציבים <bdi>h₁ + h₂ = d₁</bdi> ומקבלים את הנוסחה:</>, math:<>S = <Frac n=\"d₁·d₂\" d=\"2\"/></>},\n    ]}/>;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #41 #42 #43 #44: square solved example, right trapezoid 90° marks instead of 'leg = height', kite letters outside and angles inside, kite area explanation",
+      "old": "    <div className=\"card\">\n      <div className=\"card-t\">חלק ב׳ — תרגילים</div>\n      <div className=\"q-grid\">\n        <NumericQuestion title=\"זווית (הרביעית)\" genFn={genKiteAngle}/>\n",
+      "new": "    <KiteAreaExplain/>\n    <div className=\"card\">\n      <div className=\"card-t\">חלק ב׳ — תרגילים</div>\n      <div className=\"q-grid\">\n        <NumericQuestion title=\"זווית (הרביעית)\" genFn={genKiteAngle}/>\n",
       "count": 1
     }
   ],

@@ -310,3 +310,40 @@ html[data-page="solids3d"] .s3d-reset {
 html[data-page="powers-roots"] #root sup { font-size: max(.72em, 12px); }
 html[data-page="powers-roots"] #root :is(.be-b, .be-e) > em { font-size: 12px; }
 }
+
+/* Solved examples and fractions written as numerator over denominator
+   (fixes board #41, #44, #52): quadrilaterals and circle. */
+@layer page {
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .mp-frac {
+  display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle;
+  margin: 0 3px; line-height: 1.15; font-size: .9em;
+}
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .mp-frac-n { padding: 0 4px 3px; border-bottom: 2px solid currentColor; }
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .mp-frac-d { padding: 3px 4px 0; }
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-steps {
+  list-style: none; counter-reset: ex; margin: 12px 0 0; padding: 0; display: grid; gap: 14px;
+}
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-step {
+  counter-increment: ex; position: relative; padding-inline-start: 38px; text-align: start;
+}
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-step::before {
+  content: counter(ex); position: absolute; inset-inline-start: 0; top: 1px;
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--a-100, #ccfbf1); color: var(--a-800, #115e59); font-weight: 700; font-size: 14px;
+}
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-text { font-size: 15px; line-height: 1.7; color: var(--ink-2, #4f4d48); }
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-math {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px;
+  margin: 8px 0 0; font-size: 1.15rem;
+}
+html[data-page="circle"] .info-box .ex-card {
+  margin-top: 14px; padding: 14px 14px 16px; border-radius: 12px; background: var(--surface, #fff);
+}
+html[data-page="circle"] .info-box .ex-card > p { margin-bottom: 4px; }
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-card bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+@media (max-width: 420px) {
+  html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-step { padding-inline-start: 0; padding-top: 32px; }
+  html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-math { font-size: 1rem; }
+}
+}
+

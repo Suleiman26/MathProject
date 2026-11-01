@@ -167,6 +167,20 @@ function Ch1(){
 }
 
 /* ═══ Chapter 2: Circumference ═══ */
+// Where the angle's value goes along the middle of a sector: far enough out to
+// clear both radii (small angles need more room), but still inside the circle.
+function sectorLabelPos(angle,txt,size,sr){
+  const w=txt.length*size*0.6, h=size, half=angle*Math.PI/360;
+  const ext=(nx,ny)=>Math.abs(nx)*w/2+Math.abs(ny)*h/2;
+  const r1=ext(0,1), r2=ext(Math.sin(2*half),Math.cos(2*half));
+  const along=ext(Math.cos(half),Math.sin(half));
+  const need=(Math.max(r1,r2)+4)/Math.max(Math.sin(Math.min(half,Math.PI/2)),0.05);
+  const d=Math.max(sr*0.55, 16+along+4, need);
+  return {d:Math.min(d, sr-along-5)};
+}
+function Frac({n,d}){
+  return <span className="mp-frac"><span className="mp-frac-n">{n}</span><span className="mp-frac-d">{d}</span></span>;
+}
 function CircleSVG({r,rVal,label,arcHighlight,sectorAngle,sectorColor,showDiam,dVal,extra}){
   const W=300,H=260,cx=150,cy=130,sr=80;
   return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(300,W),height:'auto',direction:'ltr'}}>
@@ -181,7 +195,9 @@ function CircleSVG({r,rVal,label,arcHighlight,sectorAngle,sectorColor,showDiam,d
       <text x={cx} y={cy+20} fontSize="14" fontWeight="700" fill="#16a34a" textAnchor="middle">{dVal!=null?'d = '+dVal:'d'}</text></>}
     {sectorAngle&&<>
       <line x1={cx} y1={cy} x2={pt(cx,cy,sr,sectorAngle).x} y2={pt(cx,cy,sr,sectorAngle).y} stroke="#dc2626" strokeWidth={2}/>
-      {label&&<text x={pt(cx,cy,sr*0.62,sectorAngle/2).x} y={pt(cx,cy,sr*0.62,sectorAngle/2).y} textAnchor="middle" dominantBaseline="central" fontSize="13" fontWeight="700" fill="#ea580c">{label}</text>}
+      {label&&<path d={arcD(cx,cy,16,0,sectorAngle)} fill="none" stroke="#ea580c" strokeWidth={2}/>}
+      {label&&(()=>{const p=sectorLabelPos(sectorAngle,String(label),13,sr);const q=pt(cx,cy,p.d,sectorAngle/2);
+        return <text x={q.x} y={q.y} textAnchor="middle" dominantBaseline="central" fontSize="13" fontWeight="700" fill="#ea580c">{label}</text>;})()}
     </>}
     {extra}
   </svg>;
@@ -400,6 +416,18 @@ function Ch4(){
       <p>קשת היא חלק מהיקף המעגל.</p>
       <div className="formula-box">L = (θ/360°) · 2πr</div>
       <p style={{marginTop:6}}>היקף גזרה = אורך קשת + 2r</p>
+      <div className="ex-card">
+        <h3>דוגמה פתורה</h3>
+        <div className="graph-wrap"><CircleSVG rVal={6} arcHighlight={[0,60]} sectorAngle={60} label="60°"/></div>
+        <p>במעגל שהרדיוס שלו <bdi>r = 6</bdi> יש זווית מרכזית <bdi>θ = 60°</bdi>. נחשב את אורך הקשת ואת היקף הגזרה.</p>
+        <ol className="ex-steps">
+          <li className="ex-step"><div className="ex-text"><b>שלב 1 — היקף המעגל כולו:</b></div><div className="formula-box ex-math">2πr = 2π · 6 = 12π</div></li>
+          <li className="ex-step"><div className="ex-text"><b>שלב 2 — אורך הקשת:</b> הזווית <bdi>60°</bdi> היא חלק מ-<bdi>360°</bdi>, ולכן הקשת היא אותו חלק מההיקף.</div>
+            <div className="formula-box ex-math">L = <Frac n="60" d="360"/> · 12π = <Frac n="1" d="6"/> · 12π = 2π</div></li>
+          <li className="ex-step"><div className="ex-text"><b>שלב 3 — היקף הגזרה:</b> אורך הקשת ועוד שני רדיוסים.</div>
+            <div className="formula-box ex-math">P = 2π + 2 · 6 = 2π + 12</div></li>
+        </ol>
+      </div>
       <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
     </div>}
 

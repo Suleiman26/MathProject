@@ -85,7 +85,7 @@ function fitAngleLabel(vert,p1,p2,arcR,txt,size,maxD,centroid,diagTo,letter){
   return{x:letter.x+side*(7+w/2),y:letter.y-4,size:s};
 }
 
-function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[]}){
+function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[], letterOut=false}){
   const n=order.length;
   const pts=order.map(k=>verts[k]);
   const sides=order.map((k,i)=>({id:k+order[(i+1)%n], a:verts[k], b:verts[order[(i+1)%n]]}));
@@ -140,7 +140,9 @@ function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={
         const isRight=rightAngleAt.includes(k);
         const arc=angleArcAtVertex(v.x,v.y,prev,next,isRight?16:20);
         const outx=v.x+(v.x-cx)*0.001, outy=v.y+(v.y-cy)*0.001;
-        const labelDx=(v.x-cx)>=0?18:-18, labelDy=(v.y-cy)>=0?18:-18;
+        // letterOut: the corner letter sits just outside its corner, straight out from the centre
+        const om=Math.hypot(v.x-cx,v.y-cy)||1;
+        const labelDx=letterOut?(v.x-cx)/om*17:((v.x-cx)>=0?18:-18), labelDy=letterOut?(v.y-cy)/om*17+4:((v.y-cy)>=0?18:-18);
         return <g key={k} style={{cursor:'pointer'}} onClick={()=>onPart('angle',k)}>
           <circle cx={v.x} cy={v.y} r={26} fill="transparent"/>
           {isRight?(
@@ -184,7 +186,7 @@ function SegTick({p,ux,uy,count}){
   })}</>;
 }
 
-function InteractiveQuadBase({verts, order, diagonals=[], activeProp}){
+function InteractiveQuadBase({verts, order, diagonals=[], activeProp, alwaysRight=[]}){
   const n=order.length;
   const pts=order.map(k=>verts[k]);
   const sides=order.map((k,i)=>({id:k+order[(i+1)%n], a:verts[k], b:verts[order[(i+1)%n]]}));
@@ -289,12 +291,12 @@ function InteractiveQuadBase({verts, order, diagonals=[], activeProp}){
         const v=verts[k];
         const prev=verts[order[(i-1+n)%n]], next=verts[order[(i+1)%n]];
         const active = kind==='angle' && ids.includes(k);
-        const showRight = active && mark==='right';
+        const showRight = (active && mark==='right') || alwaysRight.includes(k);
         const showArc = active && mark==='arc';
         const arc=angleArcAtVertex(v.x,v.y,prev,next,showRight?16:20);
         const labelDx=(v.x-cx)>=0?18:-18, labelDy=(v.y-cy)>=0?18:-18;
         return <g key={k}>
-          {showRight && <RightSquareMark v={v} prev={prev} next={next} active={true}/>}
+          {showRight && <RightSquareMark v={v} prev={prev} next={next} active={active && mark==='right'}/>}
           {showArc && <path d={arc.path} fill="none" stroke="#7c3aed" strokeWidth={3}/>}
           <text x={v.x+labelDx} y={v.y+labelDy} textAnchor="middle" fontSize="12" fontWeight="700" fill="#1e293b">{k}</text>
         </g>;
@@ -304,14 +306,14 @@ function InteractiveQuadBase({verts, order, diagonals=[], activeProp}){
 }
 
 /* ═══════════════════ Property explorer (Part A) ═══════════════════ */
-function PropertyExplorer({verts, order, diagonals=[], properties}){
+function PropertyExplorer({verts, order, diagonals=[], properties, alwaysRight=[]}){
   const [active,setActive]=useState(null);
   const prop = properties.find(p=>p.id===active);
   return (
     <div className="card">
       <div className="card-t">חלק א׳ — הצגה ויזואלית</div>
       <div className="quad-wrap">
-        <InteractiveQuadBase verts={verts} order={order} diagonals={diagonals} activeProp={prop||null}/>
+        <InteractiveQuadBase verts={verts} order={order} diagonals={diagonals} activeProp={prop||null} alwaysRight={alwaysRight}/>
       </div>
       <div className="prop-list">
         {properties.map(p=>(
@@ -320,6 +322,28 @@ function PropertyExplorer({verts, order, diagonals=[], properties}){
         ))}
       </div>
       <div className="def-box">{prop?prop.def:'לחץ על תכונה כדי לראות אותה מודגשת בשרטוט'}</div>
+    </div>
+  );
+}
+
+/* ═══════════════════ Solved examples ═══════════════════ */
+function Frac({n,d}){
+  return <span className="mp-frac"><span className="mp-frac-n">{n}</span><span className="mp-frac-d">{d}</span></span>;
+}
+function SolvedExample({title, visual, given, steps}){
+  return (
+    <div className="card ex-card">
+      <div className="card-t">{title}</div>
+      {visual&&<div className="quad-wrap">{visual}</div>}
+      {given&&<div className="given-box">{given}</div>}
+      <ol className="ex-steps">
+        {steps.map((st,i)=>(
+          <li key={i} className="ex-step">
+            <div className="ex-text">{st.text}</div>
+            {st.math&&<div className="formula-box ex-math">{st.math}</div>}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -493,9 +517,19 @@ function genSquareSide(){
     given:`שטח S = ${S} (הוצא שורש כדי למצוא את הצלע)`,
     visual:<SquareShape/>};
 }
+function SquareExample(){
+  return <SolvedExample title="דוגמה פתורה — שטח והיקף של ריבוע"
+    visual={<SquareShape sideLabels={{AB:6}}/>}
+    given={<>נתון ריבוע ABCD שאורך הצלע שלו <bdi>a = 6</bdi>. נחשב את השטח ואת ההיקף.</>}
+    steps={[
+      {text:<><b>שטח:</b> בריבוע כל הצלעות שוות, לכן השטח הוא צלע כפול צלע.</>, math:<>S = a² = 6 · 6 = 36</>},
+      {text:<><b>היקף:</b> ההיקף הוא סכום ארבע הצלעות, וכולן שוות ל-6.</>, math:<>P = 4a = 4 · 6 = 24</>},
+    ]}/>;
+}
 function Ch1Square(){
   return <div className="content">
     <PropertyExplorer verts={SQ_VERTS} order={SQ_ORDER} diagonals={[['A','C'],['B','D']]} properties={SQUARE_PROPS}/>
+    <SquareExample/>
     <div className="card">
       <div className="card-t">חלק ב׳ — תרגילים</div>
       <div className="q-grid">
@@ -716,7 +750,6 @@ const TRAP_ISO_PROPS=[
 ];
 const TRAP_RIGHT_PROPS=[
   ...TRAP_GEN_PROPS,
-  {id:'perp',label:'שוק ניצבה = גובה',kind:'angle',ids:['C','D'],mark:'right',def:'שוק אחת (CD) ניצבה לבסיסים — היא בעצם הגובה של הטרפז, ולכן הזוויות לידה (C ו-D) ישרות.'},
 ];
 
 /* ---- General ---- */
@@ -869,7 +902,7 @@ function genTrapRightAngle(){
 }
 function ChTrapRight(){
   return <div className="content">
-    <PropertyExplorer verts={TR_VERTS} order={T_ORDER} diagonals={[]} properties={TRAP_RIGHT_PROPS}/>
+    <PropertyExplorer verts={TR_VERTS} order={T_ORDER} diagonals={[]} properties={TRAP_RIGHT_PROPS} alwaysRight={['C','D']}/>
     <div className="card">
       <div className="card-t">חלק ב׳ — תרגילים</div>
       <div className="q-grid">
@@ -899,11 +932,11 @@ function Ch5Trapezoid(){
 /* ═══════════════════ KITE ═══════════════════ */
 const KT_VERTS={T:{x:150,y:40},R:{x:210,y:120},B:{x:150,y:230},L:{x:90,y:120}};
 const KT_ORDER=['T','R','B','L'];
-function KiteShape({highlight,onPart,angleLabels={},sideLabels={}}){
+function KiteShape({highlight,onPart,angleLabels={},sideLabels={},noDiag=false}){
   return <QuadBase verts={KT_VERTS} order={KT_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
     ticks={{TR:1,LT:1,RB:2,BL:2}} parallelArrows={{}} rightAngleAt={[]}
-    diagonals={[['T','B'],['L','R']]}/>;
+    diagonals={noDiag?[]:[['T','B'],['L','R']]} letterOut/>;
 }
 const KITE_PROPS=[
   {id:'sides',label:'צלעות שוות (סמוכות)',kind:'side',ids:['TR','RB','BL','LT'],mark:'tick',groups:[['TR','LT'],['RB','BL']],def:'יש שני זוגות של צלעות שוות, אך הן סמוכות זו לזו (לא נגדיות כמו במקבילית) — כל זוג מסומן במספר קווים משלו.'},
@@ -942,11 +975,44 @@ function genKiteAngle(){
   return {answer:a4,
     given:`שלוש זוויות: ${a1}°, ${a2}°, ${a3}°`,
     formula:'סכום זוויות מרובע = 360°', askLabel:'הזווית הרביעית =',
-    visual:<KiteShape angleLabels={{T:a1+'°',R:a2+'°',B:a3+'°',L:'?'}}/>};
+    visual:<KiteShape noDiag angleLabels={{T:a1+'°',R:a2+'°',B:a3+'°',L:'?'}}/>};
+}
+function KiteAreaSVG(){
+  const {T,R,B,L}=KT_VERTS; const M={x:T.x,y:R.y};
+  const pts=(...p)=>p.map(q=>`${q.x},${q.y}`).join(' ');
+  return (
+    <svg viewBox="0 0 300 270" style={{width:'100%',maxWidth:300,height:'auto',direction:'ltr'}}>
+      <polygon points={pts(T,R,L)} fill="#ede9fe" stroke="none"/>
+      <polygon points={pts(B,R,L)} fill="#ffedd5" stroke="none"/>
+      <polygon points={pts(T,R,B,L)} fill="none" stroke="#334155" strokeWidth={2.5} strokeLinejoin="round"/>
+      <line x1={L.x} y1={L.y} x2={R.x} y2={R.y} stroke="#0e7490" strokeWidth={3}/>
+      <line x1={T.x} y1={T.y} x2={M.x} y2={M.y} stroke="#7c3aed" strokeWidth={2.5} strokeDasharray="6,4"/>
+      <line x1={M.x} y1={M.y} x2={B.x} y2={B.y} stroke="#ea580c" strokeWidth={2.5} strokeDasharray="6,4"/>
+      <RightSquareMark v={M} prev={R} next={B} active={false}/>
+      <text x={M.x+12} y={(T.y+M.y)/2+6} fontSize="14" fontWeight="700" fill="#7c3aed">h₁</text>
+      <text x={M.x+12} y={(M.y+B.y)/2+6} fontSize="14" fontWeight="700" fill="#ea580c">h₂</text>
+      <text x={(L.x+M.x)/2} y={M.y+18} textAnchor="middle" fontSize="14" fontWeight="700" fill="#0e7490">d₂</text>
+      <text x={T.x} y={T.y-8} textAnchor="middle" fontSize="12" fontWeight="700" fill="#1e293b">T</text>
+      <text x={R.x+10} y={R.y+4} textAnchor="start" fontSize="12" fontWeight="700" fill="#1e293b">R</text>
+      <text x={B.x} y={B.y+18} textAnchor="middle" fontSize="12" fontWeight="700" fill="#1e293b">B</text>
+      <text x={L.x-10} y={L.y+4} textAnchor="end" fontSize="12" fontWeight="700" fill="#1e293b">L</text>
+    </svg>
+  );
+}
+function KiteAreaExplain(){
+  return <SolvedExample title="מאיפה מגיעה נוסחת השטח של הדלתון?"
+    visual={<KiteAreaSVG/>}
+    steps={[
+      {text:<>האלכסון LR (באורך d₂) מחלק את הדלתון לשני משולשים שווי שוקיים עם <b>בסיס משותף</b> LR: המשולש TLR (כי <bdi>TL = TR</bdi>) והמשולש BLR (כי <bdi>BL = BR</bdi>).</>},
+      {text:<>הגובה של כל משולש לבסיס LR מונח על האלכסון הראשי TB, כי TB ניצב ל-LR. לכן שני הגבהים יחד הם האלכסון כולו:</>, math:<>h₁ + h₂ = d₁</>},
+      {text:<>מחברים את שטחי שני המשולשים (בסיס כפול גובה חלקי 2):</>, math:<>S = <Frac n="d₂·h₁" d="2"/> + <Frac n="d₂·h₂" d="2"/> = <Frac n="d₂·(h₁+h₂)" d="2"/></>},
+      {text:<>מציבים <bdi>h₁ + h₂ = d₁</bdi> ומקבלים את הנוסחה:</>, math:<>S = <Frac n="d₁·d₂" d="2"/></>},
+    ]}/>;
 }
 function Ch6Kite(){
   return <div className="content">
     <PropertyExplorer verts={KT_VERTS} order={KT_ORDER} diagonals={[['T','B'],['L','R']]} properties={KITE_PROPS}/>
+    <KiteAreaExplain/>
     <div className="card">
       <div className="card-t">חלק ב׳ — תרגילים</div>
       <div className="q-grid">
