@@ -60,6 +60,18 @@ function Resume({ account, p, first, go = true }) {
 }
 
 /* Signed-in student: only their grade, as a railway, with strengths and what to strengthen. */
+/* the terms or privacy policy changed since this student last agreed: ask them to look and agree again */
+function TermsNote({ account }) {
+  if (!account.needs_terms) return null;
+  return (
+    <Link className="terms-note" href="/login">
+      <span aria-hidden="true">📄</span>
+      <span><b>עדכנו את מדיניות הפרטיות</b><small>כדי שההתקדמות שלך תמשיך להישמר בחשבון, צריך לקרוא ולאשר אותה.</small></span>
+      <em>לקריאה ואישור</em>
+    </Link>
+  );
+}
+
 function SignedIn({ account, data, myGrade }) {
   const [p, setP] = useState(null);
   const [others, setOthers] = useState(false);
@@ -73,6 +85,7 @@ function SignedIn({ account, data, myGrade }) {
   if (!account.grade) {
     return (
       <>
+        <TermsNote account={account} />
         <Resume account={account} p={p} />
         <section className="jr-pick">
           <h2>באיזו כיתה את/ה?</h2>
@@ -89,6 +102,7 @@ function SignedIn({ account, data, myGrade }) {
   }
   return (
     <>
+      <TermsNote account={account} />
       {/* the railway's own "next step" ticket is the one button here, so the greeting has none */}
       <Hello account={account} p={p} gradeName={gradeObj ? gradeObj.name : "הכיתה שלי"} />
       {p === null && <div className="jr-loading" aria-hidden="true"><span /><span /></div>}

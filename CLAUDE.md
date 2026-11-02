@@ -41,6 +41,10 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   default: every table the site reads needs an explicit `grant` in its migration.
 - Database changes go in a new file in `supabase/migrations/`. Every admin action
   is a database function that checks the PIN session. Never put a secret key in the site.
+- Admin → Students (2026-11-02): signed-in students show by username, all their
+  devices together; guests stay "אורח #1234" per device. Tap a row for one
+  student's details (topics, chapters, days, latest answers). Database:
+  `admin_students` / `admin_student` (`20261102100000_admin_students_accounts.sql`).
 - `src/lib/mp-runtime.js` sends anonymous answer stats when connected. It only
   watches the page; it never changes the exercise.
 - Local test copy: `supabase start` (Docker), ports 564xx. On localhost the app

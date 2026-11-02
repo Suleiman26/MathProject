@@ -162,6 +162,16 @@ const demo = {
     }
     return out.sort((a, b) => new Date(b.last_seen) - new Date(a.last_seen));
   },
+  // preview: one sample student, so the details sheet can be seen without the database
+  admin_student({ days }) {
+    const r = rng(7), pages = Object.keys(HARD).slice(0, 4), now = Date.now();
+    const recent = Array.from({ length: 18 }, (_, i) => ({ at: new Date(now - i * 3.6e6 * (1 + r() * 6)).toISOString(), page: pages[i % 4], chapter: CH[i % 3], step: null, kind: ["ok", "bad", "win"][Math.floor(r() * 3)], mobile: true }));
+    const topics = pages.map((page) => ({ page, ok: 10 + Math.round(r() * 30), bad: Math.round(r() * 14), win: Math.round(r() * 6), last: recent.find((e) => e.page === page).at }));
+    const chapters = pages.flatMap((page) => CH.slice(0, 3).map((chapter) => ({ page, chapter, ok: Math.round(r() * 12), bad: Math.round(r() * 7), win: Math.round(r() * 3), last: recent[0].at })));
+    const daily = Array.from({ length: days }, (_, i) => ({ day: new Date(now - i * 864e5).toISOString().slice(0, 10), ok: Math.round(r() * 9), bad: Math.round(r() * 4), win: Math.round(r() * 2) })).filter(() => r() < 0.5);
+    const sum = (k) => topics.reduce((a, t) => a + t[k], 0);
+    return { account: null, devices: 1, mobile: true, first_seen: new Date(now - days * 864e5).toISOString(), last_seen: recent[0].at, totals: { ok: sum("ok"), bad: sum("bad"), win: sum("win"), days: daily.length }, topics, chapters, daily, recent };
+  },
   admin_sales() {
     const d = new Date(), monthly = [];
     for (let i = 11; i >= 0; i--) { const m = new Date(d.getFullYear(), d.getMonth() - i, 1); monthly.push({ month: m.toISOString().slice(0, 7), subscribers: 0, mrr: 0 }); }

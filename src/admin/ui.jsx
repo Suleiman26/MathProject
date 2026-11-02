@@ -13,10 +13,13 @@ export function ago(t) {
   if (s < 60) return "עכשיו";
   if (s < 3600) return "לפני " + Math.round(s / 60) + " דק׳";
   if (s < 86400) return "לפני " + Math.round(s / 3600) + " שע׳";
-  if (s < 86400 * 7) return "לפני " + Math.round(s / 86400) + " ימים";
+  if (s < 86400 * 7) { const d = Math.round(s / 86400); return d <= 1 ? "אתמול" : "לפני " + d + " ימים"; }
   return new Date(t).toLocaleDateString("he-IL");
 }
-export const studentName = (dev) => "תלמיד #" + String(dev || "").replace(/[^a-z0-9]/gi, "").slice(-4).toUpperCase();
+/* guests (no account) get a short number from their device; signed-in students show their username */
+export const studentName = (dev) => "אורח #" + String(dev || "").replace(/[^a-z0-9]/gi, "").slice(-4).toUpperCase();
+export const whoName = (x) => (x && x.username) || studentName(x && x.device);
+export const GRADE = { 7: "כיתה ז׳", 8: "כיתה ח׳", 9: "כיתה ט׳" };
 
 export function Card({ title, sub, action, className = "", children, style }) {
   return (

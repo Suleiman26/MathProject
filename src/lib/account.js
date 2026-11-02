@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { mpData } from "./mp-data";
 
-export const TERMS_VERSION = "2026-10-31"; // must match account_terms_version() in the database
+export const TERMS_VERSION = "2026-11-02"; // must match account_terms_version() in the database
 const KEY = "mp:account";
 
 let state = { ready: false, account: null, tok: null };

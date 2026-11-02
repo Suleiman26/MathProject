@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { Users, ListChecks, Target, Trophy, ChartLineUp, ArrowLeft, Lightning, Plus, Stack, DownloadSimple, Fire, Warning, Star } from "@phosphor-icons/react";
 import { useAdmin, useData, PageHead } from "../AdminShell";
-import { Card, Kpi, Delta, Meter, TopicIcon, Seg, Empty, fmt, pct, ago, studentName } from "../ui";
+import { Card, Kpi, Delta, Meter, TopicIcon, Seg, Empty, fmt, pct, ago, whoName } from "../ui";
 import { AreaCompare, CountUp, DayTimeline, Donut, Gauge, Heatmap, BarList, Sparkline } from "../charts";
 
 export const PERIODS = [[7, "7 ימים"], [30, "30 ימים"], [90, "90 ימים"]];
@@ -122,7 +122,7 @@ export default function Dashboard() {
       <Card title="פעילות אחרונה" sub="התשובות האחרונות באתר" className="mt">
         {(s.recent || []).length ? <ul className="rows feed">{s.recent.slice(0, 10).map((e, i) => {
           const tp = topicOf(c, e.page), m = { ok: ["ok", "✓", "תשובה נכונה"], bad: ["bad", "✗", "תשובה שגויה"], win: ["win", "★", "פתר תרגיל"] }[e.kind] || ["", "·", e.kind];
-          return <li key={i} className="row"><span className={"dot-k " + m[0]}>{m[1]}</span><div><b>{tp.name}{e.chapter ? " · " + e.chapter : ""}</b><small>{m[2]} · {studentName(e.device)}{e.step ? " · " + e.step : ""}</small></div><small className="muted">{ago(e.at)}</small></li>;
+          return <li key={i} className="row"><span className={"dot-k " + m[0]}>{m[1]}</span><div><b>{tp.name}{e.chapter ? " · " + e.chapter : ""}</b><small>{m[2]} · {whoName(e)}{e.step ? " · " + e.step : ""}</small></div><small className="muted">{ago(e.at)}</small></li>;
         })}</ul> : <Empty icon={<Lightning size={28} />} title="כשתלמידים יענו על שאלות, זה יופיע כאן" />}
       </Card>
     </>
