@@ -2,8 +2,9 @@
 /* Shared pieces for the account pages: avatar, the account button in the
    top bars, the page frame, password field. Styles: src/styles/account.css */
 import Link from "next/link";
-import { useState } from "react";
-import { useAccount } from "@/lib/account";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAccount, accountApi } from "@/lib/account";
 
 export function Avatar({ account, size = 40 }) {
   const letter = account ? [...(account.username || "?")][0].toUpperCase() : "";
@@ -25,10 +26,53 @@ export function AccountButton({ compact }) {
       </Link>
     );
   }
+  return <AccountMenu account={account} />;
+}
+
+/* Signed in: the avatar opens a small menu (profile, settings, sign out).
+   Same menu on the home page and on every topic page. */
+const GRADE_NAME = { 7: "כיתה ז׳", 8: "כיתה ח׳", 9: "כיתה ט׳" };
+const MI = {
+  me: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></svg>,
+  set: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>,
+  out: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3" /><path d="M10 17l-5-5 5-5" /><path d="M5 12h11" /></svg>,
+  chev: <svg className="acct-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>,
+};
+export function AccountMenu({ account }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const box = useRef(null);
+  const router = useRouter();
+  const path = usePathname();
+  useEffect(() => { setOpen(false); }, [path]);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e) => { if (box.current && !box.current.contains(e.target)) setOpen(false); };
+    const key = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", key); };
+  }, [open]);
+  async function out() {
+    setBusy(true);
+    try { await accountApi.logout(); } finally { setBusy(false); setOpen(false); }
+    if (path !== "/") router.push("/");
+  }
   return (
-    <Link className="acct-btn in" href="/profile" aria-label={"הפרופיל של " + account.username}>
-      <Avatar account={account} size={26} /><span className="nm">{account.username}</span>
-    </Link>
+    <div className={"acct-menu" + (open ? " open" : "")} ref={box}>
+      <button type="button" className="acct-btn in" aria-haspopup="menu" aria-expanded={open} aria-label={"החשבון של " + account.username} onClick={() => setOpen(!open)}>
+        <Avatar account={account} size={26} /><span className="nm">{account.username}</span>{MI.chev}
+      </button>
+      <div className="acct-pop" role="menu" aria-label="החשבון שלי" inert={!open}>
+        <div className="acct-pop-h">
+          <Avatar account={account} size={44} />
+          <span><b dir="auto">{account.username}</b><small>{GRADE_NAME[account.grade] || "בלי כיתה"}</small></span>
+        </div>
+        <Link role="menuitem" href="/profile" onClick={() => setOpen(false)}><i>{MI.me}</i><span>הפרופיל וההתקדמות שלי</span></Link>
+        <Link role="menuitem" href="/profile#settings" onClick={() => setOpen(false)}><i>{MI.set}</i><span>הגדרות: כיתה, צבע, סיסמה</span></Link>
+        <button type="button" role="menuitem" className="out" disabled={busy} onClick={out}><i>{MI.out}</i><span>{busy ? "יוצאים…" : "יציאה מהחשבון"}</span></button>
+      </div>
+    </div>
   );
 }
 

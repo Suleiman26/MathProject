@@ -88,6 +88,10 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   with 75%+ right, or 8+ answers with 80%+ (solved exercises count: many topics
   finish without step checks); weak = same chapter rule as the railway (`isWeak`).
   No "other grades" list on the signed-in home (grade is changed in the profile).
+  Top bar (signed in): floating glass bar, sticky; the avatar opens `AccountMenu`
+  (src/account/ui.jsx: profile, settings, sign out), same menu on topic pages.
+  Guests see `GuestLine` (Journey.jsx): the same area bands + topic circles,
+  no progress, ending with an invitation to open an account.
   Above it: one greeting card `src/home/Hello.jsx` (level/points, streak, solved,
   accuracy, practice days this week); the top bar shows the site name, not the
   username. Moving/renaming a topic's chapters: update `chapters.js` and add the

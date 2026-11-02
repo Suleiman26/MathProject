@@ -16,7 +16,7 @@ import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { iconSvg } from "@/lib/icons";
 import { Avatar } from "@/account/ui";
-import { chapterStats, chapterTitle } from "./chapters";
+import { chapterStats, chapterTitle, CHAPTERS } from "./chapters";
 import { topicInfo, chapterInfo } from "./chapterInfo";
 import { levelOf, fmt, slugOf, ago, confettiAt } from "@/lib/progress";
 
@@ -106,6 +106,58 @@ export function Insights({ progress, topics }) {
           </ol>
         ) : <p className="jr-pan-none ok"><span aria-hidden="true">🎉</span> אין כרגע פרק חלש. כל הכבוד!<small>פרק נכנס לכאן כשפחות מ־65% מהתשובות בו נכונות.</small></p>}
       </div>
+    </section>
+  );
+}
+
+/* ── guests: the same line, without progress (2026-11-02) ──────────────────
+   Areas are the same coloured bands, topics the same circles on the line;
+   tapping a topic opens it. The finish line invites to open an account. */
+export function GuestLine({ sections, show }) {
+  const areas = sections.map((s) => ({ ...s, list: s.topics.filter(show) })).filter((s) => s.list.length);
+  let i = 0;
+  return (
+    <section className="jr gst" aria-label="כל הנושאים">
+      <ol className="jr-line">
+        {areas.map((s, z) => (
+          <Fragment key={s.id}>
+            {s.name && (
+              <li className="jr-zone off" data-topic={s.list[0].color} style={{ "--i": i++ }}>
+                <div className="jr-zone-in" data-topic={s.color || s.list[0].color}>
+                  <span className="jr-zone-k">{areas.length > 1 ? `תחום ${fmt(z + 1)} מתוך ${fmt(areas.length)}` : "תחום"}</span>
+                  <h3>{s.name}</h3>
+                  <span className="jr-zone-m">{s.list.length === 1 ? "נושא אחד" : `${fmt(s.list.length)} נושאים`}
+                    {(() => { const n = s.list.reduce((a, t) => a + ((t.slug && CHAPTERS[t.slug]) ? CHAPTERS[t.slug].length : 0), 0); return n ? ` · ${fmt(n)} פרקים` : ""; })()}</span>
+                  <span className="jr-zone-g" aria-hidden="true">{ZONE[zoneKey(s)]}</span>
+                </div>
+              </li>
+            )}
+            {s.list.map((t) => {
+              const nCh = t.slug && CHAPTERS[t.slug] ? CHAPTERS[t.slug].length : 0;
+              const inner = (
+                <>
+                  <span className="jr-node"><Icon k={t.icon} /></span>
+                  <span className="jr-stt"><b>{t.name}</b><small>{[nCh > 1 ? `${fmt(nCh)} פרקים` : null, t.grades].filter(Boolean).join(" · ")}</small></span>
+                  {t.slug ? <span className="gst-go"><Arrow /></span> : <span className="gst-soon">בקרוב</span>}
+                </>
+              );
+              return (
+                <li key={t.name} className={"jr-st off" + (t.slug ? "" : " soon")} data-topic={t.color} style={{ "--i": i++ }}>
+                  {t.slug ? <Link className="jr-sth" href={`/topics/${t.slug}`}>{inner}</Link> : <div className="jr-sth" aria-disabled="true">{inner}</div>}
+                </li>
+              );
+            })}
+          </Fragment>
+        ))}
+        <li className="jr-end gst-end">
+          <span className="jr-flag" aria-hidden="true">🏆</span>
+          <div className="gst-cta">
+            <b>רוצים לראות את הדרך שלכם?</b>
+            <p>עם חשבון חינמי ההתקדמות נשמרת, ומקבלים מסלול לכיתה שלכם, את הצעד הבא ואת החוזקות שלכם.</p>
+            <Link className="jr-go" href="/signup"><span>פתיחת חשבון</span><Arrow /></Link>
+          </div>
+        </li>
+      </ol>
     </section>
   );
 }

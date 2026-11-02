@@ -8,8 +8,7 @@ import { iconSvg } from "@/lib/icons";
 import { HERO, GRADES, TOPICS, CATEGORIES } from "./catalog";
 import { AccountButton, LegalFooter, Avatar } from "@/account/ui";
 import { useAccount, accountApi } from "@/lib/account";
-import { Railway, Insights } from "./Journey";
-import { CHAPTERS } from "./chapters";
+import { Railway, Insights, GuestLine } from "./Journey";
 import { Hello } from "./Hello";
 
 const KEY = "mp:grade";
@@ -164,13 +163,11 @@ export default function Home() {
     } catch (e) {}
   }, []);
   const show = (t) => g === "all" || t.g.includes(g);
-  let i = 0;
-  const grouped = useMemo(() => data.sections.length > 1 || data.sections[0].name, [data]);
 
   return (
     <div className="home">
       <header className={"home-top" + (account ? " in" : "")}>
-        {account ? <Link href="/" className="home-brand"><img src="/icon.png" alt="" width={30} height={30} /><b>{HERO.title}</b></Link> : <span className="home-top-s" />}
+        {account ? <Link href="/" className="home-brand"><img src="/icon.png" alt="" width={38} height={38} /><span><b>{HERO.title}</b><small>{{ 7: "כיתה ז׳ · המסלול שלי", 8: "כיתה ח׳ · המסלול שלי", 9: "כיתה ט׳ · המסלול שלי" }[account.grade] || "המסלול שלי"}</small></span></Link> : <span className="home-top-s" />}
         <AccountButton />
       </header>
       <main>
@@ -198,25 +195,7 @@ export default function Home() {
           <button type="button" aria-pressed={g === "all"} onClick={() => pick("all")}>הכל</button>
           {data.grades.map((x) => <button key={x.id} type="button" aria-pressed={g === x.id} onClick={() => pick(x.id)}>{x.name}{myGrade === x.id && <span className="mine" title="הכיתה שלי" aria-label="(הכיתה שלי)" />}</button>)}
         </nav>
-        {data.sections.map((s) => {
-          const list = s.topics.filter(show);
-          if (!list.length) return null;
-          const grid = (
-            <div className="g">
-              {list.map((t) => {
-                const style = { "--i": i++ };
-                const nCh = t.slug && CHAPTERS[t.slug] ? CHAPTERS[t.slug].length : 0;
-                const inner = <><Icon k={t.icon} /><span className="tx"><span className="nm">{t.name}</span><small>{t.grades}{nCh > 1 ? <span className="nch"> · {nCh} פרקים</span> : null}</small></span></>;
-                return t.slug
-                  ? <Link key={t.name} className="topic" style={style} data-topic={t.color} href={`/topics/${t.slug}`}>{inner}<Go /></Link>
-                  : <div key={t.name} className="topic soon" style={style} data-topic={t.color} aria-disabled="true">{inner}<span className="soon-b">בקרוב</span></div>;
-              })}
-            </div>
-          );
-          return grouped
-            ? <section key={s.id} className="sec" data-topic={s.color}><h2 className="sec-h"><i />{s.name}<span>· {s.topics.length}</span></h2>{grid}</section>
-            : <div key={s.id}>{grid}</div>;
-        })}
+        <GuestLine sections={data.sections} show={show} />
       </div>
 
       </>}

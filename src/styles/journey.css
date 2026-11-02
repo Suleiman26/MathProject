@@ -347,13 +347,23 @@
 
 
 /* ── signed-in greeting: the big picture ─────────────────────────────────── */
-.home .home-top.in { padding-bottom: 2px; }
-.home-brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; min-width: 0; }
-.home-brand img { border-radius: 9px; flex: none; }
-.home-brand b { font-size: .98rem; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.home .home-top.in .acct-btn { width: 42px; height: 42px; padding: 0; justify-content: center; }
-.home .home-top.in .acct-btn .nm { display: none; }
-.home .home-top.in .acct-btn .acct-av { --s: 32px !important; }
+/* signed-in top bar: a floating glass bar that stays at the top while scrolling */
+.home .home-top.in {
+  position: sticky; top: calc(8px + env(safe-area-inset-top)); z-index: 40;
+  width: calc(100% - 24px); max-width: 860px; margin: calc(10px + env(safe-area-inset-top)) auto 0; padding: 7px 14px 7px 7px;
+  border-radius: 24px; background: color-mix(in srgb, var(--surface) 90%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent), 0 1px 2px rgb(28 27 25 / .04), 0 14px 34px -22px rgb(28 27 25 / .4);
+}
+.home-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; min-width: 0; }
+.home-brand img { width: 38px; height: 38px; border-radius: 12px; flex: none; box-shadow: 0 6px 14px -8px rgb(79 70 229 / .6); }
+.home-brand > span { display: grid; gap: 1px; min-width: 0; }
+.home-brand b { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-brand small { font-size: .76rem; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+.home .home-top.in .acct-btn { height: 44px; max-width: none; padding: 0 6px 0 12px; gap: 7px; background: var(--surface); border-color: color-mix(in srgb, var(--line) 80%, transparent); box-shadow: none; }
+.home .home-top.in .acct-btn .acct-av { --s: 34px !important; }
+.home .home-top.in .acct-btn .nm { max-width: 120px; }
+.home .home-top.in + main { padding-top: 16px; }
 
 .hello { box-sizing: border-box;
   max-width: 860px; margin: 0 auto 16px; padding: 18px 18px 16px; border-radius: 28px; position: relative; overflow: hidden; isolation: isolate;
@@ -413,7 +423,10 @@
   .hello-st { gap: 6px; }
   .hello-st b { font-size: 1.05rem; }
   .hello-st small { font-size: .66rem; }
-  .home-brand b { font-size: .92rem; }
+  .home-brand b { font-size: .94rem; }
+  .home-brand img { width: 36px; height: 36px; }
+  .home .home-top.in .acct-btn { padding: 0 4px 0 9px; }
+  .home .home-top.in .acct-btn .nm { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .hello, .hello-st li, .hello-lv-t .bar i { animation: none !important; } }
 
@@ -483,3 +496,24 @@
 .terms-note b { font-weight: 700; }
 .terms-note small { font-size: .82rem; color: var(--ink-2); }
 .terms-note em { font-style: normal; font-weight: 700; font-size: .86rem; color: var(--warn-900, #78350f); white-space: nowrap; }
+
+/* ── guests: the same line without progress ──────────────────────────────── */
+.home .jr.gst { margin-top: 6px; padding-top: 10px; }
+.gst .jr-node { color: var(--a-700); background: var(--a-50); box-shadow: 0 0 0 6px var(--surface), inset 0 0 0 2px var(--a-200); }
+.gst .jr-st.off .jr-stt b { color: var(--ink); }
+.gst .jr-sth { color: inherit; text-decoration: none; }
+.gst-go { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--a-700); background: var(--a-50); transition: transform var(--t) var(--ease-out); }
+.gst-go svg { width: 18px; height: 18px; }
+@media (hover: hover) { .gst .jr-sth:hover .gst-go { transform: translateX(-3px); } }
+.gst-soon { font-size: .74rem; font-weight: 700; color: var(--ink-3); background: var(--surface-3); padding: 4px 10px; border-radius: 999px; }
+.gst .jr-st.soon .jr-sth { cursor: default; }
+.gst .jr-st.soon .jr-node, .gst .jr-st.soon .jr-stt { opacity: .55; }
+.gst .jr-zone.off { padding-top: 26px; }
+.gst .jr-zone:first-child { padding-top: 8px; }
+.gst-end { align-items: start !important; padding-top: 12px; }
+.gst-end .jr-flag { margin-top: 4px; filter: none; opacity: 1; background: linear-gradient(135deg, #fef3c7, #fde68a); }
+.gst-cta { padding: 4px 6px 8px 12px; }
+.gst-cta b { display: block; font-size: 1.06rem; font-weight: 700; color: var(--ink); }
+.gst-cta p { margin: 4px 0 12px; color: var(--ink-2); font-size: .9rem; line-height: 1.55; }
+.gst-cta .jr-go { margin: 0; }
+.gst-end::before { bottom: auto !important; height: 42px; }

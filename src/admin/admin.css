@@ -869,3 +869,12 @@ html, .adm-root body { min-height: 100%; }
 }
 .adm-root .st-who.guest .acct-av { background: var(--surface-3); color: var(--ink-3); box-shadow: none; }
 .adm-root .mtop-a { display: inline-flex; gap: 6px; }
+.adm-root .pin-wrap { position: relative; }
+.adm-root .pin-back {
+  position: absolute; top: calc(14px + env(safe-area-inset-top)); right: 14px;
+  display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 16px; border-radius: 999px;
+  color: var(--ink-2); font-weight: 600; font-size: .92rem; text-decoration: none;
+  background: var(--surface); box-shadow: var(--sh-1); border: 1px solid var(--line);
+}
+.adm-root .pin-back:hover { color: var(--ink); }
+.adm-root .pin-back:active { transform: scale(.97); }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, SignOut, ArrowSquareOut, Backspace, Info, ClipboardText } from "@phosphor-icons/react";
+import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, SignOut, Backspace, Info, ClipboardText, House, ArrowRight } from "@phosphor-icons/react";
 import { call, login, isPreview } from "./api";
 import { ToastHost } from "./ui";
 
@@ -98,13 +98,14 @@ export default function AdminShell({ children }) {
             <div className="side-foot">
               <div className={"status-pill" + (preview ? " demo" : "")}><i /><span>{preview ? "מצב תצוגה · נתוני דוגמה" : "מחובר למסד הנתונים"}</span></div>
               <a className="side-link" href="/classic/project-hub.html" target="_blank" rel="noopener"><ClipboardText size={17} /><span>מצב הפרויקט</span></a>
-              <a className="side-link" href="/" target="_blank" rel="noopener"><ArrowSquareOut size={17} /><span>לאתר התלמידים</span></a>
+              <a className="side-link" href="/"><House size={17} /><span>חזרה לאתר</span></a>
               <button type="button" className="side-link" onClick={() => signOut(false)}><SignOut size={17} /><span>יציאה</span></button>
             </div>
           </aside>
           <header className="mtop">
             <div className="brand"><Mark /><div><b>ניהול</b><small>מתמטיקה חט״ב</small></div></div>
             <span className="mtop-a">
+              <a className="ibtn" href="/" aria-label="חזרה לאתר"><House size={18} /></a>
               <a className="ibtn" href="/classic/project-hub.html" target="_blank" rel="noopener" aria-label="מצב הפרויקט: מה נעשה, מה חסר ומה בעבודה"><ClipboardText size={18} /></a>
               <button type="button" className="ibtn" onClick={() => signOut(false)} aria-label="יציאה"><SignOut size={18} /></button>
             </span>
@@ -178,6 +179,7 @@ function Pin({ preview, expired, onIn }) {
   });
   return (
     <main className="pin-wrap">
+      <a className="pin-back" href="/"><ArrowRight size={18} weight="bold" /><span>חזרה לאתר</span></a>
       <div className="pin-card">
         <Mark className="mark" />
         <h1>כניסה לניהול</h1><p>הקלידו את קוד הכניסה</p>

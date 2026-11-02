@@ -36,6 +36,38 @@
   .mp-topbar .acct-btn.ghost { width: 38px; }
 }
 
+/* ── account menu: the avatar opens profile / settings / sign out ────────── */
+.acct-menu { position: relative; flex: none; }
+.acct-menu > .acct-btn { cursor: pointer; font: inherit; font-weight: 600; font-size: .92rem; }
+.acct-chev { width: 14px; height: 14px; flex: none; color: var(--ink-3); transition: transform 240ms var(--ease-out); }
+.acct-menu.open .acct-chev { transform: rotate(180deg); }
+.acct-pop {
+  position: absolute; top: calc(100% + 10px); left: 0; z-index: 70; width: 272px; max-width: calc(100vw - 24px); padding: 8px;
+  border-radius: 22px; background: var(--surface);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 80%, transparent), 0 24px 60px -18px rgb(28 27 25 / .38);
+  transform-origin: 12% 0; opacity: 0; transform: translateY(-6px) scale(.96); pointer-events: none;
+  transition: opacity 160ms ease, transform 240ms var(--ease-out);
+}
+.acct-menu.open .acct-pop { opacity: 1; transform: none; pointer-events: auto; }
+.acct-pop-h { display: flex; align-items: center; gap: 12px; padding: 8px 8px 14px; margin-bottom: 6px; border-bottom: 1px solid var(--line); }
+.acct-pop-h > span { display: grid; gap: 2px; min-width: 0; }
+.acct-pop-h b { font-size: 1.02rem; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-pop-h small { font-size: .8rem; color: var(--ink-3); }
+.acct-pop a, .acct-pop button {
+  all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 0 8px;
+  border-radius: 14px; cursor: pointer; color: var(--ink); font-size: .94rem; font-weight: 500; -webkit-tap-highlight-color: transparent;
+  transition: background 160ms ease;
+}
+.acct-pop a:hover, .acct-pop button:hover, .acct-pop a:focus-visible, .acct-pop button:focus-visible { background: var(--surface-2); }
+.acct-pop a:active, .acct-pop button:active { background: var(--surface-3); }
+.acct-pop i { width: 34px; height: 34px; flex: none; border-radius: 11px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); }
+.acct-pop i svg { width: 18px; height: 18px; }
+.acct-pop .out { margin-top: 6px; color: var(--bad-700); position: relative; }
+.acct-pop .out::before { content: ""; position: absolute; top: -4px; left: 8px; right: 8px; height: 1px; background: var(--line); }
+.acct-pop .out i { background: var(--bad-50); color: var(--bad-600); }
+.acct-pop .out:disabled { opacity: .6; cursor: default; }
+@media (max-width: 560px) { .mp-topbar .acct-btn .acct-chev { display: none; } }
+
 /* ── page frame ───────────────────────────────────────────────────────────── */
 .acct, .acct *, .acct *::before, .acct *::after, .acct-btn, .acct-btn * { box-sizing: border-box; }
 .acct {

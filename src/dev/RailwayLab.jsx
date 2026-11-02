@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { Railway, Insights } from "@/home/Journey";
 import { Hello } from "@/home/Hello";
-import { Avatar } from "@/account/ui";
+import { AccountMenu } from "@/account/ui";
 import { HERO } from "@/home/catalog";
 import { TOPICS, CATEGORIES, GRADES } from "@/home/catalog";
 import { CHAPTERS } from "@/home/chapters";
@@ -53,8 +53,8 @@ export default function RailwayLab() {
   return (
     <div className="home">
       <header className="home-top in">
-        <a href="/" className="home-brand"><img src="/icon.png" alt="" width={30} height={30} /><b>{HERO.title}</b></a>
-        <a className="acct-btn in" href="#"><Avatar account={account} size={26} /><span className="nm">{account.username}</span></a>
+        <a href="/" className="home-brand"><img src="/icon.png" alt="" width={38} height={38} /><span><b>{HERO.title}</b><small>{GRADES.find((g) => g.id === q.g).name} · המסלול שלי</small></span></a>
+        <AccountMenu account={account} />
       </header>
       <main>
         <nav style={{ display: "flex", gap: 8, justifyContent: "center", margin: "12px 0", flexWrap: "wrap", direction: "ltr" }}>
