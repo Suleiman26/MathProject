@@ -77,6 +77,10 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   what it is about + progress + a button into it. Topic/chapter "what is it
   about" lines: `src/home/chapterInfo.js` (keys = chapter names in chapters.js;
   add a line when a chapter is added). Strengths cards sit below it.
+  Above it: one greeting card `src/home/Hello.jsx` (level/points, streak, solved,
+  accuracy, practice days this week); the top bar shows the site name, not the
+  username. Moving/renaming a topic's chapters: update `chapters.js` and add the
+  old → new names to `RENAMED` there, so earlier practice still counts.
   Local preview with sample students (no database needed): `npm run dev` →
   `/dev/railway?s=new|mid|pro|gold&g=7|8|9` (shows "not found" on the live site). Shared rules (levels, points,
   badge names) in `src/lib/progress.js`; database: `account_achievements`,

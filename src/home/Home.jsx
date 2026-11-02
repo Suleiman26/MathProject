@@ -10,6 +10,7 @@ import { AccountButton, LegalFooter, Avatar } from "@/account/ui";
 import { useAccount, accountApi } from "@/lib/account";
 import { Railway, Insights } from "./Journey";
 import { CHAPTERS } from "./chapters";
+import { Hello } from "./Hello";
 
 const KEY = "mp:grade";
 const Go = () => (
@@ -89,7 +90,7 @@ function SignedIn({ account, data, myGrade }) {
   return (
     <>
       {/* the railway's own "next step" ticket is the one button here, so the greeting has none */}
-      <Resume account={account} p={p} first={mine[0]} go={!(p && mine.length)} />
+      <Hello account={account} p={p} gradeName={gradeObj ? gradeObj.name : "הכיתה שלי"} />
       {p === null && <div className="jr-loading" aria-hidden="true"><span /><span /></div>}
       {p === false && <p className="jr-err">לא הצלחנו לטעון את ההתקדמות. רעננו את הדף.</p>}
       {p && <>
@@ -164,7 +165,10 @@ export default function Home() {
 
   return (
     <div className="home">
-      <header className="home-top"><span className="home-top-s" /><AccountButton /></header>
+      <header className={"home-top" + (account ? " in" : "")}>
+        {account ? <Link href="/" className="home-brand"><img src="/icon.png" alt="" width={30} height={30} /><b>{HERO.title}</b></Link> : <span className="home-top-s" />}
+        <AccountButton />
+      </header>
       <main>
       {account ? <SignedIn account={account} data={data} myGrade={myGrade} /> : <>
       <header className="hero">

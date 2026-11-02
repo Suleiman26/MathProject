@@ -220,34 +220,50 @@ function genRatio(){
   return {ctx, a, b, total, simA:sa, simB:sb, scaledTotal, scaledA, g:gcd(a,b)};
 }
 
+/* Chapter 1 has two sub-chapters (Sulaiman, fixes board #46):
+   א — ratio and reducing it (step by step, #45), ב — from a ratio to amounts. */
 function Ch1(){
+  const [part,setPart]=useState(0);
+  return <div>
+    <div className="content" style={{marginBottom:0}}>
+      <div className="sub-tabs">
+        <button className={`sub-tab-btn ${part===0?'active':''}`} onClick={()=>setPart(0)}>א. יחס וצמצום</button>
+        <button className={`sub-tab-btn ${part===1?'active':''}`} onClick={()=>setPart(1)}>ב. מיחס לכמות</button>
+      </div>
+    </div>
+    {part===0?<Ch1Ratio key="r"/>:<Ch1Amount key="a"/>}
+  </div>;
+}
+
+function Ch1Ratio(){
   const [ex, setEx] = useState(()=>genRatio());
   const [step, setStep] = useState(1);
   const [r1,setR1]=useState('');const [r2,setR2]=useState('');
   const [s1,setS1]=useState('');const [s2,setS2]=useState('');
-  const [ans3,setAns3]=useState('');
+  const [chain,setChain]=useState([]);   // reductions so far, e.g. [[12,18],[6,9]]
   const [fb,setFb]=useState(null);
 
   const check1=()=>{
     const v1=parseInt(r1),v2=parseInt(r2);
-    if(v1===ex.a&&v2===ex.b){setFb('ok');setTimeout(()=>{setStep(2);setFb(null);},600);}
+    if(v1===ex.a&&v2===ex.b){setFb('ok');setTimeout(()=>{setStep(2);setChain([[ex.a,ex.b]]);setFb(null);},600);}
     else setFb('err');
   };
+  // reducing may take several small steps: a correct but partial reduction is accepted and the student goes on
   const check2=()=>{
     const v1=parseInt(s1),v2=parseInt(s2);
-    if(v1===ex.simA&&v2===ex.simB){setFb('ok');setTimeout(()=>{setStep(3);setFb(null);},600);}
-    else setFb('err');
+    const [c1,c2]=chain[chain.length-1];
+    const same = v1>0&&v2>0&&v1*c2===v2*c1;
+    if(same&&v1<c1){
+      if(gcd(v1,v2)===1){setChain([...chain,[v1,v2]]);setFb('ok');setTimeout(()=>{setStep(4);setFb(null);},600);}
+      else{setChain([...chain,[v1,v2]]);setS1('');setS2('');setFb('more');}
+    } else setFb(same?'same':'err');
   };
-  const check3=()=>{
-    const v=parseInt(ans3);
-    if(v===ex.scaledA){setFb('ok');setStep(4);}
-    else setFb('err');
-  };
-  const reset=()=>{const e=genRatio();setEx(e);setStep(1);setR1('');setR2('');setS1('');setS2('');setAns3('');setFb(null);};
+  const reset=()=>{const e=genRatio();setEx(e);setStep(1);setR1('');setR2('');setS1('');setS2('');setChain([]);setFb(null);};
 
   const vis = ex.ctx.type==='pie'?<PieVis total={ex.total} filled={ex.a} color1={ex.ctx.color1} color2={ex.ctx.color2}/>
     :ex.ctx.type==='bar'?<BarVis total={ex.total} filled={ex.a} color1={ex.ctx.color1} color2={ex.ctx.color2}/>
     :<PeopleVis total={ex.total} filled={ex.a} color1={ex.ctx.color1}/>;
+  const cur = chain.length?chain[chain.length-1]:null;
 
   return <div className="content">
     <div className="info">
@@ -278,6 +294,10 @@ function Ch1(){
       {/* Step 2 */}
       {step>=2 && <div className={`step-card ${step>2?'done':''}`}>
         <div className="step-label">שלב ב׳ — פשט את היחס למספרים הקטנים ביותר</div>
+        {step===2&&<div className="rp-hint">אפשר לצמצם בכמה צעדים: בכל צעד מחלקים את שני המספרים באותו מספר.</div>}
+        {chain.length>0&&<div className="rp-chain" dir="ltr">
+          {chain.map(([x,y],i)=><React.Fragment key={i}>{i>0&&<span className="rp-arrow">→</span>}<span className={i===chain.length-1&&step>2?'rp-last':''}>{x} : {y}</span></React.Fragment>)}
+        </div>}
         {step===2?<>
           <div className="ans-row">
             <input type="text" value={s1} onChange={e=>{setS1(e.target.value);setFb(null);}} placeholder="?" style={{width:55}}/>
@@ -286,21 +306,10 @@ function Ch1(){
               onKeyDown={e=>e.key==='Enter'&&check2()}/>
             <button className="btn bg" onClick={check2}>✓ בדוק</button>
           </div>
-          <Fb fb={fb}/>
+          {fb==='more'?<div className="fb ok rp-more">👍 יפה! צמצמת נכון ל-{cur[0]} : {cur[1]}. אבל אפשר לצמצם עוד. המשיכו.</div>
+            :fb==='same'?<div className="fb err">זה אותו יחס בלי צמצום. חלקו את שני המספרים באותו מספר.</div>
+            :<Fb fb={fb}/>}
         </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ {ex.simA} : {ex.simB}</div>}
-      </div>}
-
-      {/* Step 3 */}
-      {step>=3 && <div className={`step-card ${step>3?'done':''}`}>
-        <div className="step-label">שלב ג׳ — אם יש {ex.scaledTotal} סה״כ, כמה יהיו {ex.ctx.label1}?</div>
-        {step===3?<>
-          <div className="ans-row">
-            <input type="text" value={ans3} onChange={e=>{setAns3(e.target.value);setFb(null);}} placeholder="?"
-              onKeyDown={e=>e.key==='Enter'&&check3()} style={{width:70}}/>
-            <button className="btn bg" onClick={check3}>✓ בדוק</button>
-          </div>
-          <Fb fb={fb}/>
-        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ {ex.scaledA}</div>}
       </div>}
     </div>
 
@@ -308,6 +317,138 @@ function Ch1(){
       ✅ כל הכבוד!
       <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
     </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ── 1ב: from a ratio to amounts. Three kinds of questions, in turn:
+   coloring squares, dividing into packs, and a ratio table. ── */
+const RA_KINDS=['grid','groups','table'];
+function genRatioAmount(kind){
+  const ctxs=[
+    {l1:'בנים',l2:'בנות',unit:'ילדים',pack:'קבוצה',packs:'קבוצות',c1:'#3b82f6',c2:'#ec4899'},
+    {l1:'עפרונות אדומים',l2:'עפרונות כחולים',unit:'עפרונות',pack:'חבילה',packs:'חבילות',c1:'#ef4444',c2:'#3b82f6'},
+    {l1:'תפוחים',l2:'תפוזים',unit:'פירות',pack:'סלסלה',packs:'סלסלות',c1:'#16a34a',c2:'#f97316'},
+    {l1:'כדורים צהובים',l2:'כדורים סגולים',unit:'כדורים',pack:'שקית',packs:'שקיות',c1:'#eab308',c2:'#8b5cf6'},
+  ];
+  const ctx=pick(ctxs);
+  const [a,b]=pick([[1,2],[2,3],[1,3],[3,4],[2,5],[3,5],[1,4],[3,2],[4,3],[5,2]]);
+  const maxK=kind==='grid'?Math.max(2,Math.floor(24/(a+b))):8;   // at most 24 squares to color
+  const k=randInt(2,maxK);
+  return {kind,ctx,a,b,k,total:(a+b)*k,A:a*k,B:b*k};
+}
+
+function RatioTable({h1,h2,rows}){
+  return <table className="rp-table">
+    <thead><tr><th></th><th>{h1}</th><th>{h2}</th><th>סה״כ</th></tr></thead>
+    <tbody>{rows.map((r,i)=><tr key={i}><th>{r[0]}</th>{r.slice(1).map((c,j)=><td key={j}>{c}</td>)}</tr>)}</tbody>
+  </table>;
+}
+
+function PackVis({a,b,c1,c2,n=1}){
+  return <div className="rp-packs">{Array.from({length:n},(_,i)=><span key={i} className="rp-pack">
+    {Array.from({length:a},(_,j)=><i key={'a'+j} style={{background:c1}}/>)}
+    {Array.from({length:b},(_,j)=><i key={'b'+j} style={{background:c2}}/>)}
+  </span>)}</div>;
+}
+
+function Ch1Amount(){
+  const [turn,setTurn]=useState(0);
+  const [ex,setEx]=useState(()=>genRatioAmount(RA_KINDS[0]));
+  const [done,setDone]=useState(false);
+  const [fb,setFb]=useState(null);
+  // grid
+  const [on,setOn]=useState([]);
+  // groups
+  const [gStep,setGStep]=useState(1);const [gk,setGk]=useState('');const [gA,setGA]=useState('');const [gB,setGB]=useState('');
+  // table
+  const [cells,setCells]=useState(['','','','','','']);const [bad,setBad]=useState([]);
+
+  const next=()=>{const t=turn+1;setTurn(t);setEx(genRatioAmount(RA_KINDS[t%3]));setDone(false);setFb(null);
+    setOn([]);setGStep(1);setGk('');setGA('');setGB('');setCells(['','','','','','']);setBad([]);};
+  const win=()=>{setFb('ok');setDone(true);};
+
+  const checkGrid=()=>{
+    const n=on.filter(Boolean).length;
+    if(n===ex.A) win(); else setFb(n<ex.A?'few':'many');
+  };
+  const checkK=()=>{if(parseInt(gk)===ex.k){setFb('ok');setTimeout(()=>{setGStep(2);setFb(null);},600);}else setFb('err');};
+  const checkAB=()=>{if(parseInt(gA)===ex.A&&parseInt(gB)===ex.B) win(); else setFb('err');};
+  const checkTable=()=>{
+    const want=[ex.a,ex.b,ex.a+ex.b,ex.A,ex.B,ex.total];
+    const wrong=want.map((w,i)=>parseInt(cells[i])===w?-1:i).filter(i=>i>=0);
+    setBad(wrong);
+    if(!wrong.length) win(); else setFb('err');
+  };
+
+  const c=ex.ctx;
+  const cellIn=(i)=><input type="text" value={cells[i]} className={bad.includes(i)?'rp-bad':''} disabled={done}
+    onChange={e=>{const v=[...cells];v[i]=e.target.value;setCells(v);setFb(null);setBad(bad.filter(x=>x!==i));}}
+    onKeyDown={e=>e.key==='Enter'&&checkTable()} placeholder="?"/>;
+
+  return <div className="content">
+    <div className="info">
+      כשיודעים את <b>היחס</b> ואת <b>הכמות הכוללת</b>, אפשר למצוא כמה יש מכל סוג:<br/>
+      1. מחברים את חלקי היחס, וכך יודעים כמה יש ב<b>קבוצה אחת</b>.<br/>
+      2. מחלקים את הכמות הכוללת בגודל הקבוצה, וכך יודעים <b>כמה קבוצות</b> יש.<br/>
+      3. כופלים כל חלק של היחס במספר הקבוצות.
+    </div>
+    <div className="example-box">
+      <div className="ex-title">דוגמה פתורה</div>
+      <div>היחס בין בנים לבנות בכיתה הוא <b dir="ltr">2 : 3</b>, ויש בכיתה <b>20</b> תלמידים. כמה בנים וכמה בנות?</div>
+      <RatioTable h1="בנים" h2="בנות" rows={[['יחס',2,3,5],['כמות',8,12,20]]}/>
+      <div>בכל קבוצה יש <span dir="ltr">2 + 3 = 5</span> תלמידים. <span dir="ltr">20 : 5 = 4</span> קבוצות.<br/>
+        בנים: <span dir="ltr">2 · 4 = 8</span>, בנות: <span dir="ltr">3 · 4 = 12</span>. בדיקה: <span dir="ltr">8 + 12 = 20</span> ✓</div>
+    </div>
+
+    <div className="card">
+      {ex.kind==='grid'&&<>
+        <div className="card-t">צביעת משבצות</div>
+        <p className="q-text">יש <b>{ex.total}</b> משבצות. צבעו משבצות כך שהיחס בין <b style={{color:'#2563eb'}}>הצבועות</b> ל<b>לבנות</b> יהיה <b dir="ltr">{ex.a} : {ex.b}</b>.</p>
+        <div className="rp-grid">{Array.from({length:ex.total},(_,i)=><button key={i} type="button" className={'rp-sq'+(on[i]?' on':'')} disabled={done}
+          aria-label={`משבצת ${i+1}`} aria-pressed={!!on[i]} onClick={()=>{const v=[...on];v[i]=!v[i];setOn(v);setFb(null);}}/>)}</div>
+        <p className="rp-count">צבעת <b>{on.filter(Boolean).length}</b> · לבנות <b>{ex.total-on.filter(Boolean).length}</b></p>
+        {!done&&<div className="center"><button className="btn bg" onClick={checkGrid}>✓ בדוק</button></div>}
+        {fb==='few'&&<div className="fb err">צריך לצבוע עוד. רמז: חלקו את {ex.total} המשבצות לקבוצות של {ex.a+ex.b}. בכל קבוצה {ex.a} צבועות.</div>}
+        {fb==='many'&&<div className="fb err">צבעת יותר מדי. רמז: חלקו את {ex.total} המשבצות לקבוצות של {ex.a+ex.b}. בכל קבוצה {ex.a} צבועות.</div>}
+        {done&&<div className="fb ok">✓ נכון! {ex.k} קבוצות של {ex.a+ex.b}: <span dir="ltr">{ex.a} · {ex.k} = {ex.A}</span> צבועות ו-<span dir="ltr">{ex.b} · {ex.k} = {ex.B}</span> לבנות.</div>}
+      </>}
+
+      {ex.kind==='groups'&&<>
+        <div className="card-t">חלוקה ל{c.packs}</div>
+        <p className="q-text">בכל {c.pack} יש <b style={{color:c.c1}}>{ex.a} {c.l1}</b> ו-<b style={{color:c.c2}}>{ex.b} {c.l2}</b>. בסך הכל יש <b>{ex.total}</b> {c.unit}.</p>
+        <PackVis a={ex.a} b={ex.b} c1={c.c1} c2={c.c2} n={gStep>1?ex.k:1}/>
+        <div className={`step-card ${gStep>1?'done':''}`}>
+          <div className="step-label">שלב א׳ — כמה {c.packs} יש?</div>
+          {gStep===1?<><div className="ans-row">
+            <input type="text" value={gk} onChange={e=>{setGk(e.target.value);setFb(null);}} onKeyDown={e=>e.key==='Enter'&&checkK()} placeholder="?"/>
+            <button className="btn bg" onClick={checkK}>✓ בדוק</button>
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ <span dir="ltr">{ex.total} : {ex.a+ex.b} = {ex.k}</span></div>}
+        </div>
+        {gStep>1&&<div className={`step-card ${done?'done':''}`}>
+          <div className="step-label">שלב ב׳ — כמה {c.l1} וכמה {c.l2}?</div>
+          <div className="ans-row" dir="rtl">
+            <label>{c.l1}: <input type="text" value={gA} disabled={done} onChange={e=>{setGA(e.target.value);setFb(null);}} placeholder="?"/></label>
+            <label>{c.l2}: <input type="text" value={gB} disabled={done} onChange={e=>{setGB(e.target.value);setFb(null);}} onKeyDown={e=>e.key==='Enter'&&checkAB()} placeholder="?"/></label>
+            {!done&&<button className="btn bg" onClick={checkAB}>✓ בדוק</button>}
+          </div>
+          {done?<div className="fb ok">✓ נכון! <span dir="ltr">{ex.a} · {ex.k} = {ex.A}</span>, <span dir="ltr">{ex.b} · {ex.k} = {ex.B}</span></div>:<Fb fb={fb}/>}
+        </div>}
+      </>}
+
+      {ex.kind==='table'&&<>
+        <div className="card-t">טבלת יחסים</div>
+        <p className="q-text">היחס בין {c.l1} ל{c.l2} הוא <b dir="ltr">{ex.a} : {ex.b}</b>, ובסך הכל יש <b>{ex.total}</b> {c.unit}. השלימו את הטבלה.</p>
+        <RatioTable h1={c.l1} h2={c.l2} rows={[['יחס',cellIn(0),cellIn(1),cellIn(2)],['כמות',cellIn(3),cellIn(4),cellIn(5)]]}/>
+        {!done&&<div className="center"><button className="btn bg" onClick={checkTable}>✓ בדוק</button></div>}
+        {!done&&fb==='err'&&<div className="fb err">יש תאים שגויים (מסומנים באדום). שורת היחס: חלקי היחס וסכומם. שורת הכמות: כל מספר כפול מספר הקבוצות.</div>}
+        {done&&<div className="fb ok">✓ נכון! כל מספר בשורת היחס כפול {ex.k} נותן את שורת הכמות.</div>}
+      </>}
+    </div>
+
+    {done?<div className="banner">
+      ✅ כל הכבוד!
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={next}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={next}>תרגיל חדש ↺</button></div>}
   </div>;
 }
 

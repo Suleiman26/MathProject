@@ -347,3 +347,100 @@ html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-card bdi { direc
 }
 }
 
+
+/* parabola: fractions drawn numerator over denominator (Sulaiman, fixes board #54) */
+html[data-page="parabola-practice"] .pp-fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 3px; font-size: .92em; line-height: 1.15; unicode-bidi: isolate; }
+html[data-page="parabola-practice"] .pp-fr > span { padding: 0 3px; white-space: nowrap; }
+html[data-page="parabola-practice"] .pp-fr > span:first-child { border-bottom: 1.6px solid currentColor; padding-bottom: 2px; }
+html[data-page="parabola-practice"] .pp-fr > span:last-child { padding-top: 2px; }
+
+/* ratio-percent 1א/1ב (Sulaiman, fixes board #45, #46): step-by-step reducing, ratio → amounts */
+html[data-page="ratio-percent"] .rp-hint { font-size: 13px; color: #475569; margin: -2px 0 6px; }
+html[data-page="ratio-percent"] .rp-chain { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin: 6px 0 2px; font-size: 18px; font-weight: 700; color: #134e4a; }
+html[data-page="ratio-percent"] .rp-chain .rp-arrow { color: #94a3b8; font-weight: 400; }
+html[data-page="ratio-percent"] .rp-chain .rp-last { color: #16a34a; }
+html[data-page="ratio-percent"] .fb.rp-more { background: #fef9c3; color: #854d0e; }
+html[data-page="ratio-percent"] .rp-table { border-collapse: separate; border-spacing: 0; margin: 12px auto; font-size: 16px; background: #fff; border: 1.5px solid #99f6e4; border-radius: 12px; overflow: hidden; }
+html[data-page="ratio-percent"] .rp-table th, html[data-page="ratio-percent"] .rp-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid #ccfbf1; border-inline-start: 1px solid #ccfbf1; min-width: 56px; }
+html[data-page="ratio-percent"] .rp-table thead th { background: #f0fdfa; color: #0f766e; font-size: 14px; }
+html[data-page="ratio-percent"] .rp-table tbody th { background: #f0fdfa; color: #0f766e; font-size: 14px; }
+html[data-page="ratio-percent"] .rp-table tbody tr:last-child > * { border-bottom: 0; }
+html[data-page="ratio-percent"] .rp-table tr > :first-child { border-inline-start: 0; }
+html[data-page="ratio-percent"] .rp-table td { font-weight: 700; color: #134e4a; }
+html[data-page="ratio-percent"] .rp-table input { width: 56px; }
+html[data-page="ratio-percent"] .rp-table input.rp-bad { border-color: #ef4444; background: #fef2f2; }
+html[data-page="ratio-percent"] .rp-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 320px; margin: 10px auto; direction: ltr; }
+html[data-page="ratio-percent"] .rp-sq { width: 40px; height: 40px; border-radius: 8px; border: 2px solid #cbd5e1; background: #fff; cursor: pointer; padding: 0; box-shadow: none; transition: background .15s, border-color .15s, transform .1s; }
+html[data-page="ratio-percent"] .rp-sq:active { transform: scale(.92); }
+html[data-page="ratio-percent"] .rp-sq.on { background: #3b82f6; border-color: #2563eb; }
+html[data-page="ratio-percent"] .rp-count { text-align: center; font-size: 14px; color: #475569; margin: 4px 0 10px; }
+html[data-page="ratio-percent"] .rp-packs { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 10px 0; direction: ltr; }
+html[data-page="ratio-percent"] .rp-pack { display: inline-flex; flex-wrap: wrap; gap: 4px; max-width: 92px; padding: 8px; border: 2px dashed #94a3b8; border-radius: 12px; background: #f8fafc; }
+html[data-page="ratio-percent"] .rp-pack i { width: 14px; height: 14px; border-radius: 50%; display: block; }
+html[data-page="ratio-percent"] .ans-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; }
+@media (max-width: 500px) {
+  html[data-page="ratio-percent"] .rp-table { font-size: 14px; }
+  html[data-page="ratio-percent"] .rp-table th, html[data-page="ratio-percent"] .rp-table td { padding: 6px 4px; min-width: 0; }
+  html[data-page="ratio-percent"] .rp-table input { width: 46px; }
+  html[data-page="ratio-percent"] .rp-sq { width: 36px; height: 36px; }
+}
+html[data-page="ratio-percent"] :is(span, b, bdi)[dir="ltr"] { direction: ltr; unicode-bidi: isolate; }
+
+/* pythagoras: where the theorem comes from + a solved example (Sulaiman, fixes board #47) */
+html[data-page="pythagoras"] .py-intro { max-width: 1040px; margin: 20px auto 0; padding: 0 16px; }
+html[data-page="pythagoras"] .py-intro-t { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer;
+  padding: 12px 16px; border-radius: 14px; background: #eef2ff; color: #3730a3; font-weight: 700; font-size: 16px; }
+html[data-page="pythagoras"] .py-intro-t:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 2px; }
+html[data-page="pythagoras"] .py-intro-b { display: grid; gap: 14px; margin-top: 10px; }
+html[data-page="pythagoras"] .py-why { display: flex; gap: 18px; align-items: center; background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+html[data-page="pythagoras"] .py-proof { flex: 0 0 auto; width: 250px; height: auto; direction: ltr; }
+html[data-page="pythagoras"] .py-why-t { flex: 1; font-size: 15px; line-height: 1.7; color: #334155; }
+html[data-page="pythagoras"] .py-why-t p { margin: 0 0 8px; }
+html[data-page="pythagoras"] .py-rule { background: #f0fdf4; border-radius: 10px; padding: 10px 12px; color: #14532d; font-weight: 600; }
+html[data-page="pythagoras"] .py-big { display: inline-block; margin-top: 4px; font-size: 22px; font-weight: 700; }
+html[data-page="pythagoras"] .py-intro bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+html[data-page="pythagoras"] .py-ex { background: #fff; border: 2px dashed #a5b4fc; border-radius: 14px; padding: 14px 16px; font-size: 15px; line-height: 1.7; color: #334155; }
+html[data-page="pythagoras"] .py-ex-t { font-weight: 700; color: #4338ca; margin-bottom: 4px; }
+html[data-page="pythagoras"] .py-ex p { margin: 0 0 6px; }
+html[data-page="pythagoras"] .py-ex ol { margin: 0 0 6px; padding-inline-start: 20px; }
+html[data-page="pythagoras"] .py-ex li { margin: 2px 0; }
+html[data-page="pythagoras"] .py-ans { color: #15803d; font-weight: 700; }
+@media (max-width: 720px) {
+  html[data-page="pythagoras"] .py-why { flex-direction: column; }
+  html[data-page="pythagoras"] .py-proof { width: min(260px, 80%); }
+}
+
+/* circle (Sulaiman, fixes board #48-#51): radians sub-chapters, π, why πr², formula beside the question */
+html[data-page="circle"] .sub-tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
+html[data-page="circle"] .sub-tab-btn { padding: 8px 16px; border: 2px solid #7dd3fc; border-radius: 10px; background: #f0f9ff; color: #0369a1; font-size: 14px; font-weight: 700; cursor: pointer; }
+html[data-page="circle"] .sub-tab-btn.active { background: #0369a1; border-color: #0369a1; color: #fff; }
+html[data-page="circle"] .info-box b { color: #075985; }
+html[data-page="circle"] .info-box bdi, html[data-page="circle"] .area-why bdi, html[data-page="circle"] .card bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+html[data-page="circle"] .pi-box { background: #fff; border-radius: 10px; padding: 10px 12px; margin: 4px 0 10px; display: grid; gap: 6px; }
+html[data-page="circle"] .rad-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; justify-content: center; }
+html[data-page="circle"] .rad-facts span { background: #fff; border-radius: 999px; padding: 4px 12px; font-size: 13px; color: #0c4a6e; }
+html[data-page="circle"] .rad-def { display: flex; gap: 12px; align-items: center; }
+html[data-page="circle"] .rad-def > svg { flex: 0 0 auto; width: 210px !important; }
+html[data-page="circle"] .rad-def p + p { margin-top: 6px; }
+html[data-page="circle"] .choice-btn.rad-frac { min-width: 56px; padding: 6px 12px; }
+html[data-page="circle"] .area-why { margin-bottom: 14px; }
+html[data-page="circle"] .area-why-t { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer;
+  padding: 11px 14px; border-radius: 12px; background: #fff; border: 2px dashed #7dd3fc; color: #0369a1; font-weight: 700; font-size: 14px; }
+html[data-page="circle"] .area-why-t:focus-visible { outline: 3px solid #7dd3fc; outline-offset: 2px; }
+html[data-page="circle"] .area-why-b { background: #fff; border-radius: 12px; padding: 12px 14px; margin-top: 8px; display: grid; gap: 6px; justify-items: center; font-size: 14px; line-height: 1.7; color: #0c4a6e; }
+html[data-page="circle"] .area-why-b p { justify-self: stretch; }
+html[data-page="circle"] .area-q { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+html[data-page="circle"] .area-q .graph-wrap { margin: 0; }
+html[data-page="circle"] .area-f { display: grid; gap: 4px; justify-items: center; padding: 10px 14px; border-radius: 12px; background: #fefce8; border: 2px solid #fde047; color: #854d0e; }
+html[data-page="circle"] .area-f small { font-size: 12px; font-weight: 700; opacity: .8; }
+html[data-page="circle"] .area-f b { font-size: 20px; font-weight: 700; white-space: nowrap; }
+html[data-page="circle"] .area-f span { font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+html[data-page="circle"] .area-hint { font-size: 16px; color: #334155; }
+html[data-page="circle"] .pi-btn { background: #e0f2fe; color: #0369a1; font-size: 18px; padding: 4px 14px; font-family: inherit; }
+html[data-page="circle"] .area-note { text-align: center; font-size: 12px; color: #6b7280; margin-top: -2px; }
+@media (max-width: 560px) {
+  html[data-page="circle"] .rad-def { flex-direction: column; }
+  html[data-page="circle"] .area-q { gap: 8px; }
+  html[data-page="circle"] .area-q .graph-wrap svg { width: 230px !important; }
+}
+html[data-page="circle"] :is(.area-why, .pi-box, .info-box) bdi, html[data-page="circle"] .area-f b[dir="ltr"] { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }

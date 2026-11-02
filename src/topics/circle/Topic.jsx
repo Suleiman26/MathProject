@@ -32,25 +32,29 @@ const defs={
   'גזרה':'שטח הכלוא בין שני רדיוסים וקשת — כמו פרוסת פיצה.',
 };
 
-function ExplorerSVG({sel}){
-  const W=320,H=280,cx=160,cy=140,r=80;
-  const c=n=>sel===n?'#0369a1':'#cbd5e1';
-  const sw=n=>sel===n?3:1.5;
+// Only the chosen part is drawn (Sulaiman, fixes board #48). quiz: no letters that give the answer away.
+function ExplorerSVG({sel,rot=0,quiz=false}){
+  const W=320,H=280,cx=160,cy=140,r=80,C='#0369a1';
   const pR=pt(cx,cy,r,35),pD1=pt(cx,cy,r,180),pD2=pt(cx,cy,r,0);
   const pC1=pt(cx,cy,r,120),pC2=pt(cx,cy,r,210),pT=pt(cx,cy,r,90);
+  const g=`rotate(${-rot} ${cx} ${cy})`;
   return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(320,W),height:'auto',direction:'ltr'}}>
-    <path d={secD(cx,cy,r,250,310)} fill={sel==='גזרה'?'rgba(3,105,161,0.2)':'rgba(203,213,225,0.15)'} stroke={c('גזרה')} strokeWidth={sw('גזרה')}/>
-    {sel==='גזרה'&&<><line x1={cx} y1={cy} x2={pt(cx,cy,r,250).x} y2={pt(cx,cy,r,250).y} stroke="#0369a1" strokeWidth={2}/><line x1={cx} y1={cy} x2={pt(cx,cy,r,310).x} y2={pt(cx,cy,r,310).y} stroke="#0369a1" strokeWidth={2}/></>}
-    <path d={arcD(cx,cy,r+3,50,120)} fill="none" stroke={sel==='קשת'?'#ea580c':'#cbd5e1'} strokeWidth={sel==='קשת'?5:2}/>
+    <g transform={g}>
+      {sel==='גזרה'&&<><path d={secD(cx,cy,r,250,310)} fill="rgba(3,105,161,0.2)" stroke={C} strokeWidth={3}/>
+        <line x1={cx} y1={cy} x2={pt(cx,cy,r,250).x} y2={pt(cx,cy,r,250).y} stroke={C} strokeWidth={2}/><line x1={cx} y1={cy} x2={pt(cx,cy,r,310).x} y2={pt(cx,cy,r,310).y} stroke={C} strokeWidth={2}/></>}
+      {sel==='קשת'&&<path d={arcD(cx,cy,r+3,50,120)} fill="none" stroke="#ea580c" strokeWidth={5}/>}
+    </g>
     <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
-    <line x1={pT.x-60} y1={pT.y} x2={pT.x+60} y2={pT.y} stroke={c('משיק')} strokeWidth={sw('משיק')}/>
-    {sel==='משיק'&&<><circle cx={pT.x} cy={pT.y} r={3} fill="#0369a1"/><line x1={cx} y1={cy} x2={pT.x} y2={pT.y} stroke="#0369a1" strokeWidth={1} strokeDasharray="4,3"/></>}
-    <line x1={pC1.x} y1={pC1.y} x2={pC2.x} y2={pC2.y} stroke={c('מיתר')} strokeWidth={sw('מיתר')}/>
-    <line x1={pD1.x} y1={pD1.y} x2={pD2.x} y2={pD2.y} stroke={c('קוטר')} strokeWidth={sw('קוטר')}/>
-    {sel==='קוטר'&&<text x={cx} y={cy-8} textAnchor="middle" fontSize="14" fontWeight="700" fill="#0369a1">d</text>}
-    <line x1={cx} y1={cy} x2={pR.x} y2={pR.y} stroke={c('רדיוס')} strokeWidth={sw('רדיוס')}/>
-    {sel==='רדיוס'&&<text x={(cx+pR.x)/2+10} y={(cy+pR.y)/2-6} fontSize="14" fontWeight="700" fill="#0369a1">r</text>}
-    <circle cx={cx} cy={cy} r={sel==='מרכז'?6:3} fill={c('מרכז')}/>
+    <g transform={g}>
+      {sel==='משיק'&&<><line x1={pT.x-60} y1={pT.y} x2={pT.x+60} y2={pT.y} stroke={C} strokeWidth={3}/><circle cx={pT.x} cy={pT.y} r={3} fill={C}/>
+        {!quiz&&<line x1={cx} y1={cy} x2={pT.x} y2={pT.y} stroke={C} strokeWidth={1} strokeDasharray="4,3"/>}</>}
+      {sel==='מיתר'&&<line x1={pC1.x} y1={pC1.y} x2={pC2.x} y2={pC2.y} stroke={C} strokeWidth={3}/>}
+      {sel==='קוטר'&&<line x1={pD1.x} y1={pD1.y} x2={pD2.x} y2={pD2.y} stroke={C} strokeWidth={3}/>}
+      {sel==='רדיוס'&&<line x1={cx} y1={cy} x2={pR.x} y2={pR.y} stroke={C} strokeWidth={3}/>}
+    </g>
+    {!quiz&&sel==='קוטר'&&<text x={cx} y={cy-8} textAnchor="middle" fontSize="14" fontWeight="700" fill={C}>d</text>}
+    {!quiz&&sel==='רדיוס'&&<text x={(cx+pR.x)/2+10} y={(cy+pR.y)/2-6} fontSize="14" fontWeight="700" fill={C}>r</text>}
+    <circle cx={cx} cy={cy} r={sel==='מרכז'?6:3} fill={sel==='מרכז'?C:'#334155'}/>
     <text x={cx-7} y={cy-7} textAnchor="end" fontSize="14" fontWeight="700" fill="#334155">O</text>
   </svg>;
 }
@@ -58,36 +62,18 @@ function ExplorerSVG({sel}){
 function genCh1(){
   const type=pick(['identify','identify','radDiam']);
   if(type==='identify'){
-    const elems=['רדיוס','קוטר','מיתר','משיק'];
-    const labels=['א','ב','ג','ד'];
-    const sh=[...labels];for(let i=3;i>0;i--){const j=randInt(0,i);[sh[i],sh[j]]=[sh[j],sh[i]];}
-    const mapping=elems.map((e,i)=>({name:e,label:sh[i]}));
-    const target=pick(elems);
-    return{type,mapping,target};
+    // one part is drawn; the student picks its name from four (Sulaiman, fixes board #48)
+    const all=Object.keys(defs);
+    const target=pick(all);
+    const others=all.filter(n=>n!==target);
+    for(let i=others.length-1;i>0;i--){const j=randInt(0,i);[others[i],others[j]]=[others[j],others[i]];}
+    const opts=[target,...others.slice(0,3)];
+    for(let i=3;i>0;i--){const j=randInt(0,i);[opts[i],opts[j]]=[opts[j],opts[i]];}
+    return{type,target,opts,rot:randInt(0,7)*45};
   }
   const isRtoD=Math.random()>0.5;
   const r=randInt(2,20);
   return{type,isRtoD,r,d:r*2};
-}
-
-function IdentifySVG({mapping}){
-  const W=320,H=280,cx=160,cy=140,r=80;
-  const positions=[
-    {x1:cx,y1:cy,x2:pt(cx,cy,r,35).x,y2:pt(cx,cy,r,35).y,lx:(cx+pt(cx,cy,r,35).x)/2-10,ly:(cy+pt(cx,cy,r,35).y)/2-14},
-    {x1:pt(cx,cy,r,180).x,y1:pt(cx,cy,r,180).y,x2:pt(cx,cy,r,0).x,y2:pt(cx,cy,r,0).y,lx:cx+45,ly:cy+14},
-    {x1:pt(cx,cy,r,120).x,y1:pt(cx,cy,r,120).y,x2:pt(cx,cy,r,210).x,y2:pt(cx,cy,r,210).y,lx:(pt(cx,cy,r,120).x+pt(cx,cy,r,210).x)/2+16,ly:(pt(cx,cy,r,120).y+pt(cx,cy,r,210).y)/2-2},
-    {x1:pt(cx,cy,r,90).x-50,y1:pt(cx,cy,r,90).y,x2:pt(cx,cy,r,90).x+50,y2:pt(cx,cy,r,90).y,lx:pt(cx,cy,r,90).x+62,ly:pt(cx,cy,r,90).y}
-  ];
-  const cols=['#dc2626','#16a34a','#ea580c','#7c3aed'];
-  return <svg viewBox={`0 0 ${W} ${H}`} style={{width:Math.min(320,W),height:'auto',direction:'ltr'}}>
-    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2563eb" strokeWidth={2.5}/>
-    <circle cx={cx} cy={cy} r={3} fill="#334155"/>
-    <text x={cx-7} y={cy-7} textAnchor="end" fontSize="13" fontWeight="700" fill="#334155">O</text>
-    {mapping.map((m,i)=><g key={i}>
-      <line x1={positions[i].x1} y1={positions[i].y1} x2={positions[i].x2} y2={positions[i].y2} stroke={cols[i]} strokeWidth={2.5}/>
-      <text x={positions[i].lx} y={positions[i].ly} fontSize="16" fontWeight="700" fill={cols[i]} textAnchor="middle" dominantBaseline="central">{m.label}</text>
-    </g>)}
-  </svg>;
 }
 
 function Ch1(){
@@ -100,8 +86,7 @@ function Ch1(){
 
   const check=()=>{
     if(ex.type==='identify'){
-      const correct=ex.mapping.find(m=>m.name===ex.target);
-      if(ans===correct.label){setFb('ok');setDone(true);}else setFb('err');
+      if(ans===ex.target){setFb('ok');setDone(true);}else setFb('err');
     } else {
       const expected=ex.isRtoD?ex.d:ex.r;
       if(parseInt(ans)===expected){setFb('ok');setDone(true);}else setFb('err');
@@ -112,7 +97,7 @@ function Ch1(){
   return <div className="content">
     {showInfo&&<div className="info-box">
       <h3>📐 היכרות עם המעגל</h3>
-      <p>לחצו על הכפתורים למטה כדי לגלות את חלקי המעגל. לאחר מכן פתרו תרגילים.</p>
+      <p>לחצו על הכפתורים למטה כדי לגלות את חלקי המעגל: כל חלק מופיע על המעגל כשלוחצים עליו. לאחר מכן פתרו תרגילים.</p>
       <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
     </div>}
 
@@ -128,11 +113,11 @@ function Ch1(){
     <div className="card">
       <div className="card-t">{ex.type==='identify'?'זיהוי אלמנטים':'רדיוס וקוטר'}</div>
       {ex.type==='identify'?<>
-        <div className="graph-wrap"><IdentifySVG mapping={ex.mapping}/></div>
-        <p className="hint">איזה קו הוא <strong>{ex.target}</strong>?</p>
+        <div className="graph-wrap"><ExplorerSVG sel={ex.target} rot={ex.rot} quiz/></div>
+        <p className="hint">מה שם החלק המסומן במעגל?</p>
         <div className="choice-row">
-          {ex.mapping.map(m=><button key={m.label} className={`choice-btn ${ans===m.label?'active':''} ${done&&m.name===ex.target?'correct':''}`}
-            onClick={()=>{if(!done){setAns(m.label);setFb(null);}}} disabled={done}>{m.label}</button>)}
+          {ex.opts.map(n=><button key={n} className={`choice-btn ${ans===n?'active':''} ${done&&n===ex.target?'correct':''}`}
+            onClick={()=>{if(!done){setAns(n);setFb(null);}}} disabled={done}>{n}</button>)}
         </div>
         {!done&&<div className="center"><button className="btn bg" disabled={!ans} onClick={check}>✓ בדוק</button></div>}
       </>:<>
@@ -239,6 +224,11 @@ function Ch2(){
   return <div className="content">
     {showInfo&&<div className="info-box">
       <h3>📏 היקף המעגל</h3>
+      <div className="pi-box">
+        <p><b>π (פאי)</b> הוא מספר מיוחד: בכל מעגל, ההיקף גדול מהקוטר פי π בדיוק. הוא מופיע בכל בעיה שיש בה סיבוב ומחזוריות: גלגלים, שעונים, גלים.</p>
+        <p><bdi dir="ltr">π ≈ 3.14159…</bdi> הוא <b>מספר ממשי אי-רציונלי</b>: אי אפשר לכתוב אותו כשבר, והספרות אחרי הנקודה לא נגמרות ולא חוזרות על עצמן. יש אנשים שמתחרים מי זוכר יותר ספרות שלו, והשיאנים זוכרים עשרות אלפי ספרות!</p>
+        <p>בפרק הרדיאנים ראינו שלאורך מעגל שלם נכנסים <bdi dir="ltr">2π</bdi> רדיוסים. לכן ההיקף הוא <bdi dir="ltr">2π</bdi> כפול הרדיוס.</p>
+      </div>
       <p>היקף המעגל הוא אורך קו המעגל. הנוסחה:</p>
       <div className="formula-box">C = 2πr = πd</div>
       <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
@@ -287,31 +277,64 @@ function genCh3(){
   return{sub,r,area:r*r};
 }
 
+// An answer typed as "25π", "25 pi", "π" or a number (π ≈ 3.14). Sulaiman, fixes board #51.
+function parsePiAns(str){
+  const t=(str||'').replace(/\s+/g,'').replace(/pi|פאי/gi,'π').replace(/[·*×]/g,'').replace(',','.');
+  if(!t) return null;
+  if(t.includes('π')){
+    const m=t.match(/^(\d*\.?\d*)π$/)||t.match(/^π(\d*\.?\d*)$/);
+    if(!m) return null;
+    const c=m[1]===''?1:parseFloat(m[1]);
+    return isNaN(c)?null:{pi:true,c};
+  }
+  if(!/^\d*\.?\d+$/.test(t)) return null;
+  return {pi:false,v:parseFloat(t)};
+}
+function piMatches(p,c){
+  if(!p) return false;
+  if(p.pi) return Math.abs(p.c-c)<1e-9;
+  return p.v>=c*3.14-0.06&&p.v<=c*3.1429+0.06;   // π as 3.14, 3.1416 or 22/7
+}
+
+// Cut the circle into slices and lay them head to tail: almost a rectangle r high and πr wide.
+function AreaWhySVG(){
+  const R=46,N=8,w=2*R*Math.sin(Math.PI/N),bul=R*(1-Math.cos(Math.PI/N))*2,top=14+bul,bot=top+R*Math.cos(Math.PI/N);
+  const cols=['#38bdf8','#fbbf24'];
+  const x0=170;
+  const wedges=Array.from({length:N},(_,i)=>{
+    const x=x0+i*w/2, up=i%2===0;
+    const d=up?`M${x+w/2},${top} L${x+w},${bot} Q${x+w/2},${bot+bul} ${x},${bot} Z`:`M${x+w/2},${bot} L${x+w},${top} Q${x+w/2},${top-bul} ${x},${top} Z`;
+    return <path key={i} d={d} fill={cols[i%2]} stroke="#fff" strokeWidth="1.5"/>;
+  });
+  const cx=70,cy=(top+bot)/2+2;
+  const slices=Array.from({length:N},(_,i)=><path key={i} d={secD(cx,cy,R+4,i*360/N,(i+1)*360/N)} fill={cols[i%2]} stroke="#fff" strokeWidth="1.5"/>);
+  const W=x0+(N+1)*w/2+14;
+  return <svg viewBox={`0 0 ${W} ${bot+bul+30}`} style={{width:'100%',maxWidth:380,height:'auto',direction:'ltr'}} role="img" aria-label="מעגל חתוך לפרוסות שמסודרות כמעט כמו מלבן">
+    <defs><marker id="aw" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker></defs>
+    {slices}
+    <text x={cx} y={bot+bul+22} textAnchor="middle" fontSize="12" fill="#334155" direction="rtl" style={{unicodeBidi:'plaintext'}}>8 פרוסות</text>
+    <path d={`M${cx+R+10},${cy} L${x0-28},${cy}`} stroke="#94a3b8" strokeWidth="2" markerEnd="url(#aw)"/>
+    {wedges}
+    <text x={x0-6} y={(top+bot)/2} textAnchor="end" dominantBaseline="central" fontSize="14" fontWeight="800" fill="#b91c1c">r</text>
+    <text x={x0+(N+1)*w/4} y={bot+bul+22} textAnchor="middle" fontSize="14" fontWeight="800" fill="#0369a1">πr</text>
+  </svg>;
+}
+
 function Ch3(){
   const [ex,setEx]=useState(()=>genCh3());
   const [fb,setFb]=useState(null);
-  const [phase,setPhase]=useState(0);
+  const [done,setDone]=useState(false);
   const [a1,setA1]=useState('');
   const [showInfo,setShowInfo]=useState(true);
+  const [why,setWhy]=useState(false);
 
-  const totalSteps=ex.sub==='calc'?1:ex.sub==='findR'?3:2;
-  const allDone=phase>=totalSteps;
-  const reset=()=>{setEx(genCh3());setFb(null);setPhase(0);setA1('');};
-  const advance=()=>{setPhase(p=>p+1);setFb(null);setA1('');};
-
-  const checkStep=()=>{
-    const v=parseInt(a1);
-    if(ex.sub==='calc'){
-      if(v===ex.area){setFb('ok');setTimeout(advance,600);}else setFb('err');
-    } else if(ex.sub==='findR'){
-      if(phase===0){if(v===ex.area){setFb('ok');setTimeout(advance,600);}else setFb('err');}
-      else if(phase===1){if(v===ex.area){setFb('ok');setTimeout(advance,600);}else setFb('err');}
-      else{if(v===ex.r){setFb('ok');setTimeout(advance,600);}else setFb('err');}
-    } else {
-      if(phase===0){if(v===ex.fullArea){setFb('ok');setTimeout(advance,600);}else setFb('err');}
-      else{if(v===ex.sectorArea){setFb('ok');setTimeout(advance,600);}else setFb('err');}
-    }
+  const reset=()=>{setEx(genCh3());setFb(null);setDone(false);setA1('');};
+  const check=()=>{
+    const ok=ex.sub==='findR'?parseFloat((a1||'').replace(',','.'))===ex.r
+      :piMatches(parsePiAns(a1),ex.sub==='calc'?ex.area:ex.sectorArea);
+    if(ok){setFb('ok');setDone(true);}else setFb('err');
   };
+  const addPi=()=>{if(!done){setA1(v=>(v||'')+'π');setFb(null);}};
 
   return <div className="content">
     {showInfo&&<div className="info-box">
@@ -322,42 +345,37 @@ function Ch3(){
       <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
     </div>}
 
+    <div className="area-why">
+      <button className="area-why-t" onClick={()=>setWhy(!why)} aria-expanded={why}><span>🔎 למתקדמים: מאיפה מגיעה הנוסחה <bdi dir="ltr">S = πr²</bdi>?</span><span aria-hidden="true">{why?'▲':'▼'}</span></button>
+      {why&&<div className="area-why-b">
+        <AreaWhySVG/>
+        <p>חותכים את המעגל לפרוסות שוות ומסדרים אותן אחת למעלה ואחת למטה. ככל שהפרוסות דקות יותר, הצורה נראית יותר כמו <b>מלבן</b>.</p>
+        <p>הגובה של המלבן הוא <b>הרדיוס r</b>. הבסיס שלו הוא <b>חצי מההיקף</b>: חצי מהפרוסות פונות למטה וחצי למעלה, אז לאורך הבסיס יש חצי מ-<bdi dir="ltr">2πr</bdi>, כלומר <b><bdi dir="ltr">πr</bdi></b>.</p>
+        <p>שטח מלבן = בסיס × גובה, ולכן: <bdi dir="ltr"><b>S = πr · r = πr²</b></bdi></p>
+      </div>}
+    </div>
+
     <div className="card">
       <div className="card-t">{ex.sub==='calc'?'חישוב שטח':ex.sub==='findR'?'מציאת רדיוס משטח':'שטח גזרה'}</div>
-      <div className="graph-wrap"><CircleSVG rVal={ex.sub==='findR'?'?':ex.r} sectorAngle={ex.sub==='sector'?ex.angle:null} label={ex.sub==='sector'?ex.angle+'°':null}/></div>
-
-      {ex.sub==='calc'&&<>
-        <p className="hint">r = {ex.r}. חשב את שטח המעגל:</p>
-        <div className="eq-row"><span>S = π·{ex.r}² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} disabled={allDone} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&!allDone&&checkStep()}/> <span>π</span></div>
-      </>}
-
-      {ex.sub==='findR'&&<>
-        <p className="hint">שטח המעגל הוא {ex.area}π. מצא את הרדיוס.</p>
-        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ πr² = {ex.area}π</div></div>}
-        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — כתוב משוואה</div>
-          <div className="eq-row">πr² = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> π</div></div>}
-        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r² = {ex.area}</div></div>}
-        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — חלק ב-π</div>
-          <div className="eq-row">r² = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
-        {phase>2&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r = {ex.r}</div></div>}
-        {phase===2&&<div className="step-card"><div className="step-label">שלב 3 — הוצא שורש</div>
-          <div className="eq-row">r = √{ex.area} = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
-      </>}
-
-      {ex.sub==='sector'&&<>
-        <p className="hint">r = {ex.r}, θ = {ex.angle}°. חשב את שטח הגזרה.</p>
-        {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ πr² = {ex.fullArea}π</div></div>}
-        {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — שטח המעגל השלם</div>
-          <div className="eq-row"><span>S = π·{ex.r}² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
-        {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ ({ex.angle}/360)·{ex.fullArea}π = {ex.sectorArea}π</div></div>}
-        {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — שטח הגזרה</div>
-          <div className="eq-row"><span>({ex.angle}/360)·{ex.fullArea}π =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
-      </>}
-
-      {!allDone&&<div className="center" style={{marginTop:8}}><button className="btn bg" onClick={checkStep}>✓ בדוק</button></div>}
+      <div className="area-q">
+        <div className="graph-wrap"><CircleSVG rVal={ex.sub==='findR'?'?':ex.r} sectorAngle={ex.sub==='sector'?ex.angle:null} label={ex.sub==='sector'?ex.angle+'°':null}/></div>
+        <div className="area-f">
+          <small>הנוסחה</small>
+          <b dir="ltr">S = π · r²</b>
+          {ex.sub==='sector'&&<span>שטח גזרה = <Frac n="θ" d="360°"/> · πr²</span>}
+        </div>
+      </div>
+      <p className="hint area-hint">{ex.sub==='calc'?`r = ${ex.r}. חשבו את שטח המעגל.`:ex.sub==='findR'?`שטח המעגל הוא ${ex.area}π. מה הרדיוס?`:`r = ${ex.r}, θ = ${ex.angle}°. חשבו את שטח הגזרה.`}</p>
+      <div className="eq-row">
+        <span>{ex.sub==='findR'?'r =':'S ='}</span>
+        <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} disabled={done} style={{width:96}} onKeyDown={e=>e.key==='Enter'&&!done&&check()}/>
+        {ex.sub!=='findR'&&<button type="button" className="btn pi-btn" onClick={addPi} disabled={done} aria-label="הוספת π">π</button>}
+      </div>
+      {ex.sub!=='findR'&&<p className="area-note">אפשר לענות עם π (למשל 25π) או במספר (π ≈ 3.14)</p>}
+      {!done&&<div className="center" style={{marginTop:8}}><button className="btn bg" onClick={check}>✓ בדוק</button></div>}
       <Fb fb={fb}/>
     </div>
-    {allDone?<div className="banner">✅ כל הכבוד!<div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div></div>
+    {done?<div className="banner">✅ כל הכבוד!<div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div></div>
       :<div className="center"><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
   </div>;
 }
@@ -601,9 +619,28 @@ const radVals=[
   {deg:180,num:1,den:1},{deg:270,num:3,den:2},{deg:360,num:2,den:1}
 ];
 
-function genCh6(){
-  const sub=pick(['degToRad','radToDeg','arcRad']);
-  if(sub==='arcRad'){
+/* Radians, right after the introduction, in three sub-chapters (Sulaiman, fixes board #49):
+   א — degrees, ב — what a radian is, ג — how the two are related. */
+const turnFracs=[
+  {num:1,den:4,deg:90},{num:1,den:2,deg:180},{num:1,den:8,deg:45},{num:1,den:3,deg:120},{num:1,den:6,deg:60},
+  {num:3,den:4,deg:270},{num:1,den:12,deg:30},{num:2,den:3,deg:240},{num:3,den:8,deg:135},{num:5,den:6,deg:300}
+];
+function genCh6(part){
+  if(part===0){
+    const sub=pick(['fracToDeg','degToFrac']);
+    const f=pick(turnFracs);
+    const others=turnFracs.filter(x=>x.deg!==f.deg);
+    for(let i=others.length-1;i>0;i--){const j=randInt(0,i);[others[i],others[j]]=[others[j],others[i]];}
+    const opts=[f,...others.slice(0,3)];
+    for(let i=3;i>0;i--){const j=randInt(0,i);[opts[i],opts[j]]=[opts[j],opts[i]];}
+    return{sub,...f,opts};
+  }
+  if(part===1){
+    const sub=pick(['thetaArc','arcRad']);
+    if(sub==='thetaArc'){
+      const r=randInt(2,9),theta=pick([1,2,3,0.5,1.5,2.5]);
+      return{sub,r,theta,L:r*theta};
+    }
     for(let i=0;i<200;i++){
       const rv=pick(radVals.slice(0,7));
       const r=randInt(2,12);
@@ -612,21 +649,34 @@ function genCh6(){
     }
     return{sub,deg:90,num:1,den:2,r:6,arcCoeff:3};
   }
+  const sub=pick(['degToRad','radToDeg']);
   const rv=pick(radVals.slice(0,7));
   return{sub,...rv};
 }
 
 function Ch6(){
-  const [ex,setEx]=useState(()=>genCh6());
+  const [part,setPart]=useState(0);
+  return <>
+    <div className="content" style={{marginBottom:0}}>
+      <div className="sub-tabs">
+        {['א. מעלות','ב. רדיאנים','ג. הקשר ביניהם'].map((l,i)=><button key={i} className={`sub-tab-btn ${part===i?'active':''}`} onClick={()=>setPart(i)}>{l}</button>)}
+      </div>
+    </div>
+    <RadPart key={part} part={part}/>
+  </>;
+}
+
+function RadPart({part}){
+  const [ex,setEx]=useState(()=>genCh6(part));
   const [fb,setFb]=useState(null);
   const [phase,setPhase]=useState(0);
   const [a1,setA1]=useState('');
   const [a2,setA2]=useState('');
   const [showInfo,setShowInfo]=useState(true);
 
-  const totalSteps=ex.sub==='arcRad'?1:2;
+  const totalSteps=ex.sub==='degToRad'||ex.sub==='radToDeg'?2:1;
   const allDone=phase>=totalSteps;
-  const reset=()=>{setEx(genCh6());setFb(null);setPhase(0);setA1('');setA2('');};
+  const reset=()=>{setEx(genCh6(part));setFb(null);setPhase(0);setA1('');setA2('');};
   const advance=()=>{setPhase(p=>p+1);setFb(null);setA1('');setA2('');};
 
   const checkStep=()=>{
@@ -639,17 +689,48 @@ function Ch6(){
     } else if(ex.sub==='radToDeg'){
       if(phase===0){if(parseInt(a1)===ex.num&&parseInt(a2)===ex.den){setFb('ok');setTimeout(advance,600);}else setFb('err');}
       else{if(parseInt(a1)===ex.deg){setFb('ok');setTimeout(advance,600);}else setFb('err');}
-    } else {
+    } else if(ex.sub==='arcRad'){
       if(parseInt(a1)===ex.arcCoeff){setFb('ok');setTimeout(advance,600);}else setFb('err');
+    } else if(ex.sub==='fracToDeg'){
+      if(parseInt(a1)===ex.deg){setFb('ok');setTimeout(advance,600);}else setFb('err');
+    } else if(ex.sub==='degToFrac'){
+      if(a1===String(ex.deg)){setFb('ok');setTimeout(advance,600);}else setFb('err');
+    } else {
+      const v=parseFloat((a1||'').replace(',','.'));
+      if(!isNaN(v)&&Math.abs(v-ex.theta)<1e-9){setFb('ok');setTimeout(advance,600);}else setFb('err');
     }
   };
 
+  const title={fracToDeg:'חלק מסיבוב → מעלות',degToFrac:'מעלות → חלק מסיבוב',thetaArc:'זווית ברדיאנים',arcRad:'אורך קשת ברדיאנים',degToRad:'מעלות → רדיאנים',radToDeg:'רדיאנים → מעלות'}[ex.sub];
+
   return <div className="content">
-    {showInfo&&<div className="info-box">
-      <h3>🔄 רדיאנים</h3>
-      <p>רדיאן הוא זווית שבה אורך הקשת שווה לרדיוס. 2π רדיאנים = 360°.</p>
+    {showInfo&&part===0&&<div className="info-box">
+      <h3>🕐 מעלות</h3>
+      <p>מחלקים סיבוב שלם ל-<b>360</b> חלקים שווים. כל חלק הוא <b>מעלה</b> אחת (1°).</p>
+      <div className="rad-facts">
+        <span>רבע סיבוב = <b>90°</b> (זווית ישרה)</span>
+        <span>חצי סיבוב = <b>180°</b> (זווית שטוחה)</span>
+        <span>סיבוב שלם = <b>360°</b></span>
+      </div>
+      <p style={{marginTop:6}}>כדי לדעת כמה מעלות יש בחלק מסיבוב, כופלים את החלק ב-360. למשל: <Frac n={1} d={8}/> מסיבוב = <bdi dir="ltr">360 : 8 = 45°</bdi></p>
+      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+    </div>}
+    {showInfo&&part===1&&<div className="info-box">
+      <h3>📏 רדיאנים</h3>
+      <div className="rad-def">
+        <CircleSVG sectorAngle={57.3} arcHighlight={[0,57.3]} label="1 rad"/>
+        <div>
+          <p><b>רדיאן</b> הוא דרך נוספת למדוד זווית, בעזרת הרדיוס עצמו: מניחים קשת שאורכה <b>בדיוק כמו הרדיוס</b> על קו המעגל. הזווית שהיא יוצרת במרכז היא <b>רדיאן אחד</b> (בערך 57°).</p>
+          <p>זווית ברדיאנים = אורך הקשת חלקי הרדיוס: <bdi dir="ltr">θ = <Frac n="L" d="r"/></bdi>, ולכן <bdi dir="ltr">L = r · θ</bdi>.</p>
+          <p>לאורך מעגל שלם נכנסים קצת יותר מ-6 רדיוסים: בדיוק <b><bdi dir="ltr">2π</bdi></b> (π הוא בערך 3.14, נכיר אותו מקרוב בפרק ההיקף). לכן סיבוב שלם = <b><bdi dir="ltr">2π</bdi> רדיאנים</b>.</p>
+        </div>
+      </div>
+      <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
+    </div>}
+    {showInfo&&part===2&&<div className="info-box">
+      <h3>🔄 הקשר בין מעלות לרדיאנים</h3>
+      <p>חצי סיבוב הוא 180°, והוא גם π רדיאנים. לכן: <b><bdi dir="ltr">π rad = 180°</bdi></b></p>
       <div className="formula-box" style={{fontSize:16}}>rad = deg · π/180 &nbsp;|&nbsp; deg = rad · 180/π</div>
-      <p style={{marginTop:6}}>אורך קשת ברדיאנים: <strong style={{direction:'ltr',display:'inline'}}>L = r · θ</strong></p>
       <table className="rad-table" style={{marginTop:10}}>
         <thead><tr><th>מעלות</th><th>0°</th><th>30°</th><th>45°</th><th>60°</th><th>90°</th><th>180°</th><th>360°</th></tr></thead>
         <tbody><tr><td><strong>רדיאנים</strong></td><td>0</td><td>π/6</td><td>π/4</td><td>π/3</td><td>π/2</td><td>π</td><td>2π</td></tr></tbody>
@@ -658,7 +739,30 @@ function Ch6(){
     </div>}
 
     <div className="card">
-      <div className="card-t">{ex.sub==='degToRad'?'מעלות → רדיאנים':ex.sub==='radToDeg'?'רדיאנים → מעלות':'אורך קשת ברדיאנים'}</div>
+      <div className="card-t">{title}</div>
+
+      {ex.sub==='fracToDeg'&&<>
+        <div className="graph-wrap"><CircleSVG sectorAngle={ex.deg} sectorColor="rgba(234,88,12,0.18)"/></div>
+        <p className="hint" style={{fontSize:16}}>הזווית המסומנת היא <Frac n={ex.num} d={ex.den}/> מסיבוב שלם. כמה מעלות היא?</p>
+        {phase>0?<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ <bdi dir="ltr">360 · {ex.num}/{ex.den} = {ex.deg}°</bdi></div></div>
+          :<div className="ans-row"><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:60}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/><span>°</span></div>}
+      </>}
+
+      {ex.sub==='degToFrac'&&<>
+        <p className="hint" style={{fontSize:16}}>איזה חלק מסיבוב שלם היא זווית של <b>{ex.deg}°</b>?</p>
+        <div className="choice-row">
+          {ex.opts.map(o=><button key={o.deg} className={`choice-btn rad-frac ${a1===String(o.deg)?'active':''} ${allDone&&o.deg===ex.deg?'correct':''}`}
+            onClick={()=>{if(!allDone){setA1(String(o.deg));setFb(null);}}} disabled={allDone}><Frac n={o.num} d={o.den}/></button>)}
+        </div>
+        {allDone&&<div className="graph-wrap"><CircleSVG sectorAngle={ex.deg} sectorColor="rgba(234,88,12,0.18)" label={ex.deg+'°'}/></div>}
+      </>}
+
+      {ex.sub==='thetaArc'&&<>
+        <div className="graph-wrap"><CircleSVG rVal={ex.r} arcHighlight={[0,ex.theta*180/Math.PI]} sectorAngle={ex.theta*180/Math.PI} sectorColor="rgba(3,105,161,0.08)"/></div>
+        <p className="hint" style={{fontSize:16}}>הרדיוס הוא {ex.r}, ואורך הקשת הכתומה הוא {ex.L}. מה הזווית ברדיאנים?</p>
+        {phase>0?<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ <bdi dir="ltr">θ = {ex.L} : {ex.r} = {ex.theta} rad</bdi></div></div>
+          :<div className="eq-row">θ = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:60}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> rad</div>}
+      </>}
 
       {ex.sub==='degToRad'&&<>
         <p className="hint" style={{fontSize:16}}>המר {ex.deg}° לרדיאנים</p>
@@ -703,9 +807,10 @@ function Ch6(){
 /* ═══ App ═══ */
 function App(){
   const [ch,setCh]=useState(0);
+  // radians come right after the introduction (Sulaiman, fixes board #49)
   const chs=[
-    {name:'1. היכרות',comp:Ch1},{name:'2. היקף',comp:Ch2},{name:'3. שטח',comp:Ch3},
-    {name:'4. קשת',comp:Ch4},{name:'5. הכל יחד',comp:Ch5},{name:'6. רדיאנים',comp:Ch6}
+    {name:'1. היכרות',comp:Ch1},{name:'2. רדיאנים',comp:Ch6},{name:'3. היקף',comp:Ch2},
+    {name:'4. שטח',comp:Ch3},{name:'5. קשת',comp:Ch4},{name:'6. הכל יחד',comp:Ch5}
   ];
   const Comp=chs[ch].comp;
   return <>

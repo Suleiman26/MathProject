@@ -100,7 +100,7 @@ export function planNext(stations, here) {
   stations.forEach((st, i) => st.known.forEach((c) => {
     if (c.n >= 6 && c.acc != null && c.acc < 65 && (!weak || c.acc < weak.c.acc)) weak = { i, c };  // same bar as "worth strengthening" below
   }));
-  if (weak) return pick(weak.i, weak.c, "weak", `כדאי לחזק · ${weak.c.acc}% נכון`);
+  if (weak) return pick(weak.i, weak.c, "weak", `כדאי לחזק · ${weak.c.acc}%`);
   // 2. keep going in the station practised last
   const h = stations[here];
   if (h && h.started) {
@@ -137,9 +137,9 @@ function Ticket({ st, next }) {
     <Link className={"jr-tk k-" + next.kind} data-topic={st.color} href={chHref(st.slug, next.ch && next.ch.name)}>
       <span className="jr-tk-ic"><Icon k={st.icon} /></span>
       <span className="jr-tk-t">
-        <small>הצעד הבא · {next.why}</small>
+        <small>הצעד הבא{next.ch ? <> · {st.name}</> : null}</small>
         <b>{next.ch ? next.ch.title : st.name}</b>
-        <em>{next.ch ? st.name : topicInfo(st.slug)}</em>
+        <em>{next.why}</em>
       </span>
       <span className="jr-tk-go"><span>{VERB[next.kind]}</span><Arrow /></span>
     </Link>
@@ -232,6 +232,7 @@ export function Railway({ topics, progress, account, gradeName }) {
         {stations.map((st, i) => (
           <Station key={st.slug} st={st} i={i} account={account}
             zoneHead={i === 0 || st.zk !== stations[i - 1].zk}
+            zoneCount={stations.filter((x) => x.zk === st.zk).length}
             isHere={i === here && st.started} next={next && next.i === i ? next : null}
             open={stOpen(i)} onToggle={() => toggleSt(i)} curCh={curCh} onCh={toggleCh} />
         ))}
@@ -245,7 +246,7 @@ export function Railway({ topics, progress, account, gradeName }) {
 }
 
 /* one station: a header row on the line, and its chapters when open */
-function Station({ st, i, account, zoneHead, isHere, next, open, onToggle, curCh, onCh }) {
+function Station({ st, i, account, zoneHead, zoneCount, isHere, next, open, onToggle, curCh, onCh }) {
   const state = st.comp >= 1 ? "done" : st.started ? "on" : "off";
   const nCh = st.known.length;
   const sub = !st.started
@@ -258,7 +259,8 @@ function Station({ st, i, account, zoneHead, isHere, next, open, onToggle, curCh
     <li data-st={i} className={`jr-st ${state}${isHere ? " here" : ""}${next ? " is-next" : ""}${open ? " open" : ""}`} data-topic={st.color} style={{ "--i": i, "--p": st.comp }}>
       {zoneHead && st.zone && (
         <div className="jr-zh" data-topic={st.zone.color || "teal"}>
-          <span className="g" aria-hidden="true">{ZONE[st.zk]}</span><b>{st.zone.name}</b>
+          <span className="jr-zg" aria-hidden="true">{ZONE[st.zk]}</span>
+          <h3 className="t"><b>{st.zone.name}</b>{zoneCount > 0 && <small>{zoneCount === 1 ? "נושא אחד" : `${fmt(zoneCount)} נושאים`}</small>}</h3>
         </div>
       )}
       <button type="button" className="jr-sth" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>

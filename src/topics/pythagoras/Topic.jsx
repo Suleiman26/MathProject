@@ -582,6 +582,70 @@ function Chapter1() {
   );
 }
 
+/* Where the theorem comes from + one solved example (Sulaiman, fixes board #47).
+   A 3-4-5 right triangle with a square built on every side; the unit grid lets
+   the student count: 9 + 16 = 25. */
+function PyProofSVG() {
+  const u = 22, ox = 3 * u + 14, oy = 7 * u + 14;           // math (x, y) → svg; C = (0, 0)
+  const P = (x, y) => [ox + x * u, oy - y * u];
+  const pts = (...a) => a.map(([x, y]) => P(x, y).join(',')).join(' ');
+  const A = [0, 3], B = [4, 0], C = [0, 0], N = [3, 4];         // N: step from AB outwards (length 5)
+  const add = (p, q, k = 1) => [p[0] + q[0] * k, p[1] + q[1] * k];
+  const grid = [];
+  for (let i = 1; i < 3; i++) grid.push([[-i, 0], [-i, 3]], [[0, i], [-3, i]]);                                   // a² (left)
+  for (let i = 1; i < 4; i++) grid.push([[i, 0], [i, -4]], [[0, -i], [4, -i]]);                                   // b² (below)
+  for (let i = 1; i < 5; i++) { const t = i / 5;
+    grid.push([add(A, [4, -3], t), add(add(A, [4, -3], t), N)], [add(A, N, t), add(B, N, t)]); }                // c² (on the hypotenuse)
+  const label = (x, y, t, c, fs = 15) => { const [sx, sy] = P(x, y); return <text x={sx} y={sy} textAnchor="middle" dominantBaseline="middle" fontSize={fs} fontWeight={fs < 15 ? 700 : 800} fill={c}>{t}</text>; };
+  return (
+    <svg className="py-proof" viewBox={`0 0 ${10 * u + 28} ${11 * u + 28}`} role="img" aria-label="משולש ישר-זווית עם ריבוע על כל צלע: 9 ועוד 16 שווה 25">
+      <polygon points={pts([0, 0], [0, 3], [-3, 3], [-3, 0])} fill="#dbeafe" stroke="#2563eb" strokeWidth="2" />
+      <polygon points={pts([0, 0], [4, 0], [4, -4], [0, -4])} fill="#ffedd5" stroke="#ea580c" strokeWidth="2" />
+      <polygon points={pts(A, B, add(B, N), add(A, N))} fill="#dcfce7" stroke="#16a34a" strokeWidth="2" />
+      {grid.map(([p, q], i) => <line key={i} x1={P(...p)[0]} y1={P(...p)[1]} x2={P(...q)[0]} y2={P(...q)[1]} stroke="#0f172a" strokeOpacity=".18" strokeWidth="1" />)}
+      <polygon points={pts(A, B, C)} fill="#fff" stroke="#0f172a" strokeWidth="2.5" strokeLinejoin="round" />
+      <polyline points={pts([0.5, 0], [0.5, 0.5], [0, 0.5])} fill="none" stroke="#0f172a" strokeWidth="1.5" />
+      {label(-1.5, 1.95, 'a = 3', '#1d4ed8', 13)}{label(-1.5, 1.05, 'a² = 9', '#1d4ed8')}
+      {label(2, -1.55, 'b = 4', '#c2410c', 13)}{label(2, -2.45, 'b² = 16', '#c2410c')}
+      {label(3.5, 3.95, 'c = 5', '#15803d', 13)}{label(3.5, 3.05, 'c² = 25', '#15803d')}
+      {label(0.42, 1.15, 'a', '#1d4ed8', 14)}{label(1.55, 0.4, 'b', '#c2410c', 14)}{label(1.75, 1.15, 'c', '#15803d', 14)}
+    </svg>
+  );
+}
+
+function PyIntro() {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="py-intro">
+      <button className="py-intro-t" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span>מאיפה מגיע המשפט? הסבר ודוגמה פתורה</span><span aria-hidden="true">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && <div className="py-intro-b">
+        <div className="py-why">
+          <PyProofSVG />
+          <div className="py-why-t">
+            <p>במשולש ישר-זווית, <b>הניצבים</b> הם שתי הצלעות שיוצרות את הזווית הישרה (a ו-b), ו<b>היתר</b> הוא הצלע הארוכה שמולה (c).</p>
+            <p>בונים <b>ריבוע</b> על כל צלע. השטח של ריבוע שצלעו a הוא <bdi dir="ltr">a · a = a²</bdi>.</p>
+            <p>סופרים משבצות: בריבוע הכחול <b>9</b>, בכתום <b>16</b> ובירוק <b>25</b>. ואכן <bdi dir="ltr">9 + 16 = 25</bdi>.</p>
+            <p className="py-rule">בכל משולש ישר-זווית: שטח הריבוע על היתר שווה לסכום השטחים של הריבועים על הניצבים:<br /><bdi dir="ltr" className="py-big">a² + b² = c²</bdi></p>
+          </div>
+        </div>
+        <div className="py-ex">
+          <div className="py-ex-t">דוגמה פתורה</div>
+          <p>במשולש ישר-זווית הניצבים הם 6 ו-8. מה אורך היתר?</p>
+          <ol>
+            <li><b>זיהוי היתר:</b> היתר הוא הצלע שמול הזווית הישרה. נקרא לו c.</li>
+            <li><b>כתיבת המשוואה:</b> <bdi dir="ltr">a² + b² = c²</bdi></li>
+            <li><b>הצבת ערכים:</b> <bdi dir="ltr">6² + 8² = c²</bdi></li>
+            <li><b>חישוב:</b> <bdi dir="ltr">36 + 64 = c²</bdi>, כלומר <bdi dir="ltr">c² = 100</bdi>, ולכן <bdi dir="ltr">c = √100 = 10</bdi></li>
+          </ol>
+          <p className="py-ans">✓ אורך היתר הוא 10</p>
+        </div>
+      </div>}
+    </div>
+  );
+}
+
 /* ═══════════════ Chapter 2 component ═══════════════ */
 function Chapter2() {
   const [quad, setQuad] = useState(() => makeQuad());
@@ -833,7 +897,7 @@ function App() {
             onClick={() => setChapter(2)}>{'\u05E4\u05E8\u05E7 2 \u2014 \u05D9\u05D9\u05E9\u05D5\u05DD'}</button>
         </div>
       </div>
-      {chapter === 1 ? <Chapter1 key="ch1" /> : <Chapter2 key="ch2" />}
+      {chapter === 1 ? <><PyIntro key="in1" /><Chapter1 key="ch1" /></> : <Chapter2 key="ch2" />}
     </div>
   );
 }

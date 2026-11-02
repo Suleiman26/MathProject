@@ -5,6 +5,8 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// Fraction drawn as numerator over denominator (Sulaiman, fixes board #54).
+const Fr = ({ n, d }) => <span className="pp-fr" dir="ltr"><span>{n}</span><span>{d}</span></span>;
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useEffect, useRef, useCallback } = React;
@@ -329,11 +331,11 @@ const tasks1 = [
   { text: 'החזר את a ל-1, ושנה את c ל-3 — מה השתנה בגרף?', check: (a,b,c) => near1(a,1) && near1(c,3), hint: 'a=1, c=3',
     q: 'הצורה של הפרבולה השתנתה?', yes: false, why: 'c לא משנה את הצורה. הוא רק מזיז את הפרבולה למעלה או למטה, ו-c היא נקודת החיתוך עם ציר y.' },
   { text: 'שנה את b ל-2 — לאן עבר הקודקוד?', check: (a,b,c) => near1(b,2), hint: 'הזז את b ל-2',
-    q: 'הקודקוד נשאר על ציר y?', yes: false, why: 'b מזיז את הקודקוד הצידה: x של הקודקוד הוא ‎−b/2a‎.' },
+    q: 'הקודקוד נשאר על ציר y?', yes: false, why: <>b מזיז את הקודקוד הצידה: x של הקודקוד הוא <Fr n="−b" d="2a" />.</> },
   { text: 'שנה את b ל-(-4) — שים לב לציר הסימטריה', check: (a,b,c) => near1(b,-4), hint: 'הזז את b ל-(-4)',
-    q: 'ציר הסימטריה עבר לצד השני של ציר y?', yes: true, why: 'כשהסימן של b מתהפך, ‎−b/2a‎ מחליף סימן, והקודקוד עובר לצד השני.' },
+    q: 'ציר הסימטריה עבר לצד השני של ציר y?', yes: true, why: <>כשהסימן של b מתהפך, <Fr n="−b" d="2a" /> מחליף סימן, והקודקוד עובר לצד השני.</> },
   { text: 'הגדר a=2, b=-4, c=1 — מצא את נקודת הקודקוד מהגרף', check: (a,b,c) => near1(a,2) && near1(b,-4) && near1(c,1), hint: 'a=2, b=-4, c=1',
-    q: 'הקודקוד הוא הנקודה (1, −1)?', yes: true, why: 'x = −(−4) / (2·2) = 1, ו-y = 2·1² − 4·1 + 1 = −1.' },
+    q: 'הקודקוד הוא הנקודה (1, −1)?', yes: true, why: <><bdi dir="ltr">x = <Fr n="−(−4)" d="2·2" /> = 1</bdi>, ו-<bdi dir="ltr">y = 2·1² − 4·1 + 1 = −1</bdi>.</> },
 ];
 
 function Section1() {
@@ -417,7 +419,7 @@ function Section1() {
           <div className="pp-sum">
             <h3>סיכום: מה עושה כל מקדם?</h3>
             <div className="pp-sum-r"><b>a</b><span>הסימן קובע את כיוון הפתיחה: a חיובי ← פתוחה למעלה (∪), a שלילי ← פתוחה למטה (∩). ככל ש-|a| גדול יותר, הפרבולה צרה יותר.</span></div>
-            <div className="pp-sum-r"><b>b</b><span>מזיז את הקודקוד הצידה (יחד עם a): ציר הסימטריה הוא <bdi dir="ltr">x = −b/2a</bdi>. כש-b = 0 הקודקוד על ציר y.</span></div>
+            <div className="pp-sum-r"><b>b</b><span>מזיז את הקודקוד הצידה (יחד עם a): ציר הסימטריה הוא <bdi dir="ltr">x = <Fr n="−b" d="2a" /></bdi>. כש-b = 0 הקודקוד על ציר y.</span></div>
             <div className="pp-sum-r"><b>c</b><span>מזיז את הפרבולה למעלה ולמטה בלי לשנות את הצורה. c היא נקודת החיתוך עם ציר y: <bdi dir="ltr">(0, c)</bdi>.</span></div>
             <button className="btn" onClick={() => { setFinished(false); setTaskIdx(0); setA(1); setB(0); setC(0); }}>להתחיל מחדש</button>
           </div>
@@ -450,7 +452,7 @@ function Section2() {
         <div className="section-title">2 — ציר הסימטריה</div>
         <div className="explanation">
           ציר הסימטריה הוא הישר האנכי העובר דרך הקודקוד. הוא מחלק את הפרבולה לשני חצאים שווים.<br />
-          <strong>משוואתו: x = -b / 2a</strong>
+          <strong>משוואתו: <bdi dir="ltr">x = <Fr n="−b" d="2a" /></bdi></strong>
         </div>
         <div className="formula">y = {a}x² {b >= 0 ? '+' : ''}{b}x {c >= 0 ? '+' : ''}{c}</div>
         <div className="task-box">לחץ על ציר הסימטריה של הפרבולה (הישר האנכי שעובר דרך הקודקוד)</div>
@@ -551,11 +553,11 @@ function Section4() {
         <div className="section-title">4 — מציאת הקודקוד מהמשוואה</div>
         <div className="explanation pp-ex">
           <div><strong>איך מוצאים את הקודקוד בלי גרף?</strong></div>
-          <div>1. ה-x של הקודקוד: <bdi dir="ltr">x = −b / 2a</bdi></div>
+          <div>1. ה-x של הקודקוד: <bdi dir="ltr">x = <Fr n="−b" d="2a" /></bdi></div>
           <div>2. ה-y של הקודקוד: מציבים את ה-x הזה במשוואה.</div>
           <div className="pp-ex-box">
             <div><strong>דוגמה:</strong> <bdi dir="ltr">y = x² − 4x + 1</bdi> (כאן <bdi dir="ltr">a = 1 , b = −4</bdi>)</div>
-            <div>1. <bdi dir="ltr">x = −(−4) / (2·1) = 4 / 2 = 2</bdi></div>
+            <div>1. <bdi dir="ltr">x = <Fr n="−(−4)" d="2·1" /> = <Fr n="4" d="2" /> = 2</bdi></div>
             <div>2. <bdi dir="ltr">y = 2² − 4·2 + 1 = 4 − 8 + 1 = −3</bdi></div>
             <div>הקודקוד: <bdi dir="ltr">(2, −3)</bdi></div>
           </div>
@@ -831,11 +833,11 @@ function QuadSolver({ a, b, c, onDone }) {
       {stage === 2 && <div className="pp-calc" dir="ltr">
         <div>Δ = {p(b)}² − 4·{p(a)}·{p(c)} = {b * b} {4 * a * c >= 0 ? '−' : '+'} {Math.abs(4 * a * c)} = <b>{disc}</b></div>
         {disc < 0 && <div className="pp-calc-he" dir="rtl">Δ שלילי ← <b>אין חיתוך עם ציר x</b> (הפרבולה כולה מעל או מתחת לציר).</div>}
-        {disc === 0 && <div>x = {-b} / {2 * a} = <b>{f2(r1)}</b> <span dir="rtl">(Δ = 0 ← נקודת חיתוך אחת)</span></div>}
+        {disc === 0 && <div>x = <Fr n={-b} d={2 * a} /> = <b>{f2(r1)}</b> <span dir="rtl">(Δ = 0 ← נקודת חיתוך אחת)</span></div>}
         {disc > 0 && <>
           <div>√Δ = √{disc} = {f2(Math.sqrt(disc))}</div>
-          <div>x₁ = ({-b} + {f2(Math.sqrt(disc))}) / {2 * a} = <b>{f2(r1)}</b></div>
-          <div>x₂ = ({-b} − {f2(Math.sqrt(disc))}) / {2 * a} = <b>{f2(r2)}</b></div>
+          <div>x₁ = <Fr n={<>{-b} + {f2(Math.sqrt(disc))}</>} d={2 * a} /> = <b>{f2(r1)}</b></div>
+          <div>x₂ = <Fr n={<>{-b} − {f2(Math.sqrt(disc))}</>} d={2 * a} /> = <b>{f2(r2)}</b></div>
         </>}
         <button className="btn green" style={{marginTop: 10}} onClick={() => onDone && onDone(roots)}>סיום</button>
       </div>}
@@ -857,7 +859,7 @@ function Section7() {
         <div className="section-title">7 — חיתוך עם ציר x (שורשים)</div>
         <div className="explanation">
           נמצא את נקודות החיתוך עם ציר x על ידי פתרון <strong>ax²+bx+c=0</strong> בעזרת נוסחת השורשים:<br />
-          <span style={{fontFamily:'monospace'}}>x = (-b ± √(b²-4ac)) / 2a</span>
+          <bdi dir="ltr">x = <Fr n="−b ± √(b²−4ac)" d="2a" /></bdi>
         </div>
         <div className="formula">y = {a}x² {b >= 0 ? '+' : ''}{b}x {c >= 0 ? '+' : ''}{c}</div>
         <div style={{marginTop: 14}}>

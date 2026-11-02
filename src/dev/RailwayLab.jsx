@@ -3,6 +3,9 @@
    ?s=new | mid | pro | gold, ?g=7|8|9 */
 import { useEffect, useState } from "react";
 import { Railway, Insights } from "@/home/Journey";
+import { Hello } from "@/home/Hello";
+import { Avatar } from "@/account/ui";
+import { HERO } from "@/home/catalog";
 import { TOPICS, CATEGORIES, GRADES } from "@/home/catalog";
 import { CHAPTERS } from "@/home/chapters";
 
@@ -28,7 +31,7 @@ function sample(kind, topics) {
     });
   });
   const totals = t.reduce((a, x) => ({ ok: a.ok + x.ok, bad: a.bad + x.bad, win: a.win + x.win }), { ok: 0, bad: 0, win: 0 });
-  return { topics: t.sort((a, b) => (a.last < b.last ? 1 : -1)), chapters: c, totals, streak: kind === "new" ? 0 : 3, days: [], today: new Date().toISOString().slice(0, 10) };
+  return { topics: t.sort((a, b) => (a.last < b.last ? 1 : -1)), chapters: c, totals, streak: kind === "new" ? 0 : 3, days: kind === "new" ? [] : [0, 1, 3].map((d) => ({ day: new Date(Date.now() - d * 864e5).toISOString().slice(0, 10), ok: 5, bad: 1, win: 2 })), today: new Date().toISOString().slice(0, 10) };
 }
 
 export default function RailwayLab() {
@@ -37,16 +40,21 @@ export default function RailwayLab() {
   if (!q) return null;
   const all = CATEGORIES.flatMap((c) => TOPICS.filter((t) => t.cat === c.id).map((t) => ({ ...t, zone: { id: c.id, name: c.name, color: c.color } })));
   const mine = all.filter((t) => t.g.includes(q.g));
-  const account = { id: "lab-" + q.s, username: "נועה", avatar: "violet", grade: q.g };
+  const account = { id: "lab-" + q.s, username: "נועה", avatar: "violet", grade: q.g, weekly_goal: 4 };
   const p = sample(q.s, mine);
   return (
     <div className="home">
+      <header className="home-top in">
+        <a href="/" className="home-brand"><img src="/icon.png" alt="" width={30} height={30} /><b>{HERO.title}</b></a>
+        <a className="acct-btn in" href="#"><Avatar account={account} size={26} /><span className="nm">{account.username}</span></a>
+      </header>
       <main>
         <nav style={{ display: "flex", gap: 8, justifyContent: "center", margin: "12px 0", flexWrap: "wrap", direction: "ltr" }}>
           {["new", "mid", "pro", "gold"].map((s) => <a key={s} href={`?s=${s}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
           {" | "}
           {["7", "8", "9"].map((g) => <a key={g} href={`?s=${q.s}&g=${g}`} style={{ fontWeight: q.g === g ? 700 : 400 }}>g{g}</a>)}
         </nav>
+        <Hello account={account} p={p} gradeName={GRADES.find((g) => g.id === q.g).name} />
         <Railway topics={mine} progress={p} account={account} gradeName={GRADES.find((g) => g.id === q.g).name} />
         <Insights progress={p} topics={all} />
       </main>

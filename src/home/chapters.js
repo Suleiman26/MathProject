@@ -5,7 +5,7 @@
    A topic with one flow and no chapter buttons has an empty list. */
 export const CHAPTERS = {
   "angles-parallel": ["1. קודקודיות", "2. צמודות", "3. מתחלפות", "4. מתאימות", "5. חד-צדדיות", "6. הכל יחד"],
-  "circle": ["1. היכרות", "2. היקף", "3. שטח", "4. קשת", "5. הכל יחד", "6. רדיאנים"],
+  "circle": ["1. היכרות", "2. רדיאנים", "3. היקף", "4. שטח", "5. קשת", "6. הכל יחד"],
   "directed-numbers": ["1. חיבור", "2. חיסור", "3. כפל", "4. חילוק", "5. סדר פעולות", "6. תרגול מקיף"],
   "equation-solver": [],
   "equations-advanced": ["1 — לינארית עם מכנה", "2 — ריבועית עם מכנה", "3 — כפל מקוצר", "4 — הכל יחד"],
@@ -23,6 +23,12 @@ export const CHAPTERS = {
   "triangles": ["1. זוויות", "2. סוגי משולשים", "3. משולשים מיוחדים", "4. חפיפה"],
 };
 
+/* Old chapter names → today's, so earlier practice still counts after a
+   chapter moves (circle, 2026-11-02: radians moved up to chapter 2). */
+const RENAMED = {
+  "circle": { "2. היקף": "3. היקף", "3. שטח": "4. שטח", "4. קשת": "5. קשת", "5. הכל יחד": "6. הכל יחד", "6. רדיאנים": "2. רדיאנים" },
+};
+
 /** A chapter name without its number: "3. מתחלפות" → "מתחלפות" */
 export const chapterTitle = (c) => (c || "").replace(/^(פרק\s*)?[0-9]{1,2}\s*[.):—–-]\s*/, "").replace(/^שלב\s*[0-9]+:\s*/, "");
 
@@ -37,7 +43,8 @@ export function chapterStats(slug, rows) {
   const by = {};
   (rows || []).forEach((r) => {
     if (r.page && r.page.replace(/\.html$/, "") !== slug) return;
-    const main = (r.chapter || "").split(" › ")[0].trim();
+    const raw = (r.chapter || "").split(" › ")[0].trim();
+    const main = (RENAMED[slug] && RENAMED[slug][raw]) || raw;
     if (!main) return;
     const s = by[main] || (by[main] = { name: main, ok: 0, bad: 0, win: 0, last: null });
     s.ok += r.ok || 0; s.bad += r.bad || 0; s.win += r.win || 0;
