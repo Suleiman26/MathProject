@@ -77,6 +77,9 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   what it is about + progress + a button into it. Topic/chapter "what is it
   about" lines: `src/home/chapterInfo.js` (keys = chapter names in chapters.js;
   add a line when a chapter is added). Strengths cards sit below it.
+  Three levels must look different (v5, 2026-11-02): area = wide coloured band
+  (`Zone`), topic = big circle on the main line, chapters = small stops on a side
+  track that branches off and rejoins (`Switch`, `.jr-br`).
   Above it: one greeting card `src/home/Hello.jsx` (level/points, streak, solved,
   accuracy, practice days this week); the top bar shows the site name, not the
   username. Moving/renaming a topic's chapters: update `chapters.js` and add the

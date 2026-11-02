@@ -2,16 +2,18 @@
 /* Signed-in home: the student's grade as a railway of topics (stations).
    v4 (2026-11-01), built so nothing is a mystery:
    - one "next step" ticket on top: the exact chapter, its topic and why;
-   - one straight railway line: every topic is a station on it, coloured rail
-     where the student has been, a dotted path where they haven't yet;
-   - tap a station: it opens and shows its chapters as numbered stops, each
-     with its name and progress (well spaced, never crowded);
+   - three levels, each with its own shape (v5, 2026-11-02):
+       area (תחום)  = a wide coloured band across the line, the biggest heading;
+       topic (נושא) = a big icon circle ON the main line;
+       chapter (פרק) = a small numbered stop on a side track that branches off
+                       the topic and joins the main line again;
+   - coloured rail where the student has been, a dotted path where they haven't yet;
    - tap a chapter: it opens in place and says what it is about (chapterInfo.js),
      how far the student got, and a button into exactly that chapter.
    The station of the next step is open on arrival, with that chapter open.
    Styles: src/styles/journey.css */
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { iconSvg } from "@/lib/icons";
 import { Avatar } from "@/account/ui";
 import { chapterStats, chapterTitle } from "./chapters";
@@ -205,6 +207,7 @@ export function Railway({ topics, progress, account, gradeName }) {
 
   if (!stations.length) return null;
   const first = stations[0];
+  const zones = stations.filter((s) => s.zone).map((s) => s.zk).filter((z, k, a) => a.indexOf(z) === k);
 
   return (
     <section className="jr" aria-labelledby="jr-h">
@@ -229,13 +232,17 @@ export function Railway({ topics, progress, account, gradeName }) {
 
       <ol className="jr-line">
         <li className={"jr-dep" + (first.started ? " on" : "")} data-topic={first.color} aria-hidden="true"><span>יציאה</span></li>
-        {stations.map((st, i) => (
-          <Station key={st.slug} st={st} i={i} account={account}
-            zoneHead={i === 0 || st.zk !== stations[i - 1].zk}
-            zoneCount={stations.filter((x) => x.zk === st.zk).length}
-            isHere={i === here && st.started} next={next && next.i === i ? next : null}
-            open={stOpen(i)} onToggle={() => toggleSt(i)} curCh={curCh} onCh={toggleCh} />
-        ))}
+        {stations.map((st, i) => {
+          const head = !!st.zone && (i === 0 || st.zk !== stations[i - 1].zk);
+          return (
+            <Fragment key={st.slug}>
+              {head && <Zone st={st} i={i} list={stations.filter((x) => x.zk === st.zk)} no={zones.indexOf(st.zk) + 1} total={zones.length} />}
+              <Station st={st} i={i} account={account}
+                isHere={i === here && st.started} next={next && next.i === i ? next : null}
+                open={stOpen(i)} onToggle={() => toggleSt(i)} curCh={curCh} onCh={toggleCh} />
+            </Fragment>
+          );
+        })}
         <li className={"jr-end" + (allDone ? " done" : "")}>
           <span className="jr-flag" aria-hidden="true">🏆</span>
           <span className="jr-end-t">{allDone ? `סיימת את כל המסלול של ${gradeName}!` : `קו הסיום של ${gradeName}`}</span>
@@ -246,7 +253,36 @@ export function Railway({ topics, progress, account, gradeName }) {
 }
 
 /* one station: a header row on the line, and its chapters when open */
-function Station({ st, i, account, zoneHead, zoneCount, isHere, next, open, onToggle, curCh, onCh }) {
+/* an area (תחום): a wide band across the line, with how far the student got in it */
+function Zone({ st, i, list, no, total }) {
+  const ch = list.reduce((a, s) => a + s.known.length, 0);
+  const done = list.reduce((a, s) => a + s.chDone, 0);
+  const started = list.some((s) => s.started);
+  const state = list.every((s) => s.comp >= 1) ? "done" : list[0].started ? "on" : "off";
+  return (
+    <li className={`jr-zone ${state}`} data-topic={st.color} style={{ "--i": i }}>
+      <div className="jr-zone-in" data-topic={st.zone.color || st.color}>
+        <span className="jr-zone-k">{total > 1 ? `תחום ${fmt(no)} מתוך ${fmt(total)}` : "תחום"}</span>
+        <h3>{st.zone.name}</h3>
+        <span className="jr-zone-m">
+          {list.length === 1 ? "נושא אחד" : `${fmt(list.length)} נושאים`}
+          {ch > 0 && <> · {started ? `${fmt(done)} מתוך ${fmt(ch)} פרקים` : `${fmt(ch)} פרקים`}</>}
+        </span>
+        {started && ch > 0 && <span className="jr-zone-bar" aria-hidden="true"><i style={{ width: Math.max(3, (done / ch) * 100) + "%" }} /></span>}
+        <span className="jr-zone-g" aria-hidden="true">{ZONE[st.zk]}</span>
+      </div>
+    </li>
+  );
+}
+
+/* the curve where the chapters' side track leaves the main line (or joins it again) */
+const Switch = ({ back }) => (
+  <svg className={"jr-sw" + (back ? " back" : "")} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <path d={back ? "M0,0 C0,62 100,38 100,100" : "M100,0 C100,62 0,38 0,100"} vectorEffect="non-scaling-stroke" />
+  </svg>
+);
+
+function Station({ st, i, account, isHere, next, open, onToggle, curCh, onCh }) {
   const state = st.comp >= 1 ? "done" : st.started ? "on" : "off";
   const nCh = st.known.length;
   const sub = !st.started
@@ -257,12 +293,6 @@ function Station({ st, i, account, zoneHead, zoneCount, isHere, next, open, onTo
   const bodyId = "jr-b-" + st.slug;
   return (
     <li data-st={i} className={`jr-st ${state}${isHere ? " here" : ""}${next ? " is-next" : ""}${open ? " open" : ""}`} data-topic={st.color} style={{ "--i": i, "--p": st.comp }}>
-      {zoneHead && st.zone && (
-        <div className="jr-zh" data-topic={st.zone.color || "teal"}>
-          <span className="jr-zg" aria-hidden="true">{ZONE[st.zk]}</span>
-          <h3 className="t"><b>{st.zone.name}</b>{zoneCount > 0 && <small>{zoneCount === 1 ? "נושא אחד" : `${fmt(zoneCount)} נושאים`}</small>}</h3>
-        </div>
-      )}
       <button type="button" className="jr-sth" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
         <span className="jr-node">
           <Icon k={st.icon} />
@@ -282,9 +312,13 @@ function Station({ st, i, account, zoneHead, zoneCount, isHere, next, open, onTo
         <div className="jr-stb-in">
           <p className="jr-about">{topicInfo(st.slug)}</p>
           {nCh > 0 ? (
-            <ol className="jr-chs">
-              {st.known.map((c, k) => <Chapter key={c.name} st={st} c={c} k={k} n={nCh} nx={!!(next && next.ch && next.ch.name === c.name)} open={curCh === `${i}:${c.name}`} onToggle={() => onCh(`${i}:${c.name}`)} />)}
-            </ol>
+            <div className="jr-br">
+              <Switch />
+              <ol className="jr-chs" aria-label={`הפרקים של ${st.name}`}>
+                {st.known.map((c, k) => <Chapter key={c.name} st={st} c={c} k={k} n={nCh} nx={!!(next && next.ch && next.ch.name === c.name)} open={curCh === `${i}:${c.name}`} onToggle={() => onCh(`${i}:${c.name}`)} />)}
+              </ol>
+              <Switch back />
+            </div>
           ) : (
             <Link className="jr-go solo" href={chHref(st.slug)}><span>{st.started ? "להמשיך לתרגל" : "להתחיל לתרגל"}</span><Arrow /></Link>
           )}
