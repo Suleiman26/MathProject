@@ -56,6 +56,7 @@ export function LegalFooter() {
       <Link href="/privacy">מדיניות פרטיות</Link><i />
       <Link href="/accessibility">הצהרת נגישות</Link><i />
       <Link href="/contact">יצירת קשר</Link>
+      <Link className="acct-foot-staff" href="/admin">כניסת צוות</Link>
     </footer>
   );
 }

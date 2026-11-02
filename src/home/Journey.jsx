@@ -21,7 +21,6 @@ import { topicInfo, chapterInfo } from "./chapterInfo";
 import { levelOf, fmt, slugOf, ago, confettiAt } from "@/lib/progress";
 
 export { levelOf };
-const lastPart = (ch) => (ch || "").split(" › ").pop().replace(/^[0-9א-ת]{1,2}[.)]\s*/, "");
 const Icon = ({ k }) => <span className="jr-ic" dangerouslySetInnerHTML={{ __html: iconSvg(k) }} />;
 const Arrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>;
 const Check = () => <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" /></svg>;
@@ -39,18 +38,27 @@ function zoneKey(z) {
   return "alg";
 }
 
-/* ── strengths and what to strengthen ─────────────────────────────────────── */
+/* ── strengths and what to strengthen ───────────────────────────────────────
+   A strength counts solved exercises, not only checked steps: many topics
+   finish an exercise without step-by-step checks (2026-11-02, Abed had 25
+   solved and no strength). Strong = 5+ solved with 75%+ right (when there
+   are 4+ checked answers), or 8+ answers with 80%+ right.
+   Worth strengthening = the same chapter rule as the railway (isWeak). */
+export const isStrong = (t) => {
+  const n = t.ok + t.bad, acc = n >= 4 ? t.ok / n : null;
+  return (t.win >= 5 && (acc == null || acc >= 0.75)) || (n >= 8 && acc >= 0.8);
+};
+const MEDAL = ["⭐", "⭐", "⭐", "👑", "💎"];
+
 export function Insights({ progress, topics }) {
   const bySlug = Object.fromEntries(topics.map((t) => [t.slug, t]));
   const strong = (progress.topics || [])
     .map((t) => ({ ...t, slug: slugOf(t.page), n: t.ok + t.bad }))
-    .filter((t) => bySlug[t.slug] && t.n >= 8 && t.ok / t.n >= 0.8)
-    .sort((a, b) => b.win - a.win || b.ok / b.n - a.ok / a.n).slice(0, 3);
-  const weak = (progress.chapters || [])
-    .map((c) => ({ ...c, slug: slugOf(c.page), n: c.ok + c.bad }))
-    .filter((c) => bySlug[c.slug] && c.n >= 4 && c.ok / c.n < 0.65)
-    .sort((a, b) => a.ok / a.n - b.ok / b.n || b.bad - a.bad).slice(0, 3);
-  const any = (progress.totals.ok + progress.totals.bad) > 0;
+    .filter((t) => bySlug[t.slug] && isStrong(t))
+    .sort((a, b) => b.win - a.win || b.ok / Math.max(1, b.n) - a.ok / Math.max(1, a.n)).slice(0, 3);
+  const weak = topics.flatMap((t) => chapterStats(t.slug, progress.chapters).filter((c) => c.known && isWeak(c)).map((c) => ({ ...c, t })))
+    .sort((a, b) => a.acc - b.acc || b.bad - a.bad).slice(0, 3);
+  const any = (progress.totals.ok + progress.totals.bad + progress.totals.win) > 0;
 
   if (!any) {
     return (
@@ -62,32 +70,41 @@ export function Insights({ progress, topics }) {
   }
   return (
     <section className="jr-ins" aria-label="חוזקות ומה לחזק">
-      <div className="jr-card good">
-        <div className="jr-card-h"><span aria-hidden="true">💪</span><h2>החוזקות שלך</h2></div>
+      <div className="jr-pan good">
+        <header><span aria-hidden="true">💪</span><div><h2>החוזקות שלך</h2><p>נושאים שאת/ה כבר שולט/ת בהם</p></div></header>
         {strong.length ? (
-          <ul>
-            {strong.map((t) => (
-              <li key={t.slug} data-topic={bySlug[t.slug].color}>
-                <Icon k={bySlug[t.slug].icon} />
-                <span className="jr-ins-t"><b>{bySlug[t.slug].name}</b><small>{Math.round((t.ok / t.n) * 100)}% נכון · {fmt(t.win)} נפתרו</small></span>
-              </li>
-            ))}
-          </ul>
-        ) : <p className="jr-ins-none">עוד מעט! נושא נכנס לכאן אחרי 8 תשובות עם 80% הצלחה ומעלה.</p>}
+          <ol>
+            {strong.map((t, k) => {
+              const T = bySlug[t.slug], lv = levelOf(t.win), acc = t.n >= 4 ? Math.round((t.ok / t.n) * 100) : null;
+              return (
+                <li key={t.slug} data-topic={T.color} style={{ "--k": k }}>
+                  <Link href={`/profile/${t.slug}`}>
+                    <span className="jr-pan-ic"><Icon k={T.icon} /><i aria-hidden="true">{MEDAL[lv.i]}</i></span>
+                    <span className="jr-pan-t"><b>{T.name}</b><small>{fmt(t.win)} נפתרו{acc != null ? ` · ${acc}% נכון` : ""}</small></span>
+                    <em>{lv.name}</em>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        ) : <p className="jr-pan-none">עוד מעט! נושא נכנס לכאן אחרי 5 תרגילים פתורים, עם 75% תשובות נכונות ומעלה.</p>}
       </div>
-      <div className="jr-card warn">
-        <div className="jr-card-h"><span aria-hidden="true">🎯</span><h2>כדאי לחזק</h2></div>
+      <div className="jr-pan warn">
+        <header><span aria-hidden="true">🎯</span><div><h2>כדאי לחזק</h2><p>פרקים שעוד לא יושבים טוב</p></div></header>
         {weak.length ? (
-          <ul>
-            {weak.map((c) => (
-              <li key={c.page + c.chapter} data-topic={bySlug[c.slug].color}>
-                <Icon k={bySlug[c.slug].icon} />
-                <span className="jr-ins-t"><b>{lastPart(c.chapter) || bySlug[c.slug].name}</b><small>{bySlug[c.slug].name} · {Math.round((c.ok / c.n) * 100)}% נכון</small></span>
-                <Link className="jr-ins-go" href={`/topics/${c.slug}`}>לתרגל</Link>
+          <ol>
+            {weak.map((c, k) => (
+              <li key={c.t.slug + c.name} data-topic={c.t.color} style={{ "--k": k }}>
+                <Link href={chHref(c.t.slug, c.name)}>
+                  <span className="jr-pan-ic"><Icon k={c.t.icon} /></span>
+                  <span className="jr-pan-t"><b>{chapterTitle(c.name)}</b><small>{c.t.name}</small>
+                    <span className="jr-pan-bar" aria-label={`${c.acc}% נכון`}><i><b style={{ width: Math.max(4, c.acc) + "%" }} /></i><s>{c.acc}%</s></span></span>
+                  <em className="jr-pan-go">לחזק<Arrow /></em>
+                </Link>
               </li>
             ))}
-          </ul>
-        ) : <p className="jr-ins-none">אין כרגע פרק חלש. כל הכבוד! 🎉</p>}
+          </ol>
+        ) : <p className="jr-pan-none ok"><span aria-hidden="true">🎉</span> אין כרגע פרק חלש. כל הכבוד!<small>פרק נכנס לכאן כשפחות מ־65% מהתשובות בו נכונות.</small></p>}
       </div>
     </section>
   );

@@ -62,6 +62,8 @@
 .acct-foot { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 10px; padding: 18px 16px calc(22px + env(safe-area-inset-bottom)); font-size: .86rem; }
 .acct-foot a { color: var(--ink-3); text-decoration: none; }
 .acct-foot a:hover { color: var(--ink); text-decoration: underline; }
+/* staff entry: last, small and quiet, on its own line */
+.acct-foot a.acct-foot-staff { flex-basis: 100%; text-align: center; margin-top: 4px; font-size: .74rem; opacity: .55; }
 .acct-foot i { width: 3px; height: 3px; border-radius: 50%; background: var(--line-strong); }
 
 /* sign-up on wide screens: what you get (side) + the form */

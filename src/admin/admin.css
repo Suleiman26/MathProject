@@ -868,3 +868,4 @@ html, .adm-root body { min-height: 100%; }
   .adm-root .st-chs li small { display: none; }
 }
 .adm-root .st-who.guest .acct-av { background: var(--surface-3); color: var(--ink-3); box-shadow: none; }
+.adm-root .mtop-a { display: inline-flex; gap: 6px; }

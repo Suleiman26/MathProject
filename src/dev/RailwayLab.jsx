@@ -1,6 +1,6 @@
 'use client';
 /* Sample students for the railway (local preview only: app/dev/railway).
-   ?s=new | mid | pro | gold, ?g=7|8|9 */
+   ?s=new | mid | pro | gold | abed, ?g=7|8|9 */
 import { useEffect, useState } from "react";
 import { Railway, Insights } from "@/home/Journey";
 import { Hello } from "@/home/Hello";
@@ -19,6 +19,14 @@ function sample(kind, topics) {
     pro: [[34, 120, 10, 200], [18, 70, 9, 120], [9, 30, 14, 60], [5, 22, 4, 26], [2, 8, 7, 3]],
     gold: topics.map((_, i) => [16 + i * 3, 70, 6, 300 - i * 20]),
   }[kind] || [];
+  // "abed": many exercises solved, few step checks (the case that hid strengths, 2026-11-02)
+  if (kind === "abed") {
+    [["directed-numbers", 14, 3, 1, 20], ["powers-roots", 11, 2, 0, 5], ["equation-solver", 1, 0, 0, 40], ["ratio-percent", 0, 2, 7, 3]].forEach(([page, win, ok, bad, h]) => {
+      t.push({ page, ok, bad, win, last: ago(h) });
+      const ch = (CHAPTERS[page] || [])[1];
+      if (ch) c.push({ page, chapter: ch, ok, bad, win, last: ago(h) });
+    });
+  }
   plan.forEach(([win, ok, bad, h], i) => {
     const tp = topics[i];
     if (!tp) return;
@@ -50,7 +58,7 @@ export default function RailwayLab() {
       </header>
       <main>
         <nav style={{ display: "flex", gap: 8, justifyContent: "center", margin: "12px 0", flexWrap: "wrap", direction: "ltr" }}>
-          {["new", "mid", "pro", "gold"].map((s) => <a key={s} href={`?s=${s}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
+          {["new", "mid", "pro", "gold", "abed"].map((s) => <a key={s} href={`?s=${s}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
           {" | "}
           {["7", "8", "9"].map((g) => <a key={g} href={`?s=${q.s}&g=${g}`} style={{ fontWeight: q.g === g ? 700 : 400 }}>g{g}</a>)}
         </nav>

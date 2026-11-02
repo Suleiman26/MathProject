@@ -24,7 +24,7 @@ for this project on Abed's personal accounts.
 | Design system | `src/styles/mp.css` (layers: mp-base < legacy < mp < page). Guide: `DESIGN.md` |
 | Drawing/display fixes per topic | `src/styles/topic-fixes.css` (scoped with `html[data-page="<topic>"]`) |
 | Home page | `app/page.tsx`, `src/home/` |
-| Admin (PIN 1111) | `app/admin/*`, `src/admin/*` |
+| Admin (PIN 1111) | `app/admin/*`, `src/admin/*`. Entry: quiet "כניסת צוות" link at the bottom of every page (`LegalFooter`). Project status page (`/classic/project-hub.html`) is linked only from the admin |
 | Database (Supabase) | `supabase/migrations`; how to connect: `supabase/README.md`; settings: `src/lib/config.js` |
 | Old plain-HTML site | `public/classic/` (served at `/classic`), git tag `html-v1` |
 | 3D shapes view (solids topic) | `src/components/solid3d/` (three.js, lazy); `?flat=1` shows the old drawings |
@@ -84,6 +84,10 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   Three levels must look different (v5, 2026-11-02): area = wide coloured band
   (`Zone`), topic = big circle on the main line, chapters = small stops on a side
   track that branches off and rejoins (`Switch`, `.jr-br`).
+  Strengths / worth strengthening (`Insights` in Journey.jsx): strong = 5+ solved
+  with 75%+ right, or 8+ answers with 80%+ (solved exercises count: many topics
+  finish without step checks); weak = same chapter rule as the railway (`isWeak`).
+  No "other grades" list on the signed-in home (grade is changed in the profile).
   Above it: one greeting card `src/home/Hello.jsx` (level/points, streak, solved,
   accuracy, practice days this week); the top bar shows the site name, not the
   username. Moving/renaming a topic's chapters: update `chapters.js` and add the

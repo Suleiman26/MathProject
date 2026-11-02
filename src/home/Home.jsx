@@ -74,13 +74,11 @@ function TermsNote({ account }) {
 
 function SignedIn({ account, data, myGrade }) {
   const [p, setP] = useState(null);
-  const [others, setOthers] = useState(false);
   const [saving, setSaving] = useState(false);
   useEffect(() => { accountApi.progress().then(setP).catch(() => setP(false)); }, [account.id]);
   const gradeObj = data.grades.find((x) => x.id === myGrade);
   const all = data.sections.flatMap((s) => s.topics.filter((t) => t.slug).map((t) => ({ ...t, zone: { id: s.id, name: s.name, color: s.color } })));
   const mine = myGrade ? all.filter((t) => t.g.includes(myGrade)) : [];
-  const rest = myGrade ? all.filter((t) => !t.g.includes(myGrade)) : [];
 
   if (!account.grade) {
     return (
@@ -111,14 +109,6 @@ function SignedIn({ account, data, myGrade }) {
         <Railway topics={mine} progress={p} account={account} gradeName={gradeObj ? gradeObj.name : "הכיתה שלי"} />
         <Insights progress={p} topics={all} />
       </>}
-      {rest.length > 0 && (
-        <div className="jr-more">
-          <button type="button" onClick={() => setOthers(!others)} aria-expanded={others}>{others ? "הסתרת נושאים מכיתות אחרות" : `נושאים מכיתות אחרות (${rest.length})`}</button>
-        </div>
-      )}
-      {others && <div className="g jr-others">{rest.map((t, i) => (
-        <Link key={t.slug} className="topic" style={{ "--i": i }} data-topic={t.color} href={`/topics/${t.slug}`}><Icon k={t.icon} /><span className="tx"><span className="nm">{t.name}</span><small>{t.grades}</small></span><Go /></Link>
-      ))}</div>}
     </>
   );
 }
@@ -230,7 +220,6 @@ export default function Home() {
       </div>
 
       </>}
-      {!account && <p className="foot"><a href="/classic/project-hub.html">{HERO.hub}</a></p>}
     </main><LegalFooter /></div>
   );
 }

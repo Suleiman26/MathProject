@@ -94,7 +94,11 @@ def main(argv):
     p = Texts()
     p.feed(git_show(ref, "index.html") or "")
     src = "".join((ROOT / f).read_text(encoding="utf-8") for f in HOME_SOURCES if (ROOT / f).exists())
-    missing = [t for t in p.out if t not in src]
+    # texts taken off the home page on purpose (who asked, when, why)
+    REMOVED_ON_PURPOSE = {
+        "מצב הפרויקט: מה נעשה, מה חסר ומה בעבודה": "Abed 2026-11-02: project status link only in the admin, not for students",
+    }
+    missing = [t for t in p.out if t not in src and t not in REMOVED_ON_PURPOSE]
     print(f"\nhome page: {len(p.out) - len(missing)}/{len(p.out)} original texts present" + (f"  MISSING: {missing}" if missing else ""))
     bad += bool(missing)
 

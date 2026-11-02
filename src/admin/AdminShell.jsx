@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, SignOut, ArrowSquareOut, Backspace, Info } from "@phosphor-icons/react";
+import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, SignOut, ArrowSquareOut, Backspace, Info, ClipboardText } from "@phosphor-icons/react";
 import { call, login, isPreview } from "./api";
 import { ToastHost } from "./ui";
 
@@ -97,13 +97,17 @@ export default function AdminShell({ children }) {
             </nav>
             <div className="side-foot">
               <div className={"status-pill" + (preview ? " demo" : "")}><i /><span>{preview ? "מצב תצוגה · נתוני דוגמה" : "מחובר למסד הנתונים"}</span></div>
+              <a className="side-link" href="/classic/project-hub.html" target="_blank" rel="noopener"><ClipboardText size={17} /><span>מצב הפרויקט</span></a>
               <a className="side-link" href="/" target="_blank" rel="noopener"><ArrowSquareOut size={17} /><span>לאתר התלמידים</span></a>
               <button type="button" className="side-link" onClick={() => signOut(false)}><SignOut size={17} /><span>יציאה</span></button>
             </div>
           </aside>
           <header className="mtop">
             <div className="brand"><Mark /><div><b>ניהול</b><small>מתמטיקה חט״ב</small></div></div>
-            <button type="button" className="ibtn" onClick={() => signOut(false)} aria-label="יציאה"><SignOut size={18} /></button>
+            <span className="mtop-a">
+              <a className="ibtn" href="/classic/project-hub.html" target="_blank" rel="noopener" aria-label="מצב הפרויקט: מה נעשה, מה חסר ומה בעבודה"><ClipboardText size={18} /></a>
+              <button type="button" className="ibtn" onClick={() => signOut(false)} aria-label="יציאה"><SignOut size={18} /></button>
+            </span>
           </header>
           <div className="main"><div className="main-in" key={path}>
             {preview && <div className="demo-bar"><Info size={18} /><span><b>מצב תצוגה.</b> המספרים כאן הם נתוני דוגמה, לא אמיתיים. הם יתחלפו בנתונים אמיתיים ברגע שנחבר את המסד של הפרויקט (<Link href="/admin/settings">הגדרות</Link>).</span></div>}

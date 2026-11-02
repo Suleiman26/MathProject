@@ -2,33 +2,56 @@
    (src/home/Journey.jsx) */
 @layer page {
 
-/* ── strengths and what to strengthen ─────────────────────────────────────── */
-.jr-ins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 auto 18px; max-width: 860px; }
-.jr-card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 16px; box-shadow: var(--sh-1); animation: mp-rise 420ms 120ms var(--ease-out) backwards; }
-.jr-card.warn { animation-delay: 170ms; }
-.jr-card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.jr-card-h span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; font-size: 18px; }
-.jr-card.good .jr-card-h span { background: var(--ok-50); }
-.jr-card.warn .jr-card-h span { background: var(--warn-50); }
-.jr-card-h h2 { margin: 0; font-size: 1.04rem; font-weight: 700; }
-.jr-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.jr-card li { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 12px; }
-.jr-card li + li { border-top: 1px solid var(--line); border-radius: 0; }
-.jr-card .jr-ic { width: 36px; height: 36px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--a-50); color: var(--a-700); }
-.jr-card .jr-ic svg { width: 21px; height: 21px; }
-.jr-ins-t { display: grid; gap: 1px; min-width: 0; flex: 1; }
-.jr-ins-t b { font-size: .95rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.jr-ins-t small { font-size: .8rem; color: var(--ink-3); }
-.jr-card.good .jr-ins-t small { color: var(--ok-700); }
-.jr-card.warn .jr-ins-t small { color: var(--warn-800); }
-.jr-ins-go {
-  flex: none; height: 34px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 10px;
-  background: var(--warn-50); border: 1px solid var(--warn-200); color: var(--warn-900); font-weight: 700; font-size: .86rem; text-decoration: none;
-  transition: transform var(--t-fast) var(--ease-out), background var(--t-fast);
+/* ── strengths and what to strengthen: two soft panels, rows you can tap ─── */
+.jr-ins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0 auto 18px; max-width: 860px; }
+.jr-pan {
+  --tint: var(--ok-50); --deep: var(--ok-800);
+  border-radius: 26px; padding: 18px 16px 16px;
+  background: linear-gradient(170deg, color-mix(in srgb, var(--tint) 85%, var(--surface)) 0%, var(--surface) 78%);
+  box-shadow: 0 1px 2px rgb(28 27 25 / .04), 0 16px 40px -28px rgb(28 27 25 / .3);
+  animation: mp-rise 420ms 120ms var(--ease-out) backwards;
 }
-.jr-ins-go:hover { background: var(--warn-100); }
-.jr-ins-go:active { transform: scale(.96); }
-.jr-ins-none { margin: 4px 2px 2px; color: var(--ink-3); font-size: .9rem; line-height: 1.6; }
+.jr-pan.warn { --tint: var(--warn-50); --deep: var(--warn-900); animation-delay: 180ms; }
+.jr-pan header { display: flex; align-items: center; gap: 12px; margin: 0 2px 14px; }
+.jr-pan header > span {
+  flex: none; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 22px;
+  background: var(--surface); box-shadow: 0 6px 16px -10px rgb(28 27 25 / .35);
+}
+.jr-pan h2 { margin: 0; font-size: 1.12rem; font-weight: 700; color: var(--deep); letter-spacing: -.01em; }
+.jr-pan header p { margin: 1px 0 0; font-size: .82rem; color: var(--ink-3); }
+.jr-pan ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.jr-pan li { animation: jr-in 380ms calc(260ms + var(--k) * 70ms) var(--ease-out) backwards; }
+.jr-pan li a {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) max-content; align-items: center; gap: 12px;
+  padding: 10px 12px 10px 10px; border-radius: 18px; text-decoration: none; color: var(--ink);
+  background: var(--surface); box-shadow: 0 1px 2px rgb(28 27 25 / .05), 0 8px 20px -16px rgb(28 27 25 / .35);
+  transition: transform var(--t-fast) var(--ease-out), box-shadow var(--t) var(--ease-out);
+}
+@media (hover: hover) { .jr-pan li a:hover { transform: translateY(-1px); box-shadow: 0 1px 2px rgb(28 27 25 / .05), 0 14px 26px -16px rgb(28 27 25 / .4); } }
+.jr-pan li a:active { transform: scale(.985); }
+.jr-pan li a:focus-visible { outline: 3px solid var(--a-300); outline-offset: 2px; }
+.jr-pan-ic { position: relative; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--a-50); color: var(--a-700); }
+.jr-pan-ic .jr-ic { width: 24px; height: 24px; display: grid; }
+.jr-pan-ic .jr-ic svg { width: 100%; height: 100%; }
+.jr-pan-ic i { position: absolute; bottom: -6px; left: -6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-style: normal; background: var(--surface); box-shadow: 0 2px 6px rgb(0 0 0 / .16); }
+.jr-pan-t { display: grid; gap: 2px; min-width: 0; }
+.jr-pan-t b { font-size: .98rem; font-weight: 700; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jr-pan-t small { font-size: .8rem; color: var(--ink-3); }
+.jr-pan li a > em { font-style: normal; font-size: .76rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; color: var(--ok-800); background: var(--ok-100); }
+.jr-pan li a > em.jr-pan-go { display: inline-flex; align-items: center; gap: 4px; height: 34px; padding: 0 10px 0 12px; font-size: .86rem; color: var(--warn-900); background: #fde68a; }
+.jr-pan li a > em.jr-pan-go svg { flex: none; width: 16px; height: 16px; transition: transform var(--t) var(--ease-out); }
+@media (hover: hover) { .jr-pan li a:hover > em.jr-pan-go svg { transform: translateX(-3px); } }
+.jr-pan-bar { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.jr-pan-bar i { position: relative; flex: 1; max-width: 140px; height: 6px; border-radius: 999px; background: var(--bad-100); overflow: hidden; }
+.jr-pan-bar i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #fb923c, var(--bad-600)); }
+.jr-pan-bar s { text-decoration: none; font-size: .76rem; font-weight: 700; color: var(--bad-700); }
+.jr-pan-none { margin: 0; padding: 14px 14px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--ink-2); font-size: .9rem; line-height: 1.6; }
+.jr-pan-none.ok { display: grid; gap: 2px; }
+.jr-pan-none small { font-size: .8rem; color: var(--ink-3); }
+@media (max-width: 640px) {
+  .jr-pan { border-radius: 22px; padding: 16px 12px 12px; }
+  .jr-pan-ic { width: 40px; height: 40px; }
+}
 .jr-ins.jr-ins-empty { grid-template-columns: auto 1fr; align-items: center; gap: 14px; padding: 16px 18px; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 20px; }
 .jr-ins-empty > span { font-size: 28px; }
 .jr-ins-empty p { margin: 0; color: var(--ink-2); line-height: 1.6; font-size: .94rem; }
@@ -443,7 +466,7 @@
 .jr-loading span + span { height: 420px; }
 @keyframes jr-sh { to { background-position: -200% 0; } }
 .jr-err { text-align: center; color: var(--bad-700); }
-.home .jr-others { max-width: 860px; margin: 16px auto 0; }
+
 }
 @layer page {
 .mp-burst { position: fixed; inset: 0; pointer-events: none; z-index: 90; overflow: hidden; }
