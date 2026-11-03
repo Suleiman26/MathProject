@@ -9,7 +9,7 @@ import { HERO, GRADES, TOPICS, CATEGORIES } from "./catalog";
 import { AccountButton, LegalFooter, Avatar } from "@/account/ui";
 import { useAccount, accountApi } from "@/lib/account";
 import { Railway, Insights, GuestLine } from "./Journey";
-import { Hello } from "./Hello";
+import { HomeHero } from "./HomeHero";
 
 const KEY = "mp:grade";
 const Go = () => (
@@ -82,8 +82,8 @@ function SignedIn({ account, data, myGrade }) {
   if (!account.grade) {
     return (
       <>
+        <HomeHero account={account} p={p} gradeName="בלי כיתה" />
         <TermsNote account={account} />
-        <Resume account={account} p={p} />
         <section className="jr-pick">
           <h2>באיזו כיתה את/ה?</h2>
           <p>נבנה לך מסלול עם הנושאים של הכיתה שלך.</p>
@@ -99,9 +99,9 @@ function SignedIn({ account, data, myGrade }) {
   }
   return (
     <>
+      {/* the railway's own "next step" ticket is the one button here, so the hero has none */}
+      <HomeHero account={account} p={p} gradeName={gradeObj ? gradeObj.name : "הכיתה שלי"} />
       <TermsNote account={account} />
-      {/* the railway's own "next step" ticket is the one button here, so the greeting has none */}
-      <Hello account={account} p={p} gradeName={gradeObj ? gradeObj.name : "הכיתה שלי"} />
       {p === null && <div className="jr-loading" aria-hidden="true"><span /><span /></div>}
       {p === false && <p className="jr-err">לא הצלחנו לטעון את ההתקדמות. רעננו את הדף.</p>}
       {p && <>
@@ -165,11 +165,13 @@ export default function Home() {
   const show = (t) => g === "all" || t.g.includes(g);
 
   return (
-    <div className="home">
-      <header className={"home-top" + (account ? " in" : "")}>
-        {account ? <Link href="/" className="home-brand"><img src="/icon.png" alt="" width={38} height={38} /><span><b>{HERO.title}</b><small>{{ 7: "כיתה ז׳ · המסלול שלי", 8: "כיתה ח׳ · המסלול שלי", 9: "כיתה ט׳ · המסלול שלי" }[account.grade] || "המסלול שלי"}</small></span></Link> : <span className="home-top-s" />}
-        <AccountButton />
-      </header>
+    <div className={"home" + (account ? " in" : "")}>
+      {!account && (
+        <header className="home-top">
+          <span className="home-top-s" />
+          <AccountButton />
+        </header>
+      )}
       <main>
       {account ? <SignedIn account={account} data={data} myGrade={myGrade} /> : <>
       <header className="hero">

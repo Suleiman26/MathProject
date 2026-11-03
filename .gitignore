@@ -8,3 +8,6 @@ next-env.d.ts
 .vercel
 .env*.local
 public/_dev/
+
+# 3D avatar candidates for the local comparison page (/dev/avatars), not shipped
+/public/dev-avatars/

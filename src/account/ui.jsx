@@ -38,7 +38,7 @@ const MI = {
   out: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3" /><path d="M10 17l-5-5 5-5" /><path d="M5 12h11" /></svg>,
   chev: <svg className="acct-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>,
 };
-export function AccountMenu({ account }) {
+export function AccountMenu({ account, trigger = "avatar" }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const box = useRef(null);
@@ -60,9 +60,15 @@ export function AccountMenu({ account }) {
   }
   return (
     <div className={"acct-menu" + (open ? " open" : "")} ref={box}>
-      <button type="button" className="acct-btn in" aria-haspopup="menu" aria-expanded={open} aria-label={"החשבון של " + account.username} onClick={() => setOpen(!open)}>
-        <Avatar account={account} size={26} /><span className="nm">{account.username}</span>{MI.chev}
-      </button>
+      {trigger === "icon" ? (
+        <button type="button" className="acct-ibtn" aria-haspopup="menu" aria-expanded={open} aria-label="התפריט שלי" onClick={() => setOpen(!open)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M5 8h14M5 16h9" /></svg>
+        </button>
+      ) : (
+        <button type="button" className="acct-btn in" aria-haspopup="menu" aria-expanded={open} aria-label={"החשבון של " + account.username} onClick={() => setOpen(!open)}>
+          <Avatar account={account} size={26} /><span className="nm">{account.username}</span>{MI.chev}
+        </button>
+      )}
       <div className="acct-pop" role="menu" aria-label="החשבון שלי" inert={!open}>
         <div className="acct-pop-h">
           <Avatar account={account} size={44} />
