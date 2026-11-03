@@ -298,7 +298,8 @@ function piMatches(p,c){
 
 // Cut the circle into slices and lay them head to tail: almost a rectangle r high and πr wide.
 function AreaWhySVG(){
-  const R=46,N=8,w=2*R*Math.sin(Math.PI/N),bul=R*(1-Math.cos(Math.PI/N))*2,top=14+bul,bot=top+R*Math.cos(Math.PI/N);
+  // the whole pie fits inside the drawing; the strip of slices is centred on it; labels sit below both
+  const R=46,N=8,w=2*R*Math.sin(Math.PI/N),bul=R*(1-Math.cos(Math.PI/N))*2,PR=R+4,cy=PR+6,hgt=R*Math.cos(Math.PI/N),top=cy-hgt/2,bot=cy+hgt/2,labelY=cy+PR+18;
   const cols=['#38bdf8','#fbbf24'];
   const x0=170;
   const wedges=Array.from({length:N},(_,i)=>{
@@ -306,17 +307,17 @@ function AreaWhySVG(){
     const d=up?`M${x+w/2},${top} L${x+w},${bot} Q${x+w/2},${bot+bul} ${x},${bot} Z`:`M${x+w/2},${bot} L${x+w},${top} Q${x+w/2},${top-bul} ${x},${top} Z`;
     return <path key={i} d={d} fill={cols[i%2]} stroke="#fff" strokeWidth="1.5"/>;
   });
-  const cx=70,cy=(top+bot)/2+2;
-  const slices=Array.from({length:N},(_,i)=><path key={i} d={secD(cx,cy,R+4,i*360/N,(i+1)*360/N)} fill={cols[i%2]} stroke="#fff" strokeWidth="1.5"/>);
+  const cx=70;
+  const slices=Array.from({length:N},(_,i)=><path key={i} d={secD(cx,cy,PR,i*360/N,(i+1)*360/N)} fill={cols[i%2]} stroke="#fff" strokeWidth="1.5"/>);
   const W=x0+(N+1)*w/2+14;
-  return <svg viewBox={`0 0 ${W} ${bot+bul+30}`} style={{width:'100%',maxWidth:380,height:'auto',direction:'ltr'}} role="img" aria-label="מעגל חתוך לפרוסות שמסודרות כמעט כמו מלבן">
+  return <svg viewBox={`0 0 ${W} ${labelY+8}`} style={{width:'100%',maxWidth:380,height:'auto',direction:'ltr'}} role="img" aria-label="מעגל חתוך לפרוסות שמסודרות כמעט כמו מלבן">
     <defs><marker id="aw" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker></defs>
     {slices}
-    <text x={cx} y={bot+bul+22} textAnchor="middle" fontSize="12" fill="#334155" direction="rtl" style={{unicodeBidi:'plaintext'}}>8 פרוסות</text>
+    <text x={cx} y={labelY} textAnchor="middle" fontSize="12" fill="#334155" direction="rtl" style={{unicodeBidi:'plaintext'}}>8 פרוסות</text>
     <path d={`M${cx+R+10},${cy} L${x0-28},${cy}`} stroke="#94a3b8" strokeWidth="2" markerEnd="url(#aw)"/>
     {wedges}
     <text x={x0-6} y={(top+bot)/2} textAnchor="end" dominantBaseline="central" fontSize="14" fontWeight="800" fill="#b91c1c">r</text>
-    <text x={x0+(N+1)*w/4} y={bot+bul+22} textAnchor="middle" fontSize="14" fontWeight="800" fill="#0369a1">πr</text>
+    <text x={x0+(N+1)*w/4} y={labelY} textAnchor="middle" fontSize="14" fontWeight="800" fill="#0369a1">πr</text>
   </svg>;
 }
 

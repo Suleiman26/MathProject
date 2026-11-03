@@ -444,3 +444,9 @@ html[data-page="circle"] .area-note { text-align: center; font-size: 12px; color
   html[data-page="circle"] .area-q .graph-wrap svg { width: 230px !important; }
 }
 html[data-page="circle"] :is(.area-why, .pi-box, .info-box) bdi, html[data-page="circle"] .area-f b[dir="ltr"] { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+
+/* Circle, intro exercises: a right answer showed "✓ נכון!" twice (the
+   feedback line plus the done line, both in the original code). Show one. */
+@layer page {
+html[data-page="circle"] .fb.ok + .fb.ok { display: none; }
+}
