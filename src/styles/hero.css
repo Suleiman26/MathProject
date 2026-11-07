@@ -3,6 +3,10 @@
 @layer page {
 
 .home.in main { padding-top: 0; }
+/* signed in, the hero paints the top: no browser margin above it (it showed as a strip) and no
+   fixed teal glow on the page behind it (the hero's own colours fade into the plain background) */
+body:has(> .home.in) { margin: 0; background: var(--bg); }
+.home.in { background: var(--bg); }
 .hh { position: relative; isolation: isolate; width: 100vw; margin-inline: calc(50% - 50vw); margin-bottom: 6px; }
 .hh-bg {
   position: absolute; inset: 0 0 -90px 0; z-index: -1; overflow: hidden; pointer-events: none;
@@ -117,11 +121,13 @@
 .hh-st small { font-size: .7rem; color: var(--hh-ink-3, var(--ink-3)); line-height: 1.2; }
 
 /* ── look 1: sky (light aurora in the student's colour) ── */
+/* every colour comes from the student's own colour (--a-*) plus one soft warm light, and the bottom
+   fades into the plain page background. A fixed mint patch here clashed with pink (2026-11-07). */
 .hh-sky .hh-bg {
   background:
     radial-gradient(55% 65% at 90% 8%, color-mix(in srgb, var(--a-300) 70%, transparent), transparent 70%),
-    radial-gradient(45% 55% at 6% 30%, rgb(253 230 138 / .6), transparent 70%),
-    radial-gradient(70% 55% at 45% 95%, rgb(153 246 228 / .55), transparent 72%),
+    radial-gradient(45% 55% at 6% 30%, rgb(253 230 138 / .5), transparent 70%),
+    radial-gradient(70% 55% at 45% 95%, color-mix(in srgb, var(--a-200) 45%, transparent), transparent 72%),
     linear-gradient(180deg, color-mix(in srgb, var(--a-100) 70%, #fff), var(--bg));
 }
 
