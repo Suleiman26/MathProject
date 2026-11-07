@@ -20,8 +20,8 @@ function greet() {
   const h = new Date().getHours();
   return h >= 5 && h < 12 ? "בוקר טוב" : h < 17 ? "צהריים טובים" : h < 22 ? "ערב טוב" : "לילה טוב";
 }
-// a 3D sun by day, a 3D moon in the evening (public/home/hero/)
-const dayArt = () => { const h = new Date().getHours(); return h >= 5 && h < 18 ? "sun" : "moon"; };
+// a 3D sun by day, a 3D moon from "ערב טוב" on: same hours as greet() (sun showed with "good evening" at 17:54)
+const dayArt = () => { const h = new Date().getHours(); return h >= 5 && h < 17 ? "sun" : "moon"; };
 
 export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
   const t = p ? p.totals : null;
