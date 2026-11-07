@@ -90,9 +90,10 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   No "other grades" list on the signed-in home (grade is changed in the profile).
   Signed-in top (2026-11-07): one hero `src/home/HomeHero.jsx` + `src/styles/hero.css`
   instead of a top bar + greeting card: brand + menu button (`AccountMenu trigger="icon"`:
-  profile, settings, sign out), level ring, greeting + name, and ONE white card with the
-  points bar and four numbers (Phosphor icons in the student's colour). When it scrolls away
-  a slim glass bar takes its place. The hero can also show the student's 3D character
+  profile, settings, sign out), avatar, greeting + name, a LEVEL CARD in the student's colour
+  (level, points, bar to the next level, a 3D star standing out of it) and four white number tiles
+  with small 3D icons (`public/home/hero/*.webp`, sources `design/hero3d/`). When it scrolls away
+  a slim glass bar takes its place (with a fade under it). The hero can also show the student's 3D character
   (`figure` prop, `src/avatars/`), not switched on yet.
   **Calm system (2026-11-07, Abed: "too noisy"): `design/home-calm.md`.** The whole signed-in
   home takes ONE accent = the student's colour (`data-topic={account.avatar}` on `.home.in`);

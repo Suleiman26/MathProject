@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Fire, CheckCircle, Target, CalendarCheck, ArrowDown, Confetti } from "@phosphor-icons/react";
+import { Fire, ArrowDown, Confetti } from "@phosphor-icons/react";
 import { Avatar, AccountMenu } from "@/account/ui";
 import { HERO } from "./catalog";
 import { fmt, playerLevel, rankOf, weekStats, xpOf } from "@/lib/progress";
@@ -35,12 +35,12 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
     : streak >= 2 ? [`${fmt(streak)} ימים ברצף. ממשיכים ככה!`, Fire]
     : week >= goal ? ["עמדת ביעד השבועי. כל הכבוד!", Confetti]
     : ["בוא/י נתרגל קצת היום", null];
-  // icons in the app's own style (Phosphor, white on a coloured badge), not emoji (Abed, 2026-11-07)
+  // each number with its own small 3D piece (same family as the world art, public/home/hero/) — 2026-11-07
   const stats = [
-    { Ic: Fire, c: "fire", v: p ? fmt(streak) : "–", l: streak === 1 ? "יום ברצף" : "ימים ברצף" },
-    { Ic: CheckCircle, c: "ok", v: p ? fmt(t.win) : "–", l: "נפתרו" },
-    { Ic: Target, c: "aim", v: acc == null ? "–" : acc + "%", l: "נכונות" },
-    { Ic: CalendarCheck, c: "week", v: p ? `${fmt(Math.min(week, goal))}/${fmt(goal)}` : "–", l: "ימים השבוע" },
+    { art: "fire", v: p ? fmt(streak) : "–", l: streak === 1 ? "יום ברצף" : "ימים ברצף" },
+    { art: "check", v: p ? fmt(t.win) : "–", l: "נפתרו" },
+    { art: "target", v: acc == null ? "–" : acc + "%", l: "נכונות" },
+    { art: "calendar", v: p ? `${fmt(Math.min(week, goal))}/${fmt(goal)}` : "–", l: "ימים השבוע", seg: [Math.min(week, goal), goal] },
   ];
 
   // the slim bar shows once the hero has scrolled away
@@ -76,9 +76,8 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
                   <span className="hh-lv"><small>רמה</small>{lv.L}</span>
                 </Link>
               ) : (
-              <Link href="/profile" className="hh-ring" style={{ "--p": pct }} aria-label={`הפרופיל שלי · רמה ${lv.L}`}>
+                <Link href="/profile" className="hh-av" aria-label={`הפרופיל שלי · רמה ${lv.L}`}>
                   <Avatar account={account} size={64} />
-                  <span className="hh-lv"><small>רמה</small>{lv.L}</span>
                 </Link>
               )}
               <div className="hh-t">
@@ -88,18 +87,26 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
               </div>
             </div>
 
-            <div className="hh-sum">
-            <Link href="/profile" className="hh-xp" aria-label={`${rankOf(lv.L)}: ${fmt(lv.xp)} נקודות, עוד ${fmt(lv.toNext)} לרמה ${lv.L + 1}`}>
-              <span className="hh-xp-r"><b>{rankOf(lv.L)}</b><span>{fmt(lv.xp)} נק׳ · עוד {fmt(lv.toNext)} לרמה {lv.L + 1}</span></span>
-              <span className="hh-xp-bar" aria-hidden="true"><i style={{ width: Math.round(pct * 100) + "%" }} /></span>
+            {/* "me" in the student's colour: level, points, the way to the next level, with a 3D star
+                standing out of the card (the same idea as the world banners below) */}
+            <Link href="/profile" className="hh-lvc" style={{ "--p": pct }} aria-label={`רמה ${lv.L}, ${rankOf(lv.L)}: ${fmt(lv.xp)} נקודות, עוד ${fmt(lv.toNext)} לרמה ${lv.L + 1}`}>
+              <img className="hh-lvc-art" src="/home/hero/star.webp" alt="" width={120} height={120} decoding="async" />
+              <span className="hh-lvc-k">רמה {lv.L} · {rankOf(lv.L)}</span>
+              <span className="hh-lvc-xp"><b>{fmt(lv.xp)}</b> נק׳</span>
+              <span className="hh-lvc-bar" aria-hidden="true"><i /></span>
+              <span className="hh-lvc-next">עוד {fmt(lv.toNext)} לרמה {lv.L + 1}</span>
             </Link>
 
             <ul className="hh-st" aria-label="המספרים שלי">
               {stats.map((x, k) => (
-                <li key={k} style={{ "--k": k }}><span className={"hh-st-ic is-" + x.c} aria-hidden="true"><x.Ic size={19} weight="duotone" /></span><b>{x.v}</b><small>{x.l}</small></li>
+                <li key={k} style={{ "--k": k }}>
+                  <img className="hh-st-art" src={`/home/hero/${x.art}.webp`} alt="" width={44} height={44} decoding="async" />
+                  <b>{x.v}</b>
+                  <small>{x.l}</small>
+                  {x.seg && <span className="hh-seg" aria-hidden="true">{Array.from({ length: x.seg[1] }, (_, i) => <i key={i} className={i < x.seg[0] ? "on" : ""} />)}</span>}
+                </li>
               ))}
             </ul>
-            </div>
             {/* the slim bar shows only once this whole card is behind it (it peeked above the bar, 2026-11-07) */}
             <span ref={ref} className="hh-end" aria-hidden="true" />
           </div>
