@@ -97,6 +97,11 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   **Calm system (2026-11-07, Abed: "too noisy"): `design/home-calm.md`.** The whole signed-in
   home takes ONE accent = the student's colour (`data-topic={account.avatar}` on `.home.in`);
   nothing on it sets a topic colour; white cards, no glyphs, no emoji, no rainbow badges.
+  **v2 "Worlds" (same day, Abed: "can't tell the levels apart"):** each area is a world with its own
+  fixed colour (`src/home/worlds.js`: num sky, alg violet, fn emerald, geo coral) and 3D art
+  (`public/home/worlds/<key>.webp`, sources in `design/worlds/`): banner → tinted tray of white topic
+  cards (segmented bar per chapter) → chapter checklist inside the open card. The student colour
+  is only for "me" (header, the white next-step ticket). Spec + lessons: `design/home-calm.md`.
   Guests keep the floating glass top bar; topic pages keep their own top bar.
   Guests see `GuestLine` (Journey.jsx): the same area bands + topic circles,
   no progress, ending with an invitation to open an account.

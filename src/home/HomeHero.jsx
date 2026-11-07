@@ -49,7 +49,7 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => setAway(!e.isIntersecting), { rootMargin: "-70px 0px 0px 0px" });
+    const io = new IntersectionObserver(([e]) => setAway(!e.isIntersecting), { rootMargin: "-64px 0px 0px 0px" });
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -96,15 +96,17 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
 
             <ul className="hh-st" aria-label="המספרים שלי">
               {stats.map((x, k) => (
-                <li key={k} style={{ "--k": k }}><span className={"hh-st-ic is-" + x.c} aria-hidden="true"><x.Ic size={18} weight="bold" /></span><b>{x.v}</b><small>{x.l}</small></li>
+                <li key={k} style={{ "--k": k }}><span className={"hh-st-ic is-" + x.c} aria-hidden="true"><x.Ic size={19} weight="duotone" /></span><b>{x.v}</b><small>{x.l}</small></li>
               ))}
             </ul>
             </div>
+            {/* the slim bar shows only once this whole card is behind it (it peeked above the bar, 2026-11-07) */}
+            <span ref={ref} className="hh-end" aria-hidden="true" />
           </div>
         </div>
-        <span ref={ref} className="hh-end" aria-hidden="true" />
       </section>
 
+      <div className={"hh-scrim" + (away ? " on" : "")} aria-hidden="true" />
       <div className={"hh-bar" + (away ? " on" : "")} data-topic={account.avatar} inert={!away}>
         <Link href="/" className="hh-bar-b"><img src="/icon.png" alt="" width={30} height={30} /><span><b>המסלול שלי</b><small>{gradeName}</small></span></Link>
         <span className="hh-bar-lv" aria-label={`רמה ${lv.L}`}>רמה {lv.L}</span>
