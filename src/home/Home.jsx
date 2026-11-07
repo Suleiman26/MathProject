@@ -165,7 +165,7 @@ export default function Home() {
   const show = (t) => g === "all" || t.g.includes(g);
 
   return (
-    <div className={"home" + (account ? " in" : "")}>
+    <div className={"home" + (account ? " in" : "")} data-topic={account ? account.avatar : undefined}>
       {!account && (
         <header className="home-top">
           <span className="home-top-s" />

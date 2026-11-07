@@ -51,7 +51,7 @@ export default function RailwayLab() {
   const account = { id: "lab-" + q.s, username: "נועה", avatar: q.c || "violet", grade: q.g, weekly_goal: 4 };
   const p = sample(q.s, mine);
   return (
-    <div className="home in">
+    <div className="home in" data-topic={account.avatar}>
       <main>
         <HomeHero account={account} p={p} gradeName={GRADES.find((g) => g.id === q.g).name} look={q.h} figure={q.av ? { src: `/avatars/3d/${q.who}.glb` } : undefined} />
         <nav style={{ display: "flex", gap: 8, justifyContent: "center", margin: "12px 0", flexWrap: "wrap", direction: "ltr" }}>

@@ -90,18 +90,20 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   No "other grades" list on the signed-in home (grade is changed in the profile).
   Signed-in top (2026-11-07): one hero `src/home/HomeHero.jsx` + `src/styles/hero.css`
   instead of a top bar + greeting card: brand + menu button (`AccountMenu trigger="icon"`:
-  profile, settings, sign out), level ring, greeting + name, points to the next level,
-  four numbers with coloured Phosphor icon badges (no emoji). When it scrolls away a slim
-  glass bar takes its place. Three looks in the CSS (`HERO_LOOK`): "sky" is live; "night"
-  and "card" are ready (try `/dev/railway?h=night|card`). The hero can also show the
-  student's 3D character (`figure` prop, `src/avatars/`), not switched on yet.
+  profile, settings, sign out), level ring, greeting + name, and ONE white card with the
+  points bar and four numbers (Phosphor icons in the student's colour). When it scrolls away
+  a slim glass bar takes its place. The hero can also show the student's 3D character
+  (`figure` prop, `src/avatars/`), not switched on yet.
+  **Calm system (2026-11-07, Abed: "too noisy"): `design/home-calm.md`.** The whole signed-in
+  home takes ONE accent = the student's colour (`data-topic={account.avatar}` on `.home.in`);
+  nothing on it sets a topic colour; white cards, no glyphs, no emoji, no rainbow badges.
   Guests keep the floating glass top bar; topic pages keep their own top bar.
   Guests see `GuestLine` (Journey.jsx): the same area bands + topic circles,
   no progress, ending with an invitation to open an account.
   Moving/renaming a topic's chapters: update `chapters.js` and add the
   old → new names to `RENAMED` there, so earlier practice still counts.
   Local preview with sample students (no database needed): `npm run dev` →
-  `/dev/railway?s=new|mid|pro|gold&g=7|8|9&h=sky|night|card` (shows "not found" on the live site, works on preview links). Shared rules (levels, points,
+  `/dev/railway?s=new|mid|pro|gold&g=7|8|9&c=<student colour, e.g. pink|teal>` (shows "not found" on the live site, works on preview links). Shared rules (levels, points,
   badge names) in `src/lib/progress.js`; database: `account_achievements`,
   `account_topic`, `account_set_goal` (`20261031120000_progress_v2.sql`).
 

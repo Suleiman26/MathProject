@@ -1,10 +1,10 @@
 'use client';
-/* Signed-in home, top of the page (2026-11-02): one hero instead of a thin bar
-   plus a card. Brand + menu, the student with a level ring around the avatar,
-   greeting, points to the next level and four numbers. It blends into the page
-   (no hard edge); when it scrolls away, a slim glass bar takes its place.
-   Three looks for Abed to choose from: "sky" (light aurora), "night" (dark),
-   "card" (a bold player card). Styles: src/styles/hero.css */
+/* Signed-in home, top of the page. Calm version (2026-11-07, design/home-calm.md):
+   one soft wash of the student's own colour, brand + menu, the student with a level
+   ring, greeting, and ONE white card with the points bar and four numbers (icons in
+   the student's colour, no rainbow badges, no floating symbols). When it scrolls
+   away, a slim glass bar takes its place. Styles: src/styles/hero.css
+   (The earlier "night" and "card" looks are in git history, commit 02cdec5.) */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -15,7 +15,6 @@ import { fmt, playerLevel, rankOf, weekStats, xpOf } from "@/lib/progress";
 
 export const HERO_LOOK = "sky";
 const Rig3D = dynamic(() => import("@/avatars/Avatar3D"), { ssr: false });
-const GLYPHS = ["π", "√", "x²", "∑", "÷", "△", "∞", "%", "½", "≠"];
 
 function greet() {
   const h = new Date().getHours();
@@ -59,12 +58,10 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
   return (
     <>
       <section className={"hh hh-" + look} data-topic={account.avatar} aria-label="הסיכום שלי">
-        <div className="hh-bg" aria-hidden="true">
-          {GLYPHS.map((g, i) => <i key={i} style={{ "--g": i }}>{g}</i>)}
-        </div>
+        <div className="hh-bg" aria-hidden="true" />
         <div className="hh-in">
           <div className="hh-row">
-            <Link href="/" className="hh-brand"><img src="/icon.png" alt="" width={36} height={36} /><span><b>{HERO.title}</b><small>{gradeName} · המסלול שלי</small></span></Link>
+            <Link href="/" className="hh-brand"><img src="/icon.png" alt="" width={36} height={36} /><span><b>{HERO.title}</b></span></Link>
             <AccountMenu account={account} trigger="icon" />
           </div>
 
@@ -80,17 +77,18 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
                 </Link>
               ) : (
               <Link href="/profile" className="hh-ring" style={{ "--p": pct }} aria-label={`הפרופיל שלי · רמה ${lv.L}`}>
-                  <Avatar account={account} size={76} />
+                  <Avatar account={account} size={64} />
                   <span className="hh-lv"><small>רמה</small>{lv.L}</span>
                 </Link>
               )}
               <div className="hh-t">
                 <p className="hh-hi">{greet()},</p>
                 <h1><bdi>{account.username}</bdi></h1>
-                <p className="hh-line">{line}{LineIc && <LineIc className="hh-line-ic" size={16} weight="fill" aria-hidden="true" />}</p>
+                <p className="hh-line">{line}{LineIc && <LineIc className="hh-line-ic" size={15} weight="bold" aria-hidden="true" />}</p>
               </div>
             </div>
 
+            <div className="hh-sum">
             <Link href="/profile" className="hh-xp" aria-label={`${rankOf(lv.L)}: ${fmt(lv.xp)} נקודות, עוד ${fmt(lv.toNext)} לרמה ${lv.L + 1}`}>
               <span className="hh-xp-r"><b>{rankOf(lv.L)}</b><span>{fmt(lv.xp)} נק׳ · עוד {fmt(lv.toNext)} לרמה {lv.L + 1}</span></span>
               <span className="hh-xp-bar" aria-hidden="true"><i style={{ width: Math.round(pct * 100) + "%" }} /></span>
@@ -98,9 +96,10 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
 
             <ul className="hh-st" aria-label="המספרים שלי">
               {stats.map((x, k) => (
-                <li key={k} style={{ "--k": k }}><span className={"hh-st-ic is-" + x.c} aria-hidden="true"><x.Ic size={17} weight="fill" /></span><b>{x.v}</b><small>{x.l}</small></li>
+                <li key={k} style={{ "--k": k }}><span className={"hh-st-ic is-" + x.c} aria-hidden="true"><x.Ic size={18} weight="bold" /></span><b>{x.v}</b><small>{x.l}</small></li>
               ))}
             </ul>
+            </div>
           </div>
         </div>
         <span ref={ref} className="hh-end" aria-hidden="true" />
