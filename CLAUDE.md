@@ -88,16 +88,20 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   with 75%+ right, or 8+ answers with 80%+ (solved exercises count: many topics
   finish without step checks); weak = same chapter rule as the railway (`isWeak`).
   No "other grades" list on the signed-in home (grade is changed in the profile).
-  Top bar (signed in): floating glass bar, sticky; the avatar opens `AccountMenu`
-  (src/account/ui.jsx: profile, settings, sign out), same menu on topic pages.
+  Signed-in top (2026-11-07): one hero `src/home/HomeHero.jsx` + `src/styles/hero.css`
+  instead of a top bar + greeting card: brand + menu button (`AccountMenu trigger="icon"`:
+  profile, settings, sign out), level ring, greeting + name, points to the next level,
+  four numbers with coloured Phosphor icon badges (no emoji). When it scrolls away a slim
+  glass bar takes its place. Three looks in the CSS (`HERO_LOOK`): "sky" is live; "night"
+  and "card" are ready (try `/dev/railway?h=night|card`). The hero can also show the
+  student's 3D character (`figure` prop, `src/avatars/`), not switched on yet.
+  Guests keep the floating glass top bar; topic pages keep their own top bar.
   Guests see `GuestLine` (Journey.jsx): the same area bands + topic circles,
   no progress, ending with an invitation to open an account.
-  Above it: one greeting card `src/home/Hello.jsx` (level/points, streak, solved,
-  accuracy, practice days this week); the top bar shows the site name, not the
-  username. Moving/renaming a topic's chapters: update `chapters.js` and add the
+  Moving/renaming a topic's chapters: update `chapters.js` and add the
   old → new names to `RENAMED` there, so earlier practice still counts.
   Local preview with sample students (no database needed): `npm run dev` →
-  `/dev/railway?s=new|mid|pro|gold&g=7|8|9` (shows "not found" on the live site). Shared rules (levels, points,
+  `/dev/railway?s=new|mid|pro|gold&g=7|8|9&h=sky|night|card` (shows "not found" on the live site, works on preview links). Shared rules (levels, points,
   badge names) in `src/lib/progress.js`; database: `account_achievements`,
   `account_topic`, `account_set_goal` (`20261031120000_progress_v2.sql`).
 

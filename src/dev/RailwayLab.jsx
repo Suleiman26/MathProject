@@ -3,7 +3,7 @@
    ?s=new | mid | pro | gold | abed, ?g=7|8|9 */
 import { useEffect, useState } from "react";
 import { Railway, Insights } from "@/home/Journey";
-import { Hello } from "@/home/Hello";
+import { HomeHero } from "@/home/HomeHero";
 import { AccountMenu } from "@/account/ui";
 import { HERO } from "@/home/catalog";
 import { TOPICS, CATEGORIES, GRADES } from "@/home/catalog";
@@ -44,25 +44,23 @@ function sample(kind, topics) {
 
 export default function RailwayLab() {
   const [q, setQ] = useState(null);
-  useEffect(() => { const p = new URLSearchParams(location.search); setQ({ s: p.get("s") || "mid", g: p.get("g") || "8" }); }, []);
+  useEffect(() => { const p = new URLSearchParams(location.search); setQ({ s: p.get("s") || "mid", g: p.get("g") || "8", h: p.get("h") || "sky", av: p.get("av") || "", who: p.get("who") || "boy" }); }, []);
   if (!q) return null;
   const all = CATEGORIES.flatMap((c) => TOPICS.filter((t) => t.cat === c.id).map((t) => ({ ...t, zone: { id: c.id, name: c.name, color: c.color } })));
   const mine = all.filter((t) => t.g.includes(q.g));
   const account = { id: "lab-" + q.s, username: "נועה", avatar: "violet", grade: q.g, weekly_goal: 4 };
   const p = sample(q.s, mine);
   return (
-    <div className="home">
-      <header className="home-top in">
-        <a href="/" className="home-brand"><img src="/icon.png" alt="" width={38} height={38} /><span><b>{HERO.title}</b><small>{GRADES.find((g) => g.id === q.g).name} · המסלול שלי</small></span></a>
-        <AccountMenu account={account} />
-      </header>
+    <div className="home in">
       <main>
+        <HomeHero account={account} p={p} gradeName={GRADES.find((g) => g.id === q.g).name} look={q.h} figure={q.av ? { src: `/avatars/3d/${q.who}.glb` } : undefined} />
         <nav style={{ display: "flex", gap: 8, justifyContent: "center", margin: "12px 0", flexWrap: "wrap", direction: "ltr" }}>
           {["new", "mid", "pro", "gold", "abed"].map((s) => <a key={s} href={`?s=${s}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
           {" | "}
-          {["7", "8", "9"].map((g) => <a key={g} href={`?s=${q.s}&g=${g}`} style={{ fontWeight: q.g === g ? 700 : 400 }}>g{g}</a>)}
+          {["7", "8", "9"].map((g) => <a key={g} href={`?s=${q.s}&g=${g}&h=${q.h}`} style={{ fontWeight: q.g === g ? 700 : 400 }}>g{g}</a>)}
+          {" | "}
+          {["sky", "night", "card"].map((h) => <a key={h} href={`?s=${q.s}&g=${q.g}&h=${h}`} style={{ fontWeight: q.h === h ? 700 : 400 }}>{h}</a>)}
         </nav>
-        <Hello account={account} p={p} gradeName={GRADES.find((g) => g.id === q.g).name} />
         <Railway topics={mine} progress={p} account={account} gradeName={GRADES.find((g) => g.id === q.g).name} />
         <Insights progress={p} topics={all} />
       </main>
