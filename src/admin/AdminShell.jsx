@@ -17,7 +17,7 @@ export const NAV = [
   { href: "/admin/settings", label: "הגדרות", short: "הגדרות", Icon: Gear, sub: "קוד כניסה, חיבור ונתונים" },
 ];
 const Mark = ({ className }) => (
-  <img className={className} src="/icon.png" alt="" width={64} height={64} style={{ borderRadius: "22%" }} />
+  <img className={className} src="/brand/logo-loop.png" alt="" width={64} height={64} style={{ borderRadius: "22%" }} />
 );
 
 const Ctx = createContext(null);

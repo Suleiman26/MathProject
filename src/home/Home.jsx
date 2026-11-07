@@ -175,7 +175,7 @@ export default function Home() {
       <main>
       {account ? <SignedIn account={account} data={data} myGrade={myGrade} /> : <>
       <header className="hero">
-        <img className="mark" src="/icon.png" alt="" width={64} height={64} />
+        <img className="mark" src="/brand/logo-loop.png" alt="" width={64} height={64} />
         <h1>{HERO.title}</h1><p className="s">{HERO.sub}</p>
       </header>
       {ready && !account && <div className="hero-act">

@@ -27,11 +27,19 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
 .hh-end { display: block; height: 1px; }
 
 /* brand + menu */
-.hh-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hh-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 6px 12px 6px 6px; border-radius: 24px;
+  background: rgb(255 255 255 / .55);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .85), 0 10px 28px -18px color-mix(in srgb, var(--a-700) 55%, transparent);
+  animation: mp-rise 420ms var(--ease-out) backwards;
+}
+.hh-row .acct-ibtn { width: 40px; height: 40px; background: color-mix(in srgb, var(--a-50) 70%, #fff); box-shadow: inset 0 0 0 1px rgb(20 20 40 / .05); -webkit-backdrop-filter: none; backdrop-filter: none; }
 /* brand: the Loop logo + a two-line wordmark (2026-11-07) */
 .hh-brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: var(--ink); text-decoration: none; }
 .hh-brand img {
-  width: 38px; height: 38px; border-radius: 11px; flex: none;
+  width: 36px; height: 36px; border-radius: 11px; flex: none;
   box-shadow: 0 0 0 1px rgb(255 255 255 / .9), 0 8px 18px -10px rgb(76 29 149 / .45);
 }
 .hh-brand > span { display: grid; min-width: 0; line-height: 1.1; }
@@ -49,18 +57,30 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
 .acct-ibtn:focus-visible { outline: 3px solid var(--a-300); outline-offset: 2px; }
 
 /* the student: avatar, greeting, name, one line */
-.hh-main { position: relative; margin-top: 22px; }
+.hh-main { position: relative; margin-top: 24px; }
 .hh-me { display: flex; align-items: center; gap: 14px; }
 .hh-av {
-  flex: none; border-radius: 50%; line-height: 0; text-decoration: none; padding: 4px; background: #fff;
-  box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--a-700) 70%, transparent);
+  position: relative; flex: none; border-radius: 50%; line-height: 0; text-decoration: none; padding: 3px;
+  background: conic-gradient(from 200deg, var(--a-300), var(--a-600), var(--a-300));
+  box-shadow: 0 12px 26px -14px color-mix(in srgb, var(--a-700) 75%, transparent);
   transition: transform var(--t) var(--ease-out);
 }
+.hh-av::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; box-shadow: inset 0 0 0 3px #fff; pointer-events: none; }
 .hh-av:active { transform: scale(.96); }
-.hh-av .acct-av { background: linear-gradient(140deg, var(--a-400, var(--a-500)), var(--a-600)); box-shadow: none; }
+.hh-av .acct-av { --s: 70px !important; background: linear-gradient(140deg, var(--a-400, var(--a-500)), var(--a-600)); box-shadow: none; font-size: 30px; }
+.hh-me { position: relative; }
+/* the 3D sun / moon floats on the open side of the greeting */
+.hh-day {
+  /* top-left corner, next to the short greeting line, clear of a long name below it */
+  position: absolute; left: 0; top: -14px; width: 58px; height: 58px; object-fit: contain; pointer-events: none;
+  filter: drop-shadow(0 10px 14px rgb(120 80 0 / .18));
+  animation: hh-day-in 800ms 150ms cubic-bezier(.34, 1.56, .64, 1) backwards, hh-bob 5s 1s ease-in-out infinite;
+}
+@keyframes hh-day-in { from { opacity: 0; transform: translateY(12px) scale(.6) rotate(-20deg); } }
+@keyframes hh-bob { 50% { transform: translateY(-5px) rotate(5deg); } }
 .hh-t { min-width: 0; }
 .hh-hi { margin: 0; font-size: .92rem; font-weight: 500; color: var(--ink-2); }
-.hh-t h1 { margin: 0; font-size: 1.75rem; font-weight: 800; line-height: 1.12; color: var(--ink); overflow-wrap: anywhere; }
+.hh-t h1 { margin: 0; font-size: 1.75rem; font-weight: 800; line-height: 1.12; color: var(--ink); overflow-wrap: break-word; }
 .hh-line { margin: 4px 0 0; font-size: .88rem; color: var(--ink-2); }
 .hh-line-ic { display: inline-block; vertical-align: -2px; margin-inline-start: 5px; color: var(--a-600); }
 
@@ -138,13 +158,14 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
 /* desktop: the student and the level card side by side, the four tiles below */
 @media (min-width: 900px) {
   .hh-in { padding-top: 22px; padding-bottom: 30px; }
-  .hh-main { margin-top: 50px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: end; column-gap: 28px; }
+  .hh-main { margin-top: 50px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: end; column-gap: 28px; }
   .hh-lvc { margin-top: 0; --art: 140px; min-height: 124px; }
   .hh-st { grid-column: 1 / -1; margin-top: 14px; gap: 12px; }
   .hh-st li { padding: 12px 6px; }
   .hh-st-art { width: 52px; height: 52px; }
-  .hh-t h1 { font-size: 2.3rem; }
-  .hh-av .acct-av { --s: 76px !important; }
+  .hh-t h1 { font-size: 2.1rem; }
+  .hh-av .acct-av { --s: 84px !important; }
+  .hh-day { width: 72px; height: 72px; top: -20px; }
   .hh-st b { font-size: 1.3rem; }
   .hh-st small { font-size: .76rem; }
 }
@@ -157,7 +178,7 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
   .hh-st small { font-size: .66rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hh-lvc, .hh-lvc-art, .hh-lvc-bar i, .hh-st li { animation: none !important; }
+  .hh-lvc, .hh-lvc-art, .hh-lvc-bar i, .hh-st li, .hh-row, .hh-day { animation: none !important; }
   .hh-bar, .hh-scrim { transition: none; }
 }
 }

@@ -87,7 +87,7 @@ export default function Signup() {
   return (
     <AcctShell split>
       <aside className="acct-aside" aria-label="מה מקבלים עם חשבון">
-        <img src="/icon.png" alt="" width={56} height={56} />
+        <img src="/brand/logo-loop.png" alt="" width={56} height={56} />
         <h2>כל ההתקדמות שלך, במקום אחד</h2>
         <ul>
           <li><span aria-hidden="true">📈</span><div><b>התקדמות בכל נושא</b><small>רמות שעולות עם כל תרגיל שפותרים</small></div></li>

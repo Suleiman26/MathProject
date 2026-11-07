@@ -20,6 +20,8 @@ function greet() {
   const h = new Date().getHours();
   return h >= 5 && h < 12 ? "בוקר טוב" : h < 17 ? "צהריים טובים" : h < 22 ? "ערב טוב" : "לילה טוב";
 }
+// a 3D sun by day, a 3D moon in the evening (public/home/hero/)
+const dayArt = () => { const h = new Date().getHours(); return h >= 5 && h < 18 ? "sun" : "moon"; };
 
 export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
   const t = p ? p.totals : null;
@@ -76,13 +78,16 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
   }, [account.avatar]);
 
   const pct = Math.max(0.03, Math.min(1, lv.pct || 0));
+  const [art, setArt] = useState("sun");
+  useEffect(() => setArt(dayArt()), []);
   return (
     <>
       <section className={"hh hh-" + look} data-topic={account.avatar} aria-label="הסיכום שלי">
         <div className="hh-bg" aria-hidden="true" />
         <div className="hh-in">
+          {/* a frosted glass capsule: logo + name and the menu, the same look as the bar that shows on scroll */}
           <div className="hh-row">
-            <Link href="/" className="hh-brand" aria-label={HERO.title}><img src="/icon.png" alt="" width={38} height={38} /><span><b>{HERO.title.split(" ")[0]}</b><small>{HERO.title.split(" ").slice(1).join(" ")}</small></span></Link>
+            <Link href="/" className="hh-brand" aria-label={HERO.title}><img src="/brand/logo-loop.png" alt="" width={38} height={38} /><span><b>{HERO.title.split(" ")[0]}</b><small>{HERO.title.split(" ").slice(1).join(" ")}</small></span></Link>
             <AccountMenu account={account} trigger="icon" />
           </div>
 
@@ -101,6 +106,7 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
                   <Avatar account={account} size={64} />
                 </Link>
               )}
+              <img className="hh-day" src={`/home/hero/${art}.webp`} alt="" width={64} height={64} decoding="async" />
               <div className="hh-t">
                 <p className="hh-hi">{greet()},</p>
                 <h1><bdi>{account.username}</bdi></h1>
@@ -136,7 +142,7 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
 
       <div className={"hh-scrim" + (away ? " on" : "")} aria-hidden="true" />
       <div className={"hh-bar" + (away ? " on" : "")} data-topic={account.avatar} inert={!away}>
-        <Link href="/" className="hh-bar-b"><img src="/icon.png" alt="" width={30} height={30} /><span><b>המסלול שלי</b><small>{gradeName}</small></span></Link>
+        <Link href="/" className="hh-bar-b"><img src="/brand/logo-loop.png" alt="" width={30} height={30} /><span><b>המסלול שלי</b><small>{gradeName}</small></span></Link>
         <span className="hh-bar-lv" aria-label={`רמה ${lv.L}`}>רמה {lv.L}</span>
         <AccountMenu account={account} />
       </div>

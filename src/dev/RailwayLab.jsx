@@ -44,11 +44,11 @@ function sample(kind, topics) {
 
 export default function RailwayLab() {
   const [q, setQ] = useState(null);
-  useEffect(() => { const p = new URLSearchParams(location.search); setQ({ s: p.get("s") || "mid", g: p.get("g") || "8", h: p.get("h") || "sky", av: p.get("av") || "", who: p.get("who") || "boy", c: p.get("c") || "" }); }, []);
+  useEffect(() => { const p = new URLSearchParams(location.search); setQ({ s: p.get("s") || "mid", g: p.get("g") || "8", h: p.get("h") || "sky", av: p.get("av") || "", who: p.get("who") || "boy", c: p.get("c") || "", u: p.get("u") || "" }); }, []);
   if (!q) return null;
   const all = CATEGORIES.flatMap((c) => TOPICS.filter((t) => t.cat === c.id).map((t) => ({ ...t, zone: { id: c.id, name: c.name, color: c.color } })));
   const mine = all.filter((t) => t.g.includes(q.g));
-  const account = { id: "lab-" + q.s, username: "נועה", avatar: q.c || "violet", grade: q.g, weekly_goal: 4 };
+  const account = { id: "lab-" + q.s, username: q.u || "נועה", avatar: q.c || "violet", grade: q.g, weekly_goal: 4 };
   const p = sample(q.s, mine);
   return (
     <div className="home in" data-topic={account.avatar}>
