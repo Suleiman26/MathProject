@@ -54,6 +54,27 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
     return () => io.disconnect();
   }, []);
 
+  // the phone's top bar (status bar / Safari bar) takes the header's own top colour, so there is
+  // no grey strip above it (Abed's iPhone, 2026-11-07). Same mix as .hh-bg's top: 80% --a-100 + white.
+  useEffect(() => {
+    const hh = document.querySelector(".hh");
+    if (!hh) return;
+    const hex = getComputedStyle(hh).getPropertyValue("--a-100").trim();
+    const m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return;
+    const n = parseInt(m[1], 16), mix = (c) => Math.round(c * 0.8 + 255 * 0.2);
+    const top = "#" + [n >> 16, (n >> 8) & 255, n & 255].map((c) => mix(c).toString(16).padStart(2, "0")).join("");
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const before = meta && meta.getAttribute("content");
+    if (meta) meta.setAttribute("content", top);
+    document.documentElement.style.backgroundColor = top;
+    document.body.style.backgroundColor = top;
+    return () => {
+      if (meta && before) meta.setAttribute("content", before);
+      document.documentElement.style.backgroundColor = ""; document.body.style.backgroundColor = "";
+    };
+  }, [account.avatar]);
+
   const pct = Math.max(0.03, Math.min(1, lv.pct || 0));
   return (
     <>
@@ -61,7 +82,7 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
         <div className="hh-bg" aria-hidden="true" />
         <div className="hh-in">
           <div className="hh-row">
-            <Link href="/" className="hh-brand"><img src="/icon.png" alt="" width={36} height={36} /><span><b>{HERO.title}</b></span></Link>
+            <Link href="/" className="hh-brand" aria-label={HERO.title}><img src="/icon.png" alt="" width={38} height={38} /><span><b>{HERO.title.split(" ")[0]}</b><small>{HERO.title.split(" ").slice(1).join(" ")}</small></span></Link>
             <AccountMenu account={account} trigger="icon" />
           </div>
 

@@ -28,16 +28,20 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
 
 /* brand + menu */
 .hh-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* brand: the Loop logo + a two-line wordmark (2026-11-07) */
 .hh-brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: var(--ink); text-decoration: none; }
-.hh-brand img { width: 34px; height: 34px; border-radius: 10px; flex: none; }
-.hh-brand > span { display: grid; gap: 1px; min-width: 0; }
-.hh-brand b { font-size: .92rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hh-brand small { font-size: .74rem; color: var(--ink-3); white-space: nowrap; }
+.hh-brand img {
+  width: 38px; height: 38px; border-radius: 11px; flex: none;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / .9), 0 8px 18px -10px rgb(76 29 149 / .45);
+}
+.hh-brand > span { display: grid; min-width: 0; line-height: 1.1; }
+.hh-brand b { font-size: 1.08rem; font-weight: 800; white-space: nowrap; }
+.hh-brand small { font-size: .74rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
 .acct-ibtn {
   all: unset; box-sizing: border-box; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; flex: none;
-  color: var(--ink); background: rgb(255 255 255 / .75);
-  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-  box-shadow: 0 1px 2px rgb(20 20 40 / .05), 0 8px 20px -14px rgb(20 20 40 / .35);
+  color: var(--ink); background: rgb(255 255 255 / .6);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .9), 0 6px 16px -10px rgb(20 20 40 / .3);
   transition: transform var(--t-fast) var(--ease-out); -webkit-tap-highlight-color: transparent;
 }
 .acct-ibtn svg { width: 21px; height: 21px; }
