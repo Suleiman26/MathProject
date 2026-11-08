@@ -19,6 +19,8 @@ import { createPresence } from "./presence-core";
 
 const isVisible = () => typeof document === "undefined" || document.visibilityState === "visible";
 const poller = createPresence({ ping: () => duelApi.ping(), visible: isVisible });
+// localhost only: lets a test read the hook's state (window.__duelPresence()) — never on the live site
+try { if (/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) window.__duelPresence = () => poller.get(); } catch {}
 
 let users = 0;
 function onVis() { if (isVisible()) poller.onVisible(); }

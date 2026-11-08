@@ -25,6 +25,9 @@ function save(tok, account) {
 /** The current session token (used by the answer tracker). */
 export function sessionToken() { const s = load(); return s ? s.tok : null; }
 
+/** The server said this session is dead (401/403): forget it, like start() does. Used by the duel API. */
+export function sessionLost() { save(null); set({ account: null, tok: null }); }
+
 let started = false;
 function start() {
   if (started || typeof window === "undefined") return;

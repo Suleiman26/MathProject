@@ -10,9 +10,10 @@ import { makeDuelApi, duelError, DUEL_ERRORS, GENERIC_ERROR } from "./api-core.j
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const HEB = /[֐-׿]/;
 
-function fake({ tok = "T", rpcResult = { ok: true }, rpcThrow, fetchRes } = {}) {
+function fake({ tok = "T", rpcResult = { ok: true }, rpcThrow, fetchRes, onAuthLost } = {}) {
   const calls = [];
   const api = makeDuelApi({
+    onAuthLost,
     token: () => tok,
     rpc: async (fn, args) => { calls.push({ fn, args }); if (rpcThrow) throw rpcThrow; return typeof rpcResult === "function" ? rpcResult(fn, args) : rpcResult; },
     fetch: async (url, init) => { calls.push({ url, init }); if (fetchRes instanceof Error) throw fetchRes; return fetchRes; },
@@ -89,6 +90,39 @@ test("never throws: dead session, no network, not connected", async () => {
   assert.deepEqual(await fake({ rpcThrow: Object.assign(new Error("boom"), { status: 500 }) }).api.ping(), { error: "network" });
 });
 
+test("HTTP 4xx that isn't a dead session → bad_request; no status / 5xx → network", async () => {
+  const bad = Object.assign(new Error("invalid input syntax"), { status: 400 });
+  assert.deepEqual(await fake({ rpcThrow: bad }).api.addFriend("x"), { error: "bad_request" });
+  const missing = Object.assign(new Error("function not found"), { status: 404 });
+  assert.deepEqual(await fake({ rpcThrow: missing }).api.friends(), { error: "bad_request" });
+  const many = Object.assign(new Error("too many"), { status: 429 });
+  assert.deepEqual(await fake({ rpcThrow: many }).api.friends(), { error: "bad_request" });
+  assert.deepEqual(await fake({ rpcThrow: Object.assign(new Error("gateway"), { status: 502 }) }).api.friends(), { error: "network" });
+  assert.deepEqual(await fake({ rpcThrow: new Error("Load failed") }).api.friends(), { error: "network" });
+  assert.match(duelError("bad_request"), HEB);
+  assert.notEqual(duelError("bad_request"), duelError("network"));
+});
+
+test("wording: network says 'נסו', the two limits read as asked", () => {
+  assert.equal(duelError("network"), "אין חיבור כרגע. נסו שוב בעוד רגע");
+  assert.equal(duelError("limit_day"), "הגעת למקסימום להיום");
+  assert.equal(duelError("limit_friends"), "אי אפשר להוסיף עוד חברים כרגע (עד 100)");
+});
+
+test("the server says the session is dead → onAuthLost runs (once per call), and not for a merely missing token", async () => {
+  let lost = 0;
+  const unauth = Object.assign(new Error("unauthorized"), { status: 401 });
+  assert.deepEqual(await fake({ rpcThrow: unauth, onAuthLost: () => lost++ }).api.friends(), { error: "signed_out" });
+  assert.equal(lost, 1);
+  const r401 = { ok: false, status: 401, text: async () => JSON.stringify({ error: "unauthorized" }) };
+  assert.deepEqual(await fake({ fetchRes: r401, onAuthLost: () => lost++ }).api.start("D"), { error: "signed_out" });
+  assert.equal(lost, 2);
+  await fake({ tok: null, onAuthLost: () => lost++ }).api.friends();   // never had a session: nothing to clear
+  assert.equal(lost, 2);
+  // a hook that throws never breaks the call
+  assert.deepEqual(await fake({ rpcThrow: unauth, onAuthLost: () => { throw new Error("x"); } }).api.friends(), { error: "signed_out" });
+});
+
 test("database errors come back as they are (with extras like wait_s)", async () => {
   const { api } = fake({ rpcResult: { error: "cooldown", wait_s: 12 } });
   assert.deepEqual(await api.invite("f", "num"), { error: "cooldown", wait_s: 12 });
@@ -116,12 +150,14 @@ test("double tap: the same answer / invite in flight is sent once", async () => 
   });
   const a = api.answer("d", 0, "1"), b = api.answer("d", 0, "1"), c = api.answer("d", 1, "1");
   const i1 = api.invite("f", "num"), i2 = api.invite("f", "num");
+  const e1 = api.emote("d", "gg"), e2 = api.emote("d", "gg"), e3 = api.emote("d", "wow");
   release();
-  const [ra, rb] = await Promise.all([a, b, c, i1, i2]);
+  const [ra, rb] = await Promise.all([a, b, c, i1, i2, e1, e2, e3]);
   assert.equal(ra, rb);
-  assert.deepEqual(calls, ["duel_answer", "duel_answer", "duel_invite"]);
+  assert.equal(await e1, await e2);
+  assert.deepEqual(calls, ["duel_answer", "duel_answer", "duel_invite", "duel_emote", "duel_emote"]);
   await api.answer("d", 0, "1");            // after it finished, a new call goes through (server says 'order')
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 6);
 });
 
 test("start(id) posts {tok,id} to the duel-start edge function with the publishable key", async () => {

@@ -7,7 +7,10 @@
    Every call resolves (never throws) to the database's JSON, or to
    { error: '<code>' } — show it with duelError(result). Client-side codes:
    signed_out (no or dead session), offline (no database configured),
-   network (request failed), start (the question function answered badly). */
+   network (request failed, no answer or 5xx), bad_request (the server refused
+   the request itself, 4xx), start (the question function answered badly).
+   deps.onAuthLost() is called when the SERVER says the session is dead, so the
+   app can clear the saved account (src/lib/account.js) and every screen agrees. */
 import { localNow } from "./clock.js";
 
 /* Short, kind Hebrew for every code. Never blame the child. Codes that might
@@ -20,12 +23,12 @@ export const DUEL_ERRORS = {
   // client side
   signed_out: "צריך להתחבר לחשבון כדי לשחק דו-קרב",
   offline: "דו-קרבים לא זמינים כרגע",
-  network: "אין חיבור כרגע. ננסה שוב בעוד רגע",
+  network: "אין חיבור כרגע. נסו שוב בעוד רגע",
   // friends
   no_code: "לא מצאנו את הקוד הזה. כדאי לבדוק אותו ולנסות שוב",
   self: "זה הקוד שלך. שלחו אותו לחברים",
-  limit_day: "הגענו למקסימום להיום. אפשר להמשיך מחר",
-  limit_friends: "רשימת החברים מלאה (עד 100 חברים)",
+  limit_day: "הגעת למקסימום להיום",
+  limit_friends: "אי אפשר להוסיף עוד חברים כרגע (עד 100)",
   you_blocked: "המשתמש הזה חסום אצלך. אפשר לבטל את החסימה ואז להוסיף",
   no_user: "לא מצאנו את המשתמש הזה",
   reason: "בחרו סיבה מהרשימה",
@@ -51,8 +54,9 @@ export const DUEL_ERRORS = {
   failed: QUESTIONS,
   gen: QUESTIONS,
   db: QUESTIONS,
-  bad_request: QUESTIONS,
   method: QUESTIONS,
+  // the server refused the request itself (HTTP 4xx that isn't a dead session)
+  bad_request: "משהו השתבש בבקשה. נסו שוב בעוד רגע",
   // admin settings (admin_set_setting)
   unknown: "ההגדרה לא נשמרה. נסו שוב",
   value: "ההגדרה לא נשמרה. נסו שוב",
@@ -78,6 +82,10 @@ function isAuthError(e) {
  */
 export function makeDuelApi(deps) {
   const inflight = new Map();
+  function authLost() {
+    try { if (typeof deps.onAuthLost === "function") deps.onAuthLost(); } catch {}
+    return { error: "signed_out" };
+  }
   // the same call while one is still on its way returns that one (double taps)
   function once(key, run) {
     if (inflight.has(key)) return inflight.get(key);
@@ -94,9 +102,11 @@ export function makeDuelApi(deps) {
     try {
       r = await deps.rpc(fn, { tok, ...(args || {}) });
     } catch (e) {
-      if (isAuthError(e)) return { error: "signed_out" };
+      if (isAuthError(e)) return authLost();
       if (e && /not-connected/.test(String(e.message))) return { error: "offline" };
-      return { error: "network" };
+      const st = e && Number(e.status);
+      if (st >= 400 && st < 500) return { error: "bad_request" };   // the request itself was refused
+      return { error: "network" };                                   // no answer, or the server fell over (5xx)
     }
     if (r == null) return { ok: true };
     if (timed && typeof r === "object" && !r.error) { r._sent = sent; r._recv = localNow(); }
@@ -120,9 +130,9 @@ export function makeDuelApi(deps) {
     let body = null;
     try { body = JSON.parse(await res.text()); } catch {}
     if (body && typeof body.error === "string") {
-      return /unauthori[sz]ed/i.test(body.error) || res.status === 401 ? { error: "signed_out" } : body;
+      return /unauthori[sz]ed/i.test(body.error) || res.status === 401 ? authLost() : body;
     }
-    if (!res.ok || !body) return { error: res.status === 401 ? "signed_out" : "start" };
+    if (!res.ok || !body) return res.status === 401 ? authLost() : { error: "start" };
     return body;
   }
 
@@ -146,7 +156,7 @@ export function makeDuelApi(deps) {
     answer: (id, idx, given) => once("answer:" + id + ":" + idx, () =>
       call("duel_answer", { id, idx, given: given == null ? null : String(given) })),
     giveUp: (id) => once("giveUp:" + id, () => call("duel_give_up", { id })),
-    emote: (id, emote) => call("duel_emote", { id, emote }),
+    emote: (id, emote) => once("emote:" + id + ":" + emote, () => call("duel_emote", { id, emote })),
     history: () => call("duel_history"),
   };
 }

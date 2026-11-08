@@ -26,7 +26,7 @@
    A second identical invite/answer/answerInvite/start/giveUp while the first is
    still on its way returns the first one's promise (double taps). */
 import { mpData } from "../lib/mp-data";
-import { sessionToken } from "../lib/account";
+import { sessionToken, sessionLost } from "../lib/account";
 import { getConfig } from "../lib/config";
 import { makeDuelApi, duelError, DUEL_ERRORS, GENERIC_ERROR } from "./api-core";
 
@@ -35,6 +35,8 @@ export const duelApi = makeDuelApi({
   rpc: (fn, args) => mpData.rpc(fn, args),
   fetch: (url, init) => fetch(url, init),
   config: () => getConfig(),
+  // the server says the session is dead → forget it here too, so the header and the duel screens agree
+  onAuthLost: () => sessionLost(),
 });
 
 export { duelError, DUEL_ERRORS, GENERIC_ERROR };
