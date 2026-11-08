@@ -1,9 +1,10 @@
 'use client';
 /* Sample students for the duel hub (local preview only: app/dev/duel).
-   ?s=hub | sheet | waiting | empty | guest | soon   ?c=<my colour>  ?g=7|8|9
+   ?s=hub | sheet | sent (challenge sent, waiting ring) | empty | guest | soon · arena (ArenaLab.jsx): invite | accepted | faceoff | arena | hot | lastq | locked | waiting | finishing | failed | done   ?c=<my colour>  ?g=7|8|9
    No database: the actions change the sample data in memory (with a short delay). */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HubView } from "@/duel/Hub";
+import ArenaLab, { ARENA_STATES } from "./ArenaLab";
 
 const ago = (s) => new Date(Date.now() - s * 1000).toISOString();
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -64,18 +65,19 @@ export default function DuelLab() {
     state: async () => ({ status: "invited" }),
   }), []);
 
+  if (q && ARENA_STATES.includes(q.s)) return <ArenaLab kind={q.s} color={q.c} />;   // the arena screens (Task 7)
   if (!q || !data) return null;
   const guest = q.s === "guest";
   const account = guest ? null : { id: "lab", username: "עבד", avatar: q.c, grade: Number(q.g) };
   const first = data.friends[0];
-  const initialSheet = q.s === "sheet" && first ? { friend: first } : q.s === "waiting" && first ? { friend: first, waiting: { id: ID(77), expires_at: new Date(Date.now() + 47000).toISOString() } } : null;
+  const initialSheet = q.s === "sheet" && first ? { friend: first } : q.s === "sent" && first ? { friend: first, waiting: { id: ID(77), expires_at: new Date(Date.now() + 47000).toISOString() } } : null;
   const state = guest ? "guest" : q.s === "soon" ? "soon" : "ok";
   return (
     <>
       <HubView key={q.s} account={account} data={data} history={history} presence={{ liveId, status: "ok", offset: 0 }} actions={actions} state={state}
         cooldownUntil={cooldownUntil} onCooldown={setCooldownUntil} onLive={(id) => setLiveId(id)} sheetRef={sheetRef} initialSheet={initialSheet} />
       <nav className="dl-labnav" aria-label="מצבי תצוגה">
-        {["hub", "sheet", "waiting", "empty", "guest", "soon"].map((s) => <a key={s} href={`?s=${s}&c=${q.c}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
+        {["hub", "sheet", "sent", "empty", "guest", "soon", ...ARENA_STATES].map((s) => <a key={s} href={`?s=${s}&c=${q.c}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
       </nav>
     </>
   );
