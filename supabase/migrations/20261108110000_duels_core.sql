@@ -18,6 +18,10 @@
 --    player's inbox or the duel's channel; clients re-read duel_state.
 --  * Row locks on the duel ("select … for update") make double taps and
 --    accept-vs-cancel races end in exactly one outcome.
+--  * Lock order is always: duel row first, accounts rows after (closing a duel
+--    writes both players' duel_xp). So the per-duel functions find the player
+--    with duel_uid() (no write to accounts) and duel_finish_if_due() never
+--    waits for a duel row ("skip locked": someone else is already closing it).
 --  * Duel answers are NOT practice events: the railway and stats stay pure.
 --  * New tables: RLS on, no grants; everything goes through the functions.
 -- ============================================================================
@@ -136,6 +140,19 @@ begin
 end $$;
 
 -- ── internal helpers ────────────────────────────────────────────────────────
+-- the player behind a session token, like account_from() but WITHOUT touching
+-- accounts (account_from bumps last_seen, which would lock the accounts row
+-- before the duel row — see the lock order above)
+create or replace function public.duel_uid(tok text)
+returns uuid language plpgsql stable security definer set search_path = public, extensions as $$
+declare uid uuid;
+begin
+  select account_id into uid from account_sessions
+   where token_hash = encode(digest(coalesce(tok, ''), 'sha256'), 'hex') and expires_at > now();
+  if uid is null then raise exception 'unauthorized' using errcode = '28000'; end if;
+  return uid;
+end $$;
+
 -- a realtime hint; never lets a broadcast problem break the game
 create or replace function public.duel_hint(topic text, event text, payload jsonb)
 returns void language plpgsql security definer set search_path = public as $$
@@ -162,14 +179,15 @@ returns jsonb language sql stable security definer set search_path = public as $
 $$;
 
 -- XP for one player at the end of a duel: only the first 5 finished duels of
--- the (Israeli) day earn XP. Adds it to accounts.duel_xp and returns it.
-create or replace function public.duel_xp_award(u uuid, d uuid, base int)
+-- the (Israeli) day of `at` (the duel's end) earn XP. Adds it to
+-- accounts.duel_xp and returns it.
+create or replace function public.duel_xp_award(u uuid, d uuid, base int, at timestamptz)
 returns int language plpgsql security definer set search_path = public as $$
 begin
   if coalesce(base, 0) <= 0 then return 0; end if;
   if (select count(*) from duels
        where (a = u or b = u) and status = 'done' and id <> d
-         and (finished_at at time zone 'Asia/Jerusalem')::date = (now() at time zone 'Asia/Jerusalem')::date) >= 5 then
+         and (finished_at at time zone 'Asia/Jerusalem')::date = (at at time zone 'Asia/Jerusalem')::date) >= 5 then
     return 0;
   end if;
   update accounts set duel_xp = duel_xp + base where id = u;
@@ -178,15 +196,19 @@ end $$;
 
 -- end a live duel now: scores, winner, XP, comeback. The caller holds the row lock.
 -- quitter = a player who gave up (loses whatever the score, earns no XP).
+-- XP only for a player who answered at least 3 questions (no XP for an idle
+-- 0–0 draw or a win by forfeit without playing). A duel closed late (nobody
+-- looked when time ran out) ends at ends_at + 2 s, not at the moment we noticed.
 create or replace function public.duel_close(d_id uuid, quitter uuid default null)
 returns void language plpgsql security definer set search_path = public as $$
 declare
   d duels;
   sa int; sb int; oa int; ob int; na int; nb int; ma bigint; mb bigint;
-  w uuid; dr boolean := false; t timestamptz; cb uuid; xa int; xb int;
+  w uuid; dr boolean := false; t timestamptz; cb uuid; xa int; xb int; fin timestamptz;
 begin
   select * into d from duels where id = d_id;
   if d.status <> 'live' then return; end if;
+  fin := least(now(), d.ends_at + interval '2 seconds');
   select coalesce(sum(points), 0), count(*) filter (where correct), count(*), coalesce(sum(ms), 0)
     into sa, oa, na, ma from duel_answers where duel_id = d.id and uid = d.a;
   select coalesce(sum(points), 0), count(*) filter (where correct), count(*), coalesce(sum(ms), 0)
@@ -212,10 +234,16 @@ begin
     end if;
   end if;
 
-  xa := duel_xp_award(d.a, d.id, case when dr then 20 when w = d.a then 30 when quitter = d.a then 0 else 10 end);
-  xb := duel_xp_award(d.b, d.id, case when dr then 20 when w = d.b then 30 when quitter = d.b then 0 else 10 end);
+  xa := case when na < 3 or quitter = d.a then 0 when dr then 20 when w = d.a then 30 else 10 end;
+  xb := case when nb < 3 or quitter = d.b then 0 when dr then 20 when w = d.b then 30 else 10 end;
+  -- both accounts rows, always in id order
+  if d.a < d.b then
+    xa := duel_xp_award(d.a, d.id, xa, fin); xb := duel_xp_award(d.b, d.id, xb, fin);
+  else
+    xb := duel_xp_award(d.b, d.id, xb, fin); xa := duel_xp_award(d.a, d.id, xa, fin);
+  end if;
 
-  update duels set status = 'done', finished_at = now(),
+  update duels set status = 'done', finished_at = fin,
          a_score = sa, b_score = sb, a_ok = oa, b_ok = ob,
          winner = w, draw = dr, xp_a = xa, xp_b = xb, comeback_by = cb, gave_up = quitter
    where id = d.id;
@@ -238,7 +266,10 @@ begin
                                   or (select count(*) from duel_answers where duel_id = d.id) >= 30))) then
     return d.status;
   end if;
-  select * into d from duels where duels.id = duel_finish_if_due.id for update;
+  -- never wait for the row: if another call holds it, that call is already
+  -- moving the duel on (waiting here could deadlock on the accounts rows)
+  select * into d from duels where duels.id = duel_finish_if_due.id for update skip locked;
+  if not found then return (select status from duels where duels.id = duel_finish_if_due.id); end if;
   if d.status = 'invited' and now() > d.expires_at then
     update duels set status = 'expired' where duels.id = d.id;
     return 'expired';
@@ -270,7 +301,7 @@ end $$;
 create or replace function public.duel_invite(tok text, friend uuid, subject text)
 returns json language plpgsql security definer set search_path = public as $$
 declare
-  me uuid := account_from(tok); g text := duel_guard(me);
+  me uuid := duel_uid(tok); g text := duel_guard(me);           -- no accounts write before duel_tidy (lock order)
   last timestamptz; d duels;
 begin
   if g is not null then return json_build_object('error', g); end if;
@@ -310,7 +341,7 @@ end $$;
 -- the sender takes back an open invite
 create or replace function public.duel_cancel(tok text, id uuid)
 returns json language plpgsql security definer set search_path = public as $$
-declare me uuid := account_from(tok); g text := duel_guard(me); d duels;
+declare me uuid := duel_uid(tok); g text := duel_guard(me); d duels;
 begin
   if g is not null then return json_build_object('error', g); end if;
   select * into d from duels where duels.id = duel_cancel.id for update;
@@ -327,7 +358,7 @@ end $$;
 -- the invitee accepts or declines; gone when it was cancelled, expired or already answered
 create or replace function public.duel_answer_invite(tok text, id uuid, accept boolean)
 returns json language plpgsql security definer set search_path = public as $$
-declare me uuid := account_from(tok); g text := duel_guard(me); d duels;
+declare me uuid := duel_uid(tok); g text := duel_guard(me); d duels;
 begin
   if g is not null then return json_build_object('error', g); end if;
   select * into d from duels where duels.id = duel_answer_invite.id for update;
@@ -339,7 +370,8 @@ begin
   -- still friends, no block, sender still allowed in (a block or unfriend since the invite)
   if friends_blocked(d.a, d.b) or duel_guard(d.a) is not null
      or not exists (select 1 from friendships where a = least(d.a, d.b) and b = greatest(d.a, d.b) and status = 'accepted') then
-    update duels set status = 'cancelled' where duels.id = d.id;
+    -- 'expired', like an invite nobody answered: the sender can't tell a block from silence
+    update duels set status = 'expired' where duels.id = d.id;
     return json_build_object('error', 'gone');
   end if;
   if not coalesce(accept, false) then
@@ -356,7 +388,7 @@ end $$;
 -- the invitee's duel-start call takes the accepted duel, once: grades + subject + seed
 create or replace function public.duel_claim_start(tok text, id uuid)
 returns json language plpgsql security definer set search_path = public as $$
-declare me uuid := account_from(tok); g text := duel_guard(me); d duels; s int;
+declare me uuid := duel_uid(tok); g text := duel_guard(me); d duels; s int;
 begin
   if g is not null then return json_build_object('error', g); end if;
   perform duel_finish_if_due(duel_claim_start.id);                    -- too late → failed
@@ -429,7 +461,7 @@ end $$;
 create or replace function public.duel_answer(tok text, id uuid, idx int, given text)
 returns json language plpgsql security definer set search_path = public as $$
 declare
-  me uuid := account_from(tok); g text := duel_guard(me); d duels; q duel_questions;
+  me uuid := duel_uid(tok); g text := duel_guard(me); d duels; q duel_questions;
   n int; prev duel_answers; ok boolean; ms int; st int; pts int; sc int;
 begin
   if g is not null then return json_build_object('error', g); end if;
@@ -447,7 +479,7 @@ begin
 
   select * into q from duel_questions where duel_id = d.id and duel_questions.idx = n;
   if not found then return json_build_object('error', 'not_live'); end if;
-  ok := duel_check(q.kind, q.answer, q.tol, given);
+  ok := coalesce(length(given), 0) <= 40 and duel_check(q.kind, q.answer, q.tol, given);   -- no parsing of long junk
   ms := greatest(0, round(extract(epoch from now() - coalesce(prev.at, d.start_at)) * 1000))::int;
   st := case when ok then coalesce(prev.streak, 0) + 1 else 0 end;
   pts := case when ok then
@@ -475,7 +507,7 @@ end $$;
 -- give up: the duel ends now as a loss for me (no XP for me)
 create or replace function public.duel_give_up(tok text, id uuid)
 returns json language plpgsql security definer set search_path = public as $$
-declare me uuid := account_from(tok); g text := duel_guard(me); d duels; s text;
+declare me uuid := duel_uid(tok); g text := duel_guard(me); d duels; s text;
 begin
   if g is not null then return json_build_object('error', g); end if;
   s := duel_finish_if_due(duel_give_up.id);
@@ -494,7 +526,7 @@ end $$;
 -- a preset emote after the end (gg | wow | again), at most 3 per player per duel
 create or replace function public.duel_emote(tok text, id uuid, emote text)
 returns json language plpgsql security definer set search_path = public as $$
-declare me uuid := account_from(tok); g text := duel_guard(me); d duels;
+declare me uuid := duel_uid(tok); g text := duel_guard(me); d duels;
 begin
   if g is not null then return json_build_object('error', g); end if;
   if emote is null or emote not in ('gg', 'wow', 'again') then return json_build_object('error', 'emote'); end if;
@@ -534,7 +566,7 @@ end $$;
 -- everything the duel screen needs; the answers of the questions are never in it
 create or replace function public.duel_state(tok text, id uuid)
 returns json language plpgsql security definer set search_path = public as $$
-declare me uuid := account_from(tok); g text := duel_guard(me); d duels; opp uuid; r jsonb;
+declare me uuid := duel_uid(tok); g text := duel_guard(me); d duels; opp uuid; r jsonb;
 begin
   if g is not null then return json_build_object('error', g); end if;
   select * into d from duels where duels.id = duel_state.id;
@@ -549,9 +581,13 @@ begin
     'me', duel_player(d.id, me, true),
     'opp', duel_player(d.id, opp, false),
     'my_lanes', duel_lanes(d.id, me),
+    -- live: only the questions up to my current one (no reading ahead); done: all
     'questions', case when d.status in ('live', 'done') then
         coalesce((select jsonb_agg(jsonb_build_object('idx', q.idx, 'kind', q.kind, 'payload', q.payload) order by q.idx)
-                    from duel_questions q where q.duel_id = d.id), '[]'::jsonb)
+                    from duel_questions q
+                   where q.duel_id = d.id
+                     and (d.status = 'done'
+                          or q.idx <= (select count(*) from duel_answers da where da.duel_id = d.id and da.uid = me))), '[]'::jsonb)
       else '[]'::jsonb end,
     'emotes', coalesce((select jsonb_agg(jsonb_build_object('uid', e.uid, 'emote', e.emote) order by e.at, e.id)
                           from duel_emotes e where e.duel_id = d.id), '[]'::jsonb));
@@ -598,15 +634,17 @@ begin
 end $$;
 
 -- ── presence (replaces the Task 1 stub) ─────────────────────────────────────
--- heartbeat every ~20 s: marks me online, moves my stale duels on, returns my
--- pending invites (fallback when realtime is off) and my accepted/live duel
+-- heartbeat every ~20 s: moves my stale duels on, marks me online, returns my
+-- pending invites (fallback when realtime is off) and my accepted/live duel.
+-- Duels first, my accounts row after (lock order).
 create or replace function public.presence_ping(tok text)
 returns json language plpgsql security definer set search_path = public as $$
-declare uid uuid := account_from(tok); g text := duel_guard(uid);
+declare uid uuid := duel_uid(tok); g text := duel_guard(uid);
 begin
   if g is not null then return json_build_object('error', g); end if;
-  update accounts set online_at = now() where id = uid;
   perform duel_tidy(uid);
+  perform account_from(tok);                                          -- last_seen, as before
+  update accounts set online_at = now() where id = uid;
   return json_build_object(
     'now', now(),
     'invites', coalesce((select json_agg(x order by x.expires_at) from (
@@ -744,8 +782,8 @@ end $$;
 -- internal helpers: not callable from the site
 revoke execute on function public.duel_parse_num(text), public.duel_check(text, text, numeric, text),
   public.duel_hint(text, text, jsonb), public.duel_wins(uuid, uuid), public.duel_lanes(uuid, uuid),
-  public.duel_xp_award(uuid, uuid, int), public.duel_close(uuid, uuid), public.duel_finish_if_due(uuid),
-  public.duel_tidy(uuid), public.duel_player(uuid, uuid, boolean)
+  public.duel_xp_award(uuid, uuid, int, timestamptz), public.duel_close(uuid, uuid), public.duel_finish_if_due(uuid),
+  public.duel_tidy(uuid), public.duel_player(uuid, uuid, boolean), public.duel_uid(text)
   from public, anon, authenticated;
 -- public entry points (each checks the session token — or the Vault secret — and the switch)
 revoke execute on function public.duel_invite(text, uuid, text), public.duel_cancel(text, uuid),

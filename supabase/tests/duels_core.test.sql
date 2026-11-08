@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(227);
+select plan(246);
 
 -- ── helpers ─────────────────────────────────────────────────────────────────
 create temporary table t_acc (name text primary key, tok text, id uuid);
@@ -195,12 +195,12 @@ select is(public.duel_put_questions('test-secret', pg_temp.d('d1'), pg_temp.rows
 select is((select count(*)::int from public.duel_questions where duel_id = pg_temp.d('d1')), 15, '15 questions stored');
 
 -- ── state: questions without answers ────────────────────────────────────────
-select is(jsonb_array_length(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'), 15, 'state has 15 questions');
+select is(jsonb_array_length(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'), 1, 'live: only the current question is shown');
 select ok(position('"answer"' in (pg_temp.st('dc_a', pg_temp.d('d1'))->'questions')::text) = 0, 'no "answer" key anywhere in questions');
 select ok(position('"tol"' in (pg_temp.st('dc_a', pg_temp.d('d1'))->'questions')::text) = 0, 'no "tol" key in questions');
 select ok(position('"meta"' in (pg_temp.st('dc_a', pg_temp.d('d1'))->'questions')::text) = 0, 'no "meta" key in questions');
 select is(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'->0->'payload'->>'prompt', 'q0', 'question payload has the prompt');
-select is(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'->3->>'kind', 'number', 'question kind is shown');
+select is(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'->0->>'kind', 'choice', 'question kind is shown');
 select is((pg_temp.st('dc_a', pg_temp.d('d1'))->'me'->>'idx')::int, 0, 'my next question is 0');
 select is(pg_temp.st('dc_a', pg_temp.d('d1'))->'opp'->>'username', 'dc_b', 'opponent''s name');
 select is(pg_temp.st('dc_a', pg_temp.d('d1'))->'opp'->'lanes', '[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]'::jsonb,
@@ -221,6 +221,10 @@ select is(pg_temp.play('dc_a', pg_temp.d('d1'), 2, '0')->>'points', '170', '3rd 
 select is(pg_temp.play('dc_a', pg_temp.d('d1'), 3, '10/2')->>'points', '170', 'number "10/2" = 5, 4th in a row → 170');
 select is(pg_temp.play('dc_a', pg_temp.d('d1'), 4, '0'), '{"correct":true,"right":"0","points":213,"score":837,"streak":5,"lock_until":null}'::jsonb,
           '5th in a row → ×1.5 = 213');
+select is(jsonb_array_length(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'), 6, 'after 5 answers A sees questions 0..5, none beyond');
+select is((select max((q->>'idx')::int) from jsonb_array_elements(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions') q), 5, 'the last one shown is the current one');
+select is(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'->3->>'kind', 'number', 'number question kind is shown');
+select is(jsonb_array_length(pg_temp.st('dc_b', pg_temp.d('d1'))->'questions'), 1, 'B (no answers yet) still sees only question 0');
 select is(public.duel_answer(pg_temp.tok('dc_a'), pg_temp.d('d1'), 4, '0')::jsonb, '{"error":"order"}'::jsonb, 'same question twice → order');
 select is(public.duel_answer(pg_temp.tok('dc_a'), pg_temp.d('d1'), 6, '0')::jsonb, '{"error":"order"}'::jsonb, 'skipping a question → order');
 select is((select a_score from public.duels where id = pg_temp.d('d1')), 837, 'score unchanged after the refused answers');
@@ -264,6 +268,8 @@ select is(jsonb_array_length(pg_temp.st('dc_a', pg_temp.d('d1'))->'result'->'rev
 select is((pg_temp.st('dc_a', pg_temp.d('d1'))->'result'->'review'->0) - 'payload',
           '{"idx":5,"right":"0","given":"1"}'::jsonb, 'review: right answer + what I gave');
 select is(jsonb_array_length(pg_temp.st('dc_b', pg_temp.d('d1'))->'result'->'review'), 15, 'B reviews all 15');
+select is(jsonb_array_length(pg_temp.st('dc_b', pg_temp.d('d1'))->'questions'), 15, 'done: all 15 questions shown');
+select ok(position('"answer"' in (pg_temp.st('dc_b', pg_temp.d('d1'))->'questions')::text) = 0, 'done: still no "answer" key in questions');
 select is(pg_temp.st('dc_b', pg_temp.d('d1'))->'opp'->>'score', '2420', 'final scores in state');
 select is(public.duel_answer(pg_temp.tok('dc_b'), pg_temp.d('d1'), 0, '0')::jsonb, '{"error":"not_live"}'::jsonb, 'answer after the end → not_live');
 select is(json_typeof(public.presence_ping(pg_temp.tok('dc_a'))->'live'), 'null', 'ping: no live duel after the end');
@@ -326,6 +332,7 @@ select is(public.friend_block(pg_temp.tok('dc_b'), pg_temp.uid('dc_d'))->>'ok', 
 select is(json_array_length(public.presence_ping(pg_temp.tok('dc_b'))->'invites'), 0, 'invite from a blocked friend is hidden');
 select is(public.duel_answer_invite(pg_temp.tok('dc_b'), (select id from public.duels where a = pg_temp.uid('dc_d')), true)::jsonb,
           '{"error":"gone"}'::jsonb, 'invite from a blocked player can''t be accepted');
+select is((select status from public.duels where a = pg_temp.uid('dc_d')), 'expired', 'it ends as "expired" (looks like no answer, hides the block)');
 update public.duels set status = 'cancelled' where a = pg_temp.uid('dc_d');
 select pg_temp.uncool('dc_d');
 select is(public.duel_invite(pg_temp.tok('dc_d'), pg_temp.uid('dc_b'), 'num')::jsonb, '{"error":"not_friend"}'::jsonb, 'blocked → not_friend');
@@ -377,12 +384,18 @@ select is(public.duel_invite(pg_temp.tok('dc_a'), pg_temp.uid('dc_b'), 'num')::j
 
 -- ── time runs out (Review Focus 5) ──────────────────────────────────────────
 insert into t_d select 'd9', pg_temp.live('dc_e', 'dc_f');
+select pg_temp.play('dc_e', pg_temp.d('d9'), 0, '1');
+select pg_temp.play('dc_e', pg_temp.d('d9'), 1, '1');
+select pg_temp.play('dc_e', pg_temp.d('d9'), 2, '1');
 select pg_temp.play('dc_f', pg_temp.d('d9'), 0, '0');
 select pg_temp.play('dc_f', pg_temp.d('d9'), 1, '0');
 select pg_temp.play('dc_f', pg_temp.d('d9'), 2, '0');
 update public.duels set ends_at = now() - interval '2.5 seconds' where id = pg_temp.d('d9');
 select is(pg_temp.st('dc_e', pg_temp.d('d9'))->>'status', 'done', 'ends_at passed with F at idx 3 → state returns done');
 select is((select winner from public.duels where id = pg_temp.d('d9')), pg_temp.uid('dc_f'), 'F (more points) wins at the end of time');
+select is((select array[xp_a, xp_b] from public.duels where id = pg_temp.d('d9')), array[10, 30], 'loser with 3 answers → 10, winner → 30');
+select is((select finished_at from public.duels where id = pg_temp.d('d9')), (select ends_at + interval '2 seconds' from public.duels where id = pg_temp.d('d9')),
+          'a duel closed late ends at ends_at + 2 s');
 select is(public.duel_answer(pg_temp.tok('dc_f'), pg_temp.d('d9'), 3, '5')::jsonb, '{"error":"not_live"}'::jsonb, 'answer after the end → not_live');
 
 insert into t_d select 'd10', pg_temp.live('dc_e', 'dc_f');
@@ -421,7 +434,20 @@ select is(public.duel_give_up(pg_temp.tok('dc_e'), pg_temp.d('d13'))::jsonb, '{"
 select is(pg_temp.status(pg_temp.d('d13')), 'done', 'give up ends the duel');
 select is((select winner from public.duels where id = pg_temp.d('d13')), pg_temp.uid('dc_f'), 'the other player wins even with fewer points');
 select is((select xp_a from public.duels where id = pg_temp.d('d13')), 0, 'giving up earns no XP');
+select is((select xp_b from public.duels where id = pg_temp.d('d13')), 0, 'a forfeit win with 0 answers earns no XP');
 select is(public.duel_give_up(pg_temp.tok('dc_f'), pg_temp.d('d13'))::jsonb, '{"error":"not_live"}'::jsonb, 'give up after the end → not_live');
+insert into t_d select 'd15', pg_temp.live('dc_e', 'dc_f');
+select is(pg_temp.play('dc_f', pg_temp.d('d15'), 0, repeat('0', 41))->>'correct', 'false', 'an answer longer than 40 chars → wrong');
+select is((select length(given) from public.duel_answers where duel_id = pg_temp.d('d15') and idx = 0), 40, 'only 40 chars are stored');
+select pg_temp.play('dc_f', pg_temp.d('d15'), 1, '0');
+select pg_temp.play('dc_f', pg_temp.d('d15'), 2, '0');
+select is(public.duel_give_up(pg_temp.tok('dc_e'), pg_temp.d('d15'))::jsonb, '{"ok":true}'::jsonb, 'E gives up again');
+select is((select array[xp_a, xp_b] from public.duels where id = pg_temp.d('d15')), array[0, 30], 'a forfeit win with 3 answers → 30');
+-- nobody plays: an idle 0–0 draw earns nothing
+insert into t_d select 'd16', pg_temp.live('dc_e', 'dc_f');
+update public.duels set ends_at = now() - interval '3 seconds' where id = pg_temp.d('d16');
+select is(pg_temp.st('dc_f', pg_temp.d('d16'))->'result'->>'draw', 'true', 'idle duel → draw');
+select is((select array[xp_a, xp_b] from public.duels where id = pg_temp.d('d16')), array[0, 0], 'idle draw → 0 / 0 XP');
 
 -- ── comeback ────────────────────────────────────────────────────────────────
 insert into t_d select 'd14', pg_temp.live('dc_g', 'dc_h');
@@ -464,6 +490,11 @@ select is(public.friend_answer(pg_temp.tok('dc_c'), pg_temp.uid('dc_e'), true)::
 
 -- ── no direct access for the public ─────────────────────────────────────────
 select ok(not has_function_privilege('anon', 'public.duel_finish_if_due(uuid)', 'execute'), 'anon cannot call duel_finish_if_due');
+select ok(not has_function_privilege('anon', 'public.duel_uid(text)', 'execute'), 'anon cannot call duel_uid');
+-- concurrency can't run inside one pgTAP transaction (no second session); the
+-- two-session check is in task-3-report.md. Here: the no-wait lock is in place.
+select ok((select prosrc ~* 'for update skip locked' from pg_proc where proname = 'duel_finish_if_due'), 'finish_if_due never waits for a locked duel');
+select is(public.duel_finish_if_due(pg_temp.d('d1')), 'done', 'finish_if_due on a finished duel just answers its status');
 select ok(not has_function_privilege('anon', 'public.duel_check(text, text, numeric, text)', 'execute'), 'anon cannot call duel_check');
 select ok(has_function_privilege('anon', 'public.duel_answer(text, uuid, integer, text)', 'execute'), 'anon can call duel_answer (token checked inside)');
 select ok(has_function_privilege('anon', 'public.duel_put_questions(text, uuid, jsonb)', 'execute'), 'anon can call duel_put_questions (secret checked inside)');
