@@ -41,7 +41,6 @@ export function linear(r, want) {
   const eq = genEq(r);
   const { a, b, c, d, x } = eq;
   // mistakes: wrong sign, moved a term without changing its sign, divided by a instead of a − c
-  const wrongs = [-x, (d + b) / (a - c), (d - b) / a, (d - b) / (a + c), x + 1, x - 1]
-    .filter((w) => Number.isInteger(w));
-  return numberQuestion(r, want, `פתרו את המשוואה: $${sideStr(eq.left)} = ${sideStr(eq.right)}$ — $x = ?$`, x, wrongs, { a, b, c, d });
+  const wrongs = [-x, (d + b) / (a - c), (d - b) / a, (d - b) / (a + c)].filter((w) => Number.isInteger(w));
+  return numberQuestion(r, want, `פתרו את המשוואה: $${sideStr(eq.left)} = ${sideStr(eq.right)}$ — $x = ?$`, x, wrongs, { a, b, c, d }, { signed: true });
 }

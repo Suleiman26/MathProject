@@ -1,4 +1,6 @@
-// Duel question engine tests. Run: node --test supabase/functions/_shared/duel/
+// Duel question engine tests.
+// Run: node --test supabase/functions/_shared/duel/*.test.mjs
+// (Node 22 does not expand a folder given to --test; use the glob.)
 // Every generator is run 1,000 times per answer kind. The right answer is
 // recomputed HERE from the question's raw numbers (q.meta) by a different
 // route than the port (inverse operation, substitution, own evaluator), so a
@@ -80,6 +82,72 @@ function evalTokens(tokens) {
   return out[0];
 }
 
+/* Read the math of a prompt (directed numbers): "(+12) + (−4) = ?" → tokens. */
+function mathOf(prompt) {
+  const m = prompt.match(/\$([^$]*)\$/);
+  assert.ok(m, 'no $…$ in ' + prompt);
+  return m[1];
+}
+function tokenize(expr) {
+  const s = expr.replace(/\s+/g, '');
+  const out = [];
+  let i = 0;
+  while (i < s.length) {
+    const ch = s[i];
+    const last = out[out.length - 1];
+    const afterValue = typeof last === 'number' || last === ')';
+    if (/\d/.test(ch) || ((ch === '−' || ch === '+') && !afterValue)) {
+      const n = s.slice(i).match(/^[−+]?\d+/)[0];
+      out.push(Number(n.replace('−', '-').replace('+', '')));
+      i += n.length;
+    } else if ('+−×÷()'.includes(ch)) { out.push(ch); i++; }
+    else throw new Error('cannot read ' + expr);
+  }
+  return out;
+}
+/* One side of a linear equation as [x coefficient, constant]: "3x − 2" → [3, −2]. */
+function linSide(side) {
+  const s = side.replace(/\s+/g, '').replace(/−/g, '-');
+  let cx = 0, c = 0;
+  for (const m of s.matchAll(/([+-]?)(\d*)(x?)/g)) {
+    if (!m[0]) continue;
+    const sign = m[1] === '-' ? -1 : 1;
+    if (m[3]) cx += sign * (m[2] === '' ? 1 : Number(m[2]));
+    else if (m[2] !== '') c += sign * Number(m[2]);
+  }
+  return [cx, c];
+}
+
+/* ── two "guessers" that must NOT beat 40 % (chance = 25 %) ────────
+   pairs: pick the choice with the most neighbours (its negative, or the
+   same text with one number ±1); ties split evenly. isolated: the choice
+   with the fewest. median: lower / upper middle of the 4 values. */
+function nbr(a, b) {
+  const num = (t) => (/^−?\d+(\.\d+)?$/.test(t) ? Number(t.replace('−', '-')) : null);
+  const pa = num(a), pb = num(b);
+  if (pa !== null && pb !== null) return (pa !== 0 && pa === -pb) || close(Math.abs(pa - pb), 1);
+  if (a === '−' + b || b === '−' + a) return true;
+  const sk = (t) => t.replace(/\d+(\.\d+)?/g, '#');
+  if (sk(a) !== sk(b)) return false;
+  const na = a.match(/\d+(\.\d+)?/g) || [], nb = b.match(/\d+(\.\d+)?/g) || [];
+  const d = na.map((x, i) => [Number(x), Number(nb[i])]).filter(([x, y]) => x !== y);
+  return d.length === 1 && close(Math.abs(d[0][0] - d[0][1]), 1);
+}
+function guessScores(q) {
+  const cs = q.choices;
+  const sc = cs.map((c, i) => cs.filter((o, j) => j !== i && nbr(c, o)).length);
+  const ans = Number(q.answer);
+  const share = (target) => { const set = sc.map((s, i) => (s === target ? i : -1)).filter((i) => i >= 0); return set.includes(ans) ? 1 / set.length : 0; };
+  const pairs = share(Math.max(...sc)), isolated = share(Math.min(...sc));
+  let ranks = null; // the answer's rank among the values: [smallest, lower, upper, largest]
+  const vals = cs.map((c) => { try { return evalMath(c); } catch { return NaN; } });
+  if (vals.every(Number.isFinite)) {
+    const order = vals.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0]).map(([, i]) => i);
+    ranks = order.map((i) => (i === ans ? 1 : 0));
+  }
+  return { pairs, isolated, ranks };
+}
+
 /* Left-hand sides of powers-roots ch5 templates, evaluated at x = X, y = Y. */
 const MIXED = {
   e0: (m, X) => Math.sqrt(X ** m.a),
@@ -102,12 +170,21 @@ const X = 1.7, Y = 2.3; // letter values for expression choices
 /* Per generator: expected value of the right answer, and (for expression
    choices) the letter values to evaluate the choices with. */
 const EXPECT = {
-  'dn.add': (m, q) => { const v = valueOf(q); assert.equal(v - m.b, m.a); return { value: v }; },
-  'dn.sub': (m, q) => { const v = valueOf(q); assert.equal(v + m.b, m.a); return { value: v }; },
-  'dn.mul': (m, q) => { const v = valueOf(q); assert.equal(v / m.b, m.a); return { value: v }; },
-  'dn.div': (m, q) => { const v = valueOf(q); assert.equal(v * m.b, m.a); return { value: v }; },
-  'dn.combo': (m) => ({ value: evalTokens(m.tokens) }),
-  'eq.linear': (m, q) => { const x = valueOf(q); assert.equal(m.a * x + m.b, m.c * x + m.d); return { value: x }; },
+  // directed numbers + equations: checked against meta AND against the prompt text itself
+  'dn.add': (m, q) => { const v = valueOf(q); assert.equal(v - m.b, m.a); return fromPrompt(q, v); },
+  'dn.sub': (m, q) => { const v = valueOf(q); assert.equal(v + m.b, m.a); return fromPrompt(q, v); },
+  'dn.mul': (m, q) => { const v = valueOf(q); assert.equal(v / m.b, m.a); return fromPrompt(q, v); },
+  'dn.div': (m, q) => { const v = valueOf(q); assert.equal(v * m.b, m.a); return fromPrompt(q, v); },
+  'dn.combo': (m, q) => { const v = evalTokens(m.tokens); return fromPrompt(q, v); },
+  'eq.linear': (m, q) => {
+    const x = valueOf(q);
+    assert.equal(m.a * x + m.b, m.c * x + m.d);
+    const [L, R] = mathOf(q.prompt).split('=');
+    const [lx, lc] = linSide(L), [rx, rc] = linSide(R);
+    assert.notEqual(lx, rx, 'not one solution: ' + q.prompt);
+    assert.equal(lx * x + lc, rx * x + rc, 'prompt says otherwise: ' + q.prompt);
+    return { value: x };
+  },
   'pr.powers': (m) => {
     if (m.v === 'calc') return { value: powLoop(m.base, m.exp) };
     if (m.v === 'rev') { let e = 0, p = 1; while (p < m.value) { p *= m.base; e++; } assert.equal(p, m.value); return { value: e }; }
@@ -169,6 +246,13 @@ const EXPECT = {
     return { value: v };
   },
 };
+
+// the prompt's own expression ("… = ?") evaluated with the test's evaluator
+function fromPrompt(q, v) {
+  const expr = mathOf(q.prompt).replace(/=\s*\?\s*$/, '');
+  assert.equal(evalTokens(tokenize(expr)), v, 'prompt says otherwise: ' + q.prompt);
+  return { value: v };
+}
 
 function valueOf(q) {
   return q.kind === 'number' ? parseNum(q.answer) : evalMath(q.choices[Number(q.answer)]);
@@ -268,6 +352,7 @@ for (const g of GENERATORS) {
           for (const c of q.choices) {
             assert.ok(typeof c === 'string' && c.length > 0 && !/NaN|undefined|null|Infinity/.test(c), where);
             assert.ok(!/(^|[\s(·])-\d/.test(c), 'ASCII minus in choice: ' + where);
+            assert.ok(!/\^\{(0|1|−[^}]*)\}|\\sqrt\{[01]\}|(^|[^\d.])[01](?=\\sqrt|[a-z])/.test(c), 'odd form in choice: ' + where);
           }
           assert.equal(checkAnswer(q, q.answer), true);
         } else {
@@ -290,6 +375,46 @@ for (const g of GENERATORS) {
     });
   }
 }
+
+for (const g of GENERATORS) {
+  test(`${g.id}: choices don't give the answer away (4000 questions, guessers ≤ 40%)`, () => {
+    const r = mulberry32(777 + g.id.length);
+    const sum = { pairs: 0, isolated: 0, ranks: [0, 0, 0, 0] };
+    let n = 0, nMed = 0;
+    for (let i = 0; i < 4000; i++) {
+      const s = guessScores(g.make(r, 'choice'));
+      n++; sum.pairs += s.pairs; sum.isolated += s.isolated;
+      if (s.ranks) { nMed++; s.ranks.forEach((x, k) => { sum.ranks[k] += x; }); }
+    }
+    const rates = { pairs: sum.pairs / n, isolated: sum.isolated / n };
+    if (nMed >= 400) {
+      ['smallest', 'lower median', 'upper median', 'largest'].forEach((name, k) => { rates[name] = sum.ranks[k] / nMed; });
+    }
+    for (const [k, v] of Object.entries(rates)) {
+      assert.ok(v <= 0.4, `${g.id}: "${k}" guesser hits ${(v * 100).toFixed(1)}%`);
+    }
+  });
+}
+
+test('buildDuel spreads over topics first, then generators', () => {
+  const cases = [[7, 'random'], [8, 'random'], [8, 'num'], [9, 'random']];
+  for (const [grade, subject] of cases) {
+    const pool = poolFor({ grade, subject });
+    for (let seed = 1; seed <= 50; seed++) {
+      const qs = buildDuel(seed, { grade, subject });
+      const byTopic = {};
+      for (const q of qs) byTopic[q.topic] = (byTopic[q.topic] || 0) + 1;
+      const topics = [...new Set(pool.map((g) => g.topic))];
+      const counts = topics.map((t) => byTopic[t] || 0);
+      assert.ok(Math.max(...counts) - Math.min(...counts) <= 1, `${grade}/${subject}/${seed} topics ${JSON.stringify(byTopic)}`);
+      for (const t of topics) {
+        const ids = pool.filter((g) => g.topic === t).map((g) => g.id);
+        const per = ids.map((id) => qs.filter((q) => q.gen === id).length);
+        assert.ok(Math.max(...per) - Math.min(...per) <= 1, `${grade}/${subject}/${seed} ${t} ${JSON.stringify(per)}`);
+      }
+    }
+  }
+});
 
 test('poolFor filters by grade and world', () => {
   assert.deepEqual(poolFor({ grade: 7, subject: 'fn' }), []);

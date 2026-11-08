@@ -24,6 +24,7 @@ const T_ADD = 'חיבור מספרים מכוונים';
 const T_SUB = 'חיסור מספרים מכוונים';
 const T_MUL = 'כפל מספרים מכוונים';
 const T_DIV = 'חילוק מספרים מכוונים';
+const SIGNED = { signed: true }; // decoys may be negative here
 
 // port of genAdd() — src/topics/directed-numbers/Topic.jsx L83
 export function add(r, want) {
@@ -31,9 +32,9 @@ export function add(r, want) {
   do { const [sa, sb] = pickSigns(r); a = randInt(r, 1, 15) * sa; b = randInt(r, 1, 15) * sb; }
   while (Math.abs(a + b) > 20);
   const ans = a + b;
-  // mistakes: subtracted instead, wrong sign, off by one
-  const wrongs = [a - b, -ans, ans + 1, ans - 1, b - a];
-  return numberQuestion(r, want, `${T_ADD}: $${fmtS(a)} + ${fmtS(b)} = ?$`, ans, wrongs, { a, b });
+  // mistakes: subtracted instead (a − b or b − a), wrong sign
+  const wrongs = [a - b, -ans, b - a];
+  return numberQuestion(r, want, `${T_ADD}: $${fmtS(a)} + ${fmtS(b)} = ?$`, ans, wrongs, { a, b }, SIGNED);
 }
 
 // port of genSub() — src/topics/directed-numbers/Topic.jsx L90
@@ -42,9 +43,9 @@ export function sub(r, want) {
   do { const [sa, sb] = pickSigns(r); a = randInt(r, 1, 15) * sa; b = randInt(r, 1, 15) * sb; }
   while (Math.abs(a - b) > 20);
   const ans = a - b;
-  // mistakes: added instead (forgot the opposite), b − a, wrong sign, off by one
-  const wrongs = [a + b, b - a, -(a + b), ans + 1, ans - 1];
-  return numberQuestion(r, want, `${T_SUB}: $${fmtS(a)} − ${fmtS(b)} = ?$`, ans, wrongs, { a, b });
+  // mistakes: added instead (forgot the opposite), b − a, wrong sign
+  const wrongs = [a + b, b - a, -(a + b)];
+  return numberQuestion(r, want, `${T_SUB}: $${fmtS(a)} − ${fmtS(b)} = ?$`, ans, wrongs, { a, b }, SIGNED);
 }
 
 // port of genMul() — src/topics/directed-numbers/Topic.jsx L97
@@ -54,8 +55,8 @@ export function mul(r, want) {
   while (Math.abs(a * b) > 20);
   const ans = a * b;
   // mistakes: sign rule, added instead
-  const wrongs = [-ans, a + b, -(a + b), ans + (ans < 0 ? -1 : 1)];
-  return numberQuestion(r, want, `${T_MUL}: $${fmtS(a)} × ${fmtS(b)} = ?$`, ans, wrongs, { a, b });
+  const wrongs = [-ans, a + b, -(a + b)];
+  return numberQuestion(r, want, `${T_MUL}: $${fmtS(a)} × ${fmtS(b)} = ?$`, ans, wrongs, { a, b }, SIGNED);
 }
 
 // port of genDiv() — src/topics/directed-numbers/Topic.jsx L104
@@ -64,8 +65,8 @@ export function div(r, want) {
   do { const [sa, sb] = pickSigns(r); q = randInt(r, 1, 10) * sa; ds = randInt(r, 1, 10) * sb; dv = q * ds; }
   while (Math.abs(dv) > 20 || ds === 0);
   // mistakes: sign rule, multiplied instead, subtracted instead
-  const wrongs = [-q, dv * ds, dv - ds, q + (q < 0 ? -1 : 1)];
-  return numberQuestion(r, want, `${T_DIV}: $${fmtS(dv)} ÷ ${fmtS(ds)} = ?$`, q, wrongs, { a: dv, b: ds });
+  const wrongs = [-q, dv * ds, dv - ds];
+  return numberQuestion(r, want, `${T_DIV}: $${fmtS(dv)} ÷ ${fmtS(ds)} = ?$`, q, wrongs, { a: dv, b: ds }, SIGNED);
 }
 
 // port of genCombo() — src/topics/directed-numbers/Topic.jsx L636
@@ -150,7 +151,8 @@ export function combo(r, want) {
   const ex = genCombo(r);
   const ans = ex.result;
   const ltr = leftToRight(ex.tokens);
-  const wrongs = [Number.isInteger(ltr) ? ltr : undefined, -ans, ans + 1, ans - 1, ans + 2];
+  // mistakes: left to right (precedence ignored), wrong sign
+  const wrongs = [Number.isInteger(ltr) ? ltr : NaN, -ans];
   return numberQuestion(r, want, `תרגול מקיף — סדר פעולות חשבון: $${showTokens(ex.tokens)} = ?$`, ans,
-    wrongs.filter((w) => w !== undefined), { tokens: ex.tokens });
+    wrongs, { tokens: ex.tokens }, SIGNED);
 }

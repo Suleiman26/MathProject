@@ -1,7 +1,6 @@
 {
   "name": "duel-engine",
   "private": true,
-  "description": "Duel question engine (plain ESM, runs in Deno, the browser and Node). main points at the tests so `node --test supabase/functions/_shared/duel/` runs them.",
-  "type": "module",
-  "main": "duel.test.mjs"
+  "description": "Duel question engine (plain ESM, runs in Deno, the browser and Node). Tests: node --test supabase/functions/_shared/duel/*.test.mjs",
+  "type": "module"
 }

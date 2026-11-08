@@ -47,8 +47,8 @@ export function ratio(r, want) {
   if (want !== 'number' && randInt(r, 0, 1) === 0) {
     const ex = genRatio(r);
     const { ctx, a, b, total, simA, simB } = ex;
-    // mistakes: swapped, part : whole, not fully reduced to the right ratio (off by one)
-    const cand = [[simB, simA], [simA, simA + simB], [simA + 1, simB], [simA, simB + 1], [a, total]];
+    // mistakes: swapped, part : whole (either part)
+    const cand = [[simB, simA], [simA, simA + simB], [simB, simA + simB]];
     const wrongs = cand
       .map(([p, q]) => [p / gcd(p, q), q / gcd(p, q)])
       .filter(([p, q]) => p * simB !== q * simA)
@@ -63,7 +63,7 @@ export function ratio(r, want) {
   const ans = askA ? A : B;
   const other = askA ? B : A;
   // mistakes: the other amount, the number of groups, total ÷ one ratio number
-  const wrongs = [other, k, total / (askA ? a : b), ans + (askA ? a : b), ans - (askA ? a : b)]
+  const wrongs = [other, k, total / (askA ? a : b)]
     .filter((w) => Number.isInteger(w) && w > 0);
   return numberQuestion(r, want,
     `היחס בין ${ctx.l1} ל${ctx.l2} הוא $${ratioText(a, b)}$, ובסך הכל יש ${total} ${ctx.unit}. כמה ${askA ? ctx.l1 : ctx.l2}?`,
@@ -92,8 +92,8 @@ function genProportion(r) {
 export function proportion(r, want) {
   const { ctx, a, b, c, d } = genProportion(r);
   const unit = b / a;
-  // mistakes: forgot to divide, added the difference, one unit off
-  const wrongs = [b * c, b + (c - a), d + unit, d - unit, b * a];
+  // mistakes: forgot to divide, added the difference, multiplied the givens, one unit too many
+  const wrongs = [b * c, b + (c - a), b * a, d + unit];
   // Sulaiman's text (L551): "אם {a} {unit1} {q} {b} {unit2}, {tail}"
   return numberQuestion(r, want, `אם ${a} ${ctx.unit1} ${ctx.q} ${b} ${ctx.unit2}, ${ctx.tail(c)}`, d, wrongs, { a, b, c });
 }
@@ -188,10 +188,11 @@ export function pct(r, want) {
   const ex = genPctCalc(r);
   const { type, pct: p, whole, part, ans, q } = ex;
   let wrongs, meta;
-  if (type === 0) { wrongs = [whole - part, part * 10, p, part + 10, part - 5]; meta = { type, pct: p, whole }; }
-  else if (type === 1) { wrongs = [100 - p, part, p + 5, p - 5, p + 10]; meta = { type, part, whole }; }
-  else { wrongs = [whole + part, whole - part, part * 2, whole + 10, whole - 10]; meta = { type, pct: p, part }; }
-  return numberQuestion(r, want, q, ans, wrongs.filter((w) => w > 0), meta);
+  // mistakes: the other part, a slipped decimal point, the percent itself / the part itself
+  if (type === 0) { wrongs = [whole - part, part * 10, p]; meta = { type, pct: p, whole }; }
+  else if (type === 1) { wrongs = [100 - p, part, whole / part]; meta = { type, part, whole }; }
+  else { wrongs = [whole + part, whole - part, part * p / 100]; meta = { type, pct: p, part }; }
+  return numberQuestion(r, want, q, ans, wrongs.filter((w) => w > 0 && Number.isInteger(w)), meta);
 }
 
 /* ── Chapter 5: percent increase / decrease ──────────────────────── */
@@ -239,19 +240,20 @@ export function change(r, want) {
   const ex = genPctChange(r);
   const { type, pct: p, original, diff, final, q } = ex;
   let ans, wrongs, meta;
-  if (type === 0) { ans = final; wrongs = [original - diff, diff, original + p, final + 10]; meta = { type, pct: p, original }; }
-  else if (type === 1) { ans = final; wrongs = [original + diff, diff, original - p, final - 10]; meta = { type, pct: p, original }; }
+  // mistakes: wrong direction, only the change, percent added as shekels, percent of the wrong price
+  if (type === 0) { ans = final; wrongs = [original - diff, diff, original + p]; meta = { type, pct: p, original }; }
+  else if (type === 1) { ans = final; wrongs = [original + diff, diff, original - p]; meta = { type, pct: p, original }; }
   else if (type === 2) {
     ans = p;
     const ofFinal = diff * 100 / final;
-    wrongs = [diff, Number.isInteger(ofFinal) ? ofFinal : undefined, 100 - p, p + 5, p - 5];
+    wrongs = [diff, Number.isInteger(ofFinal) ? ofFinal : undefined, 100 - p];
     meta = { type, original, final };
   } else {
     ans = original;
     // mistake: took the percent of the final price instead of the original
     const d2 = Math.round(final * p / 100);
-    wrongs = [ex.isUp ? final - d2 : final + d2, final, ex.isUp ? final + diff : final - diff, original + 10];
+    wrongs = [ex.isUp ? final - d2 : final + d2, final, ex.isUp ? final + diff : final - diff];
     meta = { type, pct: p, final, isUp: ex.isUp };
   }
-  return numberQuestion(r, want, q, ans, wrongs.filter((w) => w !== undefined && w > 0), meta);
+  return numberQuestion(r, want, q, ans, wrongs.filter((w) => w !== undefined && w > 0 && Number.isInteger(w)), meta);
 }

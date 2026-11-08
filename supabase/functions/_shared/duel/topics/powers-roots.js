@@ -61,11 +61,12 @@ export function powers(r, want) {
   if (ex.mode === 0) {
     const { base, exp, ans } = ex;
     // mistakes: base × exponent, one factor too few/many
-    const wrongs = [base * exp, Math.pow(base, exp - 1), Math.pow(base, exp + 1), ans + base];
+    const wrongs = [base * exp, Math.pow(base, exp - 1), Math.pow(base, exp + 1)];
     return numberQuestion(r, want, `הבנת חזקות: $${pw(base, exp)} = ?$`, ans, wrongs, { v: 'calc', base, exp });
   }
   const { base, exp, ans } = ex;
-  const wrongs = [ans / base, exp + 1, exp - 1, exp + 2].filter((w) => Number.isInteger(w) && w > 0);
+  // mistakes: divided once instead of counting the factors, the base read as the exponent
+  const wrongs = [ans / base, base].filter((w) => Number.isInteger(w) && w > 0 && w !== exp);
   return numberQuestion(r, want, `מצאו את המעריך: $${ans} = ${base}^{?}$`, exp, wrongs, { v: 'rev', base, value: ans });
 }
 
@@ -106,9 +107,10 @@ export function laws(r, want) {
   const prompt = `${lawNames[law]}: $${ex.q}$`;
   if (law <= 2) {
     const { n, m, expAns } = ex;
-    const wrongs = law === 0 ? [n * m, expAns + 1, expAns - 1]
-      : law === 1 ? [n + m, n / m, expAns + 1, expAns - 1].filter(Number.isInteger)
-        : [n + m, Math.pow(n, m), expAns + 1, expAns - 1];
+    // mistakes: exponents multiplied / added / divided instead
+    const wrongs = law === 0 ? [n * m, Math.pow(n, m)]
+      : law === 1 ? [n + m, n / m].filter(Number.isInteger)
+        : [n + m, Math.pow(n, m)];
     return numberQuestion(r, want, prompt, expAns, wrongs, { law, base: ex.base, n, m });
   }
   if (law === 3) {
@@ -120,7 +122,7 @@ export function laws(r, want) {
     return choiceQuestion(r, prompt, `${ansA} · ${ansB}`, wrongs.map(([x, y]) => `${x} · ${y}`), { law, a, b, n });
   }
   if (law === 4) {
-    return numberQuestion(r, want, prompt, 1, [0, ex.base, -1], { law, base: ex.base });
+    return numberQuestion(r, want, prompt, 1, [0, ex.base],{ law, base: ex.base });
   }
   const { base, n, den } = ex;
   // mistakes: negative number, base × n in the denominator, minus kept
@@ -165,15 +167,15 @@ export function param(r, want) {
   const { v, w } = ex;
   if (sub === 0) {
     const { a, b, ans } = ex;
-    return numberQuestion(r, want, prompt, ans, [a * b, ans + 1, ans - 1], { sub, a, b });
+    return numberQuestion(r, want, prompt, ans, [a * b, Math.max(a, b)], { sub, a, b });
   }
   if (sub === 1) {
     const { a, b, c, ans } = ex;
-    return numberQuestion(r, want, prompt, ans, [a + b + c, a * b * c, ans + 1, ans - 1], { sub, a, b, c });
+    return numberQuestion(r, want, prompt, ans, [a + b + c, a * b * c, Math.pow(a, b) + c],{ sub, a, b, c });
   }
   if (sub === 3) {
     const { a, b, ans } = ex;
-    return numberQuestion(r, want, prompt, ans, [a + b, a / b, ans + 1, ans - 1].filter(Number.isInteger), { sub, a, b });
+    return numberQuestion(r, want, prompt, ans, [a + b, a / b, a * b].filter(Number.isInteger), { sub, a, b });
   }
   if (sub === 2) {
     const { k, a, b, coefAns, expAns } = ex;
@@ -230,36 +232,35 @@ export function roots(r, want) {
   const name = rootNames[sub];
   if (sub === 0) {
     const { val, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${val}} = ?$`, ans, [val / 2, ans + 1, ans - 1, ans * 2].filter(Number.isInteger), { sub, val });
+    return numberQuestion(r, want, `${name}: $\\sqrt{${val}} = ?$`, ans, [val / 2, ans * 2, val].filter(Number.isInteger), { sub, val });
   }
   if (sub === 1) {
     const { a, b, val } = ex;
-    // mistakes: a and b swapped, a² left outside, off by one
-    const wrongs = [rt(b, a), rt(a * a, b), rt(a + 1, b), rt(a, b + 1)];
+    // mistakes: a and b swapped, a² left outside (decoys fill the rest)
+    const wrongs = [rt(b, a), rt(a * a, b)];
     return choiceQuestion(r, `${name}: $\\sqrt{${val}} = ?$`, rt(a, b), wrongs, { sub, val });
   }
   if (ex.opType === 0) {
     const { a, b, prod, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} · \\sqrt{${b}} = ?$`, ans, [prod, ans + 1, ans - 1, a + b], { sub, op: 0, a, b });
+    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} · \\sqrt{${b}} = ?$`, ans, [prod, a + b, b - a],{ sub, op: 0, a, b });
   }
   if (ex.opType === 1) {
     const { a, b, div, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} ÷ \\sqrt{${b}} = ?$`, ans, [div, ans + 1, ans - 1, a - b], { sub, op: 1, a, b });
+    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} ÷ \\sqrt{${b}} = ?$`, ans, [div, a - b, div / 2].filter(Number.isInteger),{ sub, op: 1, a, b });
   }
   if (ex.opType === 2) {
     const { base, k, m, ans } = ex;
     const lhs = `${rt(k, base)} + ${rt(m, base)}`;
     if (want === 'number') {
-      return numberQuestion(r, want, `${name}: $${lhs} = ?\\sqrt{${base}}$`, ans, [], { sub, op: 2, base, k, m, ask: 'coef' });
+      return numberQuestion(r, want, `${name}: $${lhs} = ?\\sqrt{${base}}$`, ans, [k * m], { sub, op: 2, base, k, m, ask: 'coef' });
     }
-    // mistakes: roots added too, coefficients multiplied, off by one
-    const wrongs = [rt(ans, 2 * base), rt(k * m, base), rt(ans + 1, base), rt(ans - 1, base)]
-      .filter((w) => w !== rt(ans, base));
+    // mistakes: roots added too, coefficients multiplied
+    const wrongs = [rt(ans, 2 * base), rt(k * m, base), rt(k * m, 2 * base)];
     return choiceQuestion(r, `${name}: $${lhs} = ?$`, rt(ans, base), wrongs, { sub, op: 2, base, k, m, ask: 'all' });
   }
   const { a, b, coef, base } = ex;
-  // mistakes: added under one root, off by one, wrong root
-  const wrongs = [`\\sqrt{${a + b}}`, rt(coef + 1, base), rt(coef - 1, base), rt(coef, base * 2)];
+  // mistakes: added under one root, wrong root
+  const wrongs = [`\\sqrt{${a + b}}`, rt(coef, base * 2), rt(coef, a + b)];
   return choiceQuestion(r, `${name}: $\\sqrt{${a}} + \\sqrt{${b}} = ?$`, rt(coef, base), wrongs, { sub, op: 3, a, b });
 }
 
@@ -297,12 +298,12 @@ export function mixed(r, want) {
   const meta = { t: tpl.t, type: tpl.type, v, w, a: ex.a, b: ex.b, c: ex.c, d: ex.d, k: ex.k };
   const prompt = `פשטו את הביטוי: $${q}$`;
   if (tpl.type === 'exp') {
-    return numberQuestion(r, want, prompt, params.ans, [...alt, params.ans + 1, params.ans - 1], meta);
+    return numberQuestion(r, want, prompt, params.ans, alt, meta);
   }
   if (tpl.type === 'coefexp') {
-    const wrongs = distinct([params.coef, params.e], alt);
+    const wrongs = distinct([params.coef, params.e], alt).filter(([, e]) => e >= 1); // no x^{0} / x^{−n} forms
     return choiceQuestion(r, prompt, mono(params.coef, [[v, params.e]]), wrongs.map(([c, e]) => mono(c, [[v, e]])), meta);
   }
-  const wrongs = distinct([params.A, params.B], alt);
+  const wrongs = distinct([params.A, params.B], alt).filter(([e1, e2]) => e1 >= 1 && e2 >= 1); // no x^{0} / x^{−n} forms
   return choiceQuestion(r, prompt, mono(1, [[v, params.A], [w, params.B]]), wrongs.map(([e1, e2]) => mono(1, [[v, e1], [w, e2]])), meta);
 }
