@@ -29,9 +29,16 @@ export function seenAgo(f) {
   const d = Math.round(s / 86400);
   return d === 1 ? "אתמול" : d < 30 ? `לפני ${d} ימים` : "מזמן";
 }
+/** the separator for meta lines: the dot stays glued to the NEXT item, so a wrapped line never ends with a dangling "·" */
+export const SEP = " ·\u00a0";
 /** "פעיל/ה עכשיו · ח׳ · רמה 6" — only the parts we know */
 export function metaLine(f) {
-  return [seenAgo(f), GRADE_SHORT[f.grade], f.level ? `רמה ${f.level}` : null].filter(Boolean).join(" · ");
+  return [seenAgo(f), GRADE_SHORT[f.grade], f.level ? `רמה ${f.level}` : null].filter(Boolean).join(SEP);
+}
+/** the head-to-head in words (for labels) */
+export function h2hWords(f) {
+  const w = Number(f.wins) || 0, l = Number(f.losses) || 0;
+  return w + l ? `המאזן ${w}–${l}` : "עוד לא שיחקתם";
 }
 
 /** avatar + online dot */
@@ -77,7 +84,7 @@ export function FriendRow({ friend, me, onChallenge, onRemove, onBlock, onReport
   return (
     <li className={"dl-fr" + (friend.online ? " online" : "")}>
       <button type="button" className="dl-fr-main" onClick={() => onChallenge(friend)} disabled={busy}
-        aria-label={`לאתגר את ${friend.username} · ${seenAgo(friend)}`}>
+        aria-label={`לאתגר את ${friend.username} · ${seenAgo(friend)} · ${h2hWords(friend)}`}>
         <FriendAvatar friend={friend} />
         <span className="dl-fr-t">
           <b dir="auto">{friend.username}</b>

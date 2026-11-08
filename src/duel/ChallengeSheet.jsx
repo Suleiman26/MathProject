@@ -13,7 +13,7 @@ import { Avatar } from "@/account/ui";
 import { worldArt } from "@/home/worlds";
 import { localNow, serverNow } from "./clock";
 import { subjectsFor, randomEmpty, SUBJECT_LABEL } from "./samples";
-import { FriendAvatar, H2H, seenAgo, toName } from "./FriendRow";
+import { FriendAvatar, H2H, seenAgo, toName, SEP } from "./FriendRow";
 import { Sheet, radioKeys } from "./Sheet";
 
 export const COOLDOWN_MS = 30000;
@@ -50,6 +50,7 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
   const [err, setErr] = useState("");
   const [, setTick] = useState(0);
   const [rolled, setRolled] = useState(false);
+  const [cdNote, setCdNote] = useState("");   // announced once when the cooldown ends (never the countdown itself)
 
   useEffect(() => { if (open) { setErr(""); setSubject("random"); setSending(false); } }, [open, friend && friend.id]);
   // one clock for the ring and the cooldown
@@ -65,6 +66,12 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
   const keys = ["random", ...subjects.map((s) => s.key)];
   const noQuestions = randomEmpty(me && me.grade, friend.grade);
   const cdLeft = Math.max(0, Math.ceil((cooldownUntil - localNow()) / 1000));
+  const coolingDown = cdLeft > 0;
+  useEffect(() => {
+    if (!open) return;
+    if (coolingDown) setCdNote("");
+    else if (cooldownUntil) setCdNote("אפשר לשלוח אתגר שוב");
+  }, [open, coolingDown, cooldownUntil]);
   const mine = wait && wait.friend && wait.friend.id === friend.id ? wait : null;     // the wait shown in THIS sheet
   const otherWait = wait && !mine;                                                   // an open invite to someone else
   const left = mine && mine.invite ? (Date.parse(mine.invite.expires_at) - serverNow(offset)) / 1000 : 0;
@@ -120,9 +127,10 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
           {err && <p className="dl-err" role="alert">{err}</p>}
           <div className="dl-ch-foot">
             <button type="button" className={"dl-btn send" + (cdLeft > 0 ? " cd" : "")} onClick={send} disabled={sending || cdLeft > 0 || noQuestions || !!otherWait}
-              style={cdLeft > 0 ? { "--cd": (cdLeft / (COOLDOWN_MS / 1000)).toFixed(3) } : undefined} aria-live="polite">
+              style={cdLeft > 0 ? { "--cd": (cdLeft / (COOLDOWN_MS / 1000)).toFixed(3) } : undefined}>
               <span>{sending ? "שולחים…" : cdLeft > 0 ? `אפשר לשלוח שוב בעוד ${cdLeft} שנ׳` : `שליחת אתגר ${toName(name)}`}</span>
             </button>
+            <p className="dl-sr" role="status" aria-live="polite">{cdNote}</p>
             <p className="dl-ch-note">15 שאלות · 5 דקות · אותן שאלות לשניכם</p>
           </div>
         </>
@@ -132,7 +140,7 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
         <div className="dl-wait">
           <WaitRing friend={friend} left={left} />
           <h2 className="dl-sh-t" role="status" aria-live="polite">מחכים {toName(name)}…</h2>
-          <p className="dl-sh-m">{friend.online ? `ההזמנה הגיעה ${toName(name)}` : `${name} לא מחובר/ת עכשיו — ההזמנה מחכה`} · {SUBJECT_LABEL[mine.subject] || "הפתעה"} · 15 שאלות</p>
+          <p className="dl-sh-m">{friend.online ? `ההזמנה הגיעה ${toName(name)}` : `${name} לא מחובר/ת עכשיו — ההזמנה מחכה`}{SEP}{SUBJECT_LABEL[mine.subject] || "הפתעה"}{SEP}15 שאלות</p>
           <p className="dl-sh-m small">אפשר לסגור ולהמשיך בדף — ההזמנה נשארת פתוחה.</p>
           <button type="button" className="dl-btn ghost wide" onClick={onCancel}>ביטול ההזמנה</button>
         </div>

@@ -54,20 +54,26 @@ body:has(> .duel) { margin: 0; background: #f6f6f9; }
 .dl-hero h1 { margin: 0; font-size: clamp(1.75rem, 1.3rem + 2.2vw, 2.4rem); font-weight: 700; line-height: 1.15; }
 .dl-nb { white-space: nowrap; }
 .dl-lead { margin: 10px 0 0; color: var(--ink-2); line-height: 1.55; font-size: 1rem; max-width: 44ch; }
-/* my record: a two-tone bar — wins in my colour (right), losses neutral (left) — plus draws and duel XP */
-.dl-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 16px; }
-.dl-rec-bar { display: grid; grid-template-columns: var(--p, 50%) 1fr; min-width: 220px; max-width: 320px; flex: 1; height: 44px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .8), 0 10px 22px -16px var(--me-700); }
-.dl-rec-bar > span { display: flex; align-items: baseline; justify-content: center; gap: 5px; padding: 0 12px; min-width: 0; white-space: nowrap; }
+/* my record: a two-tone bar — wins in my colour (right) | a thin neutral "תיקו" segment | losses (left) — and the duel-XP chip inline */
+.dl-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-top: 16px; }
+.dl-rec-bar { display: grid; grid-template-columns: var(--p, 50%) 1fr; flex: 1 1 260px; min-width: min(100%, 260px); max-width: 360px; height: 46px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .8), 0 10px 22px -16px var(--me-700); }
+.dl-rec-bar.has-d { grid-template-columns: var(--p, 50%) auto 1fr; }
+.dl-rec-bar > span { display: grid; place-items: center; min-width: 0; }                      /* the segment fills the bar… */
+.dl-rec-bar > span > i { display: inline-flex; align-items: baseline; gap: 5px; padding: 0 12px; font-style: normal; white-space: nowrap; }   /* …its text sits in the vertical middle */
 .dl-rec-bar b { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
 .dl-rec-bar small { font-size: .74rem; font-weight: 600; opacity: .9; }
 .dl-rec-w { color: #fff; background: linear-gradient(90deg, var(--me-700), var(--me-500)); }
 .dl-rec-l { color: var(--ink-2); background: rgb(255 255 255 / .75); }
-.dl-rec-side { display: flex; align-items: center; gap: 10px; }
-.dl-rec-side > span { display: inline-flex; align-items: baseline; gap: 5px; }
-.dl-rec-side b { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
-.dl-rec-side small { font-size: .76rem; color: var(--ink-3); font-weight: 600; }
-.dl-rec-xp { padding: 6px 12px 6px 8px; border-radius: 999px; background: rgb(255 255 255 / .75); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .9); }
+.dl-rec-d { color: var(--ink-2); background: var(--surface-3); box-shadow: inset 1px 0 0 rgb(255 255 255 / .9), inset -1px 0 0 rgb(255 255 255 / .9); }
+.dl-rec-d > i { padding: 0 9px; } .dl-rec-d b { font-size: 1rem; } .dl-rec-d small { font-size: .68rem; }
+.dl-kick-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.dl-kick-row .dl-kicker { margin: 0; }
+.dl-rec-xp { display: inline-flex; align-items: baseline; gap: 5px; flex: none; padding: 5px 12px 5px 8px; border-radius: 999px; background: rgb(255 255 255 / .75); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .9); }
+.dl-rec-xp b { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.dl-rec-xp small { font-size: .76rem; color: var(--ink-3); font-weight: 600; }
 .dl-rec-xp img { width: 22px; height: 22px; align-self: center; filter: drop-shadow(0 3px 4px rgb(20 20 40 / .25)); }
+.dl-rec-empty { margin: 0; font-size: .98rem; color: var(--ink-2); font-weight: 500; }
+@media (max-width: 379px) { .dl-rec-bar > span > i { padding: 0 9px; } .dl-rec-bar b { font-size: 1.15rem; } .dl-rec-bar small { font-size: .7rem; } }
 
 /* "מחוברים עכשיו": the online friends as big avatars, straight under the headline */
 .dl-now { margin: 4px 0 14px; animation: mp-rise 420ms var(--ease-out) 90ms backwards; }
@@ -242,7 +248,8 @@ body:has(> .duel) { margin: 0; background: #f6f6f9; }
 .dl-btn.sm { min-height: 44px; padding: 0 14px; font-size: .9rem; }
 .dl-btn.wide { width: 100%; }
 .dl-row { display: flex; gap: 8px; margin-top: 14px; }
-.dl-row .dl-btn { flex: 1; } .dl-row .dl-btn.accent, .dl-row .dl-btn.dark, .dl-row .dl-btn.warn { flex: 1.5; }
+.dl-row .dl-btn { flex: 1; white-space: nowrap; } .dl-row .dl-btn.accent, .dl-row .dl-btn.dark, .dl-row .dl-btn.warn { flex: 1.5; }
+@media (max-width: 439px) { .dl-guest .dl-row { flex-direction: column-reverse; } .dl-guest .dl-row .dl-btn { flex: none; width: 100%; } }
 .dl-pill {
   all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 14px;
   border-radius: 999px; font: inherit; font-size: .9rem; font-weight: 700; color: var(--me-800); background: var(--me-50); cursor: pointer; text-decoration: none;
@@ -364,6 +371,8 @@ html.dl-locked, html.dl-locked body { overflow: hidden; }
 }
 @keyframes dl-pillin { from { transform: translate(-50%, 24px); opacity: 0; } }
 .dl-waitpill .dl-ring { margin: 0; }
+.dl-waitpill .dl-ring-n { display: none; }                  /* the seconds live in the text; the badge would cover the avatar */
+.duel.has-pill .dl-in { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }   /* the last row / footer can scroll out from under the pill */
 .dl-waitpill .dl-ring-bg, .dl-waitpill .dl-ring-fg { stroke-width: 9; }
 .dl-waitpill-main { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; cursor: pointer; border-radius: 999px; color: var(--ink); -webkit-tap-highlight-color: transparent; }
 .dl-waitpill-main:focus-visible { box-shadow: var(--ring); }

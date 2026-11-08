@@ -128,6 +128,22 @@ test("the function body says the token is dead → onAuthLost runs (once per cal
   assert.deepEqual(await fake({ rpcThrow: unauth, onAuthLost: () => { throw new Error("x"); } }).api.friends(), { error: "signed_out" });
 });
 
+test("start(): a known error code in the body wins over the HTTP status (off on a 403 stays off)", async () => {
+  let lost = 0;
+  const off403 = { ok: false, status: 403, text: async () => JSON.stringify({ error: "off" }) };
+  assert.deepEqual(await fake({ fetchRes: off403, onAuthLost: () => lost++ }).api.start("D"), { error: "off" });
+  const gone401 = { ok: false, status: 401, text: async () => JSON.stringify({ error: "gone" }) };
+  assert.deepEqual(await fake({ fetchRes: gone401, onAuthLost: () => lost++ }).api.start("D"), { error: "gone" });
+  const busy409 = { ok: false, status: 409, text: async () => JSON.stringify({ error: "busy" }) };
+  assert.deepEqual(await fake({ fetchRes: busy409 }).api.start("D"), { error: "busy" });
+  // unknown code on a 401/403 → signed_out (session kept); unknown code on another status → passed through
+  const weird401 = { ok: false, status: 401, text: async () => JSON.stringify({ error: "weird_code" }) };
+  assert.deepEqual(await fake({ fetchRes: weird401, onAuthLost: () => lost++ }).api.start("D"), { error: "signed_out" });
+  const weird500 = { ok: false, status: 500, text: async () => JSON.stringify({ error: "weird_code" }) };
+  assert.deepEqual(await fake({ fetchRes: weird500 }).api.start("D"), { error: "weird_code" });
+  assert.equal(lost, 0);
+});
+
 test("a bare HTTP 401/403 (gateway, missing grant) → signed_out for that call, but the session is NOT cleared", async () => {
   let lost = 0;
   const h401 = Object.assign(new Error("JWT expired"), { status: 401 });

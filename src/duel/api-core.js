@@ -138,6 +138,7 @@ export function makeDuelApi(deps) {
     try { body = JSON.parse(await res.text()); } catch {}
     if (body && typeof body.error === "string") {
       if (/unauthori[sz]ed/i.test(body.error) || body.error === "signed_out") return authLost();   // the function said so
+      if (Object.prototype.hasOwnProperty.call(DUEL_ERRORS, body.error)) return body;            // a known answer (off, gone, busy…) beats the HTTP status
       return res.status === 401 || res.status === 403 ? { error: "signed_out" } : body;
     }
     if (!res.ok || !body) return res.status === 401 || res.status === 403 ? { error: "signed_out" } : { error: "start" };

@@ -15,7 +15,7 @@ import { usePresence } from "./presence";
 import { subscribe } from "./live";
 import { SUBJECT_LABEL } from "./samples";
 import { MyCode, AddFriendForm, cleanCode, useShareCode } from "./AddFriend";
-import { FriendRow, FriendMenu, FriendAvatar, Tug, toName } from "./FriendRow";
+import { FriendRow, FriendMenu, FriendAvatar, Tug, toName, SEP } from "./FriendRow";
 import { ChallengeSheet, WaitRing } from "./ChallengeSheet";
 import { serverNow } from "./clock";
 import { fmtCode } from "./QR";
@@ -25,9 +25,9 @@ const REFRESH_MS = 30000;
 const POLL_MS = 3000;
 
 /* ── the page frame: soft wash of my colour, glass top row ──────────────────── */
-export function DuelShell({ account, children, back = "/", next }) {
+export function DuelShell({ account, children, back = "/", next, className = "" }) {
   return (
-    <div className="duel" data-topic={(account && account.avatar) || "teal"}>
+    <div className={"duel" + (className ? " " + className : "")} data-topic={(account && account.avatar) || "teal"}>
       <div className="dl-bg" aria-hidden="true" />
       <div className="dl-in">
         <header className="dl-top">
@@ -116,23 +116,27 @@ function Skeleton() {
 }
 
 /* ── hero pieces ───────────────────────────────────────────────────────────── */
-/** my record as a two-tone bar: wins (my colour) | losses (neutral), with draws + duel XP beside it */
+/** my record as a two-tone bar: wins (my colour, right) | draws (thin, neutral) | losses (neutral), with duel XP beside it.
+    No games yet → a calm line instead of a "0 | 0" bar. */
 function Record({ stats }) {
   const w = Number(stats.wins) || 0, l = Number(stats.losses) || 0, d = Number(stats.draws) || 0;
-  const p = w + l ? Math.max(14, Math.min(86, Math.round((w / (w + l)) * 100))) : 50;
-  const label = w + l + d ? `המאזן שלי: ${w} ניצחונות, ${l} הפסדים${d ? `, ${d} תיקו` : ""}` : "עוד לא שיחקת דו-קרב";
+  if (!(w + l + d)) return <div className="dl-rec"><p className="dl-rec-empty">עוד לא שיחקת — אתגרו חבר/ה</p></div>;
+  const p = w + l ? Math.max(16, Math.min(84, Math.round((w / (w + l)) * 100))) : 50;
+  const label = `המאזן שלי: ${w} ניצחונות, ${l} הפסדים${d ? `, ${d} תיקו` : ""}`;
   return (
     <div className="dl-rec">
-      <div className="dl-rec-bar" role="img" aria-label={label} style={{ "--p": p + "%" }}>
-        <span className="dl-rec-w" aria-hidden="true"><b>{w}</b><small>ניצחונות</small></span>
-        <span className="dl-rec-l" aria-hidden="true"><b>{l}</b><small>הפסדים</small></span>
-      </div>
-      <div className="dl-rec-side" aria-hidden="true">
-        {d ? <span className="dl-rec-d"><b>{d}</b><small>תיקו</small></span> : null}
-        {stats.duel_xp ? <span className="dl-rec-xp"><img src="/home/hero/star.webp" alt="" width={22} height={22} /><b>{stats.duel_xp}</b><small>נק׳</small></span> : null}
+      <div className={"dl-rec-bar" + (d ? " has-d" : "")} role="img" aria-label={label} style={{ "--p": p + "%" }}>
+        <span className="dl-rec-w" aria-hidden="true"><i><b>{w}</b><small>ניצחונות</small></i></span>
+        {d ? <span className="dl-rec-d" aria-hidden="true"><i><b>{d}</b><small>תיקו</small></i></span> : null}
+        <span className="dl-rec-l" aria-hidden="true"><i><b>{l}</b><small>הפסדים</small></i></span>
       </div>
     </div>
   );
+}
+/** duel XP as a small chip beside the kicker (keeps the record row to the bar alone) */
+function XpChip({ xp }) {
+  if (!xp) return null;
+  return <span className="dl-rec-xp" role="img" aria-label={`${xp} נקודות דו-קרב`}><img src="/home/hero/star.webp" alt="" width={22} height={22} /><b aria-hidden="true">{xp}</b><small aria-hidden="true">נק׳ דו-קרב</small></span>;
 }
 
 /** "מחוברים עכשיו": the online friends as big avatars, tap → challenge; none → a line + share CTA */
@@ -196,7 +200,15 @@ export function HubView({ account, data, history, presence, actions, state, erro
   const [reqBusy, setReqBusy] = useState("");
   const [reqErr, setReqErr] = useState("");
   const [, setTick] = useState(0);
+  const [announce, setAnnounce] = useState("");   // one hidden live region: phase changes only, never the seconds
   const { share, canShare, copied } = useShareCode(data && data.code);
+  const waitPhase = wait ? wait.phase + ":" + wait.friend.id : "";
+  useEffect(() => {
+    if (!wait) { setAnnounce((a) => (a ? "" : a)); return; }
+    const n = wait.friend.username;
+    setAnnounce(wait.phase === "waiting" ? `ההזמנה נשלחה. מחכים ${toName(n)}` : wait.phase === "declined" ? `${n} לא יכול/ה עכשיו` : "הזמן עבר, ההזמנה פגה");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waitPhase]);
   useInviteWatch({ wait, setWait, api: actions, onLive, liveId: presence && presence.liveId, sheetRef });
   // the waiting pill's ring ticks while the sheet is closed
   useEffect(() => {
@@ -233,11 +245,12 @@ export function HubView({ account, data, history, presence, actions, state, erro
   const openSheet = (f) => setSheet({ friend: f });
 
   return (
-    <DuelShell account={account}>
+    <DuelShell account={account} className={wait && !sheet ? "has-pill" : ""}>
+      <p className="dl-sr" role="status" aria-live="polite">{announce}</p>
       {state === "loading" && !data ? <Skeleton /> : (
         <>
           <section className="dl-hero">
-            <p className="dl-kicker">דו-קרב</p>
+            <div className="dl-kick-row"><p className="dl-kicker">דו-קרב</p><XpChip xp={stats.duel_xp} /></div>
             <h1>{friends.length ? "את מי מאתגרים?" : "מתחילים עם חבר/ה"}</h1>
             <Record stats={stats} />
           </section>
@@ -263,7 +276,7 @@ export function HubView({ account, data, history, presence, actions, state, erro
                     {incoming.map((f) => (
                       <li key={f.id} className="dl-req-row">
                         <Avatar account={f} size={44} />
-                        <div className="dl-fr-t"><b dir="auto">{f.username}</b><small>רוצה להתחבר · {ago(f.created_at)}</small></div>
+                        <div className="dl-fr-t"><b dir="auto">{f.username}</b><small>רוצה להתחבר{SEP}{ago(f.created_at)}</small></div>
                         <div className="dl-req-acts">
                           <button type="button" className="dl-btn accent sm" disabled={!!reqBusy} onClick={() => answer(f, true)}>{reqBusy === f.id + "y" ? "…" : "אישור"}</button>
                           <button type="button" className="dl-more" aria-label={`לדחות את הבקשה של ${f.username}`} disabled={!!reqBusy} onClick={() => answer(f, false)}>{MI.x}</button>
@@ -279,7 +292,7 @@ export function HubView({ account, data, history, presence, actions, state, erro
               <section className="dl-card dl-friends" aria-labelledby="dl-fr-h">
                 <div className="dl-card-h">
                   <h2 id="dl-fr-h">החברים</h2>
-                  {friends.length > 0 && <span className="dl-count">{online ? <><i className="dl-online-i" aria-hidden="true" />{online} מחוברים · </> : null}{friends.length}</span>}
+                  {friends.length > 0 && <span className="dl-count">{online ? <><i className="dl-online-i" aria-hidden="true" />{online} מחוברים{SEP}</> : null}{friends.length}</span>}
                 </div>
                 {friends.length === 0 ? (
                   <div className="dl-empty">
@@ -302,7 +315,7 @@ export function HubView({ account, data, history, presence, actions, state, erro
                       {outgoing.map((f) => (
                         <li key={f.id} className="dl-out-row">
                           <Avatar account={f} size={38} />
-                          <div className="dl-fr-t"><b dir="auto">{f.username}</b><small>ממתין/ה לאישור… · {ago(f.created_at)}</small></div>
+                          <div className="dl-fr-t"><b dir="auto">{f.username}</b><small>ממתין/ה לאישור…{SEP}{ago(f.created_at)}</small></div>
                           <button type="button" className="dl-pill sm" onClick={() => setReqMenu({ f, pending: "outgoing" })}>ביטול</button>
                         </li>
                       ))}
@@ -318,7 +331,7 @@ export function HubView({ account, data, history, presence, actions, state, erro
                     {recent.map((d) => (
                       <li key={d.id} className={"dl-rc " + d.result}>
                         <Avatar account={d.opp} size={38} />
-                        <div className="dl-fr-t"><b dir="auto">{d.opp.username}</b><small>{SUBJECT_LABEL[d.subject] || d.subject} · {ago(d.at)}</small></div>
+                        <div className="dl-fr-t"><b dir="auto">{d.opp.username}</b><small>{SUBJECT_LABEL[d.subject] || d.subject}{SEP}{ago(d.at)}</small></div>
                         <Tug mine={d.my} theirs={d.their} me={account} other={d.opp} size="score"
                           label={`התוצאה: ${d.my} לך, ${d.their} ${toName(d.opp.username)} — ${d.result === "win" ? "ניצחון" : d.result === "loss" ? "הפסד" : "תיקו"}`} />
                         <span className="dl-chip" aria-hidden="true">{d.result === "win" ? "ניצחון" : d.result === "loss" ? "הפסד" : "תיקו"}</span>
@@ -358,12 +371,12 @@ export function HubView({ account, data, history, presence, actions, state, erro
 
       {/* the open invite while the sheet is closed: a compact pill at the bottom */}
       {wait && !sheet && (
-        <div className={"dl-waitpill" + (wait.phase !== "waiting" ? " ended" : "")} role="status" aria-live="polite">
+        <div className={"dl-waitpill" + (wait.phase !== "waiting" ? " ended" : "")}>
           <button type="button" className="dl-waitpill-main" onClick={() => setSheet({ friend: wait.friend })} aria-label={wait.phase === "waiting" ? `מחכים ${toName(wait.friend.username)}, עוד ${Math.ceil(pillLeft)} שניות. לפתיחה` : "לפתיחה"}>
             <WaitRing friend={wait.friend} left={pillLeft} size={44} quiet={wait.phase !== "waiting"} />
             <span className="dl-waitpill-t">
               <b>{wait.phase === "waiting" ? `מחכים ${toName(wait.friend.username)}…` : wait.phase === "declined" ? `${wait.friend.username} לא יכול/ה עכשיו` : "הזמן עבר"}</b>
-              <small>{wait.phase === "waiting" ? `עוד ${Math.ceil(pillLeft)} שנ׳ · ${SUBJECT_LABEL[wait.subject] || "הפתעה"}` : "לחיצה לפרטים"}</small>
+              <small>{wait.phase === "waiting" ? `עוד ${Math.ceil(pillLeft)} שנ׳${SEP}${SUBJECT_LABEL[wait.subject] || "הפתעה"}` : "לחיצה לפרטים"}</small>
             </span>
           </button>
           <button type="button" className="dl-pill sm" onClick={wait.phase === "waiting" ? cancelWait : () => setWait(null)}>{wait.phase === "waiting" ? "ביטול" : "סגירה"}</button>
