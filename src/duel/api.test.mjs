@@ -109,18 +109,36 @@ test("wording: network says 'נסו', the two limits read as asked", () => {
   assert.equal(duelError("limit_friends"), "אי אפשר להוסיף עוד חברים כרגע (עד 100)");
 });
 
-test("the server says the session is dead → onAuthLost runs (once per call), and not for a merely missing token", async () => {
+test("the function body says the token is dead → onAuthLost runs (once per call)", async () => {
   let lost = 0;
-  const unauth = Object.assign(new Error("unauthorized"), { status: 401 });
+  // duel_uid / account_from: raise exception 'unauthorized' (SQLSTATE 28000) → PostgREST 400 with that message
+  const unauth = Object.assign(new Error("unauthorized"), { status: 400, code: "28000" });
   assert.deepEqual(await fake({ rpcThrow: unauth, onAuthLost: () => lost++ }).api.friends(), { error: "signed_out" });
   assert.equal(lost, 1);
+  // a function that answers {error:'signed_out'} as JSON
+  assert.deepEqual(await fake({ rpcResult: { error: "signed_out" }, onAuthLost: () => lost++ }).api.friends(), { error: "signed_out" });
+  assert.equal(lost, 2);
+  // duel-start: {error:'unauthorized'} body
   const r401 = { ok: false, status: 401, text: async () => JSON.stringify({ error: "unauthorized" }) };
   assert.deepEqual(await fake({ fetchRes: r401, onAuthLost: () => lost++ }).api.start("D"), { error: "signed_out" });
-  assert.equal(lost, 2);
+  assert.equal(lost, 3);
   await fake({ tok: null, onAuthLost: () => lost++ }).api.friends();   // never had a session: nothing to clear
-  assert.equal(lost, 2);
+  assert.equal(lost, 3);
   // a hook that throws never breaks the call
   assert.deepEqual(await fake({ rpcThrow: unauth, onAuthLost: () => { throw new Error("x"); } }).api.friends(), { error: "signed_out" });
+});
+
+test("a bare HTTP 401/403 (gateway, missing grant) → signed_out for that call, but the session is NOT cleared", async () => {
+  let lost = 0;
+  const h401 = Object.assign(new Error("JWT expired"), { status: 401 });
+  assert.deepEqual(await fake({ rpcThrow: h401, onAuthLost: () => lost++ }).api.friends(), { error: "signed_out" });
+  const h403 = Object.assign(new Error("permission denied for function friends_me"), { status: 403 });
+  assert.deepEqual(await fake({ rpcThrow: h403, onAuthLost: () => lost++ }).api.friends(), { error: "signed_out" });
+  const s401 = { ok: false, status: 401, text: async () => "" };
+  assert.deepEqual(await fake({ fetchRes: s401, onAuthLost: () => lost++ }).api.start("D"), { error: "signed_out" });
+  const s403 = { ok: false, status: 403, text: async () => JSON.stringify({ error: "forbidden" }) };
+  assert.deepEqual(await fake({ fetchRes: s403, onAuthLost: () => lost++ }).api.start("D"), { error: "signed_out" });
+  assert.equal(lost, 0);
 });
 
 test("database errors come back as they are (with extras like wait_s)", async () => {

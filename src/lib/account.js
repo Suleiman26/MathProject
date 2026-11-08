@@ -25,7 +25,16 @@ function save(tok, account) {
 /** The current session token (used by the answer tracker). */
 export function sessionToken() { const s = load(); return s ? s.tok : null; }
 
-/** The server said this session is dead (401/403): forget it, like start() does. Used by the duel API. */
+/** Where to go after signing in / up: the page's ?next=, only when it is a path inside /duel
+    (a friend's /duel/add/<code> link); anything else is ignored. Null on the server. */
+export function safeNext() {
+  try {
+    const n = new URLSearchParams(window.location.search).get("next") || "";
+    return /^\/duel(\/[A-Za-z0-9_\-\/]*)?$/.test(n) ? n : null;
+  } catch { return null; }
+}
+
+/** The function body said this session is dead ('unauthorized'): forget it, like start() does. Used by the duel API. */
 export function sessionLost() { save(null); set({ account: null, tok: null }); }
 
 let started = false;

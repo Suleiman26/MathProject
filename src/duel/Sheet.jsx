@@ -6,6 +6,20 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const FOCUS = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/** Arrow keys inside a role="radiogroup" of buttons (RTL: → previous, ← next; ↓ next, ↑ previous).
+    radioKeys(event, ids, currentId, select) — selects and focuses the neighbour. */
+export function radioKeys(e, ids, current, select) {
+  const d = { ArrowDown: 1, ArrowLeft: 1, ArrowUp: -1, ArrowRight: -1 }[e.key];
+  if (!d) return;
+  e.preventDefault();
+  const i = Math.max(0, ids.indexOf(current));
+  const next = ids[(i + d + ids.length) % ids.length];
+  select(next);
+  const group = e.currentTarget.closest('[role="radiogroup"]');
+  const btn = group && [...group.querySelectorAll('[role="radio"]')].find((b) => b.dataset.id === next);
+  if (btn) btn.focus();
+}
 let locks = 0;
 function lockBody(on) {
   locks += on ? 1 : -1;
@@ -40,7 +54,8 @@ export function Sheet({ open, onClose, label, children, wide, className = "" }) 
     const key = (e) => {
       if (e.key === "Escape") { e.stopPropagation(); onClose?.(); return; }
       if (e.key !== "Tab" || !el) return;
-      const list = [...el.querySelectorAll(FOCUS)].filter((n) => n.offsetParent !== null || n === document.activeElement);
+      // only what the browser itself would tab to (a roving radio at tabindex -1 is not), so native Tab never escapes
+      const list = [...el.querySelectorAll(FOCUS)].filter((n) => n.tabIndex >= 0 && (n.offsetParent !== null || n === document.activeElement));
       if (!list.length) { e.preventDefault(); el.focus(); return; }
       const i = list.indexOf(document.activeElement);
       if (e.shiftKey && (i <= 0)) { e.preventDefault(); list[list.length - 1].focus(); }

@@ -9,8 +9,12 @@
    signed_out (no or dead session), offline (no database configured),
    network (request failed, no answer or 5xx), bad_request (the server refused
    the request itself, 4xx), start (the question function answered badly).
-   deps.onAuthLost() is called when the SERVER says the session is dead, so the
-   app can clear the saved account (src/lib/account.js) and every screen agrees. */
+   deps.onAuthLost() is called ONLY when the function body itself says the
+   session is dead ('unauthorized' raised by duel_uid/account_from — SQLSTATE
+   28000 — or {error:'signed_out'|'unauthorized'} from duel-start), so the app can
+   clear the saved account (src/lib/account.js) and every screen agrees.
+   A bare HTTP 401/403 (e.g. a missing grant on one function) still answers
+   signed_out for THAT call, but never clears the session. */
 import { localNow } from "./clock.js";
 
 /* Short, kind Hebrew for every code. Never blame the child. Codes that might
@@ -73,9 +77,10 @@ export function duelError(codeOrResult, extra) {
   return Object.prototype.hasOwnProperty.call(DUEL_ERRORS, code) ? DUEL_ERRORS[code] : GENERIC_ERROR;
 }
 
-function isAuthError(e) {
-  return !!e && (e.status === 401 || e.status === 403 || /unauthori[sz]ed/i.test(String(e.message || "")));
-}
+// the function body said the token is dead (duel_uid / account_from raise 'unauthorized', SQLSTATE 28000)
+function saysUnauthorized(e) { return !!e && /unauthori[sz]ed/i.test(String(e.message || "")); }
+// a bare HTTP 401/403 from the gateway or a missing grant: signed_out for this call, session kept
+function isAuthStatus(e) { return !!e && (e.status === 401 || e.status === 403); }
 
 /**
  * deps: { token(): string|null, rpc(fn, args): Promise<json>, fetch, config(): {functionsUrl, supabaseKey} }
@@ -102,13 +107,15 @@ export function makeDuelApi(deps) {
     try {
       r = await deps.rpc(fn, { tok, ...(args || {}) });
     } catch (e) {
-      if (isAuthError(e)) return authLost();
+      if (saysUnauthorized(e)) return authLost();
+      if (isAuthStatus(e)) return { error: "signed_out" };
       if (e && /not-connected/.test(String(e.message))) return { error: "offline" };
       const st = e && Number(e.status);
       if (st >= 400 && st < 500) return { error: "bad_request" };   // the request itself was refused
       return { error: "network" };                                   // no answer, or the server fell over (5xx)
     }
     if (r == null) return { ok: true };
+    if (r && r.error === "signed_out") return authLost();   // a function that answers with the code instead of raising
     if (timed && typeof r === "object" && !r.error) { r._sent = sent; r._recv = localNow(); }
     return r;
   }
@@ -130,9 +137,10 @@ export function makeDuelApi(deps) {
     let body = null;
     try { body = JSON.parse(await res.text()); } catch {}
     if (body && typeof body.error === "string") {
-      return /unauthori[sz]ed/i.test(body.error) || res.status === 401 ? authLost() : body;
+      if (/unauthori[sz]ed/i.test(body.error) || body.error === "signed_out") return authLost();   // the function said so
+      return res.status === 401 || res.status === 403 ? { error: "signed_out" } : body;
     }
-    if (!res.ok || !body) return res.status === 401 ? authLost() : { error: "start" };
+    if (!res.ok || !body) return res.status === 401 || res.status === 403 ? { error: "signed_out" } : { error: "start" };
     return body;
   }
 

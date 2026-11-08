@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { accountApi, nameProblem, NAME_PROBLEM, PASS_PROBLEM, passChecks, useAccount } from "@/lib/account";
+import { accountApi, nameProblem, NAME_PROBLEM, PASS_PROBLEM, passChecks, safeNext, useAccount } from "@/lib/account";
 import { mpData } from "@/lib/mp-data";
 import { AcctShell, PasswordInput, Spinner } from "./ui";
 
@@ -19,9 +19,11 @@ export default function Signup() {
   const [busy, setBusy] = useState(false);
   const timer = useRef(null);
   const justSigned = useRef(false);
+  const [next, setNext] = useState(null);   // a safe return path (/duel/…), e.g. from a friend's link
+  useEffect(() => { setNext(safeNext()); }, []);
 
   // already signed in → profile (but right after signing up, the submit handler decides where to go)
-  useEffect(() => { if (ready && account && !justSigned.current) router.replace("/profile"); }, [ready, account, router]);
+  useEffect(() => { if (ready && account && !justSigned.current) router.replace(safeNext() || "/profile"); }, [ready, account, router]);
 
   // live username check (format here, availability on the server)
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function Signup() {
     justSigned.current = true;
     try {
       const r = await accountApi.signup(f);
-      if (r && r.token) { router.replace("/profile?welcome=1"); return; }
+      if (r && r.token) { router.replace(safeNext() || "/profile?welcome=1"); return; }
       const map = {
         taken: "שם המשתמש הזה כבר תפוס. נסו שם אחר.",
         consent: "צריך לסמן את שתי תיבות האישור.",
@@ -159,7 +161,7 @@ export default function Signup() {
           <button type="submit" className="acct-cta" disabled={busy} aria-disabled={!canSubmit}>
             {busy ? <><Spinner />יוצרים את החשבון…</> : "פתיחת חשבון"}
           </button>
-          <p className="acct-alt">כבר יש לך חשבון? <Link href="/login">התחברות</Link></p>
+          <p className="acct-alt">כבר יש לך חשבון? <Link href={next ? "/login?next=" + encodeURIComponent(next) : "/login"}>התחברות</Link></p>
         </form>
       </section>
     </AcctShell>

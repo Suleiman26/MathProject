@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { accountApi, useAccount } from "@/lib/account";
+import { accountApi, safeNext, useAccount } from "@/lib/account";
 import { AcctShell, PasswordInput, Spinner } from "./ui";
 
 export default function Login() {
@@ -14,8 +14,10 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [terms, setTerms] = useState({ accept: false, parentOk: false });
   const needsTerms = !!(account && account.needs_terms);
+  const [next, setNext] = useState(null);   // a safe return path (/duel/…), e.g. from a friend's link
+  useEffect(() => { setNext(safeNext()); }, []);
 
-  useEffect(() => { if (ready && account && !account.needs_terms) router.replace("/profile"); }, [ready, account, router]);
+  useEffect(() => { if (ready && account && !account.needs_terms) router.replace(safeNext() || "/profile"); }, [ready, account, router]);
 
   async function submit(e) {
     e.preventDefault();
@@ -86,7 +88,7 @@ export default function Login() {
           </div>
           {err && <div className="acct-alert" role="alert">{err}</div>}
           <button type="submit" className="acct-cta" disabled={busy}>{busy ? <><Spinner />מתחברים…</> : "התחברות"}</button>
-          <p className="acct-alt">אין לך חשבון? <Link href="/signup">פתיחת חשבון</Link></p>
+          <p className="acct-alt">אין לך חשבון? <Link href={next ? "/signup?next=" + encodeURIComponent(next) : "/signup"}>פתיחת חשבון</Link></p>
           <p className="acct-alt small">שכחת את הסיסמה? אין איפוס במייל, כי אנחנו לא שומרים מייל. <Link href="/contact">כתבו לנו</Link> ונעזור.</p>
         </form>
       </section>

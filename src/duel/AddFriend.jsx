@@ -30,17 +30,16 @@ const MI = {
   plus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>,
 };
 
-/** The white card with my code */
-export function MyCode({ code, compact }) {
-  const [copied, setCopied] = useState("");     // '' | 'code' | 'link'
-  const [qr, setQr] = useState(false);
+/** Copy / share my code — shared by the code card and the hub's "share" CTA.
+    { canShare, copied: ''|'code'|'link', copyCode(), share() } */
+export function useShareCode(code) {
+  const [copied, setCopied] = useState("");
   const [canShare, setCanShare] = useState(false);
   const t = useRef(null);
   useEffect(() => { setCanShare(typeof navigator !== "undefined" && typeof navigator.share === "function"); }, []);
   useEffect(() => () => clearTimeout(t.current), []);
   const link = addLink(code);
   const flash = (what) => { setCopied(what); clearTimeout(t.current); t.current = setTimeout(() => setCopied(""), 1800); };
-
   async function copyCode() { if (await copyText(String(code || "").toUpperCase())) flash("code"); }
   async function share() {
     const text = `בואו לדו-קרב במתמטיקה! הקוד שלי: ${fmtCode(code)}`;
@@ -50,9 +49,16 @@ export function MyCode({ code, compact }) {
     }
     if (await copyText(link)) flash("link");
   }
+  return { canShare, copied, copyCode, share, link };
+}
+
+/** The white card with my code */
+export function MyCode({ code, compact }) {
+  const [qr, setQr] = useState(false);
+  const { canShare, copied, copyCode, share, link } = useShareCode(code);
 
   return (
-    <section className={"dl-card dl-code" + (compact ? " compact" : "")} aria-labelledby="dl-code-h">
+    <section id="dl-code" className={"dl-card dl-code" + (compact ? " compact" : "")} aria-labelledby="dl-code-h">
       <div className="dl-code-h">
         <h2 id="dl-code-h">הקוד שלי</h2>
         <p>חבר/ה מקליד/ה אותו — ואתם מחוברים</p>
@@ -61,7 +67,7 @@ export function MyCode({ code, compact }) {
         <span className="dl-code-txt" dir="ltr">{fmtCode(code) || "······"}</span>
         <span className="dl-code-ic" aria-hidden="true">{copied === "code" ? MI.check : MI.copy}</span>
       </button>
-      <p className="dl-live" role="status" aria-live="polite">{copied === "code" ? "הקוד הועתק" : copied === "link" ? "הקישור הועתק" : " "}</p>
+      <p className="dl-live" role="status" aria-live="polite">{copied === "code" ? "הקוד הועתק" : copied === "link" ? "הקישור הועתק" : "\u00a0"}</p>
       <div className="dl-code-acts">
         <button type="button" className="dl-pill" onClick={share}>{MI.share}<span>{canShare ? "שיתוף הקישור" : "העתקת קישור"}</span></button>
         <button type="button" className="dl-pill" onClick={() => setQr(true)}>{MI.qr}<span>קוד QR</span></button>
@@ -74,11 +80,10 @@ export function MyCode({ code, compact }) {
 const CODE_RE = /^[A-Z2-9]{6}$/;
 export const cleanCode = (v) => String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
 
-export function AddFriendForm({ onAdd, initial = "", autoSend = false, title = "הוספת חבר/ה" }) {
+export function AddFriendForm({ onAdd, initial = "", title = "הוספת חבר/ה" }) {
   const [v, setV] = useState(cleanCode(initial));
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);     // { kind: 'ok'|'err', text }
-  const sentOnce = useRef(false);
   const ok = CODE_RE.test(v);
 
   async function send(e) {
@@ -92,16 +97,11 @@ export function AddFriendForm({ onAdd, initial = "", autoSend = false, title = "
     setMsg({ kind: "ok", text: st === "accepted" ? "אתם חברים עכשיו" : st === "already" ? "כבר חברים" : "הבקשה נשלחה. כשיאשרו — תופיעו זה אצל זה" });
     setV("");
   }
-  useEffect(() => {
-    if (autoSend && ok && !sentOnce.current) { sentOnce.current = true; send(); }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoSend, ok]);
-
   return (
     <section className="dl-card dl-add" aria-labelledby="dl-add-h">
       <div className="dl-code-h"><h2 id="dl-add-h">{title}</h2><p>יש לכם קוד של חבר/ה? מקלידים כאן</p></div>
       <form className="dl-add-f" onSubmit={send}>
-        <label className="sr" htmlFor="dl-add-in">קוד החבר</label>
+        <label className="dl-sr" htmlFor="dl-add-in">קוד החבר</label>
         <input id="dl-add-in" className="dl-add-in" dir="ltr" inputMode="text" autoCapitalize="characters" autoCorrect="off" spellCheck={false}
           placeholder="XK4 7PM" maxLength={7} value={fmtCode(v)} onChange={(e) => { setV(cleanCode(e.target.value)); setMsg(null); }}
           aria-invalid={msg && msg.kind === "err" ? true : undefined} aria-describedby="dl-add-msg" />
