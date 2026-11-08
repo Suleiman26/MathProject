@@ -139,13 +139,33 @@ function guessScores(q) {
   const ans = Number(q.answer);
   const share = (target) => { const set = sc.map((s, i) => (s === target ? i : -1)).filter((i) => i >= 0); return set.includes(ans) ? 1 / set.length : 0; };
   const pairs = share(Math.max(...sc)), isolated = share(Math.min(...sc));
-  let ranks = null; // the answer's rank among the values: [smallest, lower, upper, largest]
+  // ties split evenly: the share of a "pick the min/max of f" guesser
+  const pickBy = (f, wantMax) => {
+    const xs = cs.map(f);
+    const t = wantMax ? Math.max(...xs) : Math.min(...xs);
+    const set = xs.map((x, i) => (close(x, t) ? i : -1)).filter((i) => i >= 0);
+    return set.includes(ans) ? 1 / set.length : 0;
+  };
+  const out = {
+    pairs, isolated,
+    'shortest text': pickBy((c) => c.length, false),
+    'longest text': pickBy((c) => c.length, true),
+  };
   const vals = cs.map((c) => { try { return evalMath(c); } catch { return NaN; } });
   if (vals.every(Number.isFinite)) {
     const order = vals.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0]).map(([, i]) => i);
-    ranks = order.map((i) => (i === ans ? 1 : 0));
+    ['smallest', 'lower median', 'upper median', 'largest'].forEach((name, k) => { out[name] = order[k] === ans ? 1 : 0; });
+    out['closest to zero'] = pickBy((c, i) => Math.abs(vals[cs.indexOf(c)]), false);
+    out['farthest from zero'] = pickBy((c) => Math.abs(vals[cs.indexOf(c)]), true);
   }
-  return { pairs, isolated, ranks };
+  return out;
+}
+
+// which variant of a generator a question is (from its meta), for per-variant guards
+function variantOf(q) {
+  const m = q.meta || {};
+  const key = ['v', 'law', 'sub', 'op', 't', 'type'].filter((k) => m[k] !== undefined).map((k) => `${k}=${m[k]}`).join(',');
+  return key || 'all';
 }
 
 /* Left-hand sides of powers-roots ch5 templates, evaluated at x = X, y = Y. */
@@ -353,6 +373,18 @@ for (const g of GENERATORS) {
             assert.ok(typeof c === 'string' && c.length > 0 && !/NaN|undefined|null|Infinity/.test(c), where);
             assert.ok(!/(^|[\s(·])-\d/.test(c), 'ASCII minus in choice: ' + where);
             assert.ok(!/\^\{(0|1|−[^}]*)\}|\\sqrt\{[01]\}|(^|[^\d.])[01](?=\\sqrt|[a-z])/.test(c), 'odd form in choice: ' + where);
+            for (const m of c.matchAll(/\\sqrt\{(\d+)\}/g)) assert.ok(!Number.isInteger(Math.sqrt(+m[1])), 'root of a square: ' + where);
+            const eq = c.match(/^(\d+) : (\d+)$/);
+            assert.ok(!eq || eq[1] !== eq[2], 'equal-parts ratio: ' + where);
+            // fraction denominators stay "nice" (2^a·5^b, like the real ones)
+            for (const m of c.matchAll(/\\frac\{\d+\}\{(\d+)\}/g)) {
+              let d = +m[1]; while (d % 2 === 0) d /= 2; while (d % 5 === 0) d /= 5;
+              if (g.topic === 'ratio-percent') assert.ok(d === 1 && +m[1] <= 2000, 'odd denominator: ' + where);
+            }
+            // no negative choices when nothing in the question is negative
+            if (!/−/.test(q.prompt) && !/−/.test(q.choices[Number(q.answer)]) && g.topic !== 'directed-numbers' && g.topic !== 'equation-solver') {
+              assert.ok(!c.startsWith('−'), 'negative choice without a reason: ' + where);
+            }
           }
           assert.equal(checkAnswer(q, q.answer), true);
         } else {
@@ -376,23 +408,30 @@ for (const g of GENERATORS) {
   }
 }
 
+const GUARD_RUNS = 3000; // choice questions per generator
+const GUARD_MIN = 150;   // a variant is judged once it has this many questions
+
 for (const g of GENERATORS) {
-  test(`${g.id}: choices don't give the answer away (4000 questions, guessers ≤ 40%)`, () => {
+  test(`${g.id}: choices don't give the answer away (${GUARD_RUNS} questions, every guesser ≤ 40%, per generator and per variant)`, () => {
     const r = mulberry32(777 + g.id.length);
-    const sum = { pairs: 0, isolated: 0, ranks: [0, 0, 0, 0] };
-    let n = 0, nMed = 0;
-    for (let i = 0; i < 4000; i++) {
-      const s = guessScores(g.make(r, 'choice'));
-      n++; sum.pairs += s.pairs; sum.isolated += s.isolated;
-      if (s.ranks) { nMed++; s.ranks.forEach((x, k) => { sum.ranks[k] += x; }); }
+    const groups = {}; // 'all' + each variant → { guesser: [hits, n] }
+    const tally = (key, s) => {
+      const gr = (groups[key] = groups[key] || {});
+      for (const [name, h] of Object.entries(s)) { const t = (gr[name] = gr[name] || [0, 0]); t[0] += h; t[1]++; }
+    };
+    for (let i = 0; i < GUARD_RUNS; i++) {
+      const q = g.make(r, 'choice');
+      const s = guessScores(q);
+      tally('(all)', s);
+      tally(variantOf(q), s);
     }
-    const rates = { pairs: sum.pairs / n, isolated: sum.isolated / n };
-    if (nMed >= 400) {
-      ['smallest', 'lower median', 'upper median', 'largest'].forEach((name, k) => { rates[name] = sum.ranks[k] / nMed; });
+    const bad = [];
+    for (const [key, gr] of Object.entries(groups)) {
+      for (const [name, [h, n]] of Object.entries(gr)) {
+        if (n >= GUARD_MIN && h / n > 0.4) bad.push(`${key} "${name}" ${(h / n * 100).toFixed(1)}% of ${n}`);
+      }
     }
-    for (const [k, v] of Object.entries(rates)) {
-      assert.ok(v <= 0.4, `${g.id}: "${k}" guesser hits ${(v * 100).toFixed(1)}%`);
-    }
+    assert.deepEqual(bad, [], `${g.id} leaks: ${bad.join('; ')}`);
   });
 }
 

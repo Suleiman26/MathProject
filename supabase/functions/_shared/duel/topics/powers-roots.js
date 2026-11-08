@@ -102,7 +102,8 @@ function genLaw(r, lawIdx) {
 }
 
 export function laws(r, want) {
-  const law = want === 'number' ? pick(r, [0, 1, 2, 4]) : randInt(r, 0, 5);
+  // a^0 is always 1: as 4 choices that is a giveaway, so it is a typed question only
+  const law = want === 'number' ? pick(r, [0, 1, 2, 4]) : pick(r, [0, 1, 2, 3, 5]);
   const ex = genLaw(r, law);
   const prompt = `${lawNames[law]}: $${ex.q}$`;
   if (law <= 2) {
@@ -129,6 +130,7 @@ export function laws(r, want) {
   const wrongs = [`−${den}`, `−\\frac{1}{${den}}`];
   if (base * n !== den) wrongs.push(`\\frac{1}{${base * n}}`);
   wrongs.push(`\\frac{1}{${den * base}}`);
+  if (n >= 2) wrongs.push(`\\frac{1}{${den / base}}`); // one factor too few
   return choiceQuestion(r, prompt, `\\frac{1}{${den}}`, wrongs, { law, base, n });
 }
 
@@ -236,8 +238,8 @@ export function roots(r, want) {
   }
   if (sub === 1) {
     const { a, b, val } = ex;
-    // mistakes: a and b swapped, a² left outside (decoys fill the rest)
-    const wrongs = [rt(b, a), rt(a * a, b)];
+    // mistakes: a and b swapped, a² left outside, the number outside forgotten
+    const wrongs = [rt(b, a), rt(a * a, b), rt(1, b)];
     return choiceQuestion(r, `${name}: $\\sqrt{${val}} = ?$`, rt(a, b), wrongs, { sub, val });
   }
   if (ex.opType === 0) {
@@ -298,7 +300,8 @@ export function mixed(r, want) {
   const meta = { t: tpl.t, type: tpl.type, v, w, a: ex.a, b: ex.b, c: ex.c, d: ex.d, k: ex.k };
   const prompt = `פשטו את הביטוי: $${q}$`;
   if (tpl.type === 'exp') {
-    return numberQuestion(r, want, prompt, params.ans, alt, meta);
+    // negative exponents only as a mistake where the question itself has one (h5)
+    return numberQuestion(r, want, prompt, params.ans, alt.filter((x) => x >= 0 || tpl.t === 'h5'), meta);
   }
   if (tpl.type === 'coefexp') {
     const wrongs = distinct([params.coef, params.e], alt).filter(([, e]) => e >= 1); // no x^{0} / x^{−n} forms

@@ -1,15 +1,22 @@
 // Four answer choices + small display helpers shared by the topic ports.
 //
-// Choices must not give the answer away by their pattern. Two "guessers" are
-// guarded in duel.test.mjs (each must stay ≤ 40 % per generator):
-//   • pairs  — pick the choice with the most "neighbours" among the others
-//              (its negative, or the same text with one number ±1);
-//   • median — pick the lower / upper middle value of the 4 choices.
-// So makeChoices picks the 3 wrongs such that every choice has the SAME
-// number of neighbours (no centre to find), the right answer has at most one
-// ±1 neighbour, and the right answer's rank among the values is a seeded
-// random 0–3. Real typical mistakes (the generator's list) are tried first;
-// decoys (±1…±3, sign flips of the answer AND of the mistakes) only fill in.
+// Choices must not give the answer away by their pattern. duel.test.mjs runs
+// these "guessers" on every generator AND every variant of it; each must stay
+// ≤ 40 % (chance = 25 %):
+//   • pairs     — the choice with the most neighbours (its negative, or the
+//                 same text with one number ±1);   • isolated — the fewest;
+//   • value     — smallest, lower median, upper median, largest value;
+//   • distance  — closest to zero, farthest from zero;
+//   • length    — shortest text, longest text.
+// So makeChoices scores every candidate set of 3 wrongs and keeps the best:
+//   + the same number of neighbours for all 4 (no centre to find),
+//   + the answer's rank by value and by distance from zero hits a seeded
+//     random target (among the ranks that can be reached),
+//   − the answer being shortest / longest text (allowed 1 time in 4),
+//   + real typical mistakes (the generator's list) over decoys.
+// Hard rule: the answer has at most one ±1 neighbour.
+// Decoys (±1, ±2, round steps, sign flips of the answer AND of the mistakes)
+// only fill in where real mistakes can't keep the set balanced.
 import { randInt, shuffle } from './rng.js';
 
 const MINUS = '\u2212';
@@ -85,10 +92,19 @@ export function neighbours(a, b) {
 
 // forms nobody writes: x^{0}, x^{1}, x^{−2} in an answer, \sqrt{1}, \frac{n}{1}, 1\sqrt{…}, 0x
 const ODD = /\^\{(0|1|\u2212[^}]*)\}|\\sqrt\{[01]\}|\\frac\{[^}]*\}\{1\}|\\frac\{0\}|(^|[^\d.])[01](?=\\sqrt|[a-z])/;
+const isSquare = (n) => Number.isInteger(Math.sqrt(n));
+function badForm(t, right) {
+  if (ODD.test(t)) return true;
+  for (const m of t.matchAll(/\\sqrt\{(\d+)\}/g)) if (isSquare(Number(m[1]))) return true; // k√4 is just 2k
+  const ratio = t.match(/^(\d+) : (\d+)$/);
+  if (ratio && ratio[1] === ratio[2] && !/^(\d+) : \1$/.test(right)) return true; // "9 : 9"
+  return false;
+}
 
 // decoys near a text: whole numbers ±1, ±2 and (from 20 up) ± a round step
-// (180 → 175, 185, 170, 190); decimals ×10, ÷10, ×2; texts: one number ±1, ±2;
-// and the negative when signed
+// (180 → 175, 185, 170, 190); decimals ×10, ÷10, ×2; texts: one number ±1, ±2
+// (never a fraction's denominator or a power of ten: they stay "nice"); and the
+// negative when signed
 function decoys(t, signed) {
   const out = [];
   const p = plain(t);
@@ -97,10 +113,10 @@ function decoys(t, signed) {
       for (const n of [p * 10, p / 10, p * 2]) out.push(fmt(Number(n.toFixed(6))));
     } else {
       const size = Math.abs(p) >= 20 ? Math.pow(10, String(Math.abs(p)).length - 2) * 5 : 0;
-      const ds = size ? [1, -1, size, -size, 2 * size, -2 * size] : [1, -1, 2, -2, 3, -3];
+      const ds = size ? [1, -1, size, -size, 2 * size, -2 * size] : [1, -1, 2, -2, 3, -3, 4, -4, 5, -5];
       for (const d of ds) {
         const n = p + d;
-        if (!signed && n <= 0 && p > 0) continue;
+        if (!signed && n < 0) continue; // no negatives where the answer has none
         out.push(fmt(n));
       }
     }
@@ -109,7 +125,15 @@ function decoys(t, signed) {
   }
   for (const m of t.matchAll(NUM)) {
     if (m[1]) continue; // decimals inside text: leave alone
-    for (const d of [1, -1, 2, -2]) {
+    const swap = (x) => t.slice(0, m.index) + x + t.slice(m.index + m[0].length);
+    if (t.slice(0, m.index).endsWith('}{')) { // a denominator: only ×2 / ÷2, so it stays "nice"
+      const q = Number(m[0]);
+      out.push(swap(q * 2));
+      if (q % 2 === 0 && q > 2) out.push(swap(q / 2));
+      continue;
+    }
+    if (/^10+$/.test(m[0])) continue; // 10, 100, 1000
+    for (const d of [1, -1, 2, -2, 3, -3]) {
       const n = Number(m[0]) + d;
       if (n < 1) continue;
       out.push(t.slice(0, m.index) + n + t.slice(m.index + m[0].length));
@@ -124,22 +148,24 @@ function* combos(arr, k, start = 0, pre = []) {
   for (let i = start; i < arr.length; i++) yield* combos(arr, k, i + 1, [...pre, arr[i]]);
 }
 
+const MAX_DECOYS = 18;
+
 /**
  * makeChoices(r, correct, wrongs, {signed}?) → { choices: string[4], answer: "0".."3" }
  * wrongs = typical mistakes, best first. Dedupes ("-" = "−"), drops wrongs
- * equal in value to the answer or to each other, adds decoys when needed,
- * picks a balanced set (see the top of this file) and shuffles.
- * signed: may decoys be negative? (default: when the answer or a mistake is)
+ * equal in value to the answer or to each other and odd forms, adds decoys,
+ * picks the best-balanced set (see the top of this file) and shuffles.
+ * signed: may decoys be negative? (default: only when the answer is)
  */
 export function makeChoices(r, correct, wrongs, opts = {}) {
   const right = norm(correct);
   const vR = valueOf(right);
   const realW = wrongs.filter((w) => w !== undefined && w !== null).map(norm);
-  const signed = opts.signed ?? [right, ...realW].some((t) => t.startsWith(MINUS));
+  const signed = opts.signed ?? right.startsWith(MINUS);
   const all = [{ t: right, v: vR, real: true }];
   const add = (t, real) => {
     if (!t || /NaN|undefined|Infinity|null/.test(t)) return;
-    if (ODD.test(t)) return;
+    if (badForm(t, right)) return;
     if (all.some((c) => c.t === t)) return;
     const v = valueOf(t);
     if (Number.isFinite(v) && all.some((c) => Number.isFinite(c.v) && close(c.v, v))) return;
@@ -147,50 +173,77 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
   };
   realW.forEach((t) => add(t, true));
   const nReal = all.length - 1;
-  for (const t of shuffle(r, [right, ...all.slice(1).map((c) => c.t)].flatMap((t) => decoys(t, signed)))) {
-    if (all.length - 1 - nReal >= 30) break;
+  // the answer's own decoys first (so it can sit anywhere), then the mistakes'
+  const pool = [...shuffle(r, decoys(right, signed)), ...shuffle(r, all.slice(1).flatMap((c) => decoys(c.t, signed)))];
+  for (const t of pool) {
+    if (all.length - 1 - nReal >= MAX_DECOYS) break;
     add(t, false);
   }
   if (all.length < 4) throw new Error('makeChoices: cannot make 4 choices for ' + correct);
 
   const n = all.length;
-  const rel = all.map((a) => all.map((b) => (a === b ? null : neighbours(a.t, b.t))));
+  const rel = new Int8Array(n * n); // 0 none, 1 sign, 2 step
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const k = neighbours(all[i].t, all[j].t);
+    rel[i * n + j] = rel[j * n + i] = k === 'sign' ? 1 : k === 'step' ? 2 : 0;
+  }
+  // features of each candidate, compared with the answer
   const rankable = !hasLetter(right) && all.every((c) => Number.isFinite(c.v));
-  // the answer's rank among the 4 values: random, but only among ranks that can be reached
-  const below = rankable ? all.filter((c) => c.v < vR).length : 3;
-  const above = rankable ? all.filter((c) => c.v > vR).length : 3;
-  const reach = [0, 1, 2, 3].filter((k) => below >= k && above >= 3 - k);
-  const target = reach.length ? reach[randInt(r, 0, reach.length - 1)] : randInt(r, 0, 3);
+  const lowV = all.map((c) => (rankable && c.v < vR ? 1 : 0));
+  const lowA = all.map((c) => (rankable && Math.abs(c.v) < Math.abs(vR) ? 1 : 0));
+  const useA = rankable && all.some((c) => c.v < 0); // all ≥ 0: distance rank = value rank
+  const len = all.map((c) => c.t.length);
+  const target = (low) => { // a random reachable rank 0–3
+    const below = low.reduce((s, x) => s + x, 0) - low[0];
+    const reach = [0, 1, 2, 3].filter((k) => below >= k && n - 1 - below >= 3 - k);
+    return reach.length ? reach[randInt(r, 0, reach.length - 1)] : -1;
+  };
+  const tV = rankable ? target(lowV) : -1;
+  const tA = useA ? target(lowA) : -1;
+  const tL = randInt(r, 0, 3); // 0: may be the shortest, 3: may be the longest, else neither
+  // weights: a hit rank target (3) beats a perfectly even neighbour count (4 vs 2 for
+  // "no single centre"), so tiny answers like x^{1} can still sit anywhere by value
+  const W_RANK = 3, W_LEN = 2;
+  const best = 4 + (tV >= 0 ? W_RANK : 0) + (tA >= 0 ? W_RANK : 0);
+
+  const score = (i, j, k) => {
+    const a = rel[i], b = rel[j], c = rel[k];
+    if ((a === 2) + (b === 2) + (c === 2) > 1) return -Infinity; // at most one ±1 of the answer
+    const ij = rel[i * n + j] > 0, ik = rel[i * n + k] > 0, jk = rel[j * n + k] > 0;
+    const s0 = (a > 0) + (b > 0) + (c > 0), si = (a > 0) + ij + ik, sj = (b > 0) + ij + jk, sk = (c > 0) + ik + jk;
+    const mx = Math.max(s0, si, sj, sk), mn = Math.min(s0, si, sj, sk);
+    let sc;
+    if (mx === mn) sc = 4;
+    else {
+      const once = (v) => (s0 === v) && ((si === v) + (sj === v) + (sk === v) === 0);
+      sc = once(mx) || once(mn) ? 0 : 2;
+    }
+    if (tV >= 0 && lowV[i] + lowV[j] + lowV[k] === tV) sc += W_RANK;
+    if (tA >= 0 && lowA[i] + lowA[j] + lowA[k] === tA) sc += W_RANK;
+    const L = [len[0], len[i], len[j], len[k]];
+    const lo = Math.min(...L), hi = Math.max(...L);
+    const share = (v) => (L[0] === v ? 1 / L.filter((x) => x === v).length : 0);
+    if (lo !== hi) sc -= W_LEN * ((tL !== 0 ? share(lo) : 0) + (tL !== 3 ? share(hi) : 0));
+    return sc;
+  };
+
   const reals = shuffle(r, Array.from({ length: nReal }, (_, k) => k + 1));
   const fills = shuffle(r, Array.from({ length: n - 1 - nReal }, (_, k) => k + 1 + nReal));
-
-  const ok = (tri, strict, rank) => {
-    const idx = [0, ...tri];
-    if (tri.filter((j) => rel[0][j] === 'step').length > 1) return false; // at most one ±1 of the answer
-    const sc = idx.map((i) => idx.filter((j) => j !== i && rel[i][j]).length);
-    const mx = Math.max(...sc), mn = Math.min(...sc);
-    if (strict && mx !== mn) return false;
-    if (!strict && mx !== mn) {
-      const only = (s) => sc[0] === s && sc.filter((x) => x === s).length === 1;
-      if (only(mx) || only(mn)) return false;
-    }
-    if (rank && rankable && tri.filter((j) => all[j].v < vR).length !== target) return false;
-    return true;
-  };
-  const search = (strict, rank) => {
-    for (let k = Math.min(3, reals.length); k >= 0; k--) {
-      for (const rs of combos(reals, k)) {
-        for (const fs of combos(fills, 3 - k)) {
-          const tri = [...rs, ...fs];
-          if (ok(tri, strict, rank)) return tri;
-        }
+  let pick = null, top = -Infinity;
+  search: for (let k = Math.min(3, reals.length); k >= 0; k--) {
+    for (const rs of combos(reals, k)) {
+      for (const fs of combos(fills, 3 - k)) {
+        const [i, j, l] = [...rs, ...fs];
+        const sc = score(i, j, l);
+        if (sc === -Infinity) continue;
+        const total = sc + 0.4 * k; // real mistakes are worth a little
+        if (total > top) { top = total; pick = [i, j, l]; }
+        if (sc >= best) break search; // can't do better on balance; more reals were tried first
       }
     }
-    return null;
-  };
-  const tri = search(true, true) || search(false, true) || search(true, false) || search(false, false)
-    || [...reals, ...fills].slice(0, 3);
-  const choices = shuffle(r, [right, ...tri.map((j) => all[j].t)]);
+  }
+  if (!pick) pick = [...reals, ...fills].slice(0, 3);
+  const choices = shuffle(r, [right, ...pick.map((j) => all[j].t)]);
   return { choices, answer: String(choices.indexOf(right)) };
 }
 

@@ -137,10 +137,15 @@ const decText = (x) => String(Number(x.toFixed(6)));
 export function convert(r, want) {
   const type = want === 'number' ? 1 : randInt(r, 0, 1); // 0 = decimal→fraction, 1 = fraction→decimal
   if (type === 0) {
-    const { n, d, dec, unreducedNum, unreducedDen } = genDecToFracEx(r);
+    const { n, d, dec } = genDecToFracEx(r);
     const f = (p, q) => `\\frac{${p}}{${q}}`;
-    // mistakes: only the numerator reduced, off by one, numerator over the wrong power of 10
-    const wrongs = [[n, unreducedDen], [n + 1, d], [n, d + 1], [unreducedNum, unreducedDen * 10]]
+    // mistakes, from the decimal as shown (0.38 → 38 and 100): only the numerator
+    // reduced, numerator off by one, the other part (d − n), one power of 10 too many.
+    // Denominators stay "nice": the right one or a power of 10 (≤ 1000).
+    const digits = decText(dec).split('.')[1];
+    const p10 = Math.pow(10, digits.length);
+    const wrongs = [[n, p10], [n + 1, d], [d - n, d], p10 < 1000 ? [Number(digits), p10 * 10] : null]
+      .filter(Boolean)
       .filter(([p, q]) => p < q && p * d !== q * n) // a proper fraction, not equal to the answer
       .map(([p, q]) => f(p, q));
     return choiceQuestion(r, `המרת עשרוני לשבר: כתבו את $${decText(dec)}$ כשבר מצומצם`, f(n, d), wrongs, { v: 'd2f', dec: decText(dec) });
