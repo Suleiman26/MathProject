@@ -6,6 +6,8 @@
 const LIVE = {
   supabaseUrl: "https://uucqyjskkyrfhvbsmorx.supabase.co",
   supabaseKey: "sb_publishable_iVOeHH932U6US3g7722FjQ_kIDz3puf",
+  functionsUrl: "https://uucqyjskkyrfhvbsmorx.supabase.co/functions/v1", // edge functions (duel-start)
+  vapidPublic: "", // public Web Push key for duel notifications (phase 1b); public by design
 };
 
 /* Local testing on this computer (supabase start): Supabase's shared
@@ -13,6 +15,8 @@ const LIVE = {
 const LOCAL = {
   supabaseUrl: "http://127.0.0.1:56421",
   supabaseKey: "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH",
+  functionsUrl: "http://127.0.0.1:56421/functions/v1",
+  vapidPublic: "",
 };
 
 export function getConfig() {
