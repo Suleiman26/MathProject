@@ -55,7 +55,10 @@ export function powers(r, want) {
     const wrongs = [[exp, base], [base, exp - 1], [base, exp + 1], [base * exp, 1]]
       .filter(([b, e]) => Math.pow(b, e) !== val && !(e === 1 && b === val));
     return choiceQuestion(r, `כתבו את הכפל כחזקה: $${chain} = ?$`, pw(base, exp),
-      wrongs.map(([b, e]) => (e === 1 ? String(b) : pw(b, e))), { v: 'prod', base, count: exp });
+      wrongs.map(([b, e]) => (e === 1 ? String(b) : pw(b, e))), { v: 'prod', base, count: exp },
+      // decoys: same base other count, or same count with the count / base×count as the base
+      // (a web: some share the base, some the exponent), no random other bases
+      { decoys: false, extra: [pw(base, exp + 2), pw(base, Math.max(2, exp - 2)), pw(base * exp, exp), pw(exp, exp), String(base + exp)] });
   }
   const ex = genCh1(r);
   if (ex.mode === 0) {
@@ -104,7 +107,9 @@ function genLaw(r, lawIdx) {
 export function laws(r, want) {
   // a^0 is always 1: as 4 choices that is a giveaway, so it is a typed question only
   const law = want === 'number' ? pick(r, [0, 1, 2, 4]) : pick(r, [0, 1, 2, 3, 5]);
-  const ex = genLaw(r, law);
+  let ex = genLaw(r, law);
+  // duel limit: a^{−1} has too few real "1 over …" mistakes, so a^{−n} uses n = 2–3
+  while (law === 5 && ex.n < 2) ex = genLaw(r, law);
   const prompt = `${lawNames[law]}: $${ex.q}$`;
   if (law <= 2) {
     const { n, m, expAns } = ex;
@@ -116,22 +121,25 @@ export function laws(r, want) {
   }
   if (law === 3) {
     const { a, b, n, ansA, ansB } = ex;
-    const val = ansA * ansB;
-    // mistakes: multiplied by n instead of a power, only one factor raised
-    const wrongs = distinct([ansA, ansB], [[a * n, b * n], [ansA, b], [a, ansB], [ansA, ansB * b]], (x) => [...x].sort((p, q) => p - q).join(","))
-      .filter(([x, y]) => x * y !== val && !(x === ansB && y === ansA));
-    return choiceQuestion(r, prompt, `${ansA} · ${ansB}`, wrongs.map(([x, y]) => `${x} · ${y}`), { law, a, b, n });
+    // each factor on its own can be: ×n instead of a power, not raised, one power too many.
+    // All combinations of a wrong first and/or wrong second factor (a "web"), no ±k
+    const alt = (x) => [x * n, x, Math.pow(x, n + 1)].filter((y) => y !== Math.pow(x, n));
+    const wrongs = [];
+    for (const x of [ansA, ...alt(a)]) for (const y of [ansB, ...alt(b)]) if (x !== ansA || y !== ansB) wrongs.push(`${x} · ${y}`);
+    return choiceQuestion(r, prompt, `${ansA} · ${ansB}`, wrongs, { law, a, b, n }, { decoys: false });
   }
   if (law === 4) {
     return numberQuestion(r, want, prompt, 1, [0, ex.base],{ law, base: ex.base });
   }
   const { base, n, den } = ex;
-  // mistakes: negative number, base × n in the denominator, minus kept
-  const wrongs = [`−${den}`, `−\\frac{1}{${den}}`];
-  if (base * n !== den) wrongs.push(`\\frac{1}{${base * n}}`);
-  wrongs.push(`\\frac{1}{${den * base}}`);
-  if (n >= 2) wrongs.push(`\\frac{1}{${den / base}}`); // one factor too few
-  return choiceQuestion(r, prompt, `\\frac{1}{${den}}`, wrongs, { law, base, n });
+  // real mistakes only (no decoys): 1 over the wrong power (b·n, one factor too
+  // few / many, n^b), the power without "1 over", the minus kept.
+  // At least 2 other "1 over …" choices, so "pick the positive 1/x" can't win.
+  const unit = (d) => `\\frac{1}{${d}}`;
+  const wrongs = [unit(base * n), unit(den / base), unit(den * base), unit(den * base * base), unit(Math.pow(n, base)), `${den}`, `−${den}`, `−${unit(den)}`];
+  const isUnit = (t) => /^\\frac\{1\}\{\d+\}$/.test(t);
+  return choiceQuestion(r, prompt, unit(den), wrongs, { law, base, n },
+    { decoys: false, must: (ts) => ts.filter(isUnit).length >= 2 });
 }
 
 /* ── Chapter 3: power laws with letters ──────────────────────────── */
@@ -293,9 +301,16 @@ export function mixed(r, want) {
   const diff = randInt(r, 0, 2);
   let list = COMBINED.filter((c) => DIFF[c.t[0]] === diff);
   if (want === 'number') list = list.filter((c) => c.type === 'exp');
+  // h1 (v^{a} · √(v^{2a}) = v^{2a}) prints its answer in the prompt: typed only
+  else list = list.filter((c) => c.t !== 'h1');
   const tpl = pick(r, list);
   const [v, w] = pickVars(r);
-  const ex = tpl.make(r, v, w);
+  let ex = tpl.make(r, v, w);
+  // as 4 choices, an exponent answer must not be a number printed in the prompt
+  // (e.g. √(v³)·√(v³) = v³); re-roll the numbers (same template) a few times
+  // (and h5's answer 1 has nothing below it but 0, so it would be the smallest choice)
+  const giveaway = (e) => (e.q.match(/\d+/g) || []).includes(String(e.ans)) || (tpl.t === 'h5' && e.ans === 1);
+  for (let k = 0; k < 20 && want !== 'number' && tpl.type === 'exp' && giveaway(ex); k++) ex = tpl.make(r, v, w);
   const { q, alt, ...params } = ex;
   const meta = { t: tpl.t, type: tpl.type, v, w, a: ex.a, b: ex.b, c: ex.c, d: ex.d, k: ex.k };
   const prompt = `פשטו את הביטוי: $${q}$`;

@@ -55,7 +55,8 @@ export function ratio(r, want) {
       .map(([p, q]) => ratioText(p, q));
     return choiceQuestion(r,
       `מתוך ${total}: ${a} ${ctx.label1} ו-${b} ${ctx.label2}. מה היחס בין ${ctx.label1} ל${ctx.label2}, במספרים הקטנים ביותר?`,
-      ratioText(simA, simB), wrongs, { v: 'simp', a, b });
+      ratioText(simA, simB), wrongs, { v: 'simp', a, b },
+      { accept: (t) => { const m = t.match(/^(\d+) : (\d+)$/); return !!m && gcd(+m[1], +m[2]) === 1; } }); // reduced only
   }
   const ex = genRatioAmount(r);
   const { ctx, a, b, k, total, A, B } = ex;
@@ -148,7 +149,16 @@ export function convert(r, want) {
       .filter(Boolean)
       .filter(([p, q]) => p < q && p * d !== q * n) // a proper fraction, not equal to the answer
       .map(([p, q]) => f(p, q));
-    return choiceQuestion(r, `המרת עשרוני לשבר: כתבו את $${decText(dec)}$ כשבר מצומצם`, f(n, d), wrongs, { v: 'd2f', dec: decText(dec) });
+    return choiceQuestion(r, `המרת עשרוני לשבר: כתבו את $${decText(dec)}$ כשבר מצומצם`, f(n, d), wrongs, { v: 'd2f', dec: decText(dec) },
+      // every choice a proper, reduced fraction (a kid knows 0.x < 1 and "reduced" was asked);
+      // decoys: proper reduced fractions over nice denominators, on both sides of the answer
+      {
+        accept: (t) => { const m = t.match(/^\\frac\{(\d+)\}\{(\d+)\}$/); return !!m && +m[1] < +m[2] && gcd(+m[1], +m[2]) === 1; },
+        extra: [d, 2 * d, d / 2, p10].filter((q) => Number.isInteger(q) && q > 1 && q <= 100)
+          .flatMap((q) => { const c = Math.round(n * q / d); return [-4, -3, -2, -1, 1, 2, 3, 4].map((k) => [c + k, q]); })
+          .filter(([p, q]) => p >= 1 && p < q && gcd(p, q) === 1 && p * d !== q * n)
+          .map(([p, q]) => f(p, q)),
+      });
   }
   const { n, d } = genFracToDecEx(r);
   const ans = Number((n / d).toFixed(6));
@@ -246,7 +256,8 @@ export function change(r, want) {
   const { type, pct: p, original, diff, final, q } = ex;
   let ans, wrongs, meta;
   // mistakes: wrong direction, only the change, percent added as shekels, percent of the wrong price
-  if (type === 0) { ans = final; wrongs = [original - diff, diff, original + p]; meta = { type, pct: p, original }; }
+  // (type 0 also: the decimal point slipped, the rise counted ten times)
+  if (type === 0) { ans = final; wrongs = [original - diff, diff, original + p, original + 10 * diff]; meta = { type, pct: p, original }; }
   else if (type === 1) { ans = final; wrongs = [original + diff, diff, original - p]; meta = { type, pct: p, original }; }
   else if (type === 2) {
     ans = p;

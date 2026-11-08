@@ -55,7 +55,9 @@ export function mul(r, want) {
   while (Math.abs(a * b) > 20);
   const ans = a * b;
   // mistakes: sign rule, added instead
-  const wrongs = [-ans, a + b, -(a + b)];
+  // + the factors themselves with both signs: with a ±1 factor the answer is one of
+  // them, so the sign rule (the skill) must decide, not "the number from the question"
+  const wrongs = [-ans, a + b, -(a + b), a, -a, b, -b];
   return numberQuestion(r, want, `${T_MUL}: $${fmtS(a)} × ${fmtS(b)} = ?$`, ans, wrongs, { a, b }, SIGNED);
 }
 
@@ -65,7 +67,7 @@ export function div(r, want) {
   do { const [sa, sb] = pickSigns(r); q = randInt(r, 1, 10) * sa; ds = randInt(r, 1, 10) * sb; dv = q * ds; }
   while (Math.abs(dv) > 20 || ds === 0);
   // mistakes: sign rule, multiplied instead, subtracted instead
-  const wrongs = [-q, dv * ds, dv - ds];
+  const wrongs = [-q, dv * ds, dv - ds, dv, -dv, ds, -ds]; // + the given numbers, both signs
   return numberQuestion(r, want, `${T_DIV}: $${fmtS(dv)} ÷ ${fmtS(ds)} = ?$`, q, wrongs, { a: dv, b: ds }, SIGNED);
 }
 

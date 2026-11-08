@@ -118,10 +118,11 @@ function linSide(side) {
   return [cx, c];
 }
 
-/* ── two "guessers" that must NOT beat 40 % (chance = 25 %) ────────
-   pairs: pick the choice with the most neighbours (its negative, or the
-   same text with one number ±1); ties split evenly. isolated: the choice
-   with the fewest. median: lower / upper middle of the 4 values. */
+/* ── "guessers" that must NOT beat 40 % (chance = 25 %) ─────────────
+   Each returns the share of the right answer it gets on one question (ties
+   split evenly), or null when it can't decide (counted as a random pick,
+   0.25). Written here independently of choices.js. */
+const gcdT = (a, b) => (b ? gcdT(b, a % b) : Math.abs(a));
 function nbr(a, b) {
   const num = (t) => (/^−?\d+(\.\d+)?$/.test(t) ? Number(t.replace('−', '-')) : null);
   const pa = num(a), pb = num(b);
@@ -135,36 +136,70 @@ function nbr(a, b) {
 }
 function guessScores(q) {
   const cs = q.choices;
-  const sc = cs.map((c, i) => cs.filter((o, j) => j !== i && nbr(c, o)).length);
   const ans = Number(q.answer);
-  const share = (target) => { const set = sc.map((s, i) => (s === target ? i : -1)).filter((i) => i >= 0); return set.includes(ans) ? 1 / set.length : 0; };
-  const pairs = share(Math.max(...sc)), isolated = share(Math.min(...sc));
-  // ties split evenly: the share of a "pick the min/max of f" guesser
-  const pickBy = (f, wantMax) => {
-    const xs = cs.map(f);
+  const among = (set) => (set.length ? (set.includes(ans) ? 1 / set.length : 0) : null);
+  const pickBy = (xs, wantMax) => {
     const t = wantMax ? Math.max(...xs) : Math.min(...xs);
-    const set = xs.map((x, i) => (close(x, t) ? i : -1)).filter((i) => i >= 0);
-    return set.includes(ans) ? 1 / set.length : 0;
+    return among(xs.map((x, i) => (close(x, t) ? i : -1)).filter((i) => i >= 0));
   };
+  // the only choice whose key differs from all others (fires when exactly one such)
+  const oddOne = (keys) => {
+    if (keys.some((k) => k === null)) return null;
+    const u = keys.map((k, i) => (keys.filter((x) => x === k).length === 1 ? i : -1)).filter((i) => i >= 0);
+    return u.length === 1 ? among(u) : null;
+  };
+  const nb = cs.map((c, i) => cs.filter((o, j) => j !== i && nbr(c, o)).length);
   const out = {
-    pairs, isolated,
-    'shortest text': pickBy((c) => c.length, false),
-    'longest text': pickBy((c) => c.length, true),
+    pairs: pickBy(nb, true),
+    isolated: pickBy(nb, false),
+    'shortest text': pickBy(cs.map((c) => c.length), false),
+    'longest text': pickBy(cs.map((c) => c.length), true),
+    'only last digit': oddOne(cs.map((c) => (c.match(/\d(?=\D*$)/) || [null])[0])),
+    'only shape': oddOne(cs.map((c) => c.replace(/\d+(\.\d+)?/g, '#'))),
   };
+  // consensus: shares the most numbers (in the same places) with the others
+  const toks = cs.map((c) => c.match(/\d+(\.\d+)?/g) || []);
+  if (toks.some((t) => t.length > 1)) {
+    out.consensus = pickBy(toks.map((t, i) => t.reduce((s, x, k) => s + toks.filter((u, j) => j !== i && u[k] === x).length, 0)), true);
+  }
+  // a number that appears in the prompt / the only ones that don't
+  const pnums = new Set(q.prompt.match(/\d+(\.\d+)?/g) || []);
+  const inP = cs.map((c, i) => (/^−?\d+(\.\d+)?$/.test(c) && pnums.has(c.replace('−', '')) ? i : -1)).filter((i) => i >= 0);
+  out['number from the prompt'] = among(inP);
+  out['not from the prompt'] = inP.length && inP.length < 4 ? among(cs.map((_, i) => i).filter((i) => !inP.includes(i))) : null;
+  // fractions / ratios: the only reduced one; student sanity: the only proper reduced
+  // fraction, a positive "1 over …"
+  const fr = cs.map((c) => c.match(/^(−?)\\frac\{(\d+)\}\{(\d+)\}$/));
+  const rt = cs.map((c) => c.match(/^(\d+) : (\d+)$/));
+  if (cs.every((c, i) => fr[i] || rt[i])) {
+    out['only reduced'] = oddOne(cs.map((c, i) => { const m = fr[i] || rt[i]; const p = +m[fr[i] ? 2 : 1], d = +m[fr[i] ? 3 : 2]; return String(gcdT(p, d) === 1); }));
+  }
+  if (fr.some(Boolean)) {
+    out['proper reduced fraction'] = among(fr.map((m, i) => (m && !m[1] && +m[2] < +m[3] && gcdT(+m[2], +m[3]) === 1 ? i : -1)).filter((i) => i >= 0));
+    out['positive 1/x'] = among(fr.map((m, i) => (m && !m[1] && m[2] === '1' ? i : -1)).filter((i) => i >= 0));
+  }
   const vals = cs.map((c) => { try { return evalMath(c); } catch { return NaN; } });
   if (vals.every(Number.isFinite)) {
     const order = vals.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0]).map(([, i]) => i);
     ['smallest', 'lower median', 'upper median', 'largest'].forEach((name, k) => { out[name] = order[k] === ans ? 1 : 0; });
-    out['closest to zero'] = pickBy((c, i) => Math.abs(vals[cs.indexOf(c)]), false);
-    out['farthest from zero'] = pickBy((c) => Math.abs(vals[cs.indexOf(c)]), true);
+    out['closest to zero'] = pickBy(vals.map(Math.abs), false);
+    out['farthest from zero'] = pickBy(vals.map(Math.abs), true);
+    const mean = vals.reduce((s, v) => s + v, 0) / 4;
+    out['nearest the mean'] = pickBy(vals.map((v) => Math.abs(v - mean)), false);
+    out['only sign'] = oddOne(vals.map((v) => (v < 0 ? 'n' : v > 0 ? 'p' : 'z')));
+    out['only whole'] = oddOne(vals.map((v) => (Number.isInteger(v) ? 'i' : 'f')));
+    if (vals.every(Number.isInteger)) out['only parity'] = oddOne(vals.map((v) => Math.abs(v) % 2));
   }
   return out;
 }
 
-// which variant of a generator a question is (from its meta), for per-variant guards
+// which variant of a generator a question is (from its meta), for per-variant
+// guards; the letters (v, w = x, y, …) are not part of the variant
 function variantOf(q) {
   const m = q.meta || {};
-  const key = ['v', 'law', 'sub', 'op', 't', 'type'].filter((k) => m[k] !== undefined).map((k) => `${k}=${m[k]}`).join(',');
+  const key = ['v', 'law', 'sub', 'op', 't', 'type']
+    .filter((k) => m[k] !== undefined && !/^[a-z]$/.test(String(m[k])))
+    .map((k) => `${k}=${m[k]}`).join(',');
   return key || 'all';
 }
 
@@ -408,27 +443,35 @@ for (const g of GENERATORS) {
   }
 }
 
-const GUARD_RUNS = 3000; // choice questions per generator
+const GUARD_SEEDS = [777, 4242, 90001]; // each seed must pass on its own
+const GUARD_RUNS = 2000; // choice questions per generator per seed
 const GUARD_MIN = 150;   // a variant is judged once it has this many questions
 
 for (const g of GENERATORS) {
-  test(`${g.id}: choices don't give the answer away (${GUARD_RUNS} questions, every guesser ≤ 40%, per generator and per variant)`, () => {
-    const r = mulberry32(777 + g.id.length);
-    const groups = {}; // 'all' + each variant → { guesser: [hits, n] }
-    const tally = (key, s) => {
-      const gr = (groups[key] = groups[key] || {});
-      for (const [name, h] of Object.entries(s)) { const t = (gr[name] = gr[name] || [0, 0]); t[0] += h; t[1]++; }
-    };
-    for (let i = 0; i < GUARD_RUNS; i++) {
-      const q = g.make(r, 'choice');
-      const s = guessScores(q);
-      tally('(all)', s);
-      tally(variantOf(q), s);
-    }
+  test(`${g.id}: choices don't give the answer away (${GUARD_SEEDS.length} seeds × ${GUARD_RUNS}, every guesser ≤ 40%, per generator and per variant)`, () => {
     const bad = [];
-    for (const [key, gr] of Object.entries(groups)) {
-      for (const [name, [h, n]] of Object.entries(gr)) {
-        if (n >= GUARD_MIN && h / n > 0.4) bad.push(`${key} "${name}" ${(h / n * 100).toFixed(1)}% of ${n}`);
+    for (const seed of GUARD_SEEDS) {
+      const r = mulberry32(seed + g.id.length);
+      const groups = {}; // '(all)' + each variant → { guesser: [hits, n] }
+      const tally = (key, s) => {
+        const gr = (groups[key] = groups[key] || {});
+        for (const [name, h] of Object.entries(s)) { const t = (gr[name] = gr[name] || [0, 0]); t[0] += h === null ? 0.25 : h; t[1]++; }
+      };
+      // at least GUARD_RUNS, and on until every variant has 200 questions (max 3×)
+      const seen = {};
+      for (let i = 0; i < GUARD_RUNS * 3; i++) {
+        if (i >= GUARD_RUNS && Math.min(...Object.values(seen)) >= 200) break;
+        const q = g.make(r, 'choice');
+        const s = guessScores(q);
+        const v = variantOf(q);
+        seen[v] = (seen[v] || 0) + 1;
+        tally('(all)', s);
+        tally(v, s);
+      }
+      for (const [key, gr] of Object.entries(groups)) {
+        for (const [name, [h, n]] of Object.entries(gr)) {
+          if (n >= GUARD_MIN && h / n > 0.4) bad.push(`seed ${seed} ${key} "${name}" ${(h / n * 100).toFixed(1)}% of ${n}`);
+        }
       }
     }
     assert.deepEqual(bad, [], `${g.id} leaks: ${bad.join('; ')}`);
