@@ -17,6 +17,7 @@ export function levelOf(win) {
 /* Points: 10 for every exercise solved to the end, 1 for every correct step.
    Player level L → L+1 costs 100 + 50·(L−1) points (100, 150, 200, …).
    (Points will also pay for the avatar shop later: ROADMAP item 4.) */
+// SQL copy for friends' levels: duel_level() in supabase/migrations/20261108100000_duels_friends.sql — keep in sync.
 export const XP_WIN = 10, XP_OK = 1;
 export function xpOf(totals) { return (totals ? totals.win * XP_WIN + totals.ok * XP_OK : 0); }
 export function playerLevel(xp) {
