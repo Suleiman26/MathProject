@@ -1,9 +1,11 @@
 // duel-start edge function: end-to-end against the LOCAL Supabase.
 //
-// Needs (see supabase/functions/duel-start/README in the task report):
+// Needs:
 //   supabase start
 //   Vault secret 'duel_secret' in the local DB = DUEL_SECRET in supabase/.env.local
-//   supabase functions serve duel-start --no-verify-jwt --env-file supabase/.env.local
+//     (gitignored; make one value with `openssl rand -hex 32`, put it in both places)
+//   supabase functions serve duel-start --env-file supabase/.env.local
+//     (verify_jwt = false comes from supabase/config.toml [functions.duel-start])
 // Run:  node --test supabase/functions/duel-start/test.mjs
 //
 // Writes test accounts/duels into the local database only (never the live one:
@@ -182,11 +184,18 @@ test("wrong method / bad body → method / bad_request (4xx, JSON)", async () =>
   assert.equal(g.status, 405);
   assert.deepEqual(g.json, { error: "method" });
   for (const raw of ["not json", "[]", "{}", JSON.stringify({ tok: "x" }), JSON.stringify({ tok: "x", id: "nope" }),
-                     JSON.stringify({ tok: 5, id: "00000000-0000-0000-0000-000000000000" })]) {
+                     JSON.stringify({ tok: 5, id: "00000000-0000-0000-0000-000000000000" }),
+                     JSON.stringify({ tok: "x".repeat(5000), id: "00000000-0000-0000-0000-000000000000" })]) {
     const r = await start(null, { raw });
-    assert.equal(r.status, 400, raw);
-    assert.deepEqual(r.json, { error: "bad_request" }, raw);
+    assert.equal(r.status, 400, raw.slice(0, 60));
+    assert.deepEqual(r.json, { error: "bad_request" }, raw.slice(0, 60));
   }
+});
+
+test("no JWT check at the gateway (config.toml verify_jwt = false): a call without any key reaches the function", async () => {
+  const r = await fetch(FN, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+  assert.equal(r.status, 400, "a 401 here means the gateway checked a JWT");
+  assert.deepEqual(await r.json(), { error: "bad_request" });
 });
 
 test("invitee starts the duel: live, questions in the DB, no answer/meta/tol on any device", async () => {

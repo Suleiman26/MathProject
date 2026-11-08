@@ -11,11 +11,12 @@
 //
 // Database calls go through PostgREST (SUPABASE_URL + the project's anon /
 // publishable key, which the runtime provides): both functions are granted to
-// anon and guard themselves (session token / Vault secret), so no admin key is needed.
+// anon and guard themselves (session token / Vault secret), so no admin key is used.
+// verify_jwt = false is set in supabase/config.toml ([functions.duel-start]).
 // Secret: DUEL_SECRET (supabase secrets set) = Vault secret 'duel_secret'.
 //
 // Answers {ok:true} or {error:'<code>'}:
-//   method (405) · bad_request (400) · signed_out (403, dead session) · off (403, switch)
+//   method (405) · bad_request (400, also bodies over 4 KB) · signed_out (403, dead session) · off (403, switch)
 //   gone (409, not the invitee / not accepted / already started / too late)
 //   secret (500, DUEL_SECRET missing or ≠ Vault) · gen (500, no questions could be made)
 //   rows (500, the DB refused the questions) · db (502, database unreachable/odd answer)
@@ -28,7 +29,12 @@ const STATUS: Record<string, number> = {
   secret: 500, gen: 500, rows: 500, db: 502,
 };
 
-// the project's public key for PostgREST: legacy anon JWT, else the new publishable key
+const MAX_BODY = 4096;       // {tok, id} is ~150 bytes
+const DEADLINE_MS = 9000;    // claim + put together; the duel fails 10 s after 'accepted'
+
+// the project's PUBLIC key for PostgREST: legacy anon JWT, else the new publishable key.
+// Never an admin key: both functions are granted to anon and guard themselves.
+// No key → fail closed ('db').
 function apiKey(): string {
   const anon = Deno.env.get("SUPABASE_ANON_KEY");
   if (anon) return anon;
@@ -37,22 +43,27 @@ function apiKey(): string {
     const k = keys.default || Object.values(keys)[0];
     if (typeof k === "string" && k) return k;
   } catch { /* not set */ }
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  return "";
 }
 
 class Fail extends Error {
   constructor(public code: string) { super(code); }
 }
 
-async function rpc(fn: string, args: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function rpc(fn: string, args: Record<string, unknown>, signal: AbortSignal): Promise<Record<string, unknown>> {
   const base = (Deno.env.get("SUPABASE_URL") || "").replace(/\/+$/, "");
+  const key = apiKey();
+  if (!base || !key) {
+    console.error("duel-start: SUPABASE_URL or the public key is missing");
+    throw new Fail("db");
+  }
   let res: Response;
   try {
     res = await fetch(`${base}/rest/v1/rpc/${fn}`, {
       method: "POST",
-      headers: { apikey: apiKey(), "content-type": "application/json" },
+      headers: { apikey: key, "content-type": "application/json" },
       body: JSON.stringify(args),
-      signal: AbortSignal.timeout(8000),
+      signal,
     });
   } catch {
     throw new Fail("db");
@@ -72,9 +83,17 @@ async function rpc(fn: string, args: Record<string, unknown>): Promise<Record<st
 
 async function handle(req: Request): Promise<Record<string, unknown>> {
   if (req.method !== "POST") throw new Fail("method");
+  // one deadline for the whole request (claim + build + put)
+  const signal = AbortSignal.timeout(DEADLINE_MS);
 
+  // small bodies only: checked from content-length before reading, and again after
+  const len = Number(req.headers.get("content-length") ?? "");
+  if (Number.isFinite(len) && len > MAX_BODY) throw new Fail("bad_request");
   let input: unknown = null;
-  try { input = JSON.parse(await req.text()); } catch { /* bad JSON */ }
+  try {
+    const text = await req.text();
+    if (text.length <= MAX_BODY) input = JSON.parse(text);
+  } catch { /* bad JSON */ }
   const { tok, id } = (input && typeof input === "object" && !Array.isArray(input) ? input : {}) as Record<string, unknown>;
   if (typeof tok !== "string" || !tok || tok.length > 200 || typeof id !== "string" || !UUID.test(id)) {
     throw new Fail("bad_request");
@@ -84,7 +103,7 @@ async function handle(req: Request): Promise<Record<string, unknown>> {
   const secret = Deno.env.get("DUEL_SECRET");
   if (!secret) throw new Fail("secret");
 
-  const claim = await rpc("duel_claim_start", { tok, id });
+  const claim = await rpc("duel_claim_start", { tok, id }, signal);
   const seed = Number(claim.seed);
   if (!Number.isInteger(seed)) throw new Fail("db");
   const grade = gradeFor(claim.grade_a, claim.grade_b);
@@ -97,7 +116,7 @@ async function handle(req: Request): Promise<Record<string, unknown>> {
     throw new Fail("gen");
   }
 
-  await rpc("duel_put_questions", { secret, id, rows });
+  await rpc("duel_put_questions", { secret, id, rows }, signal);
   return { ok: true };
 }
 

@@ -401,3 +401,9 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Duels (spec §7.2): the site calls duel-start with the publishable key (not a JWT);
+# the function checks our own session token itself. Without this, a deploy that
+# forgets --no-verify-jwt makes the gateway answer 401 to every invitee.
+[functions.duel-start]
+verify_jwt = false
