@@ -149,13 +149,17 @@ export function convert(r, want) {
       .filter(Boolean)
       .filter(([p, q]) => p < q && p * d !== q * n) // a proper fraction, not equal to the answer
       .map(([p, q]) => f(p, q));
+    // every choice a proper, reduced fraction (a kid knows 0.x < 1 and "reduced" was asked);
+    // decoys: proper reduced fractions over "nice" denominators (2ᵃ·5ᵇ, from d/4 up to
+    // 4d and ≤ 100, plus the power of ten), close to the answer on both sides — so the
+    // right fraction has neither the smallest denominator nor the smallest numerator
+    const NICE = [2, 4, 5, 8, 10, 16, 20, 25, 32, 40, 50, 64, 80, 100];
+    const dens = [...new Set([...NICE.filter((q) => q >= d / 4 && q <= 4 * d), p10])].filter((q) => q <= 100);
     return choiceQuestion(r, `המרת עשרוני לשבר: כתבו את $${decText(dec)}$ כשבר מצומצם`, f(n, d), wrongs, { v: 'd2f', dec: decText(dec) },
-      // every choice a proper, reduced fraction (a kid knows 0.x < 1 and "reduced" was asked);
-      // decoys: proper reduced fractions over nice denominators, on both sides of the answer
       {
         accept: (t) => { const m = t.match(/^\\frac\{(\d+)\}\{(\d+)\}$/); return !!m && +m[1] < +m[2] && gcd(+m[1], +m[2]) === 1; },
-        extra: [d, 2 * d, d / 2, p10].filter((q) => Number.isInteger(q) && q > 1 && q <= 100)
-          .flatMap((q) => { const c = Math.round(n * q / d); return [-4, -3, -2, -1, 1, 2, 3, 4].map((k) => [c + k, q]); })
+        extra: dens
+          .flatMap((q) => { const c = Math.round(n * q / d); return [-3, -2, -1, 1, 2, 3].map((k) => [c + k, q]); })
           .filter(([p, q]) => p >= 1 && p < q && gcd(p, q) === 1 && p * d !== q * n)
           .map(([p, q]) => f(p, q)),
       });

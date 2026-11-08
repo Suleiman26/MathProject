@@ -12,7 +12,18 @@
 //                         last digit / shape / reduced-or-not;
 //   • consensus         — shares the most numbers (same places) with the others;
 //   • prompt            — a number that appears in the question (or the only
-//                         ones that don't).
+//                         ones that don't);
+//   • extreme numbers   — over ALL numbers printed in a choice (coefficients,
+//                         exponents, roots, fractions): smallest / largest sum,
+//                         first number, last number; fewest / most numbers
+//                         shared with the prompt (for plain numbers these are
+//                         the distance and prompt guessers above, so they are
+//                         scored only for expression / fraction choices);
+//   • covered           — every number of the choice appears in another choice
+//                         (the answer as the hub of its mistakes).
+// Whole expressions as 4 choices (x³y², 3√2, 2⁵) leak through that last family
+// whatever the decoys, so the topic ports ask ONE slot of such an answer
+// (coefficient or exponent, "…= ?x^{12}") as plain numbers instead.
 // So makeChoices builds candidates — real typical mistakes, two mistakes in
 // one (a "web" around the answer, not a star), then decoys — and scores sets
 // of 3 wrongs:
@@ -100,10 +111,11 @@ export function neighbours(a, b) {
 
 // forms nobody writes: x^{0}, x^{1}, x^{−2} in an answer, \sqrt{1}, \frac{n}{1}, 1\sqrt{…}, 0x
 const ODD = /\^\{(0|1|\u2212[^}]*)\}|\\sqrt\{[01]\}|\\frac\{[^}]*\}\{1\}|\\frac\{0\}|(^|[^\d.])[01](?=\\sqrt|[a-z])/;
-const isSquare = (n) => Number.isInteger(Math.sqrt(n));
+// a radicand with a square factor (√4, √8, √50) is never a finished answer
+const squareFactor = (n) => { for (let k = 2; k * k <= n; k++) if (n % (k * k) === 0) return true; return false; };
 function badForm(t, right) {
   if (ODD.test(t)) return true;
-  for (const m of t.matchAll(/\\sqrt\{(\d+)\}/g)) if (isSquare(Number(m[1]))) return true; // k√4 is just 2k
+  for (const m of t.matchAll(/\\sqrt\{(\d+)\}/g)) if (squareFactor(Number(m[1]))) return true; // k√8 is 2k√2
   const ratio = t.match(/^(\d+) : (\d+)$/);
   if (ratio && ratio[1] === ratio[2] && !/^(\d+) : \1$/.test(right)) return true; // "9 : 9"
   return false;
@@ -176,6 +188,31 @@ function webs(right, list) {
     out.push(sk.replace(/#/g, () => merged[i++]));
   }
   return out;
+}
+
+// A seeded (value rank, distance rank) pair for the answer among the pairs that
+// 3 wrongs can reach (each wrong is below the answer by value and/or by
+// distance from zero, or by neither). The pair is drawn from a distribution
+// over the reachable pairs whose two marginals are as even as possible
+// (a few rounds of row / column scaling), so neither "smallest" nor "closest
+// to zero" is favoured even when the two ranks are tied to each other.
+function jointTarget(r, lowV, lowA) {
+  const cnt = [0, 0, 0, 0]; // type = lowV·2 + lowA, over the wrongs
+  for (let i = 1; i < lowV.length; i++) cnt[lowV[i] * 2 + lowA[i]]++;
+  const M = Array.from({ length: 4 }, () => [0, 0, 0, 0]);
+  for (let a = 0; a <= Math.min(3, cnt[0]); a++) for (let b = 0; a + b <= 3 && b <= cnt[1]; b++)
+    for (let c = 0; a + b + c <= 3 && c <= cnt[2]; c++) { const d = 3 - a - b - c; if (d <= cnt[3]) M[c + d][b + d] = 1; }
+  const rows = M.map((row) => row.some(Boolean)), cols = [0, 1, 2, 3].map((j) => M.some((row) => row[j]));
+  const nr = rows.filter(Boolean).length, nc = cols.filter(Boolean).length;
+  if (!nr) return [-1, -1];
+  for (let it = 0; it < 12; it++) {
+    for (let i = 0; i < 4; i++) if (rows[i]) { const s = M[i].reduce((x, y) => x + y, 0); for (let j = 0; j < 4; j++) M[i][j] *= 1 / nr / s; }
+    for (let j = 0; j < 4; j++) if (cols[j]) { let s = 0; for (let i = 0; i < 4; i++) s += M[i][j]; for (let i = 0; i < 4; i++) M[i][j] *= 1 / nc / s; }
+  }
+  let u = r() * M.flat().reduce((x, y) => x + y, 0);
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { u -= M[i][j]; if (u <= 0 && M[i][j] > 0) return [i, j]; }
+  for (let i = 3; i >= 0; i--) for (let j = 3; j >= 0; j--) if (M[i][j] > 0) return [i, j];
+  return [-1, -1];
 }
 
 function* combos(arr, k, start = 0, pre = []) {
@@ -262,6 +299,16 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
   const KEYS = kf.map((f) => { const k = keyer(); return Int32Array.from(all, (c) => k(f(c))); });
   const pnums = new Set(opts.prompt ? opts.prompt.match(NUM) || [] : []);
   const inP = all.map((c) => (plain(c.t) !== null && pnums.has(c.t.replace(MINUS, '')) ? 1 : 0));
+  // extreme numbers (expression / fraction choices only; plain numbers are
+  // covered by the distance rank and the prompt guesser)
+  const plainAll = all.every((c) => plain(c.t) !== null);
+  const NN = P.map((p) => p[1].map(Number));
+  const EXT = plainAll ? [] : [
+    [NN.map((a) => a.reduce((s, x) => s + x, 0)), false], [NN.map((a) => a.reduce((s, x) => s + x, 0)), true],
+    [NN.map((a) => (a.length ? a[0] : 0)), false], [NN.map((a) => (a.length ? a[0] : 0)), true],
+    [NN.map((a) => (a.length ? a[a.length - 1] : 0)), false], [NN.map((a) => (a.length ? a[a.length - 1] : 0)), true],
+    [P.map((p) => p[1].filter((x) => pnums.has(x)).length), false], [P.map((p) => p[1].filter((x) => pnums.has(x)).length), true],
+  ];
 
   /* ── seeded targets / let-offs for this question ── */
   const target = (low) => {
@@ -269,10 +316,14 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
     const reach = [0, 1, 2, 3].filter((k) => below >= k && n - 1 - below >= 3 - k);
     return reach.length ? reach[randInt(r, 0, reach.length - 1)] : -1;
   };
-  const tV = rankable ? target(lowV) : -1;
-  const tA = useA ? target(lowA) : -1;
+  // the value rank and the distance rank are drawn TOGETHER from the pairs a
+  // set can really reach (for 2 among 1, 0, −1, 4, 8 "closest to zero" also
+  // means "smallest"); drawn apart they clash and the natural rank wins
+  let tV = -1, tA = -1;
+  if (useA) [tV, tA] = jointTarget(r, lowV, lowA);
+  else if (rankable) tV = target(lowV);
   const tL = randInt(r, 0, 3); // 0: may be the shortest, 3: may be the longest
-  const free = Array.from({ length: KEYS.length + 4 }, () => r() < 0.25); // guessers let off this time
+  const free = Array.from({ length: KEYS.length + 4 + EXT.length + 1 }, () => r() < 0.25); // guessers let off this time
   const best = W_STRICT + (tV >= 0 ? W_RANK : 0) + (tA >= 0 ? W_RANK : 0);
 
   // share of a "pick the max of x" guesser that the answer gets, minus chance
@@ -330,6 +381,20 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
       if (!free[G + 2] && inP[0]) pen += Math.max(0, 1 / pc - 0.25);
       if (!free[G + 3] && !inP[0] && pc < 4) pen += Math.max(0, 1 / (4 - pc) - 0.25);
     }
+    // extreme numbers: smallest / largest sum, first, last, shared with the prompt
+    for (let g = 0; g < EXT.length; g++) {
+      if (free[G + 4 + g]) continue;
+      const [A, mx] = EXT[g];
+      pen += over(A[0], A[i], A[j], A[k], mx);
+    }
+    // "covered": every number of the choice appears in another choice (the answer
+    // is the hub of its mistakes: 2 : 3 among 3 : 2, 2 : 5, 3 : 5; for plain
+    // numbers: its negative is in the set)
+    if (!free[G + 4 + EXT.length]) {
+      const S = [0, i, j, k];
+      const cov = S.map((x) => P[x][1].length > 0 && P[x][1].every((tok) => S.some((y) => y !== x && P[y][1].includes(tok))) ? 1 : 0);
+      pen += over(cov[0], cov[1], cov[2], cov[3], true);
+    }
     return sc - W_GUESS * pen;
   };
 
@@ -337,21 +402,27 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
   const F = shuffle(r, Array.from({ length: n - 1 - nReal }, (_, q) => q + 1 + nReal));
   const must = opts.must;
   let pick = null, top = -Infinity, fallback = null;
-  // phases: 3 real mistakes, 2 + 1 decoy, 1 + 2, 3 decoys; each phase gets at
-  // most MAX_EVAL sets (so the all-decoy phase is always explored too)
+  // phases: 3 real mistakes, 2 + 1 decoy, 1 + 2, 3 decoys; each phase scores at
+  // most MAX_EVAL sets that miss the seeded rank targets and MAX_EVAL that hit
+  // them (so the all-decoy phase is always explored, and the few sets that put
+  // the answer at the rank wanted are not cut off by the cap)
+  const hits = (i, j, l) => (tV < 0 || lowV[i] + lowV[j] + lowV[l] === tV) && (tA < 0 || lowA[i] + lowA[j] + lowA[l] === tA);
   search: for (let k = Math.min(3, R.length); k >= 0; k--) {
-    let evals = 0;
+    let misses = 0, onTarget = 0;
     phase: for (const rs of combos(R, k)) {
       for (const fs of combos(F, 3 - k)) {
+        if (misses >= MAX_EVAL && onTarget >= MAX_EVAL) break phase;
         const [i, j, l] = [...rs, ...fs];
+        const h = hits(i, j, l);
+        if (h ? onTarget >= MAX_EVAL : misses >= MAX_EVAL) continue;
         if (must && !must([all[i].t, all[j].t, all[l].t])) continue;
         fallback = fallback || [i, j, l];
         const sc = score(i, j, l);
         if (sc === -Infinity) continue;
+        if (h) onTarget++; else misses++;
         const total = sc + W_REAL * k;
         if (total > top) { top = total; pick = [i, j, l]; }
         if (sc >= best - 1e-9) break search; // perfect: more real mistakes were tried first
-        if (++evals >= MAX_EVAL) break phase;
       }
     }
   }

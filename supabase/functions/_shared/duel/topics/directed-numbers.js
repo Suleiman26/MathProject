@@ -58,17 +58,30 @@ export function mul(r, want) {
   // + the factors themselves with both signs: with a ±1 factor the answer is one of
   // them, so the sign rule (the skill) must decide, not "the number from the question"
   const wrongs = [-ans, a + b, -(a + b), a, -a, b, -b];
-  return numberQuestion(r, want, `${T_MUL}: $${fmtS(a)} × ${fmtS(b)} = ?$`, ans, wrongs, { a, b }, SIGNED);
+  const one = Math.abs(a) === 1 || Math.abs(b) === 1;
+  return numberQuestion(r, want, `${T_MUL}: $${fmtS(a)} × ${fmtS(b)} = ?$`, ans, wrongs, { a, b, one }, withOpposite(one, ans));
+}
+
+// with a ±1 factor the answer's magnitude is printed in the question, so the
+// opposite sign is ALWAYS one of the choices (the sign rule decides); the
+// guard measures these questions as their own variant (meta.one)
+function withOpposite(one, ans) {
+  if (!one) return SIGNED;
+  const opp = fmt(-ans);
+  return { ...SIGNED, must: (ts) => ts.includes(opp) };
 }
 
 // port of genDiv() — src/topics/directed-numbers/Topic.jsx L104
 export function div(r, want) {
   let dv, ds, q;
+  // duel limit: equal magnitudes ((−9) ÷ (−9) = ±1) only as a typed question —
+  // as 4 choices with both ±1 present the answer always sits nearest the mean
   do { const [sa, sb] = pickSigns(r); q = randInt(r, 1, 10) * sa; ds = randInt(r, 1, 10) * sb; dv = q * ds; }
-  while (Math.abs(dv) > 20 || ds === 0);
+  while (Math.abs(dv) > 20 || ds === 0 || (want !== 'number' && Math.abs(q) === 1));
   // mistakes: sign rule, multiplied instead, subtracted instead
   const wrongs = [-q, dv * ds, dv - ds, dv, -dv, ds, -ds]; // + the given numbers, both signs
-  return numberQuestion(r, want, `${T_DIV}: $${fmtS(dv)} ÷ ${fmtS(ds)} = ?$`, q, wrongs, { a: dv, b: ds }, SIGNED);
+  const one = Math.abs(ds) === 1; // ÷ (±1): the answer's magnitude is printed
+  return numberQuestion(r, want, `${T_DIV}: $${fmtS(dv)} ÷ ${fmtS(ds)} = ?$`, q, wrongs, { a: dv, b: ds, one }, withOpposite(one, q));
 }
 
 // port of genCombo() — src/topics/directed-numbers/Topic.jsx L636

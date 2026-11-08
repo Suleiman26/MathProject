@@ -167,6 +167,20 @@ function guessScores(q) {
   const inP = cs.map((c, i) => (/^−?\d+(\.\d+)?$/.test(c) && pnums.has(c.replace('−', '')) ? i : -1)).filter((i) => i >= 0);
   out['number from the prompt'] = among(inP);
   out['not from the prompt'] = inP.length && inP.length < 4 ? among(cs.map((_, i) => i).filter((i) => !inP.includes(i))) : null;
+  // extreme numbers, over EVERY number printed in a choice (coefficients, exponents,
+  // roots, fractions, "a : b"): sum, first, last; and how many it shares with the prompt
+  const nums = toks.map((t) => t.map(Number));
+  if (nums.every((t) => t.length)) {
+    const sums = nums.map((t) => t.reduce((s, x) => s + x, 0));
+    out['smallest sum'] = pickBy(sums, false); out['largest sum'] = pickBy(sums, true);
+    out['smallest first number'] = pickBy(nums.map((t) => t[0]), false); out['largest first number'] = pickBy(nums.map((t) => t[0]), true);
+    out['smallest last number'] = pickBy(nums.map((t) => t[t.length - 1]), false); out['largest last number'] = pickBy(nums.map((t) => t[t.length - 1]), true);
+  }
+  const shared = toks.map((t) => t.filter((x) => pnums.has(x)).length);
+  out['fewest shared with the prompt'] = pickBy(shared, false); out['most shared with the prompt'] = pickBy(shared, true);
+  // every number of the choice appears in another choice (the hub of a web of mistakes)
+  const covered = toks.map((t, i) => (t.length && t.every((x) => toks.some((u, j) => j !== i && u.includes(x))) ? i : -1)).filter((i) => i >= 0);
+  out['all its numbers elsewhere'] = among(covered);
   // fractions / ratios: the only reduced one; student sanity: the only proper reduced
   // fraction, a positive "1 over …"
   const fr = cs.map((c) => c.match(/^(−?)\\frac\{(\d+)\}\{(\d+)\}$/));
@@ -194,10 +208,11 @@ function guessScores(q) {
 }
 
 // which variant of a generator a question is (from its meta), for per-variant
-// guards; the letters (v, w = x, y, …) are not part of the variant
+// guards; the letters (v, w = x, y, …) are not part of the variant.
+// ask = which slot of a multi-part answer; one = a ±1 factor (directed numbers)
 function variantOf(q) {
   const m = q.meta || {};
-  const key = ['v', 'law', 'sub', 'op', 't', 'type']
+  const key = ['v', 'law', 'sub', 'op', 't', 'type', 'ask', 'one']
     .filter((k) => m[k] !== undefined && !/^[a-z]$/.test(String(m[k])))
     .map((k) => `${k}=${m[k]}`).join(',');
   return key || 'all';
@@ -222,6 +237,16 @@ const MIXED = {
 
 const X = 1.7, Y = 2.3; // letter values for expression choices
 
+/* One slot of a monomial k·v^A·w^B from its left-hand side f(X, Y), read off
+   numerically: k = f(1, 1), A = log₂(f(2, 1) / k), B = log₂(f(1, 2) / k). */
+function slotValue(f, ask) {
+  const k = f(1, 1);
+  const r6 = (x) => Math.round(x * 1e6) / 1e6;
+  if (ask === 'coef') return r6(k);
+  if (ask === 'B') return r6(Math.log2(f(1, 2) / k));
+  return r6(Math.log2(f(2, 1) / k)); // 'A' (or an exp-only template)
+}
+
 /* Per generator: expected value of the right answer, and (for expression
    choices) the letter values to evaluate the choices with. */
 const EXPECT = {
@@ -240,10 +265,14 @@ const EXPECT = {
     assert.equal(lx * x + lc, rx * x + rc, 'prompt says otherwise: ' + q.prompt);
     return { value: x };
   },
-  'pr.powers': (m) => {
+  'pr.powers': (m, q) => {
     if (m.v === 'calc') return { value: powLoop(m.base, m.exp) };
     if (m.v === 'rev') { let e = 0, p = 1; while (p < m.value) { p *= m.base; e++; } assert.equal(p, m.value); return { value: e }; }
-    return { value: powLoop(m.base, m.count) }; // prod: the choice is a power with that value
+    // prod: "b · b · b = b^{?}" — the answer is how many factors the prompt prints
+    const [chain, rhs] = mathOf(q.prompt).split('=');
+    const factors = chain.split('·').map((s) => s.trim());
+    assert.ok(factors.every((f) => f === String(m.base)) && rhs.trim() === `${m.base}^{?}`, q.prompt);
+    return { value: factors.length };
   },
   'pr.laws': (m) => {
     const B = m.base;
@@ -258,23 +287,24 @@ const EXPECT = {
     if (m.sub === 0) return { value: Math.log2(2 ** m.a * 2 ** m.b) };
     if (m.sub === 1) return { value: Math.log2((2 ** m.a) ** m.b * 2 ** m.c) };
     if (m.sub === 3) return { value: Math.log2(2 ** m.a / 2 ** m.b) };
-    const env = { [m.v]: X, [m.w]: Y };
-    if (m.sub === 2) return { value: (m.k * X ** m.a) ** m.b, env };
-    return { value: (m.k * X ** m.a * Y ** m.b) ** m.c, env };
+    // subs 2 and 4: one slot of (k·v^a[·w^b])^n, read off the left-hand side
+    if (m.sub === 2) return { value: slotValue((x) => (m.k * x ** m.a) ** m.b, m.ask) };
+    return { value: slotValue((x, y) => (m.k * x ** m.a * y ** m.b) ** m.c, m.ask) };
   },
   'pr.roots': (m) => {
     if (m.sub === 0) return { value: Math.sqrt(m.val) };
     if (m.sub === 1) return { value: Math.sqrt(m.val) };
     if (m.op === 0) return { value: Math.sqrt(m.a * m.b) };
     if (m.op === 1) return { value: Math.sqrt(m.a / m.b) };
-    if (m.op === 2) return m.ask === 'coef' ? { value: (m.k * Math.sqrt(m.base) + m.m * Math.sqrt(m.base)) / Math.sqrt(m.base) }
-      : { value: m.k * Math.sqrt(m.base) + m.m * Math.sqrt(m.base) };
-    return { value: Math.sqrt(m.a) + Math.sqrt(m.b) };
+    // op 2 and 3: the coefficient of √base, "k√b + m√b = ?√b", "√a + √b = ?√base"
+    assert.equal(m.ask, 'coef');
+    if (m.op === 2) return { value: (m.k * Math.sqrt(m.base) + m.m * Math.sqrt(m.base)) / Math.sqrt(m.base) };
+    return { value: (Math.sqrt(m.a) + Math.sqrt(m.b)) / Math.sqrt(m.base) };
   },
-  'pr.mixed': (m) => {
+  'pr.mixed': (m, q) => {
     const f = MIXED[m.t];
-    if (m.type === 'exp') return { value: Math.round(Math.log2(f(m, 2, 3)) * 1e6) / 1e6 };
-    return { value: f(m, X, Y), env: { [m.v]: X, [m.w]: Y } };
+    if (m.type !== 'exp') assert.ok(['coef', 'A', 'B'].includes(m.ask), q.prompt);
+    return { value: slotValue((x, y) => f(m, x, y), m.ask) };
   },
   'rp.ratio': (m, q) => {
     if (m.v === 'simp') return { value: m.a / m.b, ratio: true };

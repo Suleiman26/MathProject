@@ -1,27 +1,28 @@
 // Powers and roots (grades 8–9) — ported from Sulaiman's
 // src/topics/powers-roots/Topic.jsx (never edited).
 // Answers with two or three slots on the topic page (coefficient + exponent,
-// a√b, a·b) are asked here as ONE answer: a 'number' question asks a single
-// slot, everything else becomes 4 choices.
+// a√b, x^a·y^b) are asked here as ONE slot: the rest of the answer is printed
+// ("(2b^{4})^{3} = ?b^{12}", "√8 + √2 = ?√2", "2 · 2 · 2 = 2^{?}") and the
+// missing number is typed or picked from 4 plain numbers. Whole expressions as
+// 4 choices gave the answer away by their numbers (see choices.js). In choice
+// mode the printed part must not contain the answer: the same template is
+// re-rolled (numbers / slot) until it doesn't.
 // Math markup: x^{n}, \sqrt{n}, \frac{a}{b}; his "x^3" → "x^{3}".
 import { randInt, pick } from '../rng.js';
 import { fmt, numberQuestion, choiceQuestion } from '../choices.js';
+
+// does the math text (with its "?") print the answer somewhere?
+const printed = (q, ans) => (q.match(/\d+/g) || []).includes(String(ans));
+// a count of factors, a value, a root's or a monomial's coefficient is positive:
+// no "0" or negative choice there (an exponent may be 0: a⁰ is in the chapter)
+const POS = { accept: (t) => Number(t.replace('−', '-')) >= 1 };
 
 // port of VARS + pickVars() — src/topics/powers-roots/Topic.jsx L31
 const VARS = ['x', 'y', 'z', 'a', 'b', 'm', 'n', 't'];
 function pickVars(r) { const v = pick(r, VARS); let w = pick(r, VARS); while (w === v) w = pick(r, VARS); return [v, w]; }
 
 const pw = (b, e) => (e === 1 ? `${b}` : `${b}^{${fmt(e)}}`);
-// a monomial: coef · v^e · w^f (coef 1 and exponent 1 are not written)
-function mono(coef, parts) {
-  return (coef === 1 ? '' : String(coef)) + parts.map(([v, e]) => pw(v, e)).join('');
-}
 const rt = (c, b) => (c === 1 ? '' : String(c)) + `\\sqrt{${b}}`;
-// keep only wrongs whose key differs from the right one and from each other
-function distinct(right, list, key = (x) => x.join(',')) {
-  const seen = new Set([key(right)]);
-  return list.filter((x) => { const k = key(x); if (seen.has(k)) return false; seen.add(k); return true; });
-}
 
 /* ── Chapter 1: understanding powers ─────────────────────────────── */
 
@@ -47,25 +48,22 @@ function genBaseExpProduct(r) {
 }
 
 export function powers(r, want) {
-  if (want !== 'number' && randInt(r, 0, 2) === 0) {
-    const { base, exp } = genBaseExpProduct(r);
+  if (randInt(r, 0, 2) === 0) {
+    // one slot: the exponent ("2 · 2 · 2 = 2^{?}"); the base is printed, so as
+    // 4 choices base ≠ count (3 · 3 · 3 = 3^{?} would print the answer)
+    let base, exp;
+    do { ({ base, exp } = genBaseExpProduct(r)); } while (want !== 'number' && base === exp);
     const chain = Array.from({ length: exp }, () => base).join(' · ');
-    const val = Math.pow(base, exp);
-    // mistakes: base and exponent swapped, one factor too few/many, multiplied
-    const wrongs = [[exp, base], [base, exp - 1], [base, exp + 1], [base * exp, 1]]
-      .filter(([b, e]) => Math.pow(b, e) !== val && !(e === 1 && b === val));
-    return choiceQuestion(r, `כתבו את הכפל כחזקה: $${chain} = ?$`, pw(base, exp),
-      wrongs.map(([b, e]) => (e === 1 ? String(b) : pw(b, e))), { v: 'prod', base, count: exp },
-      // decoys: same base other count, or same count with the count / base×count as the base
-      // (a web: some share the base, some the exponent), no random other bases
-      { decoys: false, extra: [pw(base, exp + 2), pw(base, Math.max(2, exp - 2)), pw(base * exp, exp), pw(exp, exp), String(base + exp)] });
+    // mistakes: the base (swapped), one factor too few / many
+    const wrongs = [base, exp - 1, exp + 1];
+    return numberQuestion(r, want, `כתבו את הכפל כחזקה: $${chain} = ${base}^{?}$`, exp, wrongs, { v: 'prod', base, count: exp }, POS);
   }
   const ex = genCh1(r);
   if (ex.mode === 0) {
     const { base, exp, ans } = ex;
     // mistakes: base × exponent, one factor too few/many
     const wrongs = [base * exp, Math.pow(base, exp - 1), Math.pow(base, exp + 1)];
-    return numberQuestion(r, want, `הבנת חזקות: $${pw(base, exp)} = ?$`, ans, wrongs, { v: 'calc', base, exp });
+    return numberQuestion(r, want, `הבנת חזקות: $${pw(base, exp)} = ?$`, ans, wrongs, { v: 'calc', base, exp }, POS);
   }
   const { base, exp, ans } = ex;
   // mistakes: divided once instead of counting the factors, the base read as the exponent
@@ -136,7 +134,9 @@ export function laws(r, want) {
   // few / many, n^b), the power without "1 over", the minus kept.
   // At least 2 other "1 over …" choices, so "pick the positive 1/x" can't win.
   const unit = (d) => `\\frac{1}{${d}}`;
-  const wrongs = [unit(base * n), unit(den / base), unit(den * base), unit(den * base * base), unit(Math.pow(n, base)), `${den}`, `−${den}`, `−${unit(den)}`];
+  // (plus the two-mistake webs base·n and −1/(base·n), so the right answer is not
+  // the only choice whose numbers all appear in other choices)
+  const wrongs = [unit(base * n), unit(den / base), unit(den * base), unit(den * base * base), unit(Math.pow(n, base)), `${den}`, `−${den}`, `−${unit(den)}`, `${base * n}`, `−${unit(base * n)}`];
   const isUnit = (t) => /^\\frac\{1\}\{\d+\}$/.test(t);
   return choiceQuestion(r, prompt, unit(den), wrongs, { law, base, n },
     { decoys: false, must: (ts) => ts.filter(isUnit).length >= 2 });
@@ -171,32 +171,40 @@ function genParam(r, subIdx) {
 }
 
 export function param(r, want) {
-  const sub = want === 'number' ? pick(r, [0, 1, 3]) : randInt(r, 0, 4);
-  const ex = genParam(r, sub);
-  const prompt = `${paramNames[sub]}: $${ex.q}$`;
-  const { v, w } = ex;
+  const sub = randInt(r, 0, 4);
+  let ex = genParam(r, sub);
   if (sub === 0) {
     const { a, b, ans } = ex;
-    return numberQuestion(r, want, prompt, ans, [a * b, Math.max(a, b)], { sub, a, b });
+    return numberQuestion(r, want, `${paramNames[sub]}: $${ex.q}$`, ans, [a * b, Math.max(a, b)], { sub, a, b });
   }
   if (sub === 1) {
     const { a, b, c, ans } = ex;
-    return numberQuestion(r, want, prompt, ans, [a + b + c, a * b * c, Math.pow(a, b) + c],{ sub, a, b, c });
+    return numberQuestion(r, want, `${paramNames[sub]}: $${ex.q}$`, ans, [a + b + c, a * b * c, Math.pow(a, b) + c],{ sub, a, b, c });
   }
   if (sub === 3) {
     const { a, b, ans } = ex;
-    return numberQuestion(r, want, prompt, ans, [a + b, a / b, a * b].filter(Number.isInteger), { sub, a, b });
+    return numberQuestion(r, want, `${paramNames[sub]}: $${ex.q}$`, ans, [a + b, a / b, a * b].filter(Number.isInteger), { sub, a, b });
   }
-  if (sub === 2) {
-    const { k, a, b, coefAns, expAns } = ex;
-    // mistakes: k·b instead of k^b, exponents added, coefficient not raised
-    const wrongs = distinct([coefAns, expAns], [[k * b, expAns], [coefAns, a + b], [k, expAns], [k * b, a + b]]);
-    return choiceQuestion(r, prompt, mono(coefAns, [[v, expAns]]), wrongs.map(([c, e]) => mono(c, [[v, e]])), { sub, k, a, b, v, w });
+  // subs 2 and 4 answer a whole monomial (k^n · v^{an} [· w^{bn}]) on the topic
+  // page; here ONE slot of it is asked — the coefficient ('coef') or an
+  // exponent ('A' for v, 'B' for w) — and the other parts are printed.
+  // Mistakes per slot: ×n instead of a power / added instead of multiplied,
+  // the part not raised at all, the two numbers swapped as a power.
+  let ask, rhs, ans, wrongs, meta;
+  for (let t = 0; ; t++) {
+    const { v, w } = ex;
+    const n = sub === 2 ? ex.b : ex.c;
+    const coef = Math.pow(ex.k, n), eA = ex.a * n, eB = sub === 4 ? ex.b * n : 0;
+    ask = pick(r, sub === 2 ? ['coef', 'A'] : ['coef', 'A', 'B']);
+    const tail = sub === 4 ? pw(w, eB) : '';
+    if (ask === 'coef') { rhs = `?${pw(v, eA)}${tail}`; ans = coef; wrongs = [ex.k * n, ex.k, Math.pow(ex.k, n + 1), Math.pow(n, ex.k)]; }
+    else if (ask === 'A') { rhs = `${coef}${v}^{?}${tail}`; ans = eA; wrongs = [ex.a + n, ex.a, Math.pow(ex.a, n), Math.pow(n, ex.a)]; }
+    else { rhs = `${coef}${pw(v, eA)}${w}^{?}`; ans = eB; wrongs = [ex.b + n, ex.b, Math.pow(ex.b, n), Math.pow(n, ex.b)]; }
+    meta = sub === 2 ? { sub, k: ex.k, a: ex.a, b: ex.b, v, w, ask } : { sub, k: ex.k, a: ex.a, b: ex.b, c: ex.c, v, w, ask };
+    if (want === 'number' || t >= 20 || !printed(ex.q + rhs, ans)) break;
+    ex = genParam(r, sub);
   }
-  const { k, a, b, c, coefAns, expA, expB } = ex;
-  const wrongs = distinct([coefAns, expA, expB], [[k * c, expA, expB], [coefAns, a + c, b + c], [k, expA, expB], [coefAns, expA, b]]);
-  return choiceQuestion(r, prompt, mono(coefAns, [[v, expA], [w, expB]]),
-    wrongs.map(([cf, e1, e2]) => mono(cf, [[v, e1], [w, e2]])), { sub, k, a, b, c, v, w });
+  return numberQuestion(r, want, `${paramNames[sub]}: $${ex.q.replace(/\?$/, rhs)}$`, ans, wrongs, meta, ask === 'coef' ? POS : undefined);
 }
 
 /* ── Chapter 4: square roots ─────────────────────────────────────── */
@@ -236,13 +244,13 @@ function genRoot(r, subIdx, opType) {
 
 export function roots(r, want) {
   // which kind: 0 exact, 1 simplify, 2.0 ×, 2.1 ÷, 2.2 like terms, 2.3 √a+√b
-  const kinds = want === 'number' ? [[0], [2, 0], [2, 1], [2, 2]] : [[0], [1], [2, 0], [2, 1], [2, 2], [2, 3]];
+  const kinds = want === 'number' ? [[0], [2, 0], [2, 1], [2, 2], [2, 3]] : [[0], [1], [2, 0], [2, 1], [2, 2], [2, 3]];
   const [sub, op] = pick(r, kinds);
-  const ex = genRoot(r, sub, op);
+  let ex = genRoot(r, sub, op);
   const name = rootNames[sub];
   if (sub === 0) {
     const { val, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${val}} = ?$`, ans, [val / 2, ans * 2, val].filter(Number.isInteger), { sub, val });
+    return numberQuestion(r, want, `${name}: $\\sqrt{${val}} = ?$`, ans, [val / 2, ans * 2, val].filter(Number.isInteger), { sub, val }, POS);
   }
   if (sub === 1) {
     const { a, b, val } = ex;
@@ -252,26 +260,26 @@ export function roots(r, want) {
   }
   if (ex.opType === 0) {
     const { a, b, prod, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} · \\sqrt{${b}} = ?$`, ans, [prod, a + b, b - a],{ sub, op: 0, a, b });
+    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} · \\sqrt{${b}} = ?$`, ans, [prod, a + b, b - a],{ sub, op: 0, a, b }, POS);
   }
   if (ex.opType === 1) {
     const { a, b, div, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} ÷ \\sqrt{${b}} = ?$`, ans, [div, a - b, div / 2].filter(Number.isInteger),{ sub, op: 1, a, b });
+    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} ÷ \\sqrt{${b}} = ?$`, ans, [div, a - b, div / 2].filter(Number.isInteger),{ sub, op: 1, a, b }, POS);
   }
+  // op 2 and 3 answer k√b; here the root is printed and ONE slot — the
+  // coefficient — is asked ("√8 + √2 = ?√2"). As 4 choices the printed part
+  // must not contain the answer (2√5 + 3√5 = ?√5; √12 + √3 = ?√3): re-roll.
   if (ex.opType === 2) {
+    for (let t = 0; want !== 'number' && t < 20 && printed(`${ex.k} ${ex.base} ${ex.m}`, ex.ans); t++) ex = genRoot(r, 2, 2);
     const { base, k, m, ans } = ex;
-    const lhs = `${rt(k, base)} + ${rt(m, base)}`;
-    if (want === 'number') {
-      return numberQuestion(r, want, `${name}: $${lhs} = ?\\sqrt{${base}}$`, ans, [k * m], { sub, op: 2, base, k, m, ask: 'coef' });
-    }
-    // mistakes: roots added too, coefficients multiplied
-    const wrongs = [rt(ans, 2 * base), rt(k * m, base), rt(k * m, 2 * base)];
-    return choiceQuestion(r, `${name}: $${lhs} = ?$`, rt(ans, base), wrongs, { sub, op: 2, base, k, m, ask: 'all' });
+    // mistakes: coefficients multiplied, one of them forgotten
+    return numberQuestion(r, want, `${name}: $${rt(k, base)} + ${rt(m, base)} = ?\\sqrt{${base}}$`, ans, [k * m, Math.max(k, m)], { sub, op: 2, base, k, m, ask: 'coef' }, POS);
   }
+  for (let t = 0; want !== 'number' && t < 20 && printed(`${ex.a} ${ex.b} ${ex.base}`, ex.coef); t++) ex = genRoot(r, 2, 3);
   const { a, b, coef, base } = ex;
-  // mistakes: added under one root, wrong root
-  const wrongs = [`\\sqrt{${a + b}}`, rt(coef, base * 2), rt(coef, a + b)];
-  return choiceQuestion(r, `${name}: $\\sqrt{${a}} + \\sqrt{${b}} = ?$`, rt(coef, base), wrongs, { sub, op: 3, a, b });
+  // mistakes: the lone √b forgotten (coef − 1), √a "simplified" to (a/b)√b, a/b alone, one too many
+  const wrongs = [coef - 1, a / b + 1, a / b, coef + 1];
+  return numberQuestion(r, want, `${name}: $\\sqrt{${a}} + \\sqrt{${b}} = ?\\sqrt{${base}}$`, coef, wrongs, { sub, op: 3, a, b, base, ask: 'coef' }, POS);
 }
 
 /* ── Chapter 5: everything together ──────────────────────────────── */
@@ -279,7 +287,7 @@ export function roots(r, want) {
 // port of genCombined(diff) — src/topics/powers-roots/Topic.jsx L668
 // Same templates and ranges, written straight in the duel markup. t = template
 // id (e = easy, m = medium, h = hard); "exp" answers are one exponent,
-// "2exp"/"coefexp" answers are a whole monomial (choices only).
+// "2exp"/"coefexp" answers are a whole monomial, of which one slot is asked.
 const COMBINED = [
   { t: 'e0', type: 'exp', make: (r, v) => { const a = pick(r, [4, 6, 8, 10]); return { a, q: `\\sqrt{${pw(v, a)}} = ${v}^{?}`, ans: a / 2, alt: [a, a - 2] }; } },
   { t: 'e1', type: 'exp', make: (r, v) => { const a = randInt(r, 3, 5), b = randInt(r, 1, 2 * a - 1); return { a, b, q: `(${pw(v, a)})^{2} ÷ ${pw(v, b)} = ${v}^{?}`, ans: 2 * a - b, alt: [a + 2 - b, a * a - b] }; } },
@@ -297,31 +305,50 @@ const COMBINED = [
 ];
 const DIFF = { e: 0, m: 1, h: 2 };
 
+// one slot of a "coefexp" / "2exp" answer: which slots can be asked (an exponent
+// of 1 is not written, so it is never the slot), the printed rest, the answer
+// and the typical mistakes for that slot (from the template's alt pairs)
+function slotOf(tpl, ex, ask, v, w) {
+  if (tpl.type === 'coefexp') {
+    const { coef, e, alt } = ex;
+    return ask === 'coef'
+      ? { rhs: `?${pw(v, e)}`, ans: coef, wrongs: alt.map((x) => x[0]) }
+      : { rhs: `${coef}${v}^{?}`, ans: e, wrongs: alt.map((x) => x[1]) };
+  }
+  const { A, B, alt } = ex;
+  return ask === 'A'
+    ? { rhs: `${v}^{?}${pw(w, B)}`, ans: A, wrongs: alt.map((x) => x[0]) }
+    : { rhs: `${pw(v, A)}${w}^{?}`, ans: B, wrongs: alt.map((x) => x[1]) };
+}
+const slotsOf = (tpl, ex) => (tpl.type === 'coefexp' ? (ex.e === 1 ? ['coef'] : ['coef', 'A']) : ex.A === 1 ? ['B'] : ['A', 'B']);
+
 export function mixed(r, want) {
   const diff = randInt(r, 0, 2);
   let list = COMBINED.filter((c) => DIFF[c.t[0]] === diff);
-  if (want === 'number') list = list.filter((c) => c.type === 'exp');
   // h1 (v^{a} · √(v^{2a}) = v^{2a}) prints its answer in the prompt: typed only
-  else list = list.filter((c) => c.t !== 'h1');
+  if (want !== 'number') list = list.filter((c) => c.t !== 'h1');
   const tpl = pick(r, list);
   const [v, w] = pickVars(r);
   let ex = tpl.make(r, v, w);
-  // as 4 choices, an exponent answer must not be a number printed in the prompt
-  // (e.g. √(v³)·√(v³) = v³); re-roll the numbers (same template) a few times
-  // (and h5's answer 1 has nothing below it but 0, so it would be the smallest choice)
-  const giveaway = (e) => (e.q.match(/\d+/g) || []).includes(String(e.ans)) || (tpl.t === 'h5' && e.ans === 1);
-  for (let k = 0; k < 20 && want !== 'number' && tpl.type === 'exp' && giveaway(ex); k++) ex = tpl.make(r, v, w);
-  const { q, alt, ...params } = ex;
-  const meta = { t: tpl.t, type: tpl.type, v, w, a: ex.a, b: ex.b, c: ex.c, d: ex.d, k: ex.k };
-  const prompt = `פשטו את הביטוי: $${q}$`;
+  const meta = () => ({ t: tpl.t, type: tpl.type, v, w, a: ex.a, b: ex.b, c: ex.c, d: ex.d, k: ex.k });
   if (tpl.type === 'exp') {
+    // as 4 choices, an exponent answer must not be a number printed in the prompt
+    // (e.g. √(v³)·√(v³) = v³); re-roll the numbers (same template) a few times
+    // (and h5's answer 1 has nothing below it but 0, so it would be the smallest choice)
+    const giveaway = (e) => printed(e.q, e.ans) || (tpl.t === 'h5' && e.ans === 1);
+    for (let k = 0; k < 20 && want !== 'number' && giveaway(ex); k++) ex = tpl.make(r, v, w);
     // negative exponents only as a mistake where the question itself has one (h5)
-    return numberQuestion(r, want, prompt, params.ans, alt.filter((x) => x >= 0 || tpl.t === 'h5'), meta);
+    return numberQuestion(r, want, `פשטו את הביטוי: $${ex.q}$`, ex.ans, ex.alt.filter((x) => x >= 0 || tpl.t === 'h5'), meta());
   }
-  if (tpl.type === 'coefexp') {
-    const wrongs = distinct([params.coef, params.e], alt).filter(([, e]) => e >= 1); // no x^{0} / x^{−n} forms
-    return choiceQuestion(r, prompt, mono(params.coef, [[v, params.e]]), wrongs.map(([c, e]) => mono(c, [[v, e]])), meta);
+  // a whole monomial on the topic page (k·v^e, v^A·w^B): ONE slot is asked here,
+  // the rest is printed; as 4 choices the printed part must not contain the answer
+  let ask, slot;
+  for (let k = 0; ; k++) {
+    ask = pick(r, slotsOf(tpl, ex));
+    slot = slotOf(tpl, ex, ask, v, w);
+    if (want === 'number' || k >= 20 || !printed(ex.q + slot.rhs, slot.ans)) break;
+    ex = tpl.make(r, v, w);
   }
-  const wrongs = distinct([params.A, params.B], alt).filter(([e1, e2]) => e1 >= 1 && e2 >= 1); // no x^{0} / x^{−n} forms
-  return choiceQuestion(r, prompt, mono(1, [[v, params.A], [w, params.B]]), wrongs.map(([e1, e2]) => mono(1, [[v, e1], [w, e2]])), meta);
+  return numberQuestion(r, want, `פשטו את הביטוי: $${ex.q.replace(/\?$/, slot.rhs)}$`, slot.ans,
+    slot.wrongs.filter((x) => x >= 1), { ...meta(), ask }, ask === 'coef' ? POS : undefined); // no x^{−n} / 0·x forms
 }
