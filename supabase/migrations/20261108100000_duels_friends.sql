@@ -65,7 +65,10 @@ create unique index if not exists accounts_inbox on public.accounts (inbox);
 create table if not exists public.friendships (
   a            uuid not null references public.accounts(id) on delete cascade,
   b            uuid not null references public.accounts(id) on delete cascade,
-  status       text not null check (status in ('pending', 'accepted')),
+  -- 'shadow' = a request to someone who blocked the sender: shown ONLY in the
+  -- sender's outgoing list (so the block stays invisible), never to the other
+  -- side, never accepted, never counted anywhere else
+  status       text not null check (status in ('pending', 'accepted', 'shadow')),
   requested_by uuid not null references public.accounts(id) on delete cascade,
   created_at   timestamptz not null default now(),
   accepted_at  timestamptz,
@@ -103,6 +106,7 @@ create table if not exists public.friend_sends (
   miss boolean not null default false
 );
 create index if not exists friend_sends_uid on public.friend_sends (uid, at);
+create index if not exists friend_sends_at on public.friend_sends (at);
 
 alter table public.friendships  enable row level security;
 alter table public.blocks       enable row level security;
@@ -185,7 +189,7 @@ returns int language sql stable security definer set search_path = public as $$
   select count(*)::int from friendships where (a = uid or b = uid) and status = 'accepted';
 $$;
 
--- my code, my friends (with online status + level), requests in and out
+-- my code, my friends (with online status + level), requests in and out, people I blocked
 create or replace function public.friends_me(tok text)
 returns json language plpgsql security definer set search_path = public as $$
 declare uid uuid := account_from(tok); g text := duel_guard(uid);
@@ -202,14 +206,20 @@ begin
                0 as wins, 0 as losses                    -- head-to-head: filled when the duels table exists
           from friendships f join accounts o on o.id = case when f.a = uid then f.b else f.a end
          where (f.a = uid or f.b = uid) and f.status = 'accepted') x), '[]'),
+    -- only real requests ('pending'); a 'shadow' from someone I blocked never shows here
     'incoming', coalesce((select json_agg(x order by x.created_at desc) from (
         select o.id, o.username, o.avatar, f.created_at
           from friendships f join accounts o on o.id = f.requested_by
          where (f.a = uid or f.b = uid) and f.status = 'pending' and f.requested_by <> uid) x), '[]'),
+    -- my requests; a 'shadow' (the other side blocked me) looks exactly like a pending one
     'outgoing', coalesce((select json_agg(x order by x.created_at desc) from (
         select o.id, o.username, o.avatar, f.created_at
           from friendships f join accounts o on o.id = case when f.a = uid then f.b else f.a end
-         where (f.a = uid or f.b = uid) and f.status = 'pending' and f.requested_by = uid) x), '[]')
+         where (f.a = uid or f.b = uid) and f.status in ('pending', 'shadow') and f.requested_by = uid) x), '[]'),
+    'blocked', coalesce((select json_agg(x order by lower(x.username)) from (
+        select o.id, o.username, o.avatar
+          from blocks bl join accounts o on o.id = bl.blocked
+         where bl.blocker = uid) x), '[]')
   );
 end $$;
 
@@ -222,6 +232,7 @@ declare
   other uuid; f friendships;
 begin
   if g is not null then return json_build_object('error', g); end if;
+  perform pg_advisory_xact_lock(hashtext('friend:' || me::text));   -- one add/answer at a time per student (double taps)
   if (select count(*) from friend_sends s where s.uid = me and s.miss and s.at > now() - interval '1 day') >= 30 then
     return json_build_object('error', 'limit_day');
   end if;
@@ -232,6 +243,10 @@ begin
     return json_build_object('error', 'no_code');
   end if;
   if other = me then return json_build_object('error', 'self'); end if;
+  -- I blocked them: I already know, so say so (unblock first)
+  if exists (select 1 from blocks where blocker = me and blocked = other) then
+    return json_build_object('error', 'you_blocked');
+  end if;
 
   select * into f from friendships where a = least(me, other) and b = greatest(me, other);
   if f.status = 'accepted' then return json_build_object('ok', true, 'state', 'already'); end if;
@@ -241,25 +256,36 @@ begin
     return json_build_object('ok', true, 'state', 'accepted');
   end if;
 
-  -- the "send" step: the same checks and the same answer whether or not there is a block
+  -- the "send" step: the same checks and the same answer whether or not they blocked me
   if friends_count(me) >= 100 then return json_build_object('error', 'limit_friends'); end if;
   if (select count(*) from friend_sends s where s.uid = me and not s.miss and s.at > now() - interval '1 day') >= 20 then
     return json_build_object('error', 'limit_day');
   end if;
   insert into friend_sends (uid) values (me);
   delete from friend_sends where at < now() - interval '2 days';
-  if friends_blocked(me, other) then return json_build_object('ok', true, 'state', 'sent'); end if;   -- never reveal a block
+  if exists (select 1 from blocks where blocker = other and blocked = me) then
+    -- they blocked me: a shadow request only I can see (never reveal a block)
+    insert into friendships (a, b, status, requested_by) values (least(me, other), greatest(me, other), 'shadow', me)
+    on conflict (a, b) do nothing;
+    return json_build_object('ok', true, 'state', 'sent');
+  end if;
+  if f.status = 'shadow' and f.requested_by = other then
+    -- an old shadow from them (I have since unblocked): my real request replaces it
+    update friendships set status = 'pending', requested_by = me, created_at = now() where a = f.a and b = f.b;
+    return json_build_object('ok', true, 'state', 'sent');
+  end if;
   insert into friendships (a, b, status, requested_by) values (least(me, other), greatest(me, other), 'pending', me)
-  on conflict (a, b) do nothing;                                     -- my request is already waiting: still "sent"
+  on conflict (a, b) do nothing;                                     -- my request (or shadow) is already waiting: still "sent"
   return json_build_object('ok', true, 'state', 'sent');
 end $$;
 
--- accept or decline a request someone sent me
+-- accept or decline a real request someone sent me
 create or replace function public.friend_answer(tok text, other uuid, accept boolean)
 returns json language plpgsql security definer set search_path = public as $$
 declare uid uuid := account_from(tok); g text := duel_guard(uid);
 begin
   if g is not null then return json_build_object('error', g); end if;
+  perform pg_advisory_xact_lock(hashtext('friend:' || uid::text));  -- one add/answer at a time per student (double taps)
   if not exists (select 1 from friendships where a = least(uid, other) and b = greatest(uid, other)
                   and status = 'pending' and requested_by = other) then
     return json_build_object('error', 'gone');
@@ -273,17 +299,20 @@ begin
   return json_build_object('ok', true, 'state', 'declined');
 end $$;
 
--- unfriend, or cancel my own request
+-- unfriend, or cancel my own request (a shadow too). A shadow the OTHER side
+-- holds toward me is left alone, so their outgoing list doesn't change.
 create or replace function public.friend_remove(tok text, other uuid)
 returns json language plpgsql security definer set search_path = public as $$
 declare uid uuid := account_from(tok); g text := duel_guard(uid);
 begin
   if g is not null then return json_build_object('error', g); end if;
-  delete from friendships where a = least(uid, other) and b = greatest(uid, other);
+  delete from friendships where a = least(uid, other) and b = greatest(uid, other)
+     and not (status = 'shadow' and requested_by = other);
   return json_build_object('ok', true);
 end $$;
 
--- silent block: removes the friendship (and any request), stops all later adds
+-- silent block: removes the friendship and my own request; a request they had
+-- sent me becomes a shadow (still in THEIR outgoing, gone from my incoming)
 create or replace function public.friend_block(tok text, other uuid)
 returns json language plpgsql security definer set search_path = public as $$
 declare uid uuid := account_from(tok); g text := duel_guard(uid);
@@ -292,7 +321,20 @@ begin
   if other is null or other = uid then return json_build_object('error', 'self'); end if;
   if not exists (select 1 from accounts where id = other) then return json_build_object('error', 'no_user'); end if;
   insert into blocks (blocker, blocked) values (uid, other) on conflict do nothing;
-  delete from friendships where a = least(uid, other) and b = greatest(uid, other);
+  update friendships set status = 'shadow'
+   where a = least(uid, other) and b = greatest(uid, other) and status = 'pending' and requested_by = other;
+  delete from friendships where a = least(uid, other) and b = greatest(uid, other)
+     and not (status = 'shadow' and requested_by = other);
+  return json_build_object('ok', true);
+end $$;
+
+-- undo a block (their old shadow request stays inert until they cancel it or I add them)
+create or replace function public.friend_unblock(tok text, other uuid)
+returns json language plpgsql security definer set search_path = public as $$
+declare uid uuid := account_from(tok); g text := duel_guard(uid);
+begin
+  if g is not null then return json_build_object('error', g); end if;
+  delete from blocks where blocker = uid and blocked = other;
   return json_build_object('ok', true);
 end $$;
 
@@ -363,10 +405,10 @@ revoke execute on function public.friend_code_new(), public.duel_switch(), publi
   from public, anon, authenticated;
 -- public entry points (each checks the session token and the switch)
 revoke execute on function public.friends_me(text), public.friend_add(text, text), public.friend_answer(text, uuid, boolean),
-  public.friend_remove(text, uuid), public.friend_block(text, uuid), public.friend_report(text, uuid, text, uuid),
+  public.friend_remove(text, uuid), public.friend_block(text, uuid), public.friend_unblock(text, uuid), public.friend_report(text, uuid, text, uuid),
   public.presence_ping(text), public.admin_set_setting(uuid, text, jsonb), public.admin_set_tester(uuid, uuid, boolean),
   public.admin_reports(uuid), public.admin_report_done(uuid, bigint) from public;
 grant execute on function public.friends_me(text), public.friend_add(text, text), public.friend_answer(text, uuid, boolean),
-  public.friend_remove(text, uuid), public.friend_block(text, uuid), public.friend_report(text, uuid, text, uuid),
+  public.friend_remove(text, uuid), public.friend_block(text, uuid), public.friend_unblock(text, uuid), public.friend_report(text, uuid, text, uuid),
   public.presence_ping(text), public.admin_set_setting(uuid, text, jsonb), public.admin_set_tester(uuid, uuid, boolean),
   public.admin_reports(uuid), public.admin_report_done(uuid, bigint) to anon, authenticated;
