@@ -77,6 +77,8 @@ select pg_temp.mk('fw_e'); select pg_temp.mk('fw_f'); select pg_temp.mk('fw_g');
 select pg_temp.befriend('fw_a', 'fw_b'); select pg_temp.befriend('fw_c', 'fw_d'); select pg_temp.befriend('fw_e', 'fw_f');
 select pg_temp.befriend('fw_g', 'fw_h'); select pg_temp.befriend('fw_a', 'fw_c');
 update public.site_settings set value = '"on"' where key = 'duels';
+-- a dev database may hold open duels from manual testing: park them (rolled back below) so the counts are exact
+update public.duels set status = 'done' where status in ('invited', 'accepted', 'live');
 delete from vault.secrets where name = 'duel_secret';           -- a dev database may hold one already (rolled back below)
 select vault.create_secret('test-secret', 'duel_secret');
 create temporary table t_adm (tok uuid);

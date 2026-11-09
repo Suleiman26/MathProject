@@ -56,6 +56,8 @@ select pg_temp.befriend('ts_t1', 'ts_t2'); select pg_temp.befriend('ts_t5', 'ts_
 select pg_temp.befriend('ts_t3', 'ts_t4'); select pg_temp.befriend('ts_t6', 'ts_n4');
 update public.accounts set duel_tester = true where id in (select id from t_acc where name like 'ts_t%');
 update public.site_settings set value = '"on"' where key = 'duels';
+-- a dev database may hold open duels from manual testing: park them (rolled back below) so the counts are exact
+update public.duels set status = 'done' where status in ('invited', 'accepted', 'live');
 delete from vault.secrets where name = 'duel_secret';           -- a dev database may hold one already (rolled back below)
 select vault.create_secret('test-secret', 'duel_secret');
 create temporary table t_adm (tok uuid);
