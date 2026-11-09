@@ -108,8 +108,11 @@ select pg_temp.answer_n('fw_a', (select id from t_d where k = 'q0'), 4);
 insert into t_d values ('inv', pg_temp.invite('fw_c', 'fw_d'));
 insert into t_d values ('acc', pg_temp.accepted('fw_e', 'fw_f'));
 insert into t_d values ('gh', pg_temp.live('fw_g', 'fw_h'));
-select is(public.admin_set_setting(pg_temp.adm(), 'duels', '"test"')->>'closed', '0', 'F4: test mode closes nothing');
+-- (all eight are testers here: test mode closes non-testers' duels — see duels_test_shut.test.sql)
+update public.accounts set duel_tester = true where id in (select id from t_acc);
+select is(public.admin_set_setting(pg_temp.adm(), 'duels', '"test"')->>'closed', '0', 'F4: test mode closes nothing (all testers)');
 select is(pg_temp.status((select id from t_d where k = 'inv')), 'invited', 'F4: …the invite is still open in test mode');
+update public.accounts set duel_tester = false where id in (select id from t_acc);
 select is((public.admin_set_setting(pg_temp.adm(), 'duels', '"off"')->>'closed')::int, 4, 'F4: off closes the 4 open duels');
 select is(pg_temp.status((select id from t_d where k = 'inv')), 'cancelled', 'F4: invited → cancelled');
 select is(pg_temp.status((select id from t_d where k = 'acc')), 'cancelled', 'F4: accepted → cancelled');

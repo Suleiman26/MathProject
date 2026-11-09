@@ -144,7 +144,7 @@ function AccountsCard({ a, toast }) {
    not just hiding buttons. Testers: accounts.duel_tester, set in Students → a student. */
 export const DUEL_MODES = [
   { v: "off", label: "כבוי", tone: "off", text: "אף תלמיד לא רואה דו-קרבים: אין אריח בדף הבית, אין פריט בתפריט, והשרת חוסם כל ניסיון להיכנס. דו-קרבים פתוחים נסגרים מיד (מי שבאמצע משחק מקבל תוצאה)." },
-  { v: "test", label: "בדיקה", tone: "test", text: "רק תלמידים שסומנו כבודקים רואים ומשחקים. כל השאר לא רואים כלום, כאילו הדו-קרבים כבויים." },
+  { v: "test", label: "בדיקה", tone: "test", text: "רק תלמידים שסומנו כבודקים רואים ומשחקים. כל השאר לא רואים כלום, כאילו הדו-קרבים כבויים. דו-קרבים פתוחים של מי שאינו בודק נסגרים מיד." },
   { v: "on", label: "פתוח לכולם", tone: "on", text: "כל תלמיד/ה עם חשבון רואה את הדו-קרבים, מוסיף/ה חברים ומזמין/ה לדו-קרב." },
 ];
 
@@ -167,8 +167,9 @@ function DuelsCard({ a, toast }) {
       const r = await a.run("admin_set_setting", { k: "duels", v });
       if (!r || !r.ok) throw new Error(r && r.error ? r.error : "not saved");
       const closed = Number(r.closed) || 0;
-      toast(v === "off" ? (closed ? `הדו-קרבים כבויים · ${closed === 1 ? "דו-קרב פתוח אחד נסגר" : `${closed} דו-קרבים פתוחים נסגרו`}` : "הדו-קרבים כבויים")
-        : v === "test" ? "הדו-קרבים פתוחים לבודקים בלבד" : "הדו-קרבים פתוחים לכל התלמידים");
+      const shut = closed === 1 ? "דו-קרב פתוח אחד נסגר" : `${closed} דו-קרבים פתוחים נסגרו`;
+      toast(v === "off" ? (closed ? `הדו-קרבים כבויים · ${shut}` : "הדו-קרבים כבויים")
+        : v === "test" ? (closed ? `הדו-קרבים פתוחים לבודקים בלבד · ${shut}` : "הדו-קרבים פתוחים לבודקים בלבד") : "הדו-קרבים פתוחים לכל התלמידים");
     } catch (e) { setD((x) => ({ ...x, switch: before })); toast("לא נשמר: " + e.message, true); }
     finally { setBusy(false); }
   }
