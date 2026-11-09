@@ -19,6 +19,7 @@ import { FriendRow, FriendMenu, FriendAvatar, Tug, toName, SEP } from "./FriendR
 import { ChallengeSheet, WaitRing } from "./ChallengeSheet";
 import { serverNow } from "./clock";
 import { fmtCode } from "./QR";
+import EnablePush from "./EnablePush";
 
 const PENDING_KEY = "mp:duel:add";   // a friend code opened from a link while signed out
 const REFRESH_MS = 30000;
@@ -345,6 +346,7 @@ export function HubView({ account, data, history, presence, actions, state, erro
             <aside className="dl-side">
               <MyCode code={data && data.code} />
               <AddFriendForm onAdd={actions.addFriend} initial={pendingCode || ""} title={pendingCode ? "קוד מהקישור שפתחת" : undefined} />
+              <EnablePush account={account} played={stats.played} />
               {blocked.length > 0 && (
                 <section className="dl-card dl-blocked">
                   <button type="button" className="dl-card-h as-btn" aria-expanded={showBlocked} onClick={() => setShowBlocked(!showBlocked)}>

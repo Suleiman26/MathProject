@@ -407,3 +407,8 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # forgets --no-verify-jwt makes the gateway answer 401 to every invitee.
 [functions.duel-start]
 verify_jwt = false
+
+# Duels push (spec §7.4): only the database calls duel-push (pg_net, from duel_invite),
+# with the shared secret header x-push-secret (= Vault 'push_secret' = PUSH_SECRET), no JWT.
+[functions.duel-push]
+verify_jwt = false
