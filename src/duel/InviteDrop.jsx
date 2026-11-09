@@ -40,11 +40,11 @@ export function InviteCard({ invite, offset = 0, onAccept, onDecline, busy, inli
   const expired = left <= 0 || gone;
   return (
     <div className={"inv" + (inline ? " inline" : "") + (shook ? " shake" : "") + (expired ? " gone" : "")} data-topic={from.avatar || "rose"} ref={card}
-      role="dialog" aria-label={`${from.username} מאתגר/ת אותך לדו-קרב`} aria-live="polite">
+      role="region" aria-label={`${from.username} מאתגר/ת אותך לדו-קרב`}>
       <div className="inv-top">
         <Avatar account={from} size={46} />
         <div className="inv-t">
-          <b><span dir="auto">{from.username}</span> מאתגר/ת אותך!</b>
+          <b aria-live="polite"><span dir="auto">{from.username}</span> מאתגר/ת אותך!</b>
           <small>דו-קרב · {subject}</small>
         </div>
         <div className="inv-ring" role="timer" aria-label={`עוד ${s} שניות`}>
@@ -71,10 +71,11 @@ export function InviteCard({ invite, offset = 0, onAccept, onDecline, busy, inli
   );
 }
 
-/** the floating version: fixed at the top of the page, above everything */
+/** the floating version: fixed at the top of the page, above everything (the card itself is the labelled region;
+    only its title is a live region — the 60-s ring and chips are not read out) */
 export function InviteDrop(props) {
   return (
-    <div className="inv-wrap" role="region" aria-label="הזמנה לדו-קרב">
+    <div className="inv-wrap">
       <InviteCard {...props} />
     </div>
   );

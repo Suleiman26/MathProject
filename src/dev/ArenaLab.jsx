@@ -1,6 +1,8 @@
 'use client';
 /* A fake duel for the arena screens (local preview only: app/dev/duel).
    ?s=invite | accepted | faceoff | arena | hot | lastq | locked | waiting | finishing | failed | done
+   extra (arena only): &q=<n> starts at question n+1 (n answered, all right); &slow=<ms> makes every
+   state() take that long (a slow network — the "next question" loop must still make progress)
    No database: a small in-memory "server" with the real question engine
    (buildDuel) and the real answer rules (checkAnswer), an opponent that
    answers every few seconds (78 % right), realtime hints as function calls,
@@ -35,6 +37,12 @@ function seed(p, n, wrongAt, startMs) {
   }
 }
 
+function labParam(k) {
+  if (typeof window === "undefined") return null;
+  const v = new URLSearchParams(window.location.search).get(k);
+  return v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v);
+}
+
 function makeDuel(kind, meColor) {
   const now = Date.now();
   const d = {
@@ -49,7 +57,13 @@ function makeDuel(kind, meColor) {
   switch (kind) {
     case "accepted": d.status = "accepted"; d.i_invited = false; d.start_at = null; d.ends_at = null; d.accepted_at = iso(now - 500); break;
     case "faceoff": break;
-    case "arena": live(40000); seed(d.me, 3, [1], now - 40000); seed(d.opp, 2, [], now - 40000); break;
+    case "arena": {
+      live(40000);
+      const q = labParam("q");
+      if (q != null) { live(20000 + q * 6000); seed(d.me, Math.min(14, q), [], now - 20000 - q * 6000); seed(d.opp, Math.max(0, q - 1), [], now - 20000 - q * 6000); }
+      else { seed(d.me, 3, [1], now - 40000); seed(d.opp, 2, [], now - 40000); }
+      break;
+    }
     case "hot": live(275000); seed(d.me, 11, [2, 7], now - 275000); seed(d.opp, 12, [4], now - 275000); break;
     case "lastq": live(200000); seed(d.me, 14, [3], now - 200000); seed(d.opp, 13, [1, 8], now - 200000); break;
     case "locked": live(60000); seed(d.me, 4, [3], now - 60000); d.me.answers[3].at = now - 200; seed(d.opp, 3, [], now - 60000); break;
@@ -123,7 +137,7 @@ function makeServer(kind, meColor) {
   if (kind === "finishing") setTimeout(() => { finish(d); hint("duel_end"); }, 4500);
 
   const api = {
-    state: async () => { await wait(R(80, 220)); return state(); },
+    state: async () => { const slow = labParam("slow"); await wait(slow ? R(slow, slow + 300) : R(80, 220)); return state(); },
     answer: async (id, idx, given) => {
       await wait(R(120, 320));
       const now = Date.now();

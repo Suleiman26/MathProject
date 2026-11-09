@@ -2,7 +2,7 @@
    The question markup (Task 2) → tree: $…$ islands, \frac, \sqrt, ^{n}. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { splitProse, parseMath, mathToText, proseToText, mathLength } from "./math-core.js";
+import { splitProse, parseMath, mathToText, proseToText, mathLength, isMathOnly, promptSize } from "./math-core.js";
 
 test("prose splits into Hebrew text and math islands", () => {
   assert.deepEqual(splitProse("פתרו את המשוואה: $2x + 4 = x + 7$ — $x = ?$"), [
@@ -42,4 +42,15 @@ test("plain text for aria-labels", () => {
   assert.equal(proseToText("חזקה שלילית: $4^{−3} = ?$"), "חזקה שלילית: 4^−3 = ?");
   assert.equal(mathLength("\\frac{1}{64}"), 4);
   assert.equal(mathLength("−14"), 3);
+});
+
+test("prompt size steps: short prose big, long prose smaller, short pure math biggest", () => {
+  assert.equal(isMathOnly("$3 : 4$"), true);
+  assert.equal(isMathOnly("כמה זה $3 + 4$?"), false);
+  assert.equal(promptSize("$12 + 7 = ?$"), "xl");
+  assert.equal(promptSize("$\\frac{1}{2} + \\frac{1}{3} + \\frac{1}{4} = ?$"), "s");
+  assert.equal(promptSize("פתרו: $2x + 4 = 10$"), "s");
+  assert.equal(promptSize("פתרו את המשוואה: $2x + 2 = x − 1$ — $x = ?$"), "m");
+  assert.equal(promptSize("היחס בין עפרונות אדומים לעפרונות כחולים הוא $3 : 2$, ובסך הכל יש 15 עפרונות. כמה עפרונות אדומים?"), "l");
+  assert.equal(promptSize(""), "s");
 });

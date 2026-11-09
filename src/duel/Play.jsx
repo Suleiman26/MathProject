@@ -23,8 +23,8 @@ import { duelApi, duelError } from "./api";
 import { subscribe } from "./live";
 import { createClock, serverNow } from "./clock";
 import {
-  phaseOf, parseTs, mergeState, applyAnswer, feedbackMs, overtake, oppPing, currentQuestion, colorVars, inviteLeft,
-  GO_MS, PING_MS, QUESTIONS, INVITE_MS, toName, atName,
+  phaseOf, parseTs, mergeState, applyAnswer, feedbackMs, overtake, oppPing, currentQuestion, colorVars, inviteLeft, lockLeft,
+  createFetchGate, GO_MS, PING_MS, QUESTIONS, INVITE_MS, toName, atName,
 } from "./arena-core";
 import { FaceOff } from "./FaceOff";
 import { Arena } from "./Arena";
@@ -33,7 +33,7 @@ import Result from "./Result";
 import { SUBJECT_LABEL } from "./samples";
 import { sfx, shake, floatPoints, usePaintStatusBar, armSound } from "./fx";
 
-const POLL_MS = 3000, FAST_POLL_MS = 1500, DARK = "#0b1020";
+const POLL_MS = 3000, FAST_POLL_MS = 1500, START_RETRY_MS = 2000, DARK = "#0b1020";
 const RING_R = 52, RING_C = 2 * Math.PI * RING_R;
 
 export default function Play({ id }) {
@@ -63,7 +63,7 @@ function Card({ title, lead, children }) {
 }
 
 /* the sender waiting for the friend to answer (direct link to /duel/<id>) */
-function SenderWait({ st, offset, onCancel }) {
+function SenderWait({ st, offset, onCancel, error }) {
   const [left, setLeft] = useState(() => inviteLeft(st.expires_at, serverNow(offset)));
   useEffect(() => {
     const t = setInterval(() => setLeft(inviteLeft(st.expires_at, serverNow(offset))), 250);
@@ -80,6 +80,7 @@ function SenderWait({ st, offset, onCancel }) {
         <span className="dl-ring-av"><Avatar account={st.opp} size={64} /></span>
         <b className="dl-ring-n">{s}</b>
       </div>
+      {error && <p className="dl-err" role="alert">{error}</p>}
       <div className="dl-row"><button type="button" className="dl-btn ghost" onClick={onCancel}>ביטול</button></div>
     </Card>
   );
@@ -95,17 +96,26 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
   const clock = useRef(createClock());
   const [conn, setConn] = useState(false);
   const [, setTick] = useState(0);
-  const gen = useRef(0);
+  const gate = useRef(null);
+  if (!gate.current) gate.current = createFetchGate();
+  const again = useRef(() => {});
   const started = useRef(false);
+  const startRetry = useRef(null);
   const stRef = useRef(null);
   stRef.current = st;
   useEffect(() => { armSound(); }, []);
 
-  const refetch = useCallback(async () => {
+  // one state() on its way at a time (a hint / poll meanwhile runs once after it); { force } sends at once.
+  // A response is applied unless a newer one was applied already — a slow network still makes progress.
+  const refetch = useCallback(async (opts) => {
     if (!account) return null;
-    const my = ++gen.current;
-    const r = await api.state(id);
-    if (my !== gen.current) return r;              // a newer request is already on its way
+    const my = gate.current.begin(!!(opts && opts.force));
+    if (!my) return null;                          // queued behind the one in flight
+    let r;
+    try { r = await api.state(id); } catch { r = { error: "network" }; }
+    const { apply, again: more } = gate.current.end(my, !!r && !r.error);
+    if (more) again.current();
+    if (!apply) return r;                          // a newer answer is already on screen
     if (!r || r.error) {
       if (r && r.error === "network") { setNet(true); return r; }
       setErr({ code: r ? r.error : "network", message: duelError(r) });
@@ -116,6 +126,7 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     setSt((prev) => mergeState(prev, r));
     return r;
   }, [id, account && account.id, api]);
+  again.current = refetch;
 
   useEffect(() => { if (ready && account) refetch(); }, [ready, account && account.id, refetch]);
 
@@ -144,20 +155,32 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     if (terminal || !account) return;
     const ms = phase === "accepted" || phase === "finishing" ? FAST_POLL_MS : (!conn || phase === "invited" || net) ? POLL_MS : 0;
     if (!ms) return;
-    const t = setInterval(() => { if (document.visibilityState === "visible") refetch(); }, ms);
+    const t = setInterval(() => { if (document.visibilityState === "visible") refetch(); }, ms);   // never piles up (gate)
     return () => clearInterval(t);
   }, [terminal, conn, phase, net, refetch, account]);
 
-  // the invitee makes the questions happen (duel-start), once; whatever it answers, the state tells the truth
+  // the invitee makes the questions happen (duel-start), once — plus ONE retry 2 s after a failed call if the
+  // duel is still 'accepted' (the first call may never have reached the server); the state tells the truth
   useEffect(() => {
     if (!st || st.status !== "accepted" || st.i_invited || started.current) return;
     started.current = true;
-    api.start(id).then((r) => {
-      // the switch is off → say so kindly; anything else (incl. errors) → the state tells the truth
-      if (r && r.error === "off") setErr({ code: "off", message: duelError(r) });
-      refetch();
-    }, () => refetch());
+    const go = (attempt) => {
+      const after = (r) => {
+        // the switch is off → say so kindly; anything else → the state tells the truth
+        if (r && r.error === "off") { setErr({ code: "off", message: duelError(r) }); return; }
+        refetch({ force: true });
+        if (attempt === 0 && (!r || r.error)) {
+          startRetry.current = setTimeout(() => {
+            const s = stRef.current;
+            if (s && s.status === "accepted") go(1);
+          }, START_RETRY_MS);
+        }
+      };
+      api.start(id).then(after, () => after(null));
+    };
+    go(0);
   }, [st && st.status, st && st.i_invited, api, id, refetch]);
+  useEffect(() => () => clearTimeout(startRetry.current), []);
 
   // re-render exactly when the phase flips: 3 s before start, at start, after "יאללה!", at ends_at, and after the grace
   useEffect(() => {
@@ -168,6 +191,16 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
       .map((d) => setTimeout(() => setTick((t) => t + 1), d + 15));
     return () => ts.forEach(clearTimeout);
   }, [st && st.status, st && st.start_at, st && st.ends_at, offset, phase]);
+
+  // …and when my lock ends: after a reload during a lock nothing else re-renders at lock_until
+  const lockUntil = st && st.me ? st.me.lock_until : null;
+  useEffect(() => {
+    if (!lockUntil) return;
+    const d = lockLeft(lockUntil, serverNow(offset));
+    if (d <= 0 || d > 1e5) return;
+    const t = setTimeout(() => setTick((n) => n + 1), d + 20);
+    return () => clearTimeout(t);
+  }, [lockUntil, offset]);
 
   /* ── answering ─────────────────────────────────────────────────────────── */
   const [busy, setBusy] = useState(false);
@@ -197,17 +230,17 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     if (!r || r.error) {
       setBusy(false);
       if (r && r.error === "network") setToast("אין חיבור כרגע… מנסים שוב");
-      refetch();                                     // 'order' / 'locked' / 'time': the state knows
+      refetch({ force: true });                      // 'order' / 'locked' / 'time': the state knows
       return;
     }
     const n = serverNow(offset);
     setFb({ idx, given, correct: !!r.correct, right: r.right, points: r.points });
     setSt((p) => applyAnswer(p, idx, r));
     sfx(r.correct ? "ok" : "bad");
-    const target = el || (rootRef.current && rootRef.current.querySelector(".kp-in"));
+    const target = el || (rootRef.current && rootRef.current.querySelector(".dkp-in"));
     if (r.correct) floatPoints(target, "+" + r.points);
     else shake(target);
-    refetch();                                       // brings the next question
+    refetch({ force: true });                        // brings the next question
     clearTimeout(fbTimer.current);
     fbTimer.current = setTimeout(() => { setFb(null); setBusy(false); }, feedbackMs(r, n));
   }, [api, id, busy, fb, offset, refetch]);
@@ -247,8 +280,20 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     if (!yes) { router.push("/duel"); return; }
     refetch();
   }
-  async function cancelInvite() { await api.cancel(id); router.push("/duel"); }
-  async function giveUp() { await api.giveUp(id); await refetch(); }
+  const [cancelErr, setCancelErr] = useState("");
+  async function cancelInvite() {
+    setCancelErr("");
+    const r = await api.cancel(id);
+    // e.g. the friend accepted a moment ago ('gone') → the state shows what really happened
+    if (!r || r.error) { setCancelErr(duelError(r)); refetch({ force: true }); return; }
+    router.push("/duel");
+  }
+  /** → null, or a short message for the confirm sheet when giving up didn't go through */
+  async function giveUp() {
+    const r = await api.giveUp(id);
+    await refetch({ force: true });
+    return !r || r.error ? duelError(r) : null;
+  }
   const [rematchBusy, setRematchBusy] = useState(false);
   const [rematchErr, setRematchErr] = useState("");
   async function rematch() {
@@ -285,7 +330,7 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
         <Card title={title} lead={code === "gone" ? "אולי הקישור ישן, או שהדו-קרב של מישהו אחר." : err.message}>
           <div className="dl-row">
             <Link className="dl-btn ghost" href="/duel">לדו-קרב</Link>
-            {code !== "gone" && code !== "off" && <button type="button" className="dl-btn accent" onClick={() => { setErr(null); refetch(); }}>לנסות שוב</button>}
+            {code !== "gone" && code !== "off" && <button type="button" className="dl-btn accent" onClick={() => { setErr(null); refetch({ force: true }); }}>לנסות שוב</button>}
           </div>
         </Card>
       </Shell>
@@ -299,7 +344,7 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     );
   }
   if (phase === "invited") {
-    if (st.i_invited) return <Shell vars={vars} avatar={account.avatar}><SenderWait st={st} offset={offset} onCancel={cancelInvite} /></Shell>;
+    if (st.i_invited) return <Shell vars={vars} avatar={account.avatar}><SenderWait st={st} offset={offset} onCancel={cancelInvite} error={cancelErr} /></Shell>;
     const invite = { id: st.id, from: st.opp, subject: st.subject, expires_at: st.expires_at, h2h: null };
     return (
       <Shell vars={vars} avatar={account.avatar}>

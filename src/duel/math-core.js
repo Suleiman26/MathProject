@@ -98,3 +98,19 @@ export function proseToText(s) {
 export function mathLength(s) {
   return mathToText(s).replace(/\s+/g, "").length;
 }
+
+/** a prompt with no words, only math */
+export function isMathOnly(text) {
+  const parts = splitProse(text);
+  return parts.length > 0 && parts.every((p) => p.math || !p.v.trim());
+}
+
+/** the prompt's size step on the arena card (CSS .ar-prompt.sz-*): short prose big (2rem at 375 px),
+    long prose smaller so 4 lines + the keypad still fit a phone; short math-only prompts
+    the biggest (the mockup's 44 px) */
+export function promptSize(text) {
+  const t = String(text == null ? "" : text);
+  const n = t.replace(/\\(frac|sqrt)|[$\{\}]/g, "").replace(/\s+/g, " ").trim().length;
+  if (isMathOnly(t)) return n <= 12 ? "xl" : n <= 20 ? "s" : "m";
+  return n <= 34 ? "s" : n <= 62 ? "m" : "l";
+}

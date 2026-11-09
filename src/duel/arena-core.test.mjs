@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import {
   tugWidth, countdown, lockLeft, fmtClock, timeLeft, phaseOf, overtake, streakLabel, laneClass, oppPing,
   keypadFor, typeKey, typedOk, typedParts, applyAnswer, mergeState, feedbackMs, parseTs, duelColors, colorVars, inviteLeft, currentQuestion,
-  GO_MS, COUNT_MS,
+  GO_MS, COUNT_MS, createFetchGate, keypadKeyTarget, andName, toName,
 } from "./arena-core.js";
 
 const T0 = Date.parse("2026-11-08T10:00:00.000Z");
@@ -173,4 +173,94 @@ test("colours: same colour → opponent turns rose", () => {
 test("invite ring", () => {
   assert.equal(inviteLeft("2026-11-08T10:01:00Z", T0), 60000);
   assert.equal(inviteLeft("2026-11-08T10:01:00Z", T0 + 70000), 0);
+});
+
+test("fetch gate: one state() in flight; a refetch asked meanwhile runs once after it", () => {
+  const g = createFetchGate();
+  const a = g.begin();
+  assert.equal(a, 1);
+  assert.equal(g.begin(), 0);                     // queued, not sent
+  assert.equal(g.begin(), 0);                     // still just one queued
+  assert.equal(g.busy, true);
+  assert.deepEqual(g.end(a, true), { apply: true, again: true });
+  assert.equal(g.busy, false);
+  const b = g.begin();
+  assert.equal(b, 2);
+  assert.deepEqual(g.end(b, true), { apply: true, again: false });   // nothing queued any more
+});
+
+test("fetch gate: a slow response is applied unless a newer one was applied first (slow network)", () => {
+  const g = createFetchGate();
+  const slow = g.begin();                         // poll, takes 2.5 s
+  const forced = g.begin(true);                   // my answer → forced refetch, sent at once
+  assert.ok(forced > slow);
+  // the slow one lands first → still applied (the old gen counter threw it away)
+  assert.equal(g.end(slow, true).apply, true);
+  assert.equal(g.end(forced, true).apply, true);
+  // reverse order: the newer one lands first → the older one is dropped
+  const g2 = createFetchGate();
+  const o = g2.begin(), n = g2.begin(true);
+  assert.equal(g2.end(n, true).apply, true);
+  assert.equal(g2.end(o, true).apply, false);
+});
+
+test("fetch gate: an error does not count as applied; a stale error is ignored", () => {
+  const g = createFetchGate();
+  const a = g.begin(), b = g.begin(true);
+  assert.equal(g.end(a, false).apply, true);      // newest so far → show "no connection"
+  assert.equal(g.end(b, true).apply, true);       // the good one after it still applies
+  const c = g.begin(), d = g.begin(true);
+  assert.equal(g.end(d, true).apply, true);
+  assert.equal(g.end(c, false).apply, false);     // an old failure after a newer success: ignored
+});
+
+test("fetch gate: queued refetch while a forced one is also in flight runs after the last lands", () => {
+  const g = createFetchGate();
+  const a = g.begin(), b = g.begin(true);
+  assert.equal(g.begin(), 0);
+  assert.equal(g.end(a, true).again, false);      // b still in flight
+  assert.equal(g.end(b, true).again, true);
+});
+
+/* a tiny fake DOM element: closest(selector list) by tag / attributes, contains by parent chain */
+function el(tag, attrs = {}, parent = null) {
+  const node = { tag, attrs, parent, isContentEditable: attrs.contenteditable === "true" };
+  const match = (n, sel) => sel.split(",").map((x) => x.trim()).some((one) => {
+    const m = one.match(/^([a-z]*)(?:\[([a-z-]+)(?:="([^"]*)")?\])?$/);
+    if (!m) return false;
+    const [, t, a, v] = m;
+    if (t && n.tag !== t) return false;
+    if (a && !(a in n.attrs)) return false;
+    if (a && v !== undefined && n.attrs[a] !== v) return false;
+    return !!(t || a);
+  });
+  node.closest = (sel) => { for (let n = node; n; n = n.parent) if (match(n, sel)) return n; return null; };
+  node.contains = (o) => { for (let n = o; n; n = n.parent) if (n === node) return true; return false; };
+  return node;
+}
+
+test("keypad keys: only when nothing else wants them", () => {
+  const body = el("body");
+  const pad = el("div", { class: "dkp" }, body);
+  const key5 = el("button", {}, pad);
+  const giveUp = el("button", {}, body);
+  const link = el("a", { href: "/duel" }, body);
+  const input = el("input", {}, body);
+  const sheet = el("div", { role: "dialog" }, body);
+  const sheetBtn = el("button", {}, sheet);
+  assert.equal(keypadKeyTarget(body, pad, false), "free");
+  assert.equal(keypadKeyTarget(null, pad, false), "free");
+  assert.equal(keypadKeyTarget(key5, pad, false), "key");
+  assert.equal(keypadKeyTarget(giveUp, pad, false), "ignore");    // Enter on "ויתור" opens the sheet, never sends
+  assert.equal(keypadKeyTarget(link, pad, false), "ignore");
+  assert.equal(keypadKeyTarget(input, pad, false), "ignore");
+  assert.equal(keypadKeyTarget(sheetBtn, pad, false), "ignore");  // digits / Enter inside the give-up sheet
+  assert.equal(keypadKeyTarget(sheet, pad, false), "ignore");
+  assert.equal(keypadKeyTarget(body, pad, true), "ignore");       // a sheet is open (html.dl-locked), focus not moved yet
+});
+
+test("names: Latin usernames get a hyphen after ו / ל", () => {
+  assert.equal(andName("t7_abed"), "ו-t7_abed");
+  assert.equal(andName("נועה"), "ונועה");
+  assert.equal(toName("noa"), "ל-noa");
 });

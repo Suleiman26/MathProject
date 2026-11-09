@@ -19,10 +19,15 @@ export function Timer({ endsAt, offset, onHot }) {
   }, [endsAt, offset]);
   const hot = left <= HOT_MS && left > 0;
   useEffect(() => { if (hot && onHot) onHot(); }, [hot]); // eslint-disable-line react-hooks/exhaustive-deps
+  // screen readers hear the time twice only: at 30 s and at 10 s (not every second)
+  const say = left > 0 && left <= 10000 ? "נשארו 10 שניות" : hot ? "נשארו 30 שניות" : "";
   return (
-    <div className={"ar-timer" + (hot ? " hot" : "")} role="timer" aria-live={hot ? "polite" : "off"} aria-label={"נשארו " + fmtClock(left)}>
-      {fmtClock(left)}
-    </div>
+    <>
+      <div className={"ar-timer" + (hot ? " hot" : "")} role="timer" aria-label={"נשארו " + fmtClock(left)}>
+        {fmtClock(left)}
+      </div>
+      <span className="ar-sr" aria-live="polite">{say}</span>
+    </>
   );
 }
 
@@ -56,8 +61,9 @@ export function Hud({ me, opp, myLanes, endsAt, offset, live, ping, onHot }) {
         </div>
       </div>
       <div className="ar-tug" role="img" aria-label={me.score === opp.score ? "תיקו" : me.score > opp.score ? `את/ה מוביל/ה ב-${me.score - opp.score}` : `${opp.username} מוביל/ה ב-${opp.score - me.score}`}>
-        <div className="ar-tug-op" style={{ width: w + "%" }} />
-        <div className="ar-knot" style={{ left: w + "%" }} />
+        {/* transform only: the fill scales from the left edge, the knot's runner slides (same look as width / left) */}
+        <div className="ar-tug-track"><div className="ar-tug-op" style={{ transform: `scaleX(${w / 100})` }} /></div>
+        <div className="ar-knot-run" style={{ transform: `translateX(${w}%)` }}><div className="ar-knot" /></div>
       </div>
       <div className="ar-lanes">
         <Lane lanes={myLanes} idx={me.idx} live={live && !me.done} who="me" name="את/ה" />

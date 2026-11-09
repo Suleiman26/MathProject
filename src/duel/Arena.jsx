@@ -11,11 +11,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/account/ui";
 import { serverNow } from "./clock";
-import { lockLeft, streakLabel, keypadFor, QUESTIONS, toName } from "./arena-core";
+import { lockLeft, streakLabel, keypadFor, QUESTIONS, toName, andName } from "./arena-core";
 import { Hud } from "./Hud";
-import { MathText, Math as M } from "./MathText";
+import { MathText, MathSpan } from "./MathText";
 import { Keypad } from "./Keypad";
-import { mathLength } from "./math-core";
+import { mathLength, promptSize } from "./math-core";
 import { Sheet } from "./Sheet";
 
 function LockOverlay({ until, offset, right, kind }) {
@@ -32,7 +32,7 @@ function LockOverlay({ until, offset, right, kind }) {
       <div>
         <b key={n}>{n}</b>
         <span>טעות — נעילה קצרה</span>
-        {right != null && kind === "number" && <small>התשובה: <M src={String(right).replace(/^-/, "−")} /></small>}
+        {right != null && kind === "number" && <small>התשובה: <MathSpan src={String(right).replace(/^-/, "−")} /></small>}
       </div>
     </div>
   );
@@ -50,7 +50,7 @@ function Choices({ q, fb, busy, onAnswer }) {
         const cls = "ar-a" + (picked ? (fb.correct ? " good" : " bad") : "") + (!picked && isRight && !fb.correct ? " show" : "");
         return (
           <button key={i} type="button" className={cls} disabled={busy || !!fb} onClick={(e) => onAnswer(String(i), e.currentTarget)}>
-            <M src={c} />
+            <MathSpan src={c} />
           </button>
         );
       })}
@@ -70,9 +70,14 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
   const waiting = phase === "waiting", finishing = phase === "finishing";
   const streak = streakLabel(me.streak || 0);
 
+  const [giveErr, setGiveErr] = useState("");
   async function giveUp() {
-    setGiving(true);
-    try { await onGiveUp(); } finally { setGiving(false); setConfirm(false); }
+    setGiving(true); setGiveErr("");
+    let msg = null;
+    try { msg = await onGiveUp(); } catch { msg = "משהו השתבש. נסו שוב."; }
+    setGiving(false);
+    if (msg) { setGiveErr(msg); return; }          // stay in the sheet and say so
+    setConfirm(false);
   }
 
   return (
@@ -101,17 +106,18 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
             </div>
             <div className="ar-card" key={q ? q.idx : "none"}>
               {q ? (
-                <>
-                  <MathText as="h2" className="ar-prompt" text={q.payload.prompt} />
-                  <p className="ar-sub">{lastQ ? "שאלה אחרונה — שווה כפול!" : q.kind === "number" ? "הקלידו את התשובה" : " "}</p>
-                </>
+                <div className="ar-qb">
+                  <MathText as="h2" className={"ar-prompt sz-" + promptSize(q.payload.prompt)} text={q.payload.prompt} />
+                  {(lastQ || q.kind === "number") && <p className="ar-sub">{lastQ ? "שאלה אחרונה — שווה כפול!" : "הקלידו את התשובה"}</p>}
+                </div>
               ) : (
                 <div className="ar-skel" aria-busy="true" aria-label="טוענים את השאלה"><i /><i /></div>
               )}
             </div>
             <div className="ar-bottom">
               {q && q.kind === "number" ? (
-                <Keypad onSend={(given) => onAnswer(given, null)} disabled={busy || !!fb || !!locked} keys={keypadFor(q)} resetKey={q.idx} />
+                <Keypad onSend={(given) => onAnswer(given, null)} disabled={busy || !!fb || !!locked} dim={!!locked} sending={busy && !fb}
+                  keys={keypadFor(q)} resetKey={q.idx} />
               ) : q ? (
                 <Choices q={q} fb={fb} busy={busy || !!locked} onAnswer={onAnswer} />
               ) : (
@@ -127,7 +133,7 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
       </main>
 
       <footer className="ar-foot">
-        <button type="button" className="ar-giveup" onClick={() => setConfirm(true)}>ויתור</button>
+        <button type="button" className="ar-giveup" onClick={() => { setGiveErr(""); setConfirm(true); }}>ויתור</button>
       </footer>
 
       <div className={"ar-banner" + (banner ? " on " + banner.kind : "")} aria-live="assertive" role={banner ? "status" : undefined}>
@@ -137,7 +143,8 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
       {confirm && (
         <Sheet open={confirm} onClose={() => setConfirm(false)} label="לוותר על הדו-קרב?" className="ar-confirm">
           <h3 className="dl-sh-t">לוותר על הדו-קרב?</h3>
-          <p className="dl-sh-m">זה ייחשב כהפסד, ו{opp.username} ינצח/תנצח. אפשר גם להישאר ולהמשיך — כל תשובה נכונה שווה נקודות.</p>
+          <p className="dl-sh-m">זה ייחשב כהפסד, {andName(opp.username)} ינצח/תנצח. אפשר גם להישאר ולהמשיך — כל תשובה נכונה שווה נקודות.</p>
+          {giveErr && <p className="dl-err" role="alert">{giveErr}</p>}
           <div className="dl-row">
             <button type="button" className="dl-btn ghost" onClick={() => setConfirm(false)} data-autofocus>להמשיך לשחק</button>
             <button type="button" className="dl-btn warn" disabled={giving} onClick={giveUp}>{giving ? "…" : "כן, לוותר"}</button>

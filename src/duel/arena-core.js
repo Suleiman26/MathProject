@@ -246,3 +246,52 @@ export function colorVars(meAvatar, oppAvatar) {
 /* "ל" + a Latin username needs a hyphen: "ל-noa"; Hebrew names glue: "לנועה" */
 export const toName = (n) => (/^[A-Za-z0-9]/.test(String(n || "")) ? "ל-" : "ל") + n;
 export const atName = (n) => (/^[A-Za-z0-9]/.test(String(n || "")) ? "את-" : "את ") + n;
+/* "ו" + name: "ו-noa" / "ונועה" */
+export const andName = (n) => (/^[A-Za-z0-9]/.test(String(n || "")) ? "ו-" : "ו") + n;
+
+/* ── fetching duel_state on a slow network ─────────────────────────────────
+   At most one state() on its way at a time: a refetch asked for while one is
+   in flight is remembered and runs once when that one lands (never lost,
+   never piled up). force (after my own answer / give-up / start) sends at once
+   anyway. A response is applied when it is newer than the last one APPLIED —
+   a slow answer is never thrown away just because a newer request started
+   (mergeState already keeps my own progress from going backwards).
+     const g = createFetchGate();
+     const t = g.begin(force); if (!t) return;          // queued behind the one in flight
+     const r = await api.state(id);
+     const { apply, again } = g.end(t, !r.error);       // again → call refetch() once more */
+export function createFetchGate() {
+  let seq = 0, applied = 0, inflight = 0, pending = false;
+  return {
+    begin(force) {
+      if (inflight > 0 && !force) { pending = true; return 0; }
+      inflight++;
+      return ++seq;
+    },
+    end(token, ok) {
+      inflight = Math.max(0, inflight - 1);
+      const apply = token > applied;
+      if (apply && ok) applied = token;
+      const again = pending && inflight === 0;
+      if (again) pending = false;
+      return { apply, again };
+    },
+    get busy() { return inflight > 0; },
+  };
+}
+
+/* ── the keypad's window keydown listener: whose key is it? ────────────────
+   'ignore' — a sheet/dialog is open or the key was meant for a text field, or
+              for a button / link outside the keypad;
+   'key'    — a focused keypad button (Enter / Space press that button);
+   'free'   — nothing in particular has focus: the keypad takes it.
+   target / pad are DOM elements (closest / contains); sheetOpen = html.dl-locked. */
+export function keypadKeyTarget(target, pad, sheetOpen) {
+  if (sheetOpen) return "ignore";
+  const t = target && typeof target.closest === "function" ? target : null;
+  if (!t) return "free";
+  if (t.closest('[role="dialog"], [aria-modal="true"]')) return "ignore";
+  if (t.isContentEditable || t.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]')) return "ignore";
+  if (t.closest('button, a[href], [role="button"], summary')) return pad && pad.contains(t) ? "key" : "ignore";
+  return "free";
+}
