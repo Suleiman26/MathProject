@@ -44,6 +44,7 @@ test("every rpc wrapper sends the exact SQL parameter names", async () => {
     [(a) => a.giveUp(D), "duel_give_up", { tok: "T", id: D }],
     [(a) => a.emote(D, "gg"), "duel_emote", { tok: "T", id: D, emote: "gg" }],
     [(a) => a.history(), "duel_history", { tok: "T" }],
+    [(a) => a.online(), "duel_online", { tok: "T" }],
   ];
   for (const [call, fn, args] of cases) {
     const { api, calls } = fake();
@@ -55,14 +56,14 @@ test("every rpc wrapper sends the exact SQL parameter names", async () => {
 });
 
 test("the SQL functions really have those parameter names", () => {
-  const sql = ["20261108100000_duels_friends.sql", "20261108110000_duels_core.sql"]
+  const sql = ["20261108100000_duels_friends.sql", "20261108110000_duels_core.sql", "20261108120000_duels_progress.sql"]
     .map((f) => readFileSync(ROOT + "supabase/migrations/" + f, "utf8")).join("\n");
   const expect = {
     friends_me: "tok", friend_add: "tok,code", friend_answer: "tok,other,accept", friend_remove: "tok,other",
     friend_block: "tok,other", friend_unblock: "tok,other", friend_report: "tok,other,reason,duel",
     presence_ping: "tok", duel_invite: "tok,friend,subject", duel_cancel: "tok,id",
     duel_answer_invite: "tok,id,accept", duel_state: "tok,id", duel_answer: "tok,id,idx,given",
-    duel_give_up: "tok,id", duel_emote: "tok,id,emote", duel_history: "tok",
+    duel_give_up: "tok,id", duel_emote: "tok,id,emote", duel_history: "tok", duel_online: "tok",
   };
   for (const [fn, params] of Object.entries(expect)) {
     const all = [...sql.matchAll(new RegExp("create or replace function public\\." + fn + "\\(([^)]*)\\)", "g"))];
@@ -234,7 +235,7 @@ test("duelError: unknown code → the generic Hebrew message", () => {
 });
 
 test("every error code the database (and edge function) can return has its own Hebrew", () => {
-  const files = ["supabase/migrations/20261108100000_duels_friends.sql", "supabase/migrations/20261108110000_duels_core.sql"];
+  const files = ["supabase/migrations/20261108100000_duels_friends.sql", "supabase/migrations/20261108110000_duels_core.sql", "supabase/migrations/20261108120000_duels_progress.sql"];
   const fnDir = ROOT + "supabase/functions/duel-start/";
   if (existsSync(fnDir)) for (const f of readdirSync(fnDir)) if (/\.(ts|js)$/.test(f) && !/test/.test(f)) files.push("supabase/functions/duel-start/" + f);
   const codes = new Set(["off", "signed_out", "network", "offline", "start"]);

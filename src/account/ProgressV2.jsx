@@ -1,9 +1,12 @@
 'use client';
 /* Profile v2 pieces: points + player level, weekly goal ring, last 7 days chart,
-   achievements (badges) and personal records. Styles: src/styles/account.css (pv-*) */
+   achievements (badges, with the duel badges when duels are open for me), personal
+   records and my duel record. Styles: src/styles/account.css (pv-*) */
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { accountApi } from "@/lib/account";
-import { BADGES, fmt, lastDays, playerLevel, rankOf, weekStats, xpOf } from "@/lib/progress";
+import { DuelMark } from "@/duel/DuelMark";
+import { BADGES, DUEL_BADGES, duelBadges, fmt, lastDays, playerLevel, rankOf, weekStats, xpOf } from "@/lib/progress";
 
 const DAY_SHORT = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 const dateLong = (d) => new Date(d).toLocaleDateString("he-IL", { day: "numeric", month: "long" });
@@ -12,7 +15,7 @@ const dateLong = (d) => new Date(d).toLocaleDateString("he-IL", { day: "numeric"
 export function XpBar({ totals }) {
   const p = playerLevel(xpOf(totals));
   return (
-    <div className="pv-xp" title="10 נקודות על כל תרגיל שפתרת עד הסוף, ונקודה על כל צעד נכון">
+    <div className="pv-xp" title={"10 נקודות על כל תרגיל שפתרת עד הסוף, ונקודה על כל צעד נכון" + (totals && totals.duel_xp > 0 ? `, ועוד ${fmt(totals.duel_xp)} מדו-קרבים` : "")}>
       <span className="pv-xp-lv" aria-hidden="true"><small>רמה</small><b>{p.L}</b></span>
       <div className="pv-xp-main">
         <div className="pv-xp-t"><b>{rankOf(p.L)}</b><span>{fmt(p.xp)} נק׳</span></div>
@@ -134,11 +137,14 @@ export function LastDays({ data }) {
 }
 
 /* ── achievements ─────────────────────────────────────────────────────── */
-export function Achievements({ ach }) {
+/* duel = duel_history().stats when duels are open for me (else null): its badges join the list.
+   They have no date ("got" is worked out from counts), so a got one says "בדו-קרב". */
+export function Achievements({ ach, duel }) {
   const [all, setAll] = useState(false);
   if (ach === false) return null;
   if (!ach) return <section className="pf-card pv-ach" aria-hidden="true"><div className="pv-ach-skel" /></section>;
-  const list = ach.badges.filter((b) => BADGES[b.id] && !(b.id === "grade" && !b.need));
+  const duels = duelBadges(duel).map((b) => ({ id: b.id, at: b.got ? "duel" : null, have: b.have, need: b.need }));
+  const list = [...ach.badges.filter((b) => BADGES[b.id] && !(b.id === "grade" && !b.need)), ...duels];
   const got = list.filter((b) => b.at);
   const locked = list.filter((b) => !b.at).sort((a, b) => b.have / b.need - a.have / a.need);
   const shown = all ? [...got, ...locked] : [...got, ...locked].slice(0, Math.max(6, got.length + 2));
@@ -150,13 +156,13 @@ export function Achievements({ ach }) {
       </div>
       <ul className="pv-badges">
         {shown.map((b, i) => {
-          const m = BADGES[b.id];
+          const m = BADGES[b.id] || DUEL_BADGES[b.id];
           const pct = Math.min(1, b.have / b.need);
           return (
             <li key={b.id} className={"pv-badge " + (b.at ? "got t-" + m.tone : "locked")} style={{ "--i": i }}>
               <span className="pv-medal" aria-hidden="true"><span>{m.icon}</span>{!b.at && <i className="lock">🔒</i>}</span>
               <b>{m.name}</b>
-              {b.at ? <small>{dateLong(b.at)}</small> : <>
+              {b.at ? <small>{b.at === "duel" ? "בדו-קרב" : dateLong(b.at)}</small> : <>
                 <small>{m.how}</small>
                 {b.need > 1 && <span className="pv-prog" aria-label={`${b.have} מתוך ${b.need}`}><i style={{ width: Math.round(pct * 100) + "%" }} /><em>{fmt(Math.min(b.have, b.need))}/{fmt(b.need)}</em></span>}
               </>}
@@ -192,6 +198,38 @@ export function Records({ ach, data }) {
             <span>{x.sub}</span>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+/* ── my duel record (only when duels are open for me) ─────────────────── */
+export function DuelRecord({ account, stats }) {
+  if (!stats) return null;
+  const played = Number(stats.played) || 0, wins = Number(stats.wins) || 0;
+  const draws = Number(stats.draws) || 0, losses = Number(stats.losses) || 0, xp = Number(stats.duel_xp) || 0;
+  const parts = [
+    { k: "w", n: wins, l: wins === 1 ? "ניצחון" : "ניצחונות" },
+    { k: "d", n: draws, l: "תיקו" },
+    { k: "l", n: losses, l: losses === 1 ? "הפסד" : "הפסדים" },
+  ];
+  return (
+    <section className="pf-card pv-duel" data-topic={account.avatar} aria-labelledby="duel-h">
+      <span className="pv-duel-mk" aria-hidden="true"><DuelMark /></span>
+      <div className="pv-duel-main">
+        <h2 id="duel-h">הדו-קרבים שלי</h2>
+        {played > 0 ? <>
+          <span className="pv-duel-bar" aria-hidden="true">
+            {parts.map((x) => x.n > 0 && <i key={x.k} className={x.k} style={{ flexGrow: x.n }} />)}
+          </span>
+          <p className="pv-duel-nums">
+            {parts.filter((x) => x.k !== "d" || x.n > 0).map((x) => <span key={x.k} className={x.k}><b>{fmt(x.n)}</b> {x.l}</span>)}
+          </p>
+        </> : <p className="pv-duel-lead">עוד לא שיחקת. 15 שאלות, 5 דקות, מול חבר/ה.</p>}
+      </div>
+      <div className="pv-duel-side">
+        {xp > 0 && <span className="pv-duel-xp"><b>{fmt(xp)}</b> נק׳ מדו-קרבים</span>}
+        <Link className="pv-duel-go" href="/duel">{played > 0 ? "לזירה" : "לאתגר חבר/ה"}</Link>
       </div>
     </section>
   );

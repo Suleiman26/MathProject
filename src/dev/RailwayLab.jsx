@@ -1,6 +1,7 @@
 'use client';
 /* Sample students for the railway (local preview only: app/dev/railway).
-   ?s=new | mid | pro | gold | abed, ?g=7|8|9 */
+   ?s=new | mid | pro | gold | abed, ?g=7|8|9
+   ?d=none|0|1|3|6: the duel tile with a sample (no friends / friends online now) */
 import { useEffect, useState } from "react";
 import { Railway, Insights } from "@/home/Journey";
 import { HomeHero } from "@/home/HomeHero";
@@ -44,16 +45,19 @@ function sample(kind, topics) {
 
 export default function RailwayLab() {
   const [q, setQ] = useState(null);
-  useEffect(() => { const p = new URLSearchParams(location.search); setQ({ s: p.get("s") || "mid", g: p.get("g") || "8", h: p.get("h") || "sky", av: p.get("av") || "", who: p.get("who") || "boy", c: p.get("c") || "", u: p.get("u") || "" }); }, []);
+  useEffect(() => { const p = new URLSearchParams(location.search); setQ({ s: p.get("s") || "mid", g: p.get("g") || "8", h: p.get("h") || "sky", av: p.get("av") || "", who: p.get("who") || "boy", c: p.get("c") || "", u: p.get("u") || "", d: p.get("d") }); }, []);
   if (!q) return null;
   const all = CATEGORIES.flatMap((c) => TOPICS.filter((t) => t.cat === c.id).map((t) => ({ ...t, zone: { id: c.id, name: c.name, color: c.color } })));
   const mine = all.filter((t) => t.g.includes(q.g));
   const account = { id: "lab-" + q.s, username: q.u || "נועה", avatar: q.c || "violet", grade: q.g, weekly_goal: 4 };
   const p = sample(q.s, mine);
+  const people = [{ username: "תמר", avatar: "pink" }, { username: "yoav_10", avatar: "orange" }, { username: "עומר", avatar: "sky" }];
+  const duel = q.d == null ? undefined : q.d === "none" ? { online: 0, friends: 0, faces: [] }
+    : { online: Number(q.d) || 0, friends: 7, faces: people.slice(0, Math.min(3, Number(q.d) || 0)) };
   return (
     <div className="home in" data-topic={account.avatar}>
       <main>
-        <HomeHero account={account} p={p} gradeName={GRADES.find((g) => g.id === q.g).name} look={q.h} figure={q.av ? { src: `/avatars/3d/${q.who}.glb` } : undefined} />
+        <HomeHero account={account} p={p} gradeName={GRADES.find((g) => g.id === q.g).name} look={q.h} figure={q.av ? { src: `/avatars/3d/${q.who}.glb` } : undefined} duel={duel} />
         <nav style={{ display: "flex", gap: 8, justifyContent: "center", margin: "12px 0", flexWrap: "wrap", direction: "ltr" }}>
           {["new", "mid", "pro", "gold", "abed"].map((s) => <a key={s} href={`?s=${s}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
           {" | "}

@@ -7,7 +7,8 @@ import { accountApi, AVATARS, passChecks, PASS_PROBLEM, useAccount } from "@/lib
 import { iconSvg } from "@/lib/icons";
 import { CATEGORIES, TOPICS } from "@/home/catalog";
 import { AcctShell, Avatar, PasswordInput, Spinner } from "./ui";
-import { WeekGoal, LastDays, Achievements, Records, XpBar } from "./ProgressV2";
+import { WeekGoal, LastDays, Achievements, Records, XpBar, DuelRecord } from "./ProgressV2";
+import { gateFrom, setDuelOpen } from "@/duel/gate";
 
 const LEVELS = [
   { min: 0, name: "עוד לא התחלת" },
@@ -47,6 +48,7 @@ export default function Profile() {
   const { ready, account } = useAccount();
   const [data, setData] = useState(null);
   const [ach, setAch] = useState(null);
+  const [duel, setDuel] = useState(null);   // duel_history().stats when duels are open for me
   const [err, setErr] = useState("");
   const [welcome, setWelcome] = useState(false);
   const leaving = useRef(false);
@@ -62,6 +64,19 @@ export default function Profile() {
     accountApi.progress().then(setData).catch((e) => setErr(e.message === "not-connected" ? "אין חיבור למסד." : "לא הצלחנו לטעון את ההתקדמות. נסו לרענן."));
     accountApi.achievements().then(setAch).catch(() => setAch(false));
   }, [ready, account && account.id]);
+  // duels: record + badges; {error:'off'} (switch off / not a tester) hides them. The duel API loads only here.
+  useEffect(() => {
+    if (!ready || !account) return;
+    let dead = false;
+    const uid = account.id;
+    import("@/duel/api").then(({ duelApi }) => duelApi.history()).then((r) => {
+      if (dead) return;
+      const g = gateFrom(r);
+      if (g != null) setDuelOpen(uid, g);
+      setDuel(g && r.stats ? r.stats : null);
+    }).catch(() => {});
+    return () => { dead = true; };
+  }, [ready, account && account.id]);
 
   if (!ready || !account) return <AcctShell wide><div className="pf-loading"><Spinner /></div></AcctShell>;
 
@@ -73,15 +88,16 @@ export default function Profile() {
         {err && <div className="acct-alert" role="alert">{err}</div>}
         {!data && !err ? <Skeleton /> : data && <>
           {(data.totals.ok + data.totals.bad + data.totals.win) === 0
-            ? <><EmptyStart grade={account.grade} /><Achievements ach={ach} /></>
+            ? <><EmptyStart grade={account.grade} /><DuelRecord account={account} stats={duel} /><Achievements ach={ach} duel={duel} /></>
             : <>
               <Kpis data={data} />
               <div className="pf-cols even">
                 <WeekGoal account={account} data={data} />
                 <LastDays data={data} />
               </div>
-              <Achievements ach={ach} />
+              <Achievements ach={ach} duel={duel} />
               <Records ach={ach} data={data} />
+              <DuelRecord account={account} stats={duel} />
               <Calendar days={data.days} today={data.today} />
               <div className="pf-cols">
                 <TopicProgress topics={data.topics} grade={account.grade} />

@@ -167,5 +167,7 @@ export function makeDuelApi(deps) {
     giveUp: (id) => once("giveUp:" + id, () => call("duel_give_up", { id })),
     emote: (id, emote) => once("emote:" + id + ":" + emote, () => call("duel_emote", { id, emote })),
     history: () => call("duel_history"),
+    // the home tile: friends online now (20261108120000_duels_progress.sql)
+    online: () => call("duel_online"),
   };
 }

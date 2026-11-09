@@ -14,12 +14,18 @@ export function levelOf(win) {
   return { i, name: LEVEL_NAME[i], next, nextName: LEVEL_NAME[i + 1], toNext: next ? next - win : 0, pct: next ? (win - LEVELS[i]) / (next - LEVELS[i]) : 1 };
 }
 
-/* Points: 10 for every exercise solved to the end, 1 for every correct step.
+/* Points: 10 for every exercise solved to the end, 1 for every correct step,
+   plus the points earned in duels (totals.duel_xp from account_progress:
+   win 30 / draw 20 / loss 10, first 5 duels a day — the server adds them up).
    Player level L → L+1 costs 100 + 50·(L−1) points (100, 150, 200, …).
    (Points will also pay for the avatar shop later: ROADMAP item 4.) */
 // SQL copy for friends' levels: duel_level() in supabase/migrations/20261108100000_duels_friends.sql — keep in sync.
+// totals.duel_xp comes from account_progress (20261108120000_duels_progress.sql).
 export const XP_WIN = 10, XP_OK = 1;
-export function xpOf(totals) { return (totals ? totals.win * XP_WIN + totals.ok * XP_OK : 0); }
+export function xpOf(totals) {
+  if (!totals) return 0;
+  return (totals.win || 0) * XP_WIN + (totals.ok || 0) * XP_OK + (Number(totals.duel_xp) || 0);
+}
 export function playerLevel(xp) {
   let L = 1, floor = 0, cost = 100;
   while (xp >= floor + cost) { floor += cost; L++; cost = 100 + 50 * (L - 1); }
@@ -45,6 +51,27 @@ export const BADGES = {
   early:     { icon: "🌅", name: "ציפור מוקדמת",      how: "לתרגל לפני 7:00 בבוקר", tone: "sky" },
   night:     { icon: "🦉", name: "ינשוף לילה",        how: "לתרגל אחרי 22:00", tone: "indigo" },
 };
+
+/* Duel badges: worked out here from duel_history().stats (src/duel/api.js), not
+   by account_achievements — duels never write practice events. Same look as
+   BADGES (Achievements in src/account/ProgressV2.jsx); "got" has no date, the
+   stats are counts only. Spec §5 "Rewards". */
+export const DUEL_BADGES = {
+  duel_first:    { icon: "⚔️", name: "דו-קרב ראשון",  how: "לשחק דו-קרב ראשון מול חבר/ה", tone: "duel", stat: "played", need: 1 },
+  duel_win1:     { icon: "🥇", name: "ניצחון ראשון",  how: "לנצח בדו-קרב", tone: "duel", stat: "wins", need: 1 },
+  duel_win5:     { icon: "🏆", name: "5 ניצחונות",    how: "לנצח ב-5 דו-קרבים", tone: "duel", stat: "wins", need: 5 },
+  duel_win25:    { icon: "🦁", name: "25 ניצחונות",   how: "לנצח ב-25 דו-קרבים", tone: "duel", stat: "wins", need: 25 },
+  duel_perfect:  { icon: "💥", name: "15 מתוך 15",    how: "לענות נכון על כל 15 השאלות בדו-קרב", tone: "duel", stat: "perfect", need: 1 },
+  duel_comeback: { icon: "🎢", name: "קאמבק",         how: "לנצח בדו-קרב אחרי שהיית מאחור בשאלה 10", tone: "duel", stat: "comebacks", need: 1 },
+};
+/** duel_history().stats → [{ id, got, have, need }] in DUEL_BADGES order ([] without stats) */
+export function duelBadges(stats) {
+  if (!stats || typeof stats !== "object") return [];
+  return Object.entries(DUEL_BADGES).map(([id, b]) => {
+    const have = Math.max(0, Number(stats[b.stat]) || 0);
+    return { id, have, need: b.need, got: have >= b.need };
+  });
+}
 
 /* Weeks start on Sunday (Israel). today = "YYYY-MM-DD" from the database. */
 export function dayKey(dt) {

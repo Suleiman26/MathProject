@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { useAccount } from "../lib/account";
 import { duelApi } from "./api";
 import { createPresence } from "./presence-core";
+import { setDuelOpen } from "./gate";
 
 const isVisible = () => typeof document === "undefined" || document.visibilityState === "visible";
 const poller = createPresence({ ping: () => duelApi.ping(), visible: isVisible });
@@ -48,9 +49,15 @@ function attach(tok) {
 const refresh = () => poller.refresh();
 
 export function usePresence() {
-  const { ready, tok } = useAccount();
+  const { ready, tok, account } = useAccount();
   const [s, setS] = useState(poller.get);
   useEffect(() => { setS(poller.get()); return poller.listen(setS); }, []);
   useEffect(() => (ready ? attach(tok || null) : undefined), [ready, tok]);
+  // the heartbeat's answer opens/closes the entry points (home tile, menu item): ./gate.js
+  const uid = account && account.id;
+  useEffect(() => {
+    if (s.status === "ok") setDuelOpen(uid, true);
+    else if (s.status === "off") setDuelOpen(uid, false);
+  }, [s.status, uid]);
   return { ...s, refresh };
 }

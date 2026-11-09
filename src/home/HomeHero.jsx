@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import { Fire, ArrowDown, Confetti } from "@phosphor-icons/react";
 import { Avatar, AccountMenu } from "@/account/ui";
 import { HERO } from "./catalog";
+import { DuelTile } from "./DuelTile";
 import { fmt, playerLevel, rankOf, weekStats, xpOf } from "@/lib/progress";
 
 export const HERO_LOOK = "sky";
@@ -23,7 +24,7 @@ function greet() {
 // a 3D sun by day, a 3D moon from "ערב טוב" on: same hours as greet() (sun showed with "good evening" at 17:54)
 const dayArt = () => { const h = new Date().getHours(); return h >= 5 && h < 17 ? "sun" : "moon"; };
 
-export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
+export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure, duel }) {
   const t = p ? p.totals : null;
   const lv = playerLevel(xpOf(t));
   const n = t ? t.ok + t.bad : 0;
@@ -134,6 +135,9 @@ export function HomeHero({ account, p, gradeName, look = HERO_LOOK, figure }) {
                 </li>
               ))}
             </ul>
+            {/* duels: shows only when they are open for me (switch / tester), see DuelTile.jsx.
+                `duel` = sample {online, friends, faces} on dev pages */}
+            <DuelTile account={account} sample={duel} />
             {/* the slim bar shows only once this whole card is behind it (it peeked above the bar, 2026-11-07) */}
             <span ref={ref} className="hh-end" aria-hidden="true" />
           </div>

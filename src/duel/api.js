@@ -21,6 +21,7 @@
      duelApi.giveUp(id)                    duel_give_up
      duelApi.emote(id, emote)              duel_emote (gg | wow | again)
      duelApi.history()                     duel_history → {stats, recent[]}
+     duelApi.online()                      duel_online → {online, friends, faces[]} (home tile)
    _sent/_recv are local times (clock.js localNow) around the request:
      clockOffset(r.now, r._sent, r._recv).
    A second identical invite/answer/answerInvite/start/giveUp while the first is

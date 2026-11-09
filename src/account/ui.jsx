@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAccount, accountApi } from "@/lib/account";
+import { useDuelOpen } from "@/duel/gate-hook";
+import { DuelMark } from "@/duel/DuelMark";
 
 export function Avatar({ account, size = 40 }) {
   const letter = account ? [...(account.username || "?")][0].toUpperCase() : "";
@@ -29,7 +31,7 @@ export function AccountButton({ compact }) {
   return <AccountMenu account={account} />;
 }
 
-/* Signed in: the avatar opens a small menu (profile, settings, sign out).
+/* Signed in: the avatar opens a small menu (profile, duels when open for me, settings, sign out).
    Same menu on the home page and on every topic page. */
 const GRADE_NAME = { 7: "כיתה ז׳", 8: "כיתה ח׳", 9: "כיתה ט׳" };
 const MI = {
@@ -44,6 +46,8 @@ export function AccountMenu({ account, trigger = "avatar" }) {
   const box = useRef(null);
   const router = useRouter();
   const path = usePathname();
+  // "דו-קרב" only when duels are open for me (switch on, or test + tester): src/duel/gate.js
+  const duels = useDuelOpen(account.id) === true;
   useEffect(() => { setOpen(false); }, [path]);
   useEffect(() => {
     if (!open) return;
@@ -75,6 +79,7 @@ export function AccountMenu({ account, trigger = "avatar" }) {
           <span><b dir="auto">{account.username}</b><small>{GRADE_NAME[account.grade] || "בלי כיתה"}</small></span>
         </div>
         <Link role="menuitem" href="/profile" onClick={() => setOpen(false)}><i>{MI.me}</i><span>הפרופיל וההתקדמות שלי</span></Link>
+        {duels && <Link role="menuitem" href="/duel" className="duel" aria-current={path === "/duel" ? "page" : undefined} onClick={() => setOpen(false)}><i data-topic={account.avatar}><DuelMark /></i><span>דו-קרב</span></Link>}
         <Link role="menuitem" href="/profile#settings" onClick={() => setOpen(false)}><i>{MI.set}</i><span>הגדרות: כיתה, צבע, סיסמה</span></Link>
         <button type="button" role="menuitem" className="out" disabled={busy} onClick={out}><i>{MI.out}</i><span>{busy ? "יוצאים…" : "יציאה מהחשבון"}</span></button>
       </div>

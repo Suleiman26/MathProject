@@ -129,6 +129,54 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
 .hh-seg i { width: 9px; height: 4px; border-radius: 2px; background: #e9e6f5; }
 .hh-seg i.on { background: #8b5cf6; }
 
+/* ── the duel tile (src/home/DuelTile.jsx): a white tile like the four above, with one
+   small peek of the arena — a night disc where two blades meet in the student's colour ── */
+.hh-duel {
+  position: relative; display: flex; align-items: center; gap: 12px; margin-top: 9px; min-height: 72px; box-sizing: border-box;
+  padding: 9px 10px 9px 12px; border-radius: 22px; background: var(--surface); box-shadow: var(--home-card);
+  color: var(--ink); text-decoration: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: transform var(--t-fast) var(--ease-out);
+  animation: mp-rise 420ms 460ms var(--ease-out) backwards;
+}
+.hh-duel:active { transform: scale(.985); }
+.hh-duel:focus-visible { outline: 3px solid var(--a-300); outline-offset: 2px; }
+.hh-duel-mk {
+  position: relative; flex: none; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--a-300);
+  background: radial-gradient(circle at 50% 28%, #232b4d, #0b1020 72%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .07), 0 10px 20px -12px #0b1020;
+}
+/* a soft glow of my colour behind the blades */
+.hh-duel-mk::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--a-500) 55%, transparent), transparent); }
+.hh-duel-sw { position: relative; width: 38px; height: 38px; overflow: visible; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--a-300) 55%, transparent)); }
+.hh-duel-sw g.b1, .hh-duel-sw g.b2 { transform-box: view-box; transform-origin: 24px 24px; }
+.hh-duel-sw .b1 { animation: hh-b1 700ms 620ms cubic-bezier(.2, 1.4, .4, 1) backwards; }
+.hh-duel-sw .b2 { animation: hh-b2 700ms 620ms cubic-bezier(.2, 1.4, .4, 1) backwards; }
+.hh-duel-sw .sp { transform-box: view-box; transform-origin: 24px 24px; animation: hh-spark 520ms 880ms ease-out; }
+@keyframes hh-b1 { from { transform: rotate(-32deg); } }
+@keyframes hh-b2 { from { transform: rotate(32deg); } }
+@keyframes hh-spark { 0% { opacity: 0; transform: scale(.2); } 30% { opacity: .95; } 100% { opacity: 0; transform: scale(2.2); } }
+.hh-duel-t { display: grid; gap: 1px; flex: 1; min-width: 0; }
+.hh-duel-t b { font-size: 1.12rem; font-weight: 800; line-height: 1.2; }
+.hh-duel-t small {
+  display: block; min-width: 0; font-size: .8rem; color: var(--ink-2); line-height: 1.35; text-wrap: balance;
+  animation: mp-fade 260ms var(--ease-out) backwards;
+}
+.hh-duel-t small bdi { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+/* online now: a green dot that breathes three times, then rests */
+.hh-duel-dot { position: relative; display: inline-block; vertical-align: 1px; margin-inline-end: 6px; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; font-style: normal; }
+.hh-duel-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #22c55e; animation: hh-ping 1.6s 900ms ease-out 3; opacity: 0; }
+@keyframes hh-ping { 0% { opacity: .55; transform: scale(1); } 100% { opacity: 0; transform: scale(2.6); } }
+.hh-duel-faces { display: flex; flex: none; align-items: center; padding-inline-start: 6px; }
+.hh-duel-face { position: relative; margin-inline-start: -9px; border-radius: 50%; box-shadow: 0 0 0 2.5px var(--surface); line-height: 0; animation: hh-face 380ms calc(700ms + var(--k) * 70ms) cubic-bezier(.2, 1.4, .4, 1) backwards; }
+.hh-duel-face:first-child { margin-inline-start: 0; }
+.hh-duel-face .acct-av { font-size: 13px; }
+@keyframes hh-face { from { opacity: 0; transform: scale(.4); } }
+.hh-duel-more { position: relative; margin-inline-start: -9px; min-width: 30px; height: 30px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; display: grid; place-items: center; font-size: .74rem; font-weight: 800; color: var(--ink-2); background: var(--surface-2, #f1f1f4); box-shadow: 0 0 0 2.5px var(--surface); font-variant-numeric: tabular-nums; }
+.hh-duel-go { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(140deg, var(--a-500), var(--a-700)); box-shadow: 0 8px 16px -10px var(--a-700); }
+.hh-duel-go svg { width: 18px; height: 18px; }
+.hh-duel-go em, .hh-duel-tag { display: none; }
+
 /* ── the slim bar after scrolling ── */
 .hh-bar {
   position: fixed; z-index: 45; top: calc(8px + env(safe-area-inset-top)); left: 0; right: 0; margin: 0 auto;
@@ -171,6 +219,15 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
   .hh-day { width: 72px; height: 72px; top: -20px; }
   .hh-st b { font-size: 1.3rem; }
   .hh-st small { font-size: .76rem; }
+  .hh-duel { grid-column: 1 / -1; margin-top: 12px; min-height: 80px; padding: 12px 14px 12px 18px; gap: 16px; }
+  .hh-duel-mk { width: 58px; height: 58px; }
+  .hh-duel-t b { font-size: 1.25rem; }
+  .hh-duel-t small { font-size: .86rem; }
+  .hh-duel-t { flex: 0 1 auto; }
+  .hh-duel-tag { display: block; flex: 1; min-width: 0; text-align: center; font-size: .86rem; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hh-duel:not(.live) .hh-duel-t { flex: 1; }
+  .hh-duel-go { width: auto; height: 44px; padding: 0 14px 0 18px; gap: 4px; border-radius: 999px; display: inline-flex; align-items: center; }
+  .hh-duel-go em { display: inline; font-style: normal; font-weight: 700; font-size: .95rem; }
 }
 @media (max-width: 380px) {
   .hh-in { padding-inline: 14px; }
@@ -181,7 +238,8 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
   .hh-st small { font-size: .66rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hh-lvc, .hh-lvc-art, .hh-lvc-bar i, .hh-st li, .hh-row, .hh-day { animation: none !important; }
+  .hh-lvc, .hh-lvc-art, .hh-lvc-bar i, .hh-st li, .hh-row, .hh-day, .hh-duel, .hh-duel-sw g, .hh-duel-face, .hh-duel-t small, .hh-duel-dot::after { animation: none !important; }
+  .hh-duel-sw .sp { animation: none !important; }
   .hh-bar, .hh-scrim { transition: none; }
 }
 }

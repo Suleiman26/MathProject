@@ -66,6 +66,10 @@
 .acct-pop .out::before { content: ""; position: absolute; top: -4px; left: 8px; right: 8px; height: 1px; background: var(--line); }
 .acct-pop .out i { background: var(--bad-50); color: var(--bad-600); }
 .acct-pop .out:disabled { opacity: .6; cursor: default; }
+/* "דו-קרב": a small peek of the arena — night chip, swords in the student's own colour (src/duel/gate.js decides if it shows) */
+.acct-pop .duel i { background: radial-gradient(circle at 50% 30%, #1d2440, #0b1020 70%); color: var(--a-300, #5eead4); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
+.acct-pop .duel i svg { width: 23px; height: 23px; }
+.acct-pop .duel[aria-current="page"] { background: var(--surface-2); }
 @media (max-width: 560px) { .mp-topbar .acct-btn .acct-chev { display: none; } }
 
 /* ── page frame ───────────────────────────────────────────────────────────── */
@@ -524,6 +528,8 @@ a.pf-tmain:focus-visible { outline: 2px solid var(--a-500); outline-offset: 4px;
 .t-ok { --m1: #86efac; --m2: #16a34a; } .t-orange { --m1: #fdba74; --m2: #ea580c; } .t-blue { --m1: #93c5fd; --m2: #2563eb; }
 .t-gold { --m1: #fde68a; --m2: #d99a00; } .t-violet { --m1: #c4b5fd; --m2: #7c3aed; } .t-pink { --m1: #f9a8d4; --m2: #db2777; }
 .t-teal { --m1: #5eead4; --m2: #0d9488; } .t-sky { --m1: #7dd3fc; --m2: #0284c7; } .t-indigo { --m1: #a5b4fc; --m2: #4f46e5; }
+/* duel badges (DUEL_BADGES in src/lib/progress.js): a night-arena medal, set apart from the practice ones */
+.t-duel { --m1: #a5b4fc; --m2: #1e1b4b; }
 .pv-badge.locked { background: var(--surface-2); border-style: dashed; }
 .pv-badge.locked .pv-medal { background: var(--surface-3); }
 .pv-badge.locked .pv-medal > span { filter: grayscale(1); opacity: .35; }
@@ -546,6 +552,44 @@ a.pf-tmain:focus-visible { outline: 2px solid var(--a-500); outline-offset: 4px;
 .pv-rec small { font-size: .78rem; color: var(--ink-3); font-weight: 600; padding-left: 34px; }
 .pv-rec b { font-size: 1.9rem; font-weight: 800; line-height: 1.1; margin-top: 6px; color: #7a4f00; font-variant-numeric: tabular-nums; }
 .pv-rec span { font-size: .78rem; color: var(--ink-3); }
+
+/* my duel record (DuelRecord in ProgressV2.jsx): night disc with the blades in my colour,
+   a two-tone bar (wins in my colour; draws and losses quiet — never blaming), duel points, a way in */
+.pv-duel { display: flex; align-items: center; gap: 16px; padding: 16px 18px; animation: mp-rise 420ms 120ms var(--ease-out) backwards; }
+.pv-duel-mk {
+  position: relative; flex: none; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: var(--a-300);
+  background: radial-gradient(circle at 50% 28%, #232b4d, #0b1020 72%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .07), 0 10px 20px -12px #0b1020;
+}
+.pv-duel-mk svg { width: 38px; height: 38px; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--a-300) 60%, transparent)); }
+.pv-duel-main { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.pv-duel-main h2 { margin: 0; font-size: 1.12rem; font-weight: 700; }
+.pv-duel-bar { display: flex; gap: 3px; height: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-3); }
+.pv-duel-bar i { display: block; min-width: 10px; flex-basis: 0; transform-origin: right; animation: pv-duel-bar 800ms 300ms var(--ease-out) backwards; }
+.pv-duel-bar .w { background: linear-gradient(90deg, var(--a-500), var(--a-600)); }
+.pv-duel-bar .d { background: #cbd5e1; }
+.pv-duel-bar .l { background: #e5e7eb; }
+@keyframes pv-duel-bar { from { transform: scaleX(0); } }
+.pv-duel-nums { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .84rem; color: var(--ink-3); }
+.pv-duel-nums b { font-size: 1.05rem; font-weight: 800; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.pv-duel-nums .w b { color: var(--a-700); }
+.pv-duel-lead { margin: 0; font-size: .88rem; color: var(--ink-2); }
+.pv-duel-side { flex: none; display: grid; justify-items: end; gap: 8px; }
+.pv-duel-xp { font-size: .78rem; color: var(--ink-3); white-space: nowrap; }
+.pv-duel-xp b { font-size: 1rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pv-duel-go {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; white-space: nowrap;
+  font-weight: 700; font-size: .92rem; color: #fff; text-decoration: none; background: linear-gradient(140deg, var(--a-500), var(--a-700));
+  box-shadow: 0 8px 18px -10px var(--a-700); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.pv-duel-go:active { transform: scale(.97); }
+.pv-duel-go:focus-visible { outline: 3px solid var(--a-300); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .pv-duel { flex-wrap: wrap; gap: 12px 14px; padding: 14px; }
+  .pv-duel-mk { width: 48px; height: 48px; }
+  .pv-duel-mk svg { width: 32px; height: 32px; }
+  .pv-duel-side { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+}
+@media (prefers-reduced-motion: reduce) { .pv-duel, .pv-duel-bar i { animation: none; } }
 
 /* ── one topic: /profile/<topic> (src/account/TopicDetail.jsx) ── */
 .td-hero {
