@@ -47,6 +47,9 @@ export default function AdminShell({ children }) {
   const cache = useRef({});
   const preview = isPreview();
   const path = usePathname();
+  const mainRef = useRef(null);
+  // On phones the page scrolls inside .main (not the window): start each tab at the top.
+  useEffect(() => { if (mainRef.current) mainRef.current.scrollTop = 0; }, [path]);
 
   useEffect(() => {
     try {
@@ -111,7 +114,7 @@ export default function AdminShell({ children }) {
               <button type="button" className="ibtn" onClick={() => signOut(false)} aria-label="יציאה"><SignOut size={18} /></button>
             </span>
           </header>
-          <div className="main"><div className="main-in" key={path}>
+          <div className="main" ref={mainRef}><div className="main-in" key={path}>
             {preview && <div className="demo-bar"><Info size={18} /><span><b>מצב תצוגה.</b> המספרים כאן הם נתוני דוגמה, לא אמיתיים. הם יתחלפו בנתונים אמיתיים ברגע שנחבר את המסד של הפרויקט (<Link href="/admin/settings">הגדרות</Link>).</span></div>}
             {children}
           </div></div>

@@ -168,23 +168,29 @@ export function Sortable({ items, render, onOrder, className = "sortable", itemC
     const all = Array.from(box.current.children), from = all.indexOf(item);
     const rects = all.map((el) => el.getBoundingClientRect());
     const gap = all.length > 1 ? rects[1].top - rects[0].bottom : 8;
-    const step = rects[from].height + gap, startY = e.clientY, startScroll = scrollY;
+    // On phones the page scrolls inside the admin frame (.main), not the window.
+    const m = box.current.closest(".main");
+    const sc = m && /auto|scroll/.test(getComputedStyle(m).overflowY) ? m : null;
+    const scrollY = () => (sc ? sc.scrollTop : window.scrollY);
+    const scrollByY = (v) => (sc ? sc.scrollBy(0, v) : window.scrollBy(0, v));
+    const view = () => (sc ? sc.getBoundingClientRect() : { top: 0, bottom: innerHeight });
+    const step = rects[from].height + gap, startY = e.clientY, startScroll = scrollY();
     let to = from, lastY = e.clientY, raf;
     item.classList.add("dragging");
     all.forEach((el) => { if (el !== item) el.classList.add("shift"); });
     if (navigator.vibrate) navigator.vibrate(8);
     h.setPointerCapture(e.pointerId);
     const layout = () => {
-      const dy = lastY - startY + (scrollY - startScroll);
+      const dy = lastY - startY + (scrollY() - startScroll);
       item.style.transform = `translateY(${dy}px)`;
       const center = rects[from].top + rects[from].height / 2 + dy;
       to = 0; all.forEach((el, i) => { if (i !== from && rects[i].top + rects[i].height / 2 < center) to++; });
       all.forEach((el, i) => { if (el === item) return; const s = i > from && i <= to ? -step : i < from && i >= to ? step : 0; el.style.transform = s ? `translateY(${s}px)` : ""; });
     };
     const auto = () => {
-      const edge = 80; let v = 0;
-      if (lastY < edge) v = -Math.ceil((edge - lastY) / 6); else if (lastY > innerHeight - edge) v = Math.ceil((lastY - (innerHeight - edge)) / 6);
-      if (v) { scrollBy(0, v); layout(); }
+      const edge = 80, { top, bottom } = view(); let v = 0;
+      if (lastY < top + edge) v = -Math.ceil((top + edge - lastY) / 6); else if (lastY > bottom - edge) v = Math.ceil((lastY - (bottom - edge)) / 6);
+      if (v) { scrollByY(v); layout(); }
       raf = requestAnimationFrame(auto);
     };
     raf = requestAnimationFrame(auto);

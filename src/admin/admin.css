@@ -437,11 +437,17 @@ html, .adm-root body { min-height: 100%; }
 }
 @media (max-width: 980px) {
   .adm-root .side { display: none; }
-  .adm-root .main { margin: 0; }
-  .adm-root .main-in { padding: 14px 16px 104px; }
+  /* Phone frame: header and tab bar are plain rows of a full-height frame and only
+     the middle scrolls. No position:fixed/sticky — on iOS 26 those drift into the
+     middle of the screen while scrolling (Abed's iPhone, 2026-11-09). */
+  .adm.adm-root { min-height: 0; }
+  body:has(.adm-root) { margin: 0; }
+  .adm-root .shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+  .adm-root .main { flex: 1 1 auto; min-height: 0; margin: 0; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+  .adm-root .main-in { padding: 14px 16px 28px; }
   .adm-root .mtop {
-    display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 30; height: 56px; padding: 0 12px;
+    display: flex; align-items: center; justify-content: space-between; flex: none;
+    position: relative; z-index: 30; height: 56px; padding: 0 12px;
     background: color-mix(in srgb, var(--bg) 85%, transparent);
     -webkit-backdrop-filter: saturate(1.6) blur(14px); backdrop-filter: saturate(1.6) blur(14px);
     border-bottom: 1px solid var(--line);
@@ -450,7 +456,7 @@ html, .adm-root body { min-height: 100%; }
   .adm-root .mtop .brand svg { width: 30px; height: 30px; }
   .adm-root .bnav {
     display: grid; grid-template-columns: repeat(8, 1fr);
-    position: fixed; inset: auto 0 0 0; z-index: 40;
+    position: relative; flex: none; z-index: 40;
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     -webkit-backdrop-filter: saturate(1.6) blur(16px); backdrop-filter: saturate(1.6) blur(16px);
