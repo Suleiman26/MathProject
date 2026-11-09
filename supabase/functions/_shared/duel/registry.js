@@ -27,6 +27,14 @@ import * as dn from './topics/directed-numbers.js';
 import * as eq from './topics/equation-solver.js';
 import * as pr from './topics/powers-roots.js';
 import * as rp from './topics/ratio-percent.js';
+import * as qd from './topics/quadrilaterals.js';
+import * as so from './topics/solids3d.js';
+import * as ci from './topics/circle.js';
+import * as tr from './topics/triangles.js';
+import * as lf from './topics/linear-function.js';
+import * as ix from './topics/intersection.js';
+import * as ea from './topics/equations-advanced.js';
+import * as qs from './topics/quadratic-solver.js';
 
 const BOTH = ['choice', 'number'];
 const TYPED = ['number'];
@@ -36,6 +44,14 @@ const TOPICS = {
   'equation-solver': { grade: 7, world: 'alg' },
   'powers-roots': { grade: 8, world: 'num' },
   'ratio-percent': { grade: 7, world: 'num' },
+  'quadrilaterals': { grade: 8, world: 'geo' },
+  'solids3d': { grade: 7, world: 'geo' },
+  'circle': { grade: 9, world: 'geo' },
+  'triangles': { grade: 7, world: 'geo' },
+  'linear-function': { grade: 8, world: 'fn' },
+  'intersection': { grade: 9, world: 'fn' },
+  'equations-advanced': { grade: 8, world: 'alg' },
+  'quadratic-solver': { grade: 9, world: 'alg' },
 };
 
 const LIST = [
@@ -55,6 +71,36 @@ const LIST = [
   ['rp.convert', 'ratio-percent', '3. המרות', BOTH, rp.convert],
   ['rp.pct', 'ratio-percent', '4. חישובי %', BOTH, rp.pct],
   ['rp.change', 'ratio-percent', '5. עלייה/ירידה', BOTH, rp.change],
+  // Task 2b: the rest of the zero-drawing topics
+  ['qd.square', 'quadrilaterals', '1. ריבוע', BOTH, qd.square],
+  ['qd.rect', 'quadrilaterals', '2. מלבן', BOTH, qd.rectangle],
+  ['qd.rhombus', 'quadrilaterals', '3. מעוין', BOTH, qd.rhombus],
+  ['qd.para', 'quadrilaterals', '4. מקבילית', BOTH, qd.parallelogram],
+  ['qd.trap', 'quadrilaterals', '5. טרפז', BOTH, qd.trapezoid],
+  ['qd.kite', 'quadrilaterals', '6. דלתון', BOTH, qd.kite],
+  ['so.cube', 'solids3d', '1. קובייה', BOTH, so.cube],
+  ['so.box', 'solids3d', '2. תיבה', BOTH, so.box],
+  ['so.cyl', 'solids3d', '3. גליל', BOTH, so.cylinder],
+  ['so.cone', 'solids3d', '4. קונוס', BOTH, so.cone],
+  ['so.pyr', 'solids3d', '5. פירמידה', BOTH, so.pyramid],
+  ['so.sphere', 'solids3d', '6. כדור', BOTH, so.sphere],
+  ['ci.rad', 'circle', '2. רדיאנים', BOTH, ci.radians],
+  ['ci.circ', 'circle', '3. היקף', BOTH, ci.circumference],
+  ['ci.area', 'circle', '4. שטח', BOTH, ci.area],
+  ['ci.arc', 'circle', '5. קשת', BOTH, ci.arc],
+  ['ci.mix', 'circle', '6. הכל יחד', BOTH, ci.combined],
+  ['tr.angles', 'triangles', '1. זוויות', BOTH, tr.angles],
+  ['tr.special', 'triangles', '3. משולשים מיוחדים', BOTH, tr.special],
+  ['lf.slope', 'linear-function', '4. חישוב שיפוע', BOTH, lf.slope],
+  ['lf.read', 'linear-function', '6. זיהוי שיפוע וחיתוך', BOTH, lf.readLine],
+  ['lf.rearr', 'linear-function', '7. סידור וזיהוי', BOTH, lf.rearrange],
+  ['lf.mpoint', 'linear-function', '8. ישר מ-m ונקודה', BOTH, lf.slopePoint],
+  ['lf.twopts', 'linear-function', '9. ישר מ-2 נקודות', BOTH, lf.twoPoints],
+  ['ix.lines', 'intersection', '1. ישר–ישר', BOTH, ix.lineLine],
+  ['ea.linfrac', 'equations-advanced', '1 — לינארית עם מכנה', BOTH, ea.linearFrac],
+  ['ea.sm', 'equations-advanced', '3 — כפל מקוצר', BOTH, ea.shortMult],
+  ['ea.combo', 'equations-advanced', '4 — הכל יחד', BOTH, ea.combined],
+  ['qs.coef', 'quadratic-solver', 'שלב 2: מקדמים', BOTH, qs.coefficients],
 ];
 
 export const GENERATORS = LIST.map(([id, topic, chapter, kinds, fn]) => ({

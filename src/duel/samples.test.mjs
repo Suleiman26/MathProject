@@ -26,10 +26,15 @@ test("a world tile is hidden exactly when poolFor is empty for that grade", () =
     assert.deepEqual(tiles.map((t) => t.key), SUBJECTS.map((s) => s.key));
     for (const t of tiles) assert.equal(t.empty, poolFor({ grade: g, subject: t.key }).length === 0, `${t.key} @${g}`);
   }
-  // today's engine: numbers and algebra exist from grade 7; functions and geometry have no generators yet
+  // today's engine: numbers, algebra and geometry (solids, triangles) exist from grade 7;
+  // functions from grade 8 (linear function), so the fn tile is hidden for grade 7 only
   const g7 = Object.fromEntries(subjectsFor(7, 7).map((t) => [t.key, t.empty]));
   assert.equal(g7.num, false);
   assert.equal(g7.alg, false);
+  assert.equal(g7.geo, false);
+  assert.equal(g7.fn, true);
+  const g9 = Object.fromEntries(subjectsFor(9, 9).map((t) => [t.key, t.empty]));
+  assert.deepEqual([g9.num, g9.alg, g9.fn, g9.geo], [false, false, false, false]);
   assert.equal(randomEmpty(7, 7), false);
 });
 

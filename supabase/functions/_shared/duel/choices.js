@@ -63,7 +63,7 @@ const close = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.
 const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
 
 /* ── value of a choice text ──────────────────────────────────────────
-   Numbers, leading −, \frac{a}{b}, \sqrt{n}, b^{e}, "·" and implicit
+   Numbers, leading −, \frac{a}{b}, \sqrt{n}, b^{e}, π, "·" and implicit
    products, "p : q" ratios; letters get fixed odd values (only to spot two
    choices that are equal, e.g. 2^{4} and 4^{2}, 2 : 3 and 4 : 6). */
 const LETTER = { x: 1.37, y: 2.29, z: 3.11, a: 1.73, b: 2.57, m: 1.19, n: 2.83, t: 3.37 };
@@ -82,6 +82,7 @@ export function valueOf(text) {
     const num = s.slice(i).match(/^\d+(\.\d+)?/);
     if (num) { i += num[0].length; return Number(num[0]); }
     if (s[i] in LETTER) return LETTER[s[i++]];
+    if (s[i] === 'π') { i++; return Math.PI; } // \frac{2π}{3} (circle: radians)
     return fail();
   }
   function power() { let v = atom(); if (s[i] === '^') { i++; v = Math.pow(v, s[i] === '{' ? group() : atom()); } return v; }
@@ -443,6 +444,20 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
   if (!pick) throw new Error('makeChoices: no valid set for ' + correct);
   const choices = shuffle(r, [right, ...pick.map((j) => all[j].t)]);
   return { choices, answer: String(choices.indexOf(right)) };
+}
+
+/**
+ * A makeChoices `must` rule for small answers among small printed numbers: one of
+ * the 3 wrongs is at least as close to a number printed in the prompt (printed
+ * ones count, at distance 0) as the answer, so "the choice nearest a number in the
+ * question" can't find it. Throws in makeChoices when no set can follow it — the
+ * caller then falls back to the plain balanced choices.
+ */
+export function notNearest(prompt, ans) {
+  const P = (prompt.match(/\d+/g) || []).map(Number);
+  const dist = (v) => Math.min(...P.map((p) => Math.abs(p - v)));
+  const d0 = dist(ans);
+  return (ts) => ts.some((t) => dist(Number(t.replace('\u2212', '-'))) <= d0);
 }
 
 /**
