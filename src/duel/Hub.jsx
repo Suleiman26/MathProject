@@ -13,10 +13,10 @@ import { AccountMenu, Avatar, LegalFooter } from "@/account/ui";
 import { duelApi, duelError } from "./api";
 import { usePresence } from "./presence";
 import { subscribe } from "./live";
-import { SUBJECT_LABEL } from "./samples";
+import { SUBJECT_LABEL } from "./subjects";
 import { MyCode, AddFriendForm, cleanCode, useShareCode } from "./AddFriend";
 import { FriendRow, FriendMenu, FriendAvatar, Tug, toName, SEP } from "./FriendRow";
-import { ChallengeSheet, WaitRing } from "./ChallengeSheet";
+import { ChallengeSheet, WaitRing, preloadEngine } from "./ChallengeSheet";
 import { serverNow } from "./clock";
 import { fmtCode } from "./QR";
 import EnablePush from "./EnablePush";
@@ -204,6 +204,16 @@ export function HubView({ account, data, history, presence, actions, state, erro
   const [announce, setAnnounce] = useState("");   // one hidden live region: phase changes only, never the seconds
   const { share, canShare, copied } = useShareCode(data && data.code);
   const waitPhase = wait ? wait.phase + ":" + wait.friend.id : "";
+  // the question engine (which worlds a pair has questions for) loads at idle, in its own chunk,
+  // once there is a friend to challenge — so the sheet opens with the right worlds at once
+  const hasFriends = !!(data && data.friends && data.friends.length);
+  useEffect(() => {
+    if (!hasFriends) return;
+    const w = window;
+    if (typeof w.requestIdleCallback === "function") { const h = w.requestIdleCallback(() => preloadEngine(), { timeout: 2000 }); return () => w.cancelIdleCallback(h); }
+    const t = setTimeout(preloadEngine, 800);
+    return () => clearTimeout(t);
+  }, [hasFriends]);
   useEffect(() => {
     if (!wait) { setAnnounce((a) => (a ? "" : a)); return; }
     const n = wait.friend.username;

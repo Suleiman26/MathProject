@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { duelOpen, onDuelOpen } from "./gate";
 
 export function useDuelOpen(uid) {
-  // null on the server and in the first render: the tile/menu item never flashes before hydration
-  const [open, setOpen] = useState(null);
+  // null on the server (and without an account). The callers render only once the account is
+  // known (after hydration), so the first client render can already use what this device
+  // remembers: a known-off student never sees a placeholder, a known-open one sees the tile at once
+  const [open, setOpen] = useState(() => (uid && typeof window !== "undefined" ? duelOpen(uid) : null));
   useEffect(() => {
     setOpen(duelOpen(uid));
     return onDuelOpen((u, v) => { if (u === uid) setOpen(v); });

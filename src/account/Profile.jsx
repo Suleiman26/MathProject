@@ -9,6 +9,7 @@ import { CATEGORIES, TOPICS } from "@/home/catalog";
 import { AcctShell, Avatar, PasswordInput, Spinner } from "./ui";
 import { WeekGoal, LastDays, Achievements, Records, XpBar, DuelRecord } from "./ProgressV2";
 import { gateFrom, setDuelOpen } from "@/duel/gate";
+import { useDuelOpen } from "@/duel/gate-hook";
 
 const LEVELS = [
   { min: 0, name: "עוד לא התחלת" },
@@ -64,9 +65,11 @@ export default function Profile() {
     accountApi.progress().then(setData).catch((e) => setErr(e.message === "not-connected" ? "אין חיבור למסד." : "לא הצלחנו לטעון את ההתקדמות. נסו לרענן."));
     accountApi.achievements().then(setAch).catch(() => setAch(false));
   }, [ready, account && account.id]);
-  // duels: record + badges; {error:'off'} (switch off / not a tester) hides them. The duel API loads only here.
+  // duels: record + badges; {error:'off'} (switch off / not a tester) hides them. The duel API loads only here,
+  // and not at all while duels are known off on this device (the light gate check flips that when they open)
+  const duelGate = useDuelOpen(account && account.id);
   useEffect(() => {
-    if (!ready || !account) return;
+    if (!ready || !account || duelGate === false) { if (duelGate === false) setDuel(null); return; }
     let dead = false;
     const uid = account.id;
     import("@/duel/api").then(({ duelApi }) => duelApi.history()).then((r) => {
@@ -76,7 +79,7 @@ export default function Profile() {
       setDuel(g && r.stats ? r.stats : null);
     }).catch(() => {});
     return () => { dead = true; };
-  }, [ready, account && account.id]);
+  }, [ready, account && account.id, duelGate === false]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!ready || !account) return <AcctShell wide><div className="pf-loading"><Spinner /></div></AcctShell>;
 

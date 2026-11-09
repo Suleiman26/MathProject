@@ -139,6 +139,12 @@ body:has(> .home.in) { margin: 0; background: #f6f6f9; }
   animation: mp-rise 420ms 460ms var(--ease-out) backwards;
 }
 .hh-duel:active { transform: scale(.985); }
+/* the place held while this device doesn't know yet whether duels are open (DuelTile.jsx):
+   the tile's own box, quiet; folds away if the answer is "no" */
+.hh-duel.skel { display: block; pointer-events: none; background: color-mix(in srgb, var(--surface) 55%, transparent); box-shadow: none; max-height: 81px; overflow: hidden; animation: none; }
+.hh-duel.skel.out { animation: hh-skel-out 360ms var(--ease-out) forwards; }
+@keyframes hh-skel-out { to { min-height: 0; max-height: 0; margin-top: 0; padding-block: 0; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hh-duel.skel.out { animation-duration: 1ms; } }
 .hh-duel:focus-visible { outline: 3px solid var(--a-300); outline-offset: 2px; }
 .hh-duel-mk {
   position: relative; flex: none; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;

@@ -7,11 +7,16 @@
    Shows only when duels are open for me (src/duel/gate.js: switch on, or test +
    tester). The friends-online number comes from ONE light call (duel_online)
    after the page has gone idle, and again when the tab comes back after 30 s —
-   the duel API is loaded only then, in its own chunk.
+   the duel API is loaded only then, in its own chunk, and ONLY when the gate is
+   known open (known off → no call at all; the light check in DuelLayerMount
+   flips the gate when the switch turns on).
+   While this device doesn't know yet (first visit), a quiet placeholder of the
+   same height holds the place (no layout jump when the tile arrives); if the
+   answer is "off" it folds away smoothly. Known off → nothing at all.
    `sample` (dev pages): {online, friends, faces} drawn without any call.
    Styles: src/styles/hero.css (.hh-duel*). */
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/account/ui";
 import { useDuelOpen } from "@/duel/gate-hook";
 import { gateFrom, setDuelOpen } from "@/duel/gate";
@@ -19,6 +24,7 @@ import { fmt } from "@/lib/progress";
 import { DuelMark } from "@/duel/DuelMark";
 
 const AGAIN_MS = 30000;
+const UNKNOWN_MS = 8000;     // no answer about the gate by then (offline…) → fold the placeholder away
 
 function whenIdle(f) {
   const w = window;
@@ -43,9 +49,18 @@ export function duelLine(info) {
 export function DuelTile({ account, sample }) {
   const known = useDuelOpen(account.id);
   const [info, setInfo] = useState(sample || null);
+  const held = useRef(known === null);          // a placeholder was shown (so a "no" folds it away)
+  const [late, setLate] = useState(false);
+  if (known === null) held.current = true;
+  useEffect(() => {
+    if (known !== null) return;
+    const t = setTimeout(() => setLate(true), UNKNOWN_MS);
+    return () => clearTimeout(t);
+  }, [known]);
 
   useEffect(() => {
     if (sample) { setInfo(sample); return; }
+    if (known !== true) return;                 // known off / not known yet: no duel call from here
     let dead = false, last = 0, busy = false;
     async function load() {
       if (busy || dead) return;
@@ -63,9 +78,13 @@ export function DuelTile({ account, sample }) {
     const vis = () => { if (document.visibilityState === "visible" && Date.now() - last > AGAIN_MS) load(); };
     document.addEventListener("visibilitychange", vis);
     return () => { dead = true; stopIdle(); document.removeEventListener("visibilitychange", vis); };
-  }, [account.id, sample]);
+  }, [account.id, sample, known]);
 
-  if (!sample && known !== true) return null;
+  if (!sample && known !== true) {
+    if (!held.current) return null;
+    // the same box as the tile, empty; folds away once the answer is "no" (or never comes)
+    return <span className={"hh-duel skel" + (known === false || late ? " out" : "")} aria-hidden="true" />;
+  }
   const line = duelLine(info);
   // up to 3 faces; with more friends online, 2 faces and a "+N" bubble (keeps the line on one row on phones)
   const all = (info && info.faces) || [];

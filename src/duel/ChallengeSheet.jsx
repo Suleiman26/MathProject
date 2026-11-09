@@ -12,9 +12,19 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/account/ui";
 import { worldArt } from "@/home/worlds";
 import { localNow, serverNow } from "./clock";
-import { subjectsFor, randomEmpty, SUBJECT_LABEL } from "./samples";
+import { SUBJECTS, SUBJECT_LABEL } from "./subjects";
 import { FriendAvatar, H2H, seenAgo, toName, SEP } from "./FriendRow";
 import { Sheet, radioKeys } from "./Sheet";
+
+/* The question engine (./samples.js: which worlds have questions for these grades) is
+   ~22 KB gz, so it is loaded only here, lazily: the hub starts it at idle (preloadEngine),
+   and an open sheet waits for it. Until then the four worlds show and "send" waits. */
+let engine = null;
+let enginePromise = null;
+export function preloadEngine() {
+  if (!enginePromise) enginePromise = import("./samples").then((m) => (engine = m)).catch(() => { enginePromise = null; return null; });
+  return enginePromise;
+}
 
 export const COOLDOWN_MS = 30000;
 export const INVITE_MS = 60000;
@@ -53,6 +63,13 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
   const [cdNote, setCdNote] = useState("");   // announced once when the cooldown ends (never the countdown itself)
 
   useEffect(() => { if (open) { setErr(""); setSubject("random"); setSending(false); } }, [open, friend && friend.id]);
+  const [eng, setEng] = useState(engine);
+  useEffect(() => {
+    if (!open || eng) return;
+    let dead = false;
+    preloadEngine().then((m) => { if (!dead && m) setEng(m); });
+    return () => { dead = true; };
+  }, [open, eng]);
   // one clock for the ring and the cooldown
   useEffect(() => {
     if (!open) return;
@@ -60,24 +77,28 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
     return () => clearInterval(t);
   }, [open]);
 
-  if (!friend) return null;
-  const name = friend.username;
-  const subjects = subjectsFor(me && me.grade, friend.grade).filter((s) => !s.empty);
-  const keys = ["random", ...subjects.map((s) => s.key)];
-  const noQuestions = randomEmpty(me && me.grade, friend.grade);
   const cdLeft = Math.max(0, Math.ceil((cooldownUntil - localNow()) / 1000));
   const coolingDown = cdLeft > 0;
+  // every hook before the early return below (rules of hooks)
   useEffect(() => {
     if (!open) return;
     if (coolingDown) setCdNote("");
     else if (cooldownUntil) setCdNote("אפשר לשלוח אתגר שוב");
   }, [open, coolingDown, cooldownUntil]);
+
+  if (!friend) return null;
+  const name = friend.username;
+  // the worlds this pair has questions for (all four until the engine has loaded)
+  const subjects = eng ? eng.subjectsFor(me && me.grade, friend.grade).filter((s) => !s.empty) : SUBJECTS;
+  const keys = ["random", ...subjects.map((s) => s.key)];
+  const noQuestions = eng ? eng.randomEmpty(me && me.grade, friend.grade) : false;
+  const loading = !eng;
   const mine = wait && wait.friend && wait.friend.id === friend.id ? wait : null;     // the wait shown in THIS sheet
   const otherWait = wait && !mine;                                                   // an open invite to someone else
   const left = mine && mine.invite ? (Date.parse(mine.invite.expires_at) - serverNow(offset)) / 1000 : 0;
 
   async function send() {
-    if (sending || cdLeft > 0 || noQuestions || otherWait) return;
+    if (sending || loading || cdLeft > 0 || noQuestions || otherWait) return;
     setSending(true); setErr("");
     const r = await api.invite(friend.id, subject);
     setSending(false);
@@ -126,7 +147,7 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
           )}
           {err && <p className="dl-err" role="alert">{err}</p>}
           <div className="dl-ch-foot">
-            <button type="button" className={"dl-btn send" + (cdLeft > 0 ? " cd" : "")} onClick={send} disabled={sending || cdLeft > 0 || noQuestions || !!otherWait}
+            <button type="button" className={"dl-btn send" + (cdLeft > 0 ? " cd" : "")} onClick={send} disabled={sending || loading || cdLeft > 0 || noQuestions || !!otherWait}
               style={cdLeft > 0 ? { "--cd": (cdLeft / (COOLDOWN_MS / 1000)).toFixed(3) } : undefined}>
               <span>{sending ? "שולחים…" : cdLeft > 0 ? `אפשר לשלוח שוב בעוד ${cdLeft} שנ׳` : `שליחת אתגר ${toName(name)}`}</span>
             </button>

@@ -7,7 +7,7 @@
    when the invitee opens the duel page directly (InviteCard). */
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/account/ui";
-import { SUBJECT_LABEL } from "./samples";
+import { SUBJECT_LABEL } from "./subjects";
 import { serverNow } from "./clock";
 import { inviteLeft, INVITE_MS, atName } from "./arena-core";
 import { reduced, sfx } from "./fx";
