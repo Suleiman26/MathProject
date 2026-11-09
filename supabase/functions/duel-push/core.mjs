@@ -17,19 +17,25 @@ export function ttlFor(expiresAt, now = new Date()) {
   return Number.isFinite(left) ? Math.max(0, Math.min(60, left)) : 0;
 }
 
-/** The notification the service worker shows (public/sw.js). Short Hebrew, no answers, no ids
- *  beyond the duel's own. Tag per duel: a repeat of the same invite replaces the first. */
+/** The notification the service worker shows (public/sw.js). Generic on purpose: no username
+ *  on a child's lock screen (the name is shown in the site, after the tap). Tag per duel:
+ *  a repeat of the same invite replaces the first. */
 export function message(info) {
-  const name = String(info.from || "").trim().slice(0, 24) || "חבר/ה";
   const subject = SUBJECT_LABEL[info.subject] || SUBJECT_LABEL.random;
   return {
     t: "invite",
     id: info.duel_id,
-    title: `${name} מאתגר/ת אותך לדו-קרב!`,
-    body: `נושא: ${subject} · ההזמנה פתוחה דקה אחת`,
+    title: "יש לך הזמנה לדו-קרב!",
+    body: `חבר/ה מאתגר/ת אותך · ${subject} · ההזמנה פתוחה דקה אחת`,
     url: "/duel",
     tag: `duel-${info.duel_id}`,
   };
+}
+
+/** The function runs against a LOCAL Supabase (supabase start / functions serve)? Test-only
+ *  switches (PUSH_NOW) are honoured only then. */
+export function isLocal(url) {
+  return /^http:\/\/(kong|localhost|127\.0\.0\.1|host\.docker\.internal)(:\d+)?\/?$/.test(String(url || ""));
 }
 
 const b64u = /^[A-Za-z0-9_-]+$/;

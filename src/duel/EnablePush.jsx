@@ -31,8 +31,8 @@ export default function EnablePush({ account, played }) {
     setMode(m);
     setHidden(isDismissed());
     if (m !== "ok" || !id) { setStatus("off"); return; }
-    pushStatus(id).then((s) => { if (live) setStatus(s); });
-    syncPush(id).catch(() => {});
+    // sync first (it may turn off a subscription made with an old key), then read the state
+    syncPush(id).catch(() => {}).then(() => pushStatus(id)).then((s) => { if (live) setStatus(s); }, () => { if (live) setStatus("off"); });
     return () => { live = false; };
   }, [id]);
 

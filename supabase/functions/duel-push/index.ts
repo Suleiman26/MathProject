@@ -7,12 +7,16 @@
 // the shared secret is the only key in). Steps:
 //   1. secret header = PUSH_SECRET (else 401) · body = {duel_id, to_uid} (uuids).
 //   2. quiet hours 21:00–07:00 Israel time → nothing is sent ({skipped:'quiet'}).
-//   3. push_info(secret, duel_id, to_uid) → sender's username, subject, expiry and
-//      the invitee's devices — only while the invite is still open ('gone' otherwise).
+//   3. push_info(secret, duel_id, to_uid) → subject, expiry and the invitee's devices —
+//      only while the invite is still open ('gone' otherwise). No sender name: the
+//      notification is generic ("יש לך הזמנה לדו-קרב!"), nothing personal on a lock screen.
 //   4. one encrypted Web Push per device (RFC 8291 aes128gcm + VAPID RFC 8292),
-//      TTL = what is left of the invite (≤ 60 s), urgency high.
-//   5. push_done(secret, ok, gone): devices the push service says no longer exist
-//      (404/410) are deleted; the rest get last_ok_at.
+//      TTL = what is left of the invite (≤ 60 s), urgency high, redirects refused.
+//   5. push_done(secret, ok, gone, failed): 404/410 → deleted; 2xx → last_ok_at;
+//      anything else (403, 5xx, timeout) counts a failure — 3 in a row drop the device.
+// One deadline for the whole run (8 s), so it ends before pg_net's 10 s. A send that
+// misses it is reported as failed; its HTTP request is NOT cancelled (the library's
+// fetch takes no signal) — it just finishes unobserved.
 // Database calls go through PostgREST with the project's PUBLIC key (like duel-start):
 // push_info / push_done are granted to anon and check the Vault secret themselves.
 //
@@ -23,12 +27,22 @@
 // Answers: 200 {sent, gone, failed} | {skipped:'quiet'|'gone'|'none'} ·
 //   401 {error:'secret'} · 400 bad_request · 405 method · 500 config · 502 db
 import * as webpush from "jsr:@negrel/webpush@0.5.0";
-import { isQuiet, message, sameSecret, ttlFor, vapidJwk, verdict } from "./core.mjs";
+import { isLocal, isQuiet, message, sameSecret, ttlFor, vapidJwk, verdict } from "./core.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const STATUS: Record<string, number> = { method: 405, bad_request: 400, secret: 401, config: 500, db: 502 };
 const MAX_BODY = 1024;
-const PUSH_TIMEOUT_MS = 6000;   // per device; pg_net waits 10 s for the whole call
+const DEADLINE_MS = 8000;       // the whole run; pg_net waits 10 s
+const DONE_RESERVE_MS = 1200;   // kept for push_done after the sends
+
+// Push endpoints come from the database's allow-list; a redirect could still send
+// the request somewhere else, so this function never follows one (the library calls
+// the global fetch without options; our PostgREST calls never redirect either).
+const nativeFetch = globalThis.fetch.bind(globalThis);
+globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
+  nativeFetch(input, { ...(init || {}), redirect: "error" })) as typeof fetch;
+
+const left = (deadline: number) => deadline - Date.now();
 
 class Fail extends Error {
   constructor(public code: string) { super(code); }
@@ -46,7 +60,7 @@ function apiKey(): string {
   return "";
 }
 
-async function rpc(fn: string, args: Record<string, unknown>): Promise<Record<string, unknown>> {
+async function rpc(fn: string, args: Record<string, unknown>, deadline: number): Promise<Record<string, unknown>> {
   const base = (Deno.env.get("SUPABASE_URL") || "").replace(/\/+$/, "");
   const key = apiKey();
   if (!base || !key) throw new Fail("config");
@@ -56,7 +70,7 @@ async function rpc(fn: string, args: Record<string, unknown>): Promise<Record<st
       method: "POST",
       headers: { apikey: key, "content-type": "application/json" },
       body: JSON.stringify(args),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(Math.max(1, left(deadline))),
     });
   } catch {
     throw new Fail("db");
@@ -87,13 +101,13 @@ function vapidKeys(): Promise<CryptoKeyPair> {
 type Sub = { endpoint: string; p256dh: string; auth: string };
 
 // one device → 'ok' | 'gone' | 'fail'
-async function sendOne(sub: Sub, text: string, ttl: number, keys: CryptoKeyPair, contact: string): Promise<string> {
+async function sendOne(sub: Sub, text: string, ttl: number, keys: CryptoKeyPair, contact: string, until: number): Promise<string> {
   try {
     // a fresh application-server ECDH key for every message (RFC 8291 §3.1)
     const server = await webpush.ApplicationServer.new({ contactInformation: contact, vapidKeys: keys });
     const subscriber = server.subscribe({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } });
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<never>((_, rej) => { timer = setTimeout(() => rej(new Error("timeout")), PUSH_TIMEOUT_MS); });
+    const timeout = new Promise<never>((_, rej) => { timer = setTimeout(() => rej(new Error("timeout")), Math.max(0, left(until))); });
     try {
       await Promise.race([subscriber.pushTextMessage(text, { ttl, urgency: webpush.Urgency.High }), timeout]);
     } finally {
@@ -114,6 +128,7 @@ async function sendOne(sub: Sub, text: string, ttl: number, keys: CryptoKeyPair,
 
 async function handle(req: Request): Promise<Record<string, unknown>> {
   if (req.method !== "POST") throw new Fail("method");
+  const deadline = Date.now() + DEADLINE_MS;
   const secret = Deno.env.get("PUSH_SECRET") || "";
   if (!secret) throw new Fail("config");
   if (!sameSecret(req.headers.get("x-push-secret") || "", secret)) throw new Fail("secret");
@@ -128,15 +143,16 @@ async function handle(req: Request): Promise<Record<string, unknown>> {
     throw new Fail("bad_request");
   }
 
-  // PUSH_NOW (ISO time) exists for the local tests only; never set it on the live project
-  const fake = Deno.env.get("PUSH_NOW");
+  // PUSH_NOW (ISO time) is for the local tests only: honoured only when the function
+  // runs against a local Supabase (SUPABASE_URL http://kong:8000 / localhost)
+  const fake = isLocal(Deno.env.get("SUPABASE_URL")) ? Deno.env.get("PUSH_NOW") : "";
   const now = fake ? new Date(fake) : new Date();
   if (isQuiet(now)) return { skipped: "quiet" };
 
   const contact = Deno.env.get("VAPID_SUBJECT") || "https://mathproject-gamma.vercel.app";
   const keys = await vapidKeys();
 
-  const info = await rpc("push_info", { secret, duel_id, to_uid });
+  const info = await rpc("push_info", { secret, duel_id, to_uid }, deadline);
   if (typeof info.error === "string") return { skipped: "gone" };
   const subs = (Array.isArray(info.subs) ? info.subs : []) as Sub[];
   if (!subs.length) return { skipped: "none" };
@@ -144,13 +160,11 @@ async function handle(req: Request): Promise<Record<string, unknown>> {
   if (ttl < 2) return { skipped: "gone" };
 
   const text = JSON.stringify(message(info));
-  const results = await Promise.all(subs.map((s) => sendOne(s, text, ttl, keys, contact)));
-  const ok = subs.filter((_, i) => results[i] === "ok").map((s) => s.endpoint);
-  const gone = subs.filter((_, i) => results[i] === "gone").map((s) => s.endpoint);
-  if (ok.length || gone.length) {
-    try { await rpc("push_done", { secret, ok, gone }); } catch (e) { console.error("duel-push: push_done failed", (e as Error)?.message); }
-  }
-  return { sent: ok.length, gone: gone.length, failed: results.length - ok.length - gone.length };
+  const results = await Promise.all(subs.map((s) => sendOne(s, text, ttl, keys, contact, deadline - DONE_RESERVE_MS)));
+  const pick = (v: string) => subs.filter((_, i) => results[i] === v).map((s) => s.endpoint);
+  const ok = pick("ok"), gone = pick("gone"), failed = pick("fail");
+  try { await rpc("push_done", { secret, ok, gone, failed }, deadline); } catch (e) { console.error("duel-push: push_done failed", (e as Error)?.message); }
+  return { sent: ok.length, gone: gone.length, failed: failed.length };
 }
 
 Deno.serve(async (req) => {

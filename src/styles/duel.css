@@ -409,12 +409,6 @@ html.dl-locked, html.dl-locked body { overflow: hidden; }
 .dl-labnav { position: fixed; bottom: 8px; left: 8px; z-index: 200; display: flex; gap: 10px; padding: 6px 10px; border-radius: 999px; background: rgb(255 255 255 / .9); font-size: .78rem; direction: ltr; box-shadow: var(--sh-2); }
 .dl-labnav a { color: var(--ink-2); text-decoration: none; }
 
-/* ── reduced motion ──────────────────────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  .duel *, .dl-sheet-wrap * { animation: none !important; transition-duration: 1ms !important; }
-}
-}
-
 /* ── duel notifications card (EnablePush.jsx, hub side column) ───────────── */
 .dl-push-top { display: flex; align-items: flex-start; gap: 12px; }
 .dl-push-ic { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--me-700); background: var(--me-50); }
@@ -426,3 +420,9 @@ html.dl-locked, html.dl-locked body { overflow: hidden; }
 .dl-push .dl-more { margin: -8px 0 0; margin-inline-end: -10px; }
 .dl-push .dl-btn, .dl-push .dl-pill { margin-top: 14px; }
 .dl-push .dl-msg:empty { min-height: 0; margin: 0; }
+
+/* ── reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .duel *, .dl-sheet-wrap * { animation: none !important; transition-duration: 1ms !important; }
+}
+}

@@ -31,11 +31,15 @@ self.addEventListener("notificationclick", (e) => {
   const url = (e.notification.data && e.notification.data.url) || "/duel";
   e.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    // an open tab of the site: bring it forward and send it to the duels
-    for (const c of all) {
-      if (new URL(c.url).origin !== self.location.origin) continue;
-      try { await c.focus(); } catch (_) {}
-      if (new URL(c.url).pathname !== url) { try { await c.navigate(url); } catch (_) {} }
+    // a tab of the site that is already on the duels: bring it forward (and to /duel).
+    // A tab on any other page (a student mid-exercise) is never taken over: new window instead.
+    const tab = all.find((c) => {
+      const u = new URL(c.url);
+      return u.origin === self.location.origin && (u.pathname === "/duel" || u.pathname.startsWith("/duel/"));
+    });
+    if (tab) {
+      try { await tab.focus(); } catch (_) {}
+      if (new URL(tab.url).pathname !== url) { try { await tab.navigate(url); } catch (_) {} }
       return;
     }
     await self.clients.openWindow(url);

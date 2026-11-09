@@ -13,8 +13,9 @@
 --    async (pg_net: queued now, sent after the commit; a rolled-back invite
 --    sends nothing) and can never break or slow down the invite.
 --  * The call carries only {duel_id, to_uid} and the shared secret in a header.
---    The function looks up the sender's name, the subject and the devices with
---    push_info(secret, …) and reports dead devices back with push_done(secret, …).
+--    The function looks up the subject and the devices with push_info(secret, …)
+--    and reports back with push_done(secret, …). The notification itself is
+--    generic (no username on a child's lock screen): "יש לך הזמנה לדו-קרב!".
 --  * Settings live in Vault, never in a migration (set on each project by hand):
 --      push_secret  = the edge function's PUSH_SECRET (shared secret)
 --      push_url     = https://<ref>.supabase.co/functions/v1/duel-push
@@ -33,7 +34,8 @@ create table if not exists public.push_subs (
   auth       text not null,
   sess       text not null,                      -- account_sessions.token_hash of the session that saved it
   created_at timestamptz not null default now(),
-  last_ok_at timestamptz                         -- last time the push service took a message
+  last_ok_at timestamptz,                        -- last time the push service took a message
+  fail_count int not null default 0              -- failed sends in a row (3 → the device is dropped)
 );
 create index if not exists push_subs_uid on public.push_subs (uid);
 
@@ -42,11 +44,16 @@ revoke all on public.push_subs from public, anon, authenticated;
 
 -- ── the student's device ────────────────────────────────────────────────────
 -- sub = PushSubscription.toJSON(): {endpoint, keys: {p256dh, auth}}.
--- Only the real browser push services are accepted (Chrome/Android = FCM, which
--- newer Chrome hands out as https://jmt17.google.com/fcm/send/…; Firefox = Mozilla;
--- Safari/iPhone = Apple; Edge = WNS), so the edge function never POSTs to an
--- address a student made up.
--- At most 5 devices per student (the oldest goes). Errors: off, sub.
+-- Only the exact hosts of the real browser push services are accepted, so the
+-- edge function never POSTs to an address a student made up (no wildcard over
+-- google.com: script.google.com / docs.google.com would be attacker-controlled):
+--   Chrome/Android  fcm.googleapis.com, jmt<N>.google.com (newer Chrome)
+--   Firefox         updates.push.services.mozilla.com
+--   Safari/iPhone   web.push.apple.com
+--   Edge (Windows)  wns2-<…>.notify.windows.com
+-- My devices whose session has ended are dropped here; at most 5 devices per
+-- student (the one least recently reached — coalesce(last_ok_at, created_at) —
+-- goes first; never the one just saved). Errors: off, sub.
 create or replace function public.push_save(tok text, sub jsonb)
 returns json language plpgsql security definer set search_path = public, extensions as $$
 declare me uuid := account_from(tok); g text := duel_guard(me);
@@ -57,7 +64,7 @@ begin
   if sub is null or jsonb_typeof(sub) <> 'object' then return json_build_object('error', 'sub'); end if;
   ep := sub->>'endpoint'; k1 := sub#>>'{keys,p256dh}'; k2 := sub#>>'{keys,auth}';
   if ep is null or length(ep) > 1000
-     or ep !~ '^https://([a-z0-9-]+\.)*(fcm\.googleapis\.com|google\.com|push\.services\.mozilla\.com|push\.apple\.com|notify\.windows\.com)/[!-~]*$'
+     or ep !~ '^https://(fcm\.googleapis\.com|jmt[0-9]+\.google\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|wns2-[a-z0-9-]+\.notify\.windows\.com)/[!-~]*$'
      or k1 is null or k1 !~ '^[A-Za-z0-9_-]{86,88}={0,2}$'          -- 65-byte P-256 point, base64url
      or k2 is null or k2 !~ '^[A-Za-z0-9_-]{20,24}={0,2}$' then      -- 16-byte auth secret
     return json_build_object('error', 'sub');
@@ -65,13 +72,12 @@ begin
   perform pg_advisory_xact_lock(hashtext('push:' || me::text));   -- double taps: one at a time
   insert into push_subs (uid, endpoint, p256dh, auth, sess) values (me, ep, k1, k2, h)
   on conflict (endpoint) do update
-     set uid = excluded.uid, p256dh = excluded.p256dh, auth = excluded.auth, sess = excluded.sess,
+     set uid = excluded.uid, p256dh = excluded.p256dh, auth = excluded.auth, sess = excluded.sess, fail_count = 0,
          created_at = case when push_subs.uid = excluded.uid then push_subs.created_at else now() end;
-  -- my devices whose session has ended, then the oldest beyond 5
-  delete from push_subs s where s.uid = me
-     and not exists (select 1 from account_sessions x where x.token_hash = s.sess and x.account_id = me and x.expires_at > now());
-  delete from push_subs where uid = me and endpoint in (
-    select endpoint from push_subs where uid = me order by created_at desc offset 5);
+  perform push_tidy(me);
+  delete from push_subs where uid = me and endpoint <> ep and endpoint in (
+    select endpoint from push_subs where uid = me and endpoint <> ep
+     order by coalesce(last_ok_at, created_at) desc offset 4);
   return json_build_object('ok', true);
 end $$;
 
@@ -91,6 +97,12 @@ returns boolean language sql stable security definer set search_path = public as
   select s.uid = u and exists (select 1 from account_sessions x where x.token_hash = s.sess and x.account_id = u and x.expires_at > now());
 $$;
 
+-- u's devices whose session has ended are dropped
+create or replace function public.push_tidy(u uuid)
+returns void language sql security definer set search_path = public as $$
+  delete from push_subs s where s.uid = u and not push_live(s, u);
+$$;
+
 -- ── edge function side (shared secret = Vault 'push_secret') ────────────────
 create or replace function public.push_secret_ok(secret text)
 returns boolean language plpgsql stable security definer set search_path = public as $$
@@ -103,7 +115,8 @@ begin
   return v is not null and v <> '' and secret is not null and secret = v;
 end $$;
 
--- what to send: the open invite to_uid got, who sent it, and to_uid's devices.
+-- what to send: the open invite to_uid got (its subject, its expiry) and to_uid's
+-- devices. Never the sender's name: the notification is generic.
 -- Errors: secret, gone (no such invite / not to_uid's / answered / expired / switched off).
 create or replace function public.push_info(secret text, duel_id uuid, to_uid uuid)
 returns json language plpgsql stable security definer set search_path = public as $$
@@ -117,7 +130,6 @@ begin
   end if;
   return json_build_object(
     'duel_id', d.id,
-    'from', (select username from accounts where id = d.a),
     'subject', d.subject,
     'expires_at', d.expires_at,
     'subs', coalesce((select json_agg(json_build_object('endpoint', s.endpoint, 'p256dh', s.p256dh, 'auth', s.auth)
@@ -125,17 +137,22 @@ begin
                         from push_subs s where s.uid = d.b and push_live(s, d.b)), '[]'));
 end $$;
 
--- after sending: ok = endpoints the push service took, gone = endpoints it says
--- no longer exist (HTTP 404/410) → deleted. Errors: secret.
-create or replace function public.push_done(secret text, ok text[], gone text[])
+-- after sending: ok = endpoints the push service took (fail_count back to 0),
+-- gone = endpoints it says no longer exist (HTTP 404/410) → deleted,
+-- failed = any other failure (403, 5xx, timeout…) → fail_count + 1; the 3rd
+-- failure in a row deletes the device. Errors: secret.
+create or replace function public.push_done(secret text, ok text[], gone text[], failed text[])
 returns json language plpgsql security definer set search_path = public as $$
-declare n int;
+declare n int; m int;
 begin
   if not push_secret_ok(secret) then return json_build_object('error', 'secret'); end if;
-  update push_subs set last_ok_at = now() where endpoint = any(coalesce(ok, '{}'));
+  update push_subs set last_ok_at = now(), fail_count = 0 where endpoint = any(coalesce(ok, '{}'));
+  update push_subs set fail_count = fail_count + 1 where endpoint = any(coalesce(failed, '{}'));
   delete from push_subs where endpoint = any(coalesce(gone, '{}'));
   get diagnostics n = row_count;
-  return json_build_object('ok', true, 'removed', n);
+  delete from push_subs where fail_count >= 3;
+  get diagnostics m = row_count;
+  return json_build_object('ok', true, 'removed', n + m);
 end $$;
 
 -- ── the call from duel_invite ───────────────────────────────────────────────
@@ -145,7 +162,8 @@ returns void language plpgsql security definer set search_path = public as $$
 declare v_secret text; v_url text;
 begin
   if exists (select 1 from accounts where id = to_uid and online_at > now() - interval '70 seconds') then return; end if;
-  if not exists (select 1 from push_subs s where s.uid = to_uid and push_live(s, to_uid)) then return; end if;
+  perform push_tidy(to_uid);                                         -- ended sessions' devices go
+  if not exists (select 1 from push_subs s where s.uid = to_uid) then return; end if;
   select decrypted_secret into v_secret from vault.decrypted_secrets where name = 'push_secret' order by created_at desc limit 1;
   select decrypted_secret into v_url    from vault.decrypted_secrets where name = 'push_url'    order by created_at desc limit 1;
   if v_secret is null or v_secret = '' or v_url is null or v_url !~ '^https?://' then return; end if;
@@ -203,11 +221,12 @@ begin
 end $$;
 
 -- ── who may call what ───────────────────────────────────────────────────────
-revoke execute on function public.push_secret_ok(text), public.duel_push_invite(uuid, uuid), public.push_live(public.push_subs, uuid)
+revoke execute on function public.push_secret_ok(text), public.duel_push_invite(uuid, uuid), public.push_live(public.push_subs, uuid),
+  public.push_tidy(uuid)
   from public, anon, authenticated;
 revoke execute on function public.push_save(text, jsonb), public.push_remove(text, text),
-  public.push_info(text, uuid, uuid), public.push_done(text, text[], text[]) from public;
+  public.push_info(text, uuid, uuid), public.push_done(text, text[], text[], text[]) from public;
 -- push_info / push_done are called by the edge function with the public key (like
 -- duel_put_questions); they check the Vault secret themselves.
 grant execute on function public.push_save(text, jsonb), public.push_remove(text, text),
-  public.push_info(text, uuid, uuid), public.push_done(text, text[], text[]) to anon, authenticated, service_role;
+  public.push_info(text, uuid, uuid), public.push_done(text, text[], text[], text[]) to anon, authenticated, service_role;

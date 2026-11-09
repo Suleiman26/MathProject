@@ -10,7 +10,8 @@
                                  CALL IT STRAIGHT FROM THE TAP: it asks for permission first.
      disablePush()             → {ok:true}
      syncPush(accountId)       → quietly re-saves this device for the student who turned it on
-                                 here (a new session after signing in again); nothing otherwise.
+                                 here (a new session after signing in again); a subscription made
+                                 with an old VAPID key is turned off instead; nothing otherwise.
      isDismissed() / dismiss() → "not now", remembered on this device
 
    A device is "on" for the student whose id is in localStorage mp:duel:push — so a brother
@@ -77,11 +78,17 @@ async function save(sub) {
   }
 }
 
+// the subscription was made with today's public key? (a new key pair = it can no longer get pushes)
+function current(sub) {
+  const vapid = getConfig().vapidPublic;
+  try { return !!(sub && vapid && sameKey(sub.options && sub.options.applicationServerKey, keyBytes(vapid))); } catch { return false; }
+}
+
 export async function pushStatus(accountId) {
   if (typeof Notification === "undefined") return "off";
   if (Notification.permission === "denied") return "denied";
   if (Notification.permission !== "granted" || !accountId || store.get(ON_KEY) !== accountId) return "off";
-  return (await existing()) ? "on" : "off";
+  return current(await existing()) ? "on" : "off";
 }
 
 export function enablePush(accountId) {
@@ -104,6 +111,8 @@ export function enablePush(accountId) {
       if (!sub) sub = await within(30000, reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
       const r = await save(sub);
       if (r.ok) { store.set(ON_KEY, accountId); store.set(DISMISS_KEY, null); }
+      // not saved (database not ready, push service not accepted, …): leave nothing half-on
+      else { try { await sub.unsubscribe(); } catch {} }
       return r;
     } catch {
       return { error: "failed" };
@@ -125,7 +134,11 @@ export async function syncPush(accountId) {
   if (!accountId || store.get(ON_KEY) !== accountId) return;
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
   const sub = await existing();
-  if (sub) await save(sub);
+  if (!sub) return;
+  // made with an old public key: it can't get our pushes any more → off, so the
+  // student can turn it on again cleanly with one tap
+  if (!current(sub)) { await disablePush(); return; }
+  await save(sub);
 }
 
 /** Hebrew for the card */
@@ -135,5 +148,6 @@ export const PUSH_ERRORS = {
   unsupported: "הדפדפן הזה לא תומך בהתראות",
   off: "דו-קרבים עוד לא פתוחים. בקרוב!",
   signed_out: "צריך להתחבר לחשבון",
+  sub: "הדפדפן הזה לא נתמך כרגע להתראות",
   failed: "לא הצלחנו להפעיל התראות. נסו שוב בעוד רגע",
 };

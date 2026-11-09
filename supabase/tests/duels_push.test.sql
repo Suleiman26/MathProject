@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(68);
+select plan(85);
 
 -- ── helpers ─────────────────────────────────────────────────────────────────
 create temporary table t_acc (name text primary key, tok text, id uuid);
@@ -61,11 +61,12 @@ select ok(not has_table_privilege('anon', 'public.push_subs', 'select')
 select ok(has_function_privilege('anon', 'public.push_save(text, jsonb)', 'execute')
       and has_function_privilege('anon', 'public.push_remove(text, text)', 'execute')
       and has_function_privilege('anon', 'public.push_info(text, uuid, uuid)', 'execute')
-      and has_function_privilege('anon', 'public.push_done(text, text[], text[])', 'execute'), 'entry points callable by the site');
+      and has_function_privilege('anon', 'public.push_done(text, text[], text[], text[])', 'execute'), 'entry points callable by the site');
 select ok(not has_function_privilege('anon', 'public.duel_push_invite(uuid, uuid)', 'execute')
       and not has_function_privilege('anon', 'public.push_secret_ok(text)', 'execute')
       and not has_function_privilege('authenticated', 'public.duel_push_invite(uuid, uuid)', 'execute')
-      and not has_function_privilege('anon', 'public.push_live(public.push_subs, uuid)', 'execute'), 'internal helpers are not');
+      and not has_function_privilege('anon', 'public.push_live(public.push_subs, uuid)', 'execute')
+      and not has_function_privilege('anon', 'public.push_tidy(uuid)', 'execute'), 'internal helpers are not');
 select ok(has_function_privilege('anon', 'public.duel_invite(text, uuid, text)', 'execute'), 'duel_invite still callable');
 
 -- ── push_save ───────────────────────────────────────────────────────────────
@@ -98,17 +99,39 @@ select is(pg_temp.save('dp_b', pg_temp.sub('i1', 'web.push.apple.com')), 'ok', '
 select is(pg_temp.save('dp_b', pg_temp.sub('w1', 'wns2-db5p.notify.windows.com')), 'ok', 'Edge (WNS) → saved');
 select is(pg_temp.save('dp_b', pg_temp.sub('j1', 'jmt17.google.com')), 'ok', 'newer Chrome (jmt17.google.com) → saved');
 select is(pg_temp.save('dp_b', pg_temp.sub('j1', 'google.com.evil.com')), 'sub', 'google.com look-alike → sub');
+-- attacker-controlled Google hosts are not push services (SSRF)
+select is(pg_temp.save('dp_b', pg_temp.sub('x1', 'script.google.com')), 'sub', 'script.google.com → sub');
+select is(pg_temp.save('dp_b', pg_temp.sub('x1', 'docs.google.com')), 'sub', 'docs.google.com → sub');
+select is(pg_temp.save('dp_b', pg_temp.sub('x1', 'google.com')), 'sub', 'google.com → sub');
+select is(pg_temp.save('dp_b', pg_temp.sub('x1', 'jmt.google.com')), 'sub', 'jmt without a number → sub');
+select is(pg_temp.save('dp_b', pg_temp.sub('x1', 'evil.push.services.mozilla.com')), 'sub', 'other mozilla host → sub');
+select is(pg_temp.save('dp_b', pg_temp.sub('x1', 'evil.push.apple.com')), 'sub', 'other apple host → sub');
+select is(pg_temp.save('dp_b', pg_temp.sub('x1', 'evil.notify.windows.com')), 'sub', 'non-wns2 windows host → sub');
 select is(public.push_remove(pg_temp.tok('dp_b'), 'https://jmt17.google.com/fcm/send/j1')->>'ok', 'true', '(removed again)');
 select is(pg_temp.subs('dp_b'), 4, 'four devices');
 select is(pg_temp.save('dp_b', pg_temp.sub('b1')), 'ok', 'same device again (double tap) → ok');
 select is(pg_temp.subs('dp_b'), 4, '… still four rows');
 select is((select sess from public.push_subs where endpoint like '%/b1'), encode(extensions.digest(pg_temp.tok('dp_b'), 'sha256'), 'hex'),
           'row remembers the saving session (hash, never the token)');
-update public.push_subs set created_at = now() - interval '1 day' where endpoint like '%/b1';   -- the oldest
+-- b1 is old but was reached just now; w1 is the least recently reached
+update public.push_subs set created_at = now() - interval '1 day', last_ok_at = now() where endpoint like '%/b1';
+update public.push_subs set created_at = now() - interval '2 days' where endpoint like '%/w1';
 select pg_temp.save('dp_b', pg_temp.sub('b2')) = 'ok' as saved;
 select pg_temp.save('dp_b', pg_temp.sub('b3')) = 'ok' as saved;
 select is(pg_temp.subs('dp_b'), 5, 'six devices → five kept');
-select ok(not exists (select 1 from public.push_subs where endpoint like '%/b1'), '… the oldest one went');
+select ok(not exists (select 1 from public.push_subs where endpoint like '%/w1'), '… the least recently reached one went');
+select ok(exists (select 1 from public.push_subs where endpoint like '%/b1'), '… the old but recently reached one stays');
+-- the device being saved is never the one evicted, even when it is the oldest
+update public.push_subs set created_at = now() - interval '9 days', last_ok_at = null where endpoint like '%/b1';
+select is(pg_temp.save('dp_b', pg_temp.sub('b1')), 'ok', 'oldest device saved again …');
+select ok(exists (select 1 from public.push_subs where endpoint like '%/b1') and pg_temp.subs('dp_b') = 5, '… it stays, still five');
+update public.push_subs set last_ok_at = now() where endpoint like '%/b1';
+-- a device of an ended session goes on the next save
+insert into public.push_subs (uid, endpoint, p256dh, auth, sess)
+values (pg_temp.uid('dp_a'), 'https://fcm.googleapis.com/fcm/send/dead', 'B' || repeat('a', 86), repeat('z', 22), 'no-such-session');
+select is(pg_temp.save('dp_a', pg_temp.sub('a1')), 'ok', 'A saves a device …');
+select is(pg_temp.subs('dp_a'), 1, '… A''s device of an ended session was dropped');
+delete from public.push_subs where uid = pg_temp.uid('dp_a');
 -- the same device, now signed in as someone else, moves to them
 select is(pg_temp.save('dp_c', pg_temp.sub('b3')), 'ok', 'C saves B''s device');
 select is((select uid from public.push_subs where endpoint like '%/b3'), pg_temp.uid('dp_c'), '… it is C''s now');
@@ -142,18 +165,30 @@ select is(public.push_info(null, (select id from t_d where k = 'one'), pg_temp.u
 select is(public.push_info('push-test-secret', (select id from t_d where k = 'one'), pg_temp.uid('dp_a'))->>'error', 'gone', 'info: not the invitee → gone');
 select is(public.push_info('push-test-secret', gen_random_uuid(), pg_temp.uid('dp_b'))->>'error', 'gone', 'info: no such duel → gone');
 create temporary table t_info as select public.push_info('push-test-secret', (select id from t_d where k = 'one'), pg_temp.uid('dp_b'))::jsonb as j;
-select is((select j->>'from' from t_info), 'dp_a', 'info: sender''s username');
+select ok((select not (j ? 'from') and j::text !~ 'dp_a' from t_info), 'info: no sender name (generic notification)');
 select is((select j->>'subject' from t_info), 'alg', 'info: subject');
 select is((select jsonb_array_length(j->'subs') from t_info), 3, 'info: B''s three devices');
 select ok((select (j->'subs'->0) ?& array['endpoint', 'p256dh', 'auth'] and not (j->'subs'->0) ? 'sess' from t_info), 'info: endpoint + keys, nothing else');
 
 -- push_done: ok → last_ok_at, gone → deleted
-select is(public.push_done('wrong', array['https://fcm.googleapis.com/fcm/send/b3'], null)->>'error', 'secret', 'done: wrong secret → secret');
+select is(public.push_done('wrong', array['https://fcm.googleapis.com/fcm/send/b3'], null, null)->>'error', 'secret', 'done: wrong secret → secret');
+update public.push_subs set last_ok_at = null where endpoint like '%/m1';
 select is(public.push_done('push-test-secret',
             array['https://updates.push.services.mozilla.com/fcm/send/m1'],
-            array['https://web.push.apple.com/fcm/send/i1'])->>'removed', '1', 'done: one dead device removed');
+            array['https://web.push.apple.com/fcm/send/i1'], null)->>'removed', '1', 'done: one dead device removed');
 select ok((select last_ok_at is not null from public.push_subs where endpoint like '%/m1'), 'done: delivered device gets last_ok_at');
 select is(pg_temp.subs('dp_b'), 2, 'done: B has two devices left');
+-- failures (403, 5xx, timeouts): three in a row drop the device; a success in between resets
+select public.push_done('push-test-secret', null, null, array['https://fcm.googleapis.com/fcm/send/b1'])::jsonb ? 'ok' as failed_once;
+select public.push_done('push-test-secret', null, null, array['https://fcm.googleapis.com/fcm/send/b1'])::jsonb ? 'ok' as failed_twice;
+select is((select fail_count from public.push_subs where endpoint like '%/b1'), 2, 'done: two failures counted');
+select public.push_done('push-test-secret', array['https://fcm.googleapis.com/fcm/send/b1'], null, null)::jsonb ? 'ok' as delivered;
+select is((select fail_count from public.push_subs where endpoint like '%/b1'), 0, 'done: a delivery resets the count');
+select public.push_done('push-test-secret', null, null, array['https://fcm.googleapis.com/fcm/send/b1'])::jsonb ? 'ok' as f1;
+select public.push_done('push-test-secret', null, null, array['https://fcm.googleapis.com/fcm/send/b1'])::jsonb ? 'ok' as f2;
+select is(public.push_done('push-test-secret', null, null, array['https://fcm.googleapis.com/fcm/send/b1'])->>'removed', '1',
+          'done: third failure in a row → device dropped');
+select is(pg_temp.subs('dp_b'), 1, 'done: B has one device left');
 
 -- the invite is answered / expired → nothing to send
 update public.duels set expires_at = now() - interval '1 second' where id = (select id from t_d where k = 'one');
@@ -166,6 +201,7 @@ select pg_temp.uncool('dp_a');
 insert into t_d select 'two', (public.duel_invite(pg_temp.tok('dp_a'), pg_temp.uid('dp_b'), 'num')->>'id')::uuid;
 select ok((select id from t_d where k = 'two') is not null, 'invite after B signed out: works');
 select is(pg_temp.queued(), 1, '… no push call (no signed-in device)');
+select is(pg_temp.subs('dp_b'), 0, '… and the signed-out device was dropped');
 select is((select jsonb_array_length(public.push_info('push-test-secret', (select id from t_d where k = 'two'), pg_temp.uid('dp_b'))::jsonb->'subs')), 0,
           '… and push_info lists no device');
 select pg_temp.close_all();

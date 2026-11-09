@@ -21,7 +21,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import http from "node:http";
 import crypto from "node:crypto";
-import { isQuiet, ttlFor, message, vapidJwk, sameSecret, verdict, SUBJECT_LABEL } from "./core.mjs";
+import { isLocal, isQuiet, ttlFor, message, vapidJwk, sameSecret, verdict, SUBJECT_LABEL } from "./core.mjs";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const cfg = readFileSync(ROOT + "src/lib/config.js", "utf8").split("const LOCAL")[1];
@@ -57,15 +57,20 @@ test("ttlFor: what is left of the invite, at most 60 s", () => {
   assert.equal(ttlFor("nonsense", now), 0);
 });
 
-test("message: short Hebrew, the sender's name, the subject, /duel, a tag per duel", () => {
+test("message: generic Hebrew (no name on a lock screen), the subject, /duel, a tag per duel", () => {
   const m = message({ duel_id: "d1", from: "noa", subject: "alg" });
-  assert.equal(m.title, "noa מאתגר/ת אותך לדו-קרב!");
-  assert.match(m.body, /אלגברה/);
+  assert.equal(m.title, "יש לך הזמנה לדו-קרב!");
+  assert.equal(m.body, "חבר/ה מאתגר/ת אותך · אלגברה · ההזמנה פתוחה דקה אחת");
+  assert.doesNotMatch(JSON.stringify(m), /noa/);
   assert.equal(m.url, "/duel");
   assert.equal(m.tag, "duel-d1");
-  assert.equal(message({ duel_id: "d", from: "x", subject: "??" }).body.includes(SUBJECT_LABEL.random), true);
-  assert.equal(message({ duel_id: "d", from: "a".repeat(80), subject: "num" }).title.startsWith("a".repeat(24) + " "), true);
+  assert.equal(message({ duel_id: "d", subject: "??" }).body.includes(SUBJECT_LABEL.random), true);
   assert.deepEqual(Object.keys(m).sort(), ["body", "id", "t", "tag", "title", "url"]);
+});
+
+test("isLocal: PUSH_NOW is honoured only against a local Supabase", () => {
+  for (const u of ["http://kong:8000", "http://127.0.0.1:56421", "http://localhost:54321/", "http://host.docker.internal:56421"]) assert.equal(isLocal(u), true, u);
+  for (const u of ["https://uucqyjskkyrfhvbsmorx.supabase.co", "http://kong.evil.com:8000", "https://kong:8000", "", undefined]) assert.equal(isLocal(u), false, String(u));
 });
 
 test("vapidJwk: raw base64url keys → a JWK pair node can sign/verify with", () => {
@@ -101,7 +106,8 @@ let served = false;
 try { served = (await fetch(FN, { method: "GET", signal: AbortSignal.timeout(3000) })).status === 405; } catch { served = false; }
 const live = { skip: served ? false : "supabase functions serve is not running" };
 
-// a fake push service with three devices: 'ok' answers 201, 'gone' 410, 'bad' 500
+// a fake push service with four devices: 'ok' answers 201, 'gone' 410, 'bad' 500,
+// 'redir' 307 → /push/hit (the function must not follow it)
 const got = [];
 let server, port;
 function device(name) {
@@ -109,7 +115,7 @@ function device(name) {
   ecdh.generateKeys();
   return { name, ecdh, pub: ecdh.getPublicKey(), auth: crypto.randomBytes(16) };
 }
-const devs = { ok: device("ok"), gone: device("gone"), bad: device("bad") };
+const devs = { ok: device("ok"), gone: device("gone"), bad: device("bad"), redir: device("redir") };
 const hmac = (key, data) => crypto.createHmac("sha256", key).update(data).digest();
 // RFC 8291 + RFC 8188, as the browser does it
 function decrypt(dev, body) {
@@ -151,6 +157,7 @@ before(async () => {
     req.on("end", () => {
       const name = req.url.split("/").pop();
       got.push({ name, headers: req.headers, body: Buffer.concat(chunks) });
+      if (name === "redir") return res.writeHead(307, { location: `http://host.docker.internal:${port}/push/hit` }).end();
       res.writeHead(name === "ok" ? 201 : name === "gone" ? 410 : 500).end();
     });
   });
@@ -228,11 +235,12 @@ if (process.env.EXPECT_QUIET) {
     assert.equal(got.length, n);
   });
 
-  test("served: real Web Push to three devices — decrypted, signed, dead one removed", live, async () => {
+  test("served: real Web Push to four devices — decrypted, signed, dead one removed, no redirect followed", live, async () => {
     const r = await call({ duel_id: T.duel, to_uid: T.ids.b }, good());
     assert.equal(r.status, 200);
-    assert.deepEqual(await r.json(), { sent: 1, gone: 1, failed: 1 });
-    assert.equal(got.length, 3);
+    assert.deepEqual(await r.json(), { sent: 1, gone: 1, failed: 2 });
+    assert.equal(got.length, 4);
+    assert.equal(got.some((g) => g.name === "hit"), false, "the 307 was not followed");
     for (const g of got) {
       assert.equal(g.headers["content-encoding"], "aes128gcm");
       assert.equal(g.headers.urgency, "high");
@@ -240,14 +248,15 @@ if (process.env.EXPECT_QUIET) {
       assert.ok(ttl > 50 && ttl <= 60, "TTL ≤ 60 s (what is left of the invite): " + ttl);
       checkVapid(g.headers.authorization, `http://host.docker.internal:${port}`);
       const m = decrypt(devs[g.name], g.body);
-      assert.equal(m.title, `${T.aname} מאתגר/ת אותך לדו-קרב!`);
-      assert.match(m.body, /גיאומטריה/);
+      assert.equal(m.title, "יש לך הזמנה לדו-קרב!");
+      assert.equal(m.body, "חבר/ה מאתגר/ת אותך · גיאומטריה · ההזמנה פתוחה דקה אחת");
+      assert.equal(JSON.stringify(m).includes(T.aname), false, "no username in the push");
       assert.equal(m.url, "/duel");
       assert.equal(m.tag, `duel-${T.duel}`);
       assert.equal(m.id, T.duel);
     }
-    const left = sql(`select string_agg(split_part(endpoint, '/', 5) || ':' || (last_ok_at is not null)::text, ',' order by endpoint) from push_subs where uid = '${T.ids.b}'`);
-    assert.equal(left, "bad:false,ok:true", "410 → removed; 201 → last_ok_at; 500 → kept");
+    const left = sql(`select string_agg(split_part(endpoint, '/', 5) || ':' || (last_ok_at is not null)::text || ':' || fail_count, ',' order by endpoint) from push_subs where uid = '${T.ids.b}'`);
+    assert.equal(left, "bad:false:1,ok:true:0,redir:false:1", "410 → removed; 201 → last_ok_at; 500/307 → kept, one failure counted");
   });
 
   test("served: the invite was answered → skipped:gone", live, async () => {
