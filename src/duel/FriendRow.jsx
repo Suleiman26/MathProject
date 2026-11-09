@@ -19,15 +19,13 @@ export function oppColor(me, other) {
   return theirs === mine ? "rose" : theirs;
 }
 
+/** "last seen" in coarse words only (friends_me sends a bucket, never exact times — privacy) */
 export function seenAgo(f) {
-  if (f.online) return "פעיל/ה עכשיו";
-  const s = Number(f.seen_ago_s);
-  if (!Number.isFinite(s)) return "עוד לא ביקר/ה";
-  if (s < 90) return "לפני רגע";
-  if (s < 3600) return `לפני ${Math.round(s / 60)} דק׳`;
-  if (s < 86400) return `לפני ${Math.round(s / 3600)} שע׳`;
-  const d = Math.round(s / 86400);
-  return d === 1 ? "אתמול" : d < 30 ? `לפני ${d} ימים` : "מזמן";
+  if (f.online || f.seen === "online") return "פעיל/ה עכשיו";
+  if (f.seen === "today") return "ביקר/ה היום";
+  if (f.seen === "week") return "ביקר/ה השבוע";
+  if (f.seen === "long") return "מזמן לא ביקר/ה";
+  return "עוד לא ביקר/ה";
 }
 /** the separator for meta lines: the dot stays glued to the NEXT item, so a wrapped line never ends with a dangling "·" */
 export const SEP = " ·\u00a0";

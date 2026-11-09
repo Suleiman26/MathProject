@@ -33,10 +33,23 @@ export function toRows(questions) {
   });
 }
 
-const ORIGINS = new Set(["https://mathproject-gamma.vercel.app", "http://localhost:5180"]);
-const PREVIEW = /^https:\/\/[a-z0-9-]+\.vercel\.app$/;
+/** The seed the questions are built from: HMAC-SHA256(DUEL_SECRET, "<claim seed>:<duel id>"),
+ *  first 4 bytes as an unsigned 32-bit number. The claim seed alone (and the public engine)
+ *  can't rebuild the duel offline: whoever sees question 0 and the seed still needs the secret.
+ *  WebCrypto only — the same in Deno (the function) and Node (the tests). */
+export async function mixSeed(secret, seed, id) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(String(secret)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(`${seed}:${id}`)));
+  return ((mac[0] << 24) | (mac[1] << 16) | (mac[2] << 8) | mac[3]) >>> 0;
+}
 
-/** CORS headers: the live site, local dev (5180) and Vercel previews; nobody else. */
+// the live site, local dev, and this project's Vercel previews (<project>-<hash>-<team>.vercel.app,
+// <project>-git-<branch>-<team>.vercel.app — project "mathproject", team "math-project")
+const ORIGINS = new Set(["https://mathproject-gamma.vercel.app", "http://localhost:5180"]);
+const PREVIEW = /^https:\/\/mathproject-[a-z0-9-]+\.vercel\.app$/;
+
+/** CORS headers: the live site, local dev (5180) and this project's Vercel previews; nobody else. */
 export function corsHeaders(origin) {
   const h = {
     "access-control-allow-methods": "POST, OPTIONS",

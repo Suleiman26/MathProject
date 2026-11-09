@@ -11,7 +11,8 @@ self.addEventListener("push", (e) => {
   let m = {};
   try { m = e.data ? e.data.json() : {}; } catch (_) { m = {}; }
   const title = typeof m.title === "string" && m.title ? m.title : "הזמנה לדו-קרב!";
-  const url = typeof m.url === "string" && m.url.startsWith("/") ? m.url : "/duel";
+  // a path on this site only: "/…" but never "//host" (a protocol-relative URL would leave the site)
+  const url = typeof m.url === "string" && /^\/(?!\/)/.test(m.url) && !m.url.includes("\\") ? m.url : "/duel";
   e.waitUntil(
     self.registration.showNotification(title, {
       body: typeof m.body === "string" ? m.body : "",
@@ -28,7 +29,8 @@ self.addEventListener("push", (e) => {
 
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const url = (e.notification.data && e.notification.data.url) || "/duel";
+  const raw = e.notification.data && e.notification.data.url;
+  const url = typeof raw === "string" && /^\/(?!\/)/.test(raw) && !raw.includes("\\") ? raw : "/duel";
   e.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     // a tab of the site that is already on the duels: bring it forward (and to /duel).

@@ -21,7 +21,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import http from "node:http";
 import crypto from "node:crypto";
-import { isLocal, isQuiet, ttlFor, message, vapidJwk, sameSecret, verdict, SUBJECT_LABEL } from "./core.mjs";
+import { isLocal, isQuiet, ttlFor, message, vapidJwk, sameSecret, verdict, timeoutVerdict, SUBJECT_LABEL } from "./core.mjs";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const cfg = readFileSync(ROOT + "src/lib/config.js", "utf8").split("const LOCAL")[1];
@@ -97,7 +97,11 @@ test("sameSecret / verdict", () => {
   assert.equal(verdict(201), "ok");
   assert.equal(verdict(410), "gone");
   assert.equal(verdict(404), "gone");
-  assert.equal(verdict(429), "fail");
+  assert.equal(verdict(429), "skip", "429: slow down — not the device's fault, not counted");
+  assert.equal(timeoutVerdict(8000), "fail", "a send with a fair chance that never answered counts");
+  assert.equal(timeoutVerdict(1000), "fail");
+  assert.equal(timeoutVerdict(999), "skip", "started with < 1 s left: our own deadline, not counted");
+  assert.equal(timeoutVerdict(0), "skip");
   assert.equal(verdict(500), "fail");
 });
 

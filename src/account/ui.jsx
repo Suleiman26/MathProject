@@ -79,7 +79,7 @@ export function AccountMenu({ account, trigger = "avatar" }) {
           <span><b dir="auto">{account.username}</b><small>{GRADE_NAME[account.grade] || "בלי כיתה"}</small></span>
         </div>
         <Link role="menuitem" href="/profile" onClick={() => setOpen(false)}><i>{MI.me}</i><span>הפרופיל וההתקדמות שלי</span></Link>
-        {duels && <Link role="menuitem" href="/duel" className="duel" aria-current={path === "/duel" ? "page" : undefined} onClick={() => setOpen(false)}><i data-topic={account.avatar}><DuelMark /></i><span>דו-קרב</span></Link>}
+        {duels && <Link role="menuitem" href="/duel" className="acct-duel" aria-current={path === "/duel" ? "page" : undefined} onClick={() => setOpen(false)}><i data-topic={account.avatar}><DuelMark /></i><span>דו-קרב</span></Link>}
         <Link role="menuitem" href="/profile#settings" onClick={() => setOpen(false)}><i>{MI.set}</i><span>הגדרות: כיתה, צבע, סיסמה</span></Link>
         <button type="button" role="menuitem" className="out" disabled={busy} onClick={out}><i>{MI.out}</i><span>{busy ? "יוצאים…" : "יציאה מהחשבון"}</span></button>
       </div>

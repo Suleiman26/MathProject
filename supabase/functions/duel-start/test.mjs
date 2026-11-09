@@ -15,7 +15,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { gradeFor, subjectFor, toRows, corsHeaders } from "./core.mjs";
+import { gradeFor, subjectFor, toRows, corsHeaders, mixSeed } from "./core.mjs";
+import { buildDuel } from "../_shared/duel/build.js";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 
@@ -28,6 +29,9 @@ const DB = process.env.LOCAL_DB_URL || "postgresql://postgres:postgres@127.0.0.1
 assert.match(API, /^http:\/\/127\.0\.0\.1:/, "tests run against the local Supabase only");
 
 const sql = (q) => execFileSync("psql", [DB, "-Atq", "-c", q], { encoding: "utf8" }).trim();
+// DUEL_SECRET from supabase/.env.local (the same file `functions serve` reads); used only to
+// recompute the mixed seed, never printed
+const SECRET = (readFileSync(ROOT + "supabase/.env.local", "utf8").match(/^DUEL_SECRET=(.*)$/m) || [])[1]?.trim().replace(/^["']|["']$/g, "");
 
 async function rpc(fn, args) {
   const r = await fetch(`${API}/rest/v1/rpc/${fn}`, {
@@ -111,7 +115,8 @@ test("gradeFor: min of both grades, text grades work, missing → 9, kept to 7..
 test("subjectFor: a world with no questions for this grade falls back to 'random'", () => {
   assert.equal(subjectFor("num", 7), "num");
   assert.equal(subjectFor("alg", 7), "alg");
-  assert.equal(subjectFor("geo", 9), "random");
+  assert.equal(subjectFor("geo", 9), "geo");
+  assert.equal(subjectFor("fn", 7), "random", "no grade-7 function questions yet");
   assert.equal(subjectFor("nope", 9), "random");
 });
 
@@ -132,16 +137,31 @@ test("toRows: idx 0..14, answer/tol kept top-level for the DB, meta and unknown 
   assert.ok(!("tol" in rows[0]));
 });
 
-test("corsHeaders: the live site, localhost:5180 and *.vercel.app previews only", () => {
+test("corsHeaders: the live site, localhost:5180 and this project's Vercel previews only", () => {
   const ok = (o) => corsHeaders(o)["access-control-allow-origin"] === o;
   assert.ok(ok("https://mathproject-gamma.vercel.app"));
   assert.ok(ok("http://localhost:5180"));
   assert.ok(ok("https://mathproject-git-duels-math-project.vercel.app"));
   assert.ok(!ok("https://evil.com"));
+  assert.ok(ok("https://mathproject-3kq9x2abc-math-project.vercel.app"), "a hashed preview");
   assert.ok(!ok("https://vercel.app.evil.com"));
   assert.ok(!ok("http://mathproject-gamma.vercel.app"));
+  assert.ok(!ok("https://someone-else.vercel.app"), "another Vercel project");
+  assert.ok(!ok("https://mathproject.vercel.app.evil.com"));
+  assert.ok(!ok("http://localhost:3000"));
   assert.ok(!ok("null"));
   assert.match(corsHeaders("http://localhost:5180")["access-control-allow-headers"], /apikey/);
+});
+
+test("mixSeed: HMAC of the claim seed + duel id with the secret — stable, 32-bit, changes with each input", async () => {
+  const id = "11111111-2222-3333-4444-555555555555";
+  const a = await mixSeed("s3cret", 12345, id);
+  assert.equal(a, await mixSeed("s3cret", 12345, id), "same inputs → same seed");
+  assert.ok(Number.isInteger(a) && a >= 0 && a < 2 ** 32);
+  assert.notEqual(a, 12345);
+  assert.notEqual(a, await mixSeed("other", 12345, id), "another secret");
+  assert.notEqual(a, await mixSeed("s3cret", 12346, id), "another seed");
+  assert.notEqual(a, await mixSeed("s3cret", 12345, "11111111-2222-3333-4444-555555555556"), "another duel");
 });
 
 // ── the served function ───────────────────────────────────────────────────────
@@ -216,6 +236,11 @@ test("invitee starts the duel: live, questions in the DB, no answer/meta/tol on 
   for (const who of ["dsa", "dsb"]) {
     const st = await rpc("duel_state", { tok: P[who].tok, id });
     assert.equal(st.status, "live", who);
+    assert.equal(st.questions.length, 0, who + ": no question before start_at (the face-off)");
+  }
+  sql(`update public.duels set start_at = now() - interval '1 second', ends_at = now() + interval '299 seconds' where id = '${id}'`);
+  for (const who of ["dsa", "dsb"]) {
+    const st = await rpc("duel_state", { tok: P[who].tok, id });
     assert.ok(st.start_at && st.ends_at, who);
     assert.equal(st.questions.length, 1, who + ": only the current question is visible");
     assert.equal(st.questions[0].idx, 0);
@@ -237,6 +262,14 @@ test("invitee starts the duel: live, questions in the DB, no answer/meta/tol on 
     assert.equal(leak, "false", line);
     assert.equal(hasAnswer, "true", line);
   });
+
+  // the questions come from the claim seed MIXED with DUEL_SECRET, never from the bare seed
+  const seed = Number(sql(`select seed from public.duels where id = '${id}'`));
+  const prompts = sql(`select payload->>'prompt' from public.duel_questions where duel_id = '${id}' order by idx`).split("\n");
+  const bare = buildDuel(seed, { grade: 7, subject: "random" }).map((q) => q.prompt);
+  const mixed = buildDuel(await mixSeed(SECRET, seed, id), { grade: 7, subject: "random" }).map((q) => q.prompt);
+  assert.deepEqual(prompts, mixed, "built from HMAC(secret, seed:id)");
+  assert.notDeepEqual(prompts, bare, "not from the bare claim seed");
 
   // once only
   const again = await start({ tok: P.dsb.tok, id });

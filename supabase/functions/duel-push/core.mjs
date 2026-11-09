@@ -70,9 +70,20 @@ export function sameSecret(a, b) {
 }
 
 /** The push service's answer → what to do with the device: 'ok' (201/202/200), 'gone'
- *  (404/410: the subscription no longer exists → delete it), 'fail' (anything else: keep it). */
+ *  (404/410: the subscription no longer exists → delete it), 'skip' (429: the service asks us
+ *  to slow down — not the device's fault, so it doesn't count toward the 3-strike drop),
+ *  'fail' (anything else: keep it, count a failure). */
 export function verdict(status) {
   if (status >= 200 && status < 300) return "ok";
   if (status === 404 || status === 410) return "gone";
+  if (status === 429) return "skip";
   return "fail";
+}
+
+/** A send that never answered (our own deadline cut it): a failure only when it had a fair
+ *  chance — at least 1 s left when it started. Less than that is our fault, not the device's
+ *  ('skip': not counted). */
+export const FAIR_SEND_MS = 1000;
+export function timeoutVerdict(budgetMs) {
+  return budgetMs >= FAIR_SEND_MS ? "fail" : "skip";
 }

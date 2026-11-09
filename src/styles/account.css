@@ -67,9 +67,9 @@
 .acct-pop .out i { background: var(--bad-50); color: var(--bad-600); }
 .acct-pop .out:disabled { opacity: .6; cursor: default; }
 /* "דו-קרב": a small peek of the arena — night chip, swords in the student's own colour (src/duel/gate.js decides if it shows) */
-.acct-pop .duel i { background: radial-gradient(circle at 50% 30%, #1d2440, #0b1020 70%); color: var(--a-300, #5eead4); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
-.acct-pop .duel i svg { width: 23px; height: 23px; }
-.acct-pop .duel[aria-current="page"] { background: var(--surface-2); }
+.acct-pop .acct-duel i { background: radial-gradient(circle at 50% 30%, #1d2440, #0b1020 70%); color: var(--a-300, #5eead4); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06); }
+.acct-pop .acct-duel i svg { width: 23px; height: 23px; }
+.acct-pop .acct-duel[aria-current="page"] { background: var(--surface-2); }
 @media (max-width: 560px) { .mp-topbar .acct-btn .acct-chev { display: none; } }
 
 /* ── page frame ───────────────────────────────────────────────────────────── */

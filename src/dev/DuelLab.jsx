@@ -11,11 +11,11 @@ const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
 function sampleFriends() {
   return [
-    { id: ID(1), username: "נועה", avatar: "pink", grade: 8, level: 6, online: true, seen_ago_s: 3, wins: 4, losses: 3 },
-    { id: ID(2), username: "יוסף", avatar: "violet", grade: 8, level: 4, online: true, seen_ago_s: 20, wins: 2, losses: 2 },
-    { id: ID(3), username: "ליאן", avatar: "orange", grade: 9, level: 7, online: false, seen_ago_s: 3600, wins: 0, losses: 1 },
-    { id: ID(4), username: "adam_2013", avatar: "sky", grade: 7, level: 2, online: false, seen_ago_s: 86400 * 2, wins: 0, losses: 0 },
-    { id: ID(5), username: "מיכאל", avatar: "cyan", grade: 8, level: 5, online: false, seen_ago_s: null, wins: 1, losses: 5 },
+    { id: ID(1), username: "נועה", avatar: "pink", grade: 8, level: 6, online: true, seen: "online", wins: 4, losses: 3 },
+    { id: ID(2), username: "יוסף", avatar: "violet", grade: 8, level: 4, online: true, seen: "online", wins: 2, losses: 2 },
+    { id: ID(3), username: "ליאן", avatar: "orange", grade: 9, level: 7, online: false, seen: "today", wins: 0, losses: 1 },
+    { id: ID(4), username: "adam_2013", avatar: "sky", grade: 7, level: 2, online: false, seen: "week", wins: 0, losses: 0 },
+    { id: ID(5), username: "מיכאל", avatar: "cyan", grade: 8, level: 5, online: false, seen: null, wins: 1, losses: 5 },
   ];
 }
 function sampleData(kind) {
@@ -55,7 +55,7 @@ export default function DuelLab() {
   const actions = useMemo(() => ({
     addFriend: async (code) => { await wait(500); if (code === "K7M2PQ") return { error: "self", message: "זה הקוד שלך. שלחו אותו לחברים" }; if (code === "ZZZZZZ") return { error: "no_code", message: "לא מצאנו את הקוד הזה. כדאי לבדוק אותו ולנסות שוב" };
       setData((d) => ({ ...d, outgoing: [{ id: ID(90), username: "new_" + code.toLowerCase(), avatar: "sky", created_at: ago(1) }, ...d.outgoing] })); return { ok: true, state: "sent" }; },
-    answerFriend: async (id, ok) => { await wait(500); setData((d) => { const f = d.incoming.find((x) => x.id === id); return { ...d, incoming: d.incoming.filter((x) => x.id !== id), friends: ok && f ? [...d.friends, { ...f, grade: 8, level: 1, online: true, seen_ago_s: 1, wins: 0, losses: 0 }] : d.friends }; }); return { ok: true, state: ok ? "accepted" : "declined" }; },
+    answerFriend: async (id, ok) => { await wait(500); setData((d) => { const f = d.incoming.find((x) => x.id === id); return { ...d, incoming: d.incoming.filter((x) => x.id !== id), friends: ok && f ? [...d.friends, { ...f, grade: 8, level: 1, online: true, seen: "online", wins: 0, losses: 0 }] : d.friends }; }); return { ok: true, state: ok ? "accepted" : "declined" }; },
     removeFriend: async (id) => { await wait(500); setData((d) => ({ ...d, friends: d.friends.filter((x) => x.id !== id), outgoing: d.outgoing.filter((x) => x.id !== id) })); return { ok: true }; },
     block: async (id) => { await wait(500); setData((d) => { const f = [...d.friends, ...d.incoming, ...d.outgoing].find((x) => x.id === id); return { ...d, friends: d.friends.filter((x) => x.id !== id), incoming: d.incoming.filter((x) => x.id !== id), outgoing: d.outgoing.filter((x) => x.id !== id), blocked: f ? [...d.blocked, f] : d.blocked }; }); return { ok: true }; },
     unblock: async (id) => { await wait(400); setData((d) => ({ ...d, blocked: d.blocked.filter((x) => x.id !== id) })); return { ok: true }; },

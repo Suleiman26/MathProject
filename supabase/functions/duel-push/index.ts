@@ -13,7 +13,8 @@
 //   4. one encrypted Web Push per device (RFC 8291 aes128gcm + VAPID RFC 8292),
 //      TTL = what is left of the invite (≤ 60 s), urgency high, redirects refused.
 //   5. push_done(secret, ok, gone, failed): 404/410 → deleted; 2xx → last_ok_at;
-//      anything else (403, 5xx, timeout) counts a failure — 3 in a row drop the device.
+//      anything else (403, 5xx, timeout) counts a failure — 3 in a row drop the device —
+//      except 429 and a timeout that started with < 1 s left (ours, not the device's).
 // One deadline for the whole run (8 s), so it ends before pg_net's 10 s. A send that
 // misses it is reported as failed; its HTTP request is NOT cancelled (the library's
 // fetch takes no signal) — it just finishes unobserved.
@@ -27,7 +28,7 @@
 // Answers: 200 {sent, gone, failed} | {skipped:'quiet'|'gone'|'none'} ·
 //   401 {error:'secret'} · 400 bad_request · 405 method · 500 config · 502 db
 import * as webpush from "jsr:@negrel/webpush@0.5.0";
-import { isLocal, isQuiet, message, sameSecret, ttlFor, vapidJwk, verdict } from "./core.mjs";
+import { isLocal, isQuiet, message, sameSecret, timeoutVerdict, ttlFor, vapidJwk, verdict } from "./core.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const STATUS: Record<string, number> = { method: 405, bad_request: 400, secret: 401, config: 500, db: 502 };
@@ -100,8 +101,9 @@ function vapidKeys(): Promise<CryptoKeyPair> {
 
 type Sub = { endpoint: string; p256dh: string; auth: string };
 
-// one device → 'ok' | 'gone' | 'fail'
+// one device → 'ok' | 'gone' | 'fail' | 'skip' (429, or our own deadline left it < 1 s: not counted)
 async function sendOne(sub: Sub, text: string, ttl: number, keys: CryptoKeyPair, contact: string, until: number): Promise<string> {
+  const budget = left(until);
   try {
     // a fresh application-server ECDH key for every message (RFC 8291 §3.1)
     const server = await webpush.ApplicationServer.new({ contactInformation: contact, vapidKeys: keys });
@@ -122,6 +124,8 @@ async function sendOne(sub: Sub, text: string, ttl: number, keys: CryptoKeyPair,
       return v;
     }
     console.error(`duel-push: send failed (${new URL(sub.endpoint).host}): ${(e as Error)?.message}`);
+    // our own deadline cut it: a failure only if the send had a fair chance (≥ 1 s)
+    if ((e as Error)?.message === "timeout") return timeoutVerdict(budget);
     return "fail";
   }
 }

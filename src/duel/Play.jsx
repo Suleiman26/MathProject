@@ -31,10 +31,10 @@ import { FaceOff } from "./FaceOff";
 import { Arena } from "./Arena";
 import { InviteCard } from "./InviteDrop";
 import Result from "./Result";
-import { SUBJECT_LABEL } from "./samples";
+import { SUBJECT_LABEL } from "./subjects";
 import { sfx, shake, floatPoints, usePaintStatusBar, armSound } from "./fx";
 
-const POLL_MS = 3000, FAST_POLL_MS = 1500, START_RETRY_MS = 2000, DARK = "#0b1020";
+const POLL_MS = 3000, FAST_POLL_MS = 1500, START_RETRY_MS = 2000, HINT_GAP_MS = 300, DARK = "#0b1020";
 const RING_R = 52, RING_C = 2 * Math.PI * RING_R;
 
 export default function Play({ id }) {
@@ -133,11 +133,20 @@ export function PlayView({ id, ready, account, api, subscribeFn, navigate, refre
 
   useEffect(() => { if (ready && account) refetch(); }, [ready, account && account.id, refetch]);
 
-  // realtime hints on the duel's channel → re-fetch
+  // realtime hints on the duel's channel → re-fetch, at most one every HINT_GAP_MS (a fast opponent
+  // sends a hint per answer; a burst ends in ONE trailing re-fetch, never in many)
   const channel = st && st.channel;
   useEffect(() => {
     if (!channel) return;
-    return subscribeFn(channel, () => { refetch(); }, { onStatus: setConn });
+    let last = 0, timer = null;
+    const onHint = () => {
+      if (timer) return;                                   // a trailing re-fetch is already planned
+      const wait = last + HINT_GAP_MS - Date.now();
+      if (wait <= 0) { last = Date.now(); refetch(); return; }
+      timer = setTimeout(() => { timer = null; last = Date.now(); refetch(); }, wait);
+    };
+    const off = subscribeFn(channel, onHint, { onStatus: setConn });
+    return () => { clearTimeout(timer); if (typeof off === "function") off(); };
   }, [channel, subscribeFn, refetch]);
 
   // the tab comes back / the browser is online again → re-fetch (live.js also sends 'sync', once subscribed)
@@ -203,8 +212,11 @@ export function PlayView({ id, ready, account, api, subscribeFn, navigate, refre
     const ts = [s - 3000 - n, s - n, s + GO_MS - n, e - n, e + 2500 - n]
       .filter((d) => d > 0 && d < 1e7)
       .map((d) => setTimeout(() => setTick((t) => t + 1), d + 15));
+    // question 0 is only handed out from start_at on (duel_state): ask for it right then
+    const atStart = s - n;
+    if (atStart > -1000 && atStart < 1e7) ts.push(setTimeout(() => refetch({ force: true }), Math.max(0, atStart) + 60));
     return () => ts.forEach(clearTimeout);
-  }, [st && st.status, st && st.start_at, st && st.ends_at, offset, phase]);
+  }, [st && st.status, st && st.start_at, st && st.ends_at, offset, phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // …and when my lock ends: after a reload during a lock nothing else re-renders at lock_until
   const lockUntil = st && st.me ? st.me.lock_until : null;
@@ -372,7 +384,7 @@ export function PlayView({ id, ready, account, api, subscribeFn, navigate, refre
     return (
       <Shell vars={vars}>
         <Card title="צריך להתחבר" lead="דו-קרב משחקים עם חשבון. התחברו — וחוזרים ישר לפה.">
-          <div className="dl-row"><Link className="dl-btn ghost" href="/duel">לדו-קרב</Link><Link className="dl-btn accent" href="/login">התחברות</Link></div>
+          <div className="dl-row"><Link className="dl-btn ghost" href="/duel">לדו-קרב</Link><Link className="dl-btn accent" href={`/login?next=${encodeURIComponent(`/duel/${id}`)}`}>התחברות</Link></div>
         </Card>
       </Shell>
     );

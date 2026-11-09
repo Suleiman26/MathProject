@@ -4,7 +4,7 @@
 // site's publishable key (deployed with --no-verify-jwt; we check our own token):
 //   1. duel_claim_start(tok, id)  → grades + subject + seed, only for the invitee
 //      of an 'accepted' duel, once (anything else → 'gone').
-//   2. buildDuel(seed, {grade: min of both, subject}) → 15 questions.
+//   2. buildDuel(HMAC(DUEL_SECRET, seed:id), {grade: min of both, subject}) → 15 questions.
 //   3. duel_put_questions(DUEL_SECRET, id, rows) → stored (answers kept apart),
 //      duel goes live, both players get the 'duel_start' hint.
 // Answers never come back in the response; meta never leaves this function.
@@ -21,7 +21,7 @@
 //   secret (500, DUEL_SECRET missing or ≠ Vault) · gen (500, no questions could be made)
 //   rows (500, the DB refused the questions) · db (502, database unreachable/odd answer)
 import { buildDuel } from "../_shared/duel/build.js";
-import { gradeFor, subjectFor, toRows, corsHeaders } from "./core.mjs";
+import { gradeFor, subjectFor, toRows, corsHeaders, mixSeed } from "./core.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const STATUS: Record<string, number> = {
@@ -110,7 +110,8 @@ async function handle(req: Request): Promise<Record<string, unknown>> {
 
   let rows;
   try {
-    rows = toRows(buildDuel(seed, { grade, subject: subjectFor(claim.subject, grade) }));
+    // the claim seed mixed with the secret (final wave): q0 + the public engine can't find the rest
+    rows = toRows(buildDuel(await mixSeed(secret, seed, id), { grade, subject: subjectFor(claim.subject, grade) }));
   } catch (e) {
     console.error("duel-start: buildDuel failed:", (e as Error)?.message);
     throw new Fail("gen");

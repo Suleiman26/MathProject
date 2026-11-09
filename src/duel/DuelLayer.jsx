@@ -48,11 +48,13 @@ export default function DuelLayer() {
     setShown((s) => {
       if (!s || s.gone) return s && s.gone ? s : null;
       if (hidden.includes(s.id)) return null;
+      // I'm on that duel's own page now (e.g. accepted the rematch from the result screen): not "gone"
+      if (path === `/duel/${s.id}`) return null;
       // it vanished under us (cancelled / expired / answered elsewhere): say so briefly
       goneT.current = setTimeout(() => setShown(null), 1600);
       return { ...s, gone: "gone" };
     });
-  }, [invite && invite.id, hidden]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [invite && invite.id, hidden, path]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => clearTimeout(goneT.current), []);
 
   async function answer(yes) {

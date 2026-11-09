@@ -143,7 +143,7 @@ function AccountsCard({ a, toast }) {
    The database enforces it in every friend/duel function (duel_guard), so this is
    not just hiding buttons. Testers: accounts.duel_tester, set in Students → a student. */
 export const DUEL_MODES = [
-  { v: "off", label: "כבוי", tone: "off", text: "אף תלמיד לא רואה דו-קרבים: אין אריח בדף הבית, אין פריט בתפריט, והשרת חוסם כל ניסיון להיכנס." },
+  { v: "off", label: "כבוי", tone: "off", text: "אף תלמיד לא רואה דו-קרבים: אין אריח בדף הבית, אין פריט בתפריט, והשרת חוסם כל ניסיון להיכנס. דו-קרבים פתוחים נסגרים מיד (מי שבאמצע משחק מקבל תוצאה)." },
   { v: "test", label: "בדיקה", tone: "test", text: "רק תלמידים שסומנו כבודקים רואים ומשחקים. כל השאר לא רואים כלום, כאילו הדו-קרבים כבויים." },
   { v: "on", label: "פתוח לכולם", tone: "on", text: "כל תלמיד/ה עם חשבון רואה את הדו-קרבים, מוסיף/ה חברים ומזמין/ה לדו-קרב." },
 ];
@@ -152,7 +152,9 @@ function DuelsCard({ a, toast }) {
   const [d, setD] = useState(null);
   const [ask, setAsk] = useState(false);
   const [busy, setBusy] = useState(false);
-  const load = () => a.run("admin_duels", {}).then(setD).catch(() => setD({ switch: null, testers: [] }));
+  const [loadErr, setLoadErr] = useState(false);
+  // the switch buttons stay disabled until the real state is known (a failed load must not look like "off")
+  const load = () => { setLoadErr(false); return a.run("admin_duels", {}).then((x) => { if (!x || !x.switch) throw new Error("no state"); setD(x); }).catch(() => { setD(null); setLoadErr(true); }); };
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function pick(v) {
@@ -164,7 +166,9 @@ function DuelsCard({ a, toast }) {
     try {
       const r = await a.run("admin_set_setting", { k: "duels", v });
       if (!r || !r.ok) throw new Error(r && r.error ? r.error : "not saved");
-      toast(v === "off" ? "הדו-קרבים כבויים" : v === "test" ? "הדו-קרבים פתוחים לבודקים בלבד" : "הדו-קרבים פתוחים לכל התלמידים");
+      const closed = Number(r.closed) || 0;
+      toast(v === "off" ? (closed ? `הדו-קרבים כבויים · ${closed === 1 ? "דו-קרב פתוח אחד נסגר" : `${closed} דו-קרבים פתוחים נסגרו`}` : "הדו-קרבים כבויים")
+        : v === "test" ? "הדו-קרבים פתוחים לבודקים בלבד" : "הדו-קרבים פתוחים לכל התלמידים");
     } catch (e) { setD((x) => ({ ...x, switch: before })); toast("לא נשמר: " + e.message, true); }
     finally { setBusy(false); }
   }
@@ -173,6 +177,12 @@ function DuelsCard({ a, toast }) {
   const testers = (d && d.testers) || [];
   return (
     <Card title="דו-קרבים" sub="מי יכול לשחק דו-קרב מול חברים" className="span-12" action={<Sword size={18} className="muted" />}>
+      {loadErr && (
+        <div className="du-ask" role="alert">
+          <span>לא הצלחנו לטעון את מצב הדו-קרבים</span>
+          <span className="du-ask-b"><button type="button" className="abtn sm" onClick={load}>לנסות שוב</button></span>
+        </div>
+      )}
       <div className="du-modes" role="radiogroup" aria-label="מצב הדו-קרבים">
         {DUEL_MODES.map((m) => (
           <button key={m.v} type="button" role="radio" aria-checked={cur === m.v} disabled={!d || busy}
