@@ -6,8 +6,8 @@
      (spec §7.3: the socket is open only on duel pages);
    - the invite drop-in (InviteDrop) for the first live invite — a card, never a
      modal — "לא עכשיו" declines, "קבל/י" accepts and goes to /duel/<id>;
-   - a slim "חזרה לדו-קרב" pill when I have a live duel and I'm not on its page.
-   Styles: src/styles/duel-arena.css (.inv*, .dar-pill) + duel.css (.dl-btn). */
+   - a slim "חזרה לדו-קרב" pill when I have a live duel and I'm not on a duel page.
+   Styles: src/styles/duel-arena.css (.dinv*, .dar-pill; hidden while the topic keypad is open) + duel.css (.dl-btn). */
 import "../styles/duel.css";
 import "../styles/duel-arena.css";
 import { useEffect, useRef, useState } from "react";
@@ -82,7 +82,12 @@ export default function DuelLayer() {
     setSaid(`${shown.from && shown.from.username ? shown.from.username : ""} מאתגר/ת אותך לדו-קרב`);
   }, [shownId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const pill = presence.liveId && path !== `/duel/${presence.liveId}` && path !== "/duel" ? presence.liveId : null;
+  // the pill: only away from the duel pages (a duel page shows its own state — e.g. the rematch's waiting card
+  // right after a result, while the last ping still remembers the finished duel as live)
+  const pill = presence.liveId && !path.startsWith("/duel") ? presence.liveId : null;
+  // the remembered live duel may have ended since the last ping (20 s): ask again when the page changes
+  const liveKnown = !!presence.liveId;
+  useEffect(() => { if (liveKnown) presence.refresh(); }, [path]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -94,7 +99,7 @@ export default function DuelLayer() {
       {pill && (
         <Link className="dar-pill" href={`/duel/${pill}`} aria-label="חזרה לדו-קרב">
           <span className="dar-pill-dot" aria-hidden="true" />
-          <span aria-hidden="true"><span className="dar-pill-long">חזרה ל</span>דו-קרב</span>
+          <span aria-hidden="true">חזרה לדו-קרב</span>
         </Link>
       )}
     </>

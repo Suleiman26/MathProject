@@ -38,7 +38,8 @@ const RING_R = 52, RING_C = 2 * Math.PI * RING_R;
 
 export default function Play({ id }) {
   const { ready, account } = useAccount();
-  return <PlayView id={id} ready={ready} account={account} api={duelApi} subscribeFn={subscribe} />;
+  // keyed by the duel: a rematch goes /duel/<old> → /duel/<new> and must start from a clean state
+  return <PlayView key={id} id={id} ready={ready} account={account} api={duelApi} subscribeFn={subscribe} />;
 }
 
 /* ── small screens around the arena ──────────────────────────────────────── */
@@ -87,8 +88,9 @@ function SenderWait({ st, offset, onCancel, error }) {
 }
 
 /* ── the duel ─────────────────────────────────────────────────────────────── */
-export function PlayView({ id, ready, account, api, subscribeFn }) {
+export function PlayView({ id, ready, account, api, subscribeFn, navigate }) {
   const router = useRouter();
+  const go = useCallback((url) => (navigate ? navigate(url) : router.push(url)), [navigate, router]);
   const [st, setSt] = useState(null);
   const [err, setErr] = useState(null);           // { code, message }: the duel can't be shown
   const [net, setNet] = useState(false);          // the last state() had no connection
@@ -152,7 +154,15 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
 
   // polling: the socket is the fast path, this is the truth path
   useEffect(() => {
-    if (terminal || !account) return;
+    if (!account) return;
+    if (phase === "done") {
+      // after the end only emotes still change: without a socket, look for them now and then (3 minutes)
+      if (conn) return;
+      const until = Date.now() + 180000;
+      const t = setInterval(() => { if (Date.now() > until) clearInterval(t); else if (document.visibilityState === "visible") refetch(); }, 4000);
+      return () => clearInterval(t);
+    }
+    if (terminal) return;
     const ms = phase === "accepted" || phase === "finishing" ? FAST_POLL_MS : (!conn || phase === "invited" || net) ? POLL_MS : 0;
     if (!ms) return;
     const t = setInterval(() => { if (document.visibilityState === "visible") refetch(); }, ms);   // never piles up (gate)
@@ -277,7 +287,7 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     const r = await api.answerInvite(id, yes);
     setInviteBusy("");
     if (r && r.error) { setGone(r.error === "gone" ? "gone" : r.error); refetch(); return; }
-    if (!yes) { router.push("/duel"); return; }
+    if (!yes) { go("/duel"); return; }
     refetch();
   }
   const [cancelErr, setCancelErr] = useState("");
@@ -286,7 +296,7 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     const r = await api.cancel(id);
     // e.g. the friend accepted a moment ago ('gone') → the state shows what really happened
     if (!r || r.error) { setCancelErr(duelError(r)); refetch({ force: true }); return; }
-    router.push("/duel");
+    go("/duel");
   }
   /** → null, or a short message for the confirm sheet when giving up didn't go through */
   async function giveUp() {
@@ -296,13 +306,33 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
   }
   const [rematchBusy, setRematchBusy] = useState(false);
   const [rematchErr, setRematchErr] = useState("");
+  const [rematchUntil, setRematchUntil] = useState(0);   // the 30-s send cooldown (local ms; counted down on the button)
   async function rematch() {
-    if (!st || !st.opp) return;
+    if (!st || !st.opp || rematchBusy) return;
     setRematchBusy(true); setRematchErr("");
     const r = await api.invite(st.opp.id, st.subject);
-    setRematchBusy(false);
-    if (!r || r.error) { setRematchErr(duelError(r)); return; }
-    router.push(`/duel/${r.id}`);
+    if (!r || r.error) {
+      setRematchBusy(false);
+      setRematchErr(duelError(r));
+      const w = r && r.error === "cooldown" ? Number(r.wait_s) : 0;
+      if (w > 0) setRematchUntil(Date.now() + Math.ceil(w) * 1000);
+      return;
+    }
+    // the same waiting card (ring + cancel) as any challenge: /duel/<new id> as the sender; the friend gets the drop-in
+    go(`/duel/${r.id}`);
+  }
+  /* after the end: a preset emote (the other side sees it via the 'emote' hint → state) and a report */
+  async function emote(e) {
+    const r = await api.emote(id, e);
+    if (r && r.error) return { ...r, message: duelError(r) };
+    refetch({ force: true });
+    return r;
+  }
+  async function report(reason) {
+    const opp = st && st.opp;
+    if (!opp || !api.report) return { error: "gone", message: duelError("gone") };
+    const r = await api.report(opp.id, reason, id);
+    return r && r.error ? { ...r, message: duelError(r) } : r;
   }
 
   /* ── render ────────────────────────────────────────────────────────────── */
@@ -373,7 +403,12 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     );
   }
   if (phase === "done") {
-    return <Shell vars={vars} avatar={account.avatar}><Result state={st} onRematch={rematch} rematchBusy={rematchBusy} rematchError={rematchErr} /></Shell>;
+    return (
+      <Shell vars={vars} avatar={account.avatar}>
+        <Result state={st} onRematch={rematch} rematchBusy={rematchBusy} rematchError={rematchErr} rematchUntil={rematchUntil}
+          onEmote={api.emote ? emote : null} onReport={api.report ? report : null} />
+      </Shell>
+    );
   }
   if (phase === "accepted" || phase === "faceoff") {
     const waitedMs = st.accepted_at ? now - parseTs(st.accepted_at) : 0;

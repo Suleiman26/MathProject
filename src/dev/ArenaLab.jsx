@@ -1,6 +1,8 @@
 'use client';
 /* A fake duel for the arena screens (local preview only: app/dev/duel).
-   ?s=invite | accepted | faceoff | arena | hot | lastq | locked | waiting | finishing | failed | done
+   ?s=invite | sentwait | accepted | faceoff | arena | hot | lastq | locked | waiting | finishing | failed | done
+   results (Task 8): win | lose | draw | perfect | comeback | xp0 (daily cap) | few (< 3 answers) | giveup
+     &cd=1 → the first rematch answers "cooldown 12 s"; the opponent sends an emote 2.5 s in
    extra (arena only): &q=<n> starts at question n+1 (n answered, all right); &slow=<ms> makes every
    state() take that long (a slow network — the "next question" loop must still make progress);
    &prompt=<text> replaces the current question's prompt (stress-test long math), &typed=1 makes it a typed one
@@ -31,12 +33,26 @@ function seed(p, n, wrongAt, startMs) {
   p.answers = [];
   let at = startMs, streak = 0;
   for (let i = 0; i < n; i++) {
-    at += R(4000, 9000);
+    const ms = R(4000, 9000);
+    at += ms;
     const ok = !wrongAt.includes(i);
     streak = ok ? streak + 1 : 0;
-    p.answers.push({ idx: i, correct: ok, at, points: points(ok, 6000, streak, i === 14), streak });
+    p.answers.push({ idx: i, correct: ok, at, ms, points: points(ok, 6000, streak, i === 14), streak });
   }
 }
+
+/* the finished duels for the result screen: [my wrong idx, my answer count, their wrong idx, extra] */
+const RESULTS = {
+  done:     { me: [5, 9], opp: [2, 6, 11] },
+  win:      { me: [3, 10], opp: [1, 6, 9, 12] },
+  lose:     { me: [2, 7, 11], opp: [5, 9] },
+  draw:     { me: [4, 9], opp: [4, 9], draw: true },
+  perfect:  { me: [], opp: [3, 8, 12] },
+  comeback: { me: [0, 1, 2, 3], opp: [10, 11, 12, 13, 14], comeback: true },
+  xp0:      { me: [6], opp: [2, 8, 13], xp: 0 },
+  few:      { me: [1], n: 2, opp: [4], xp: 0 },
+  giveup:   { me: [2], n: 6, opp: [1], gaveUp: true },
+};
 
 function labParam(k) {
   if (typeof window === "undefined") return null;
@@ -57,7 +73,7 @@ function makeDuel(kind, meColor) {
     start_at: iso(now + 6500), ends_at: iso(now + 6500 + 300000), questions: buildDuel(4242, { grade: 8, subject: "random" }),
     me: { id: "lab", username: "עבד", avatar: meColor, level: 5, answers: [] },
     opp: { id: ID(1), username: "נועה", avatar: meColor === "pink" ? "violet" : "pink", level: 6, answers: [] },
-    result: null,
+    result: null, emotes: [],
   };
   const live = (ago) => { d.start_at = iso(now - ago); d.ends_at = iso(now - ago + 300000); };
   switch (kind) {
@@ -75,10 +91,17 @@ function makeDuel(kind, meColor) {
     case "locked": live(60000); seed(d.me, 4, [3], now - 60000); d.me.answers[3].at = now - 200; seed(d.opp, 3, [], now - 60000); break;
     case "waiting": live(180000); seed(d.me, 15, [5], now - 180000); seed(d.opp, 9, [2], now - 180000); break;
     case "finishing": live(300400); seed(d.me, 15, [5], now - 300400); seed(d.opp, 13, [2], now - 300400); break;   // time up, inside the 2-s grace
-    case "_": break;
     case "failed": d.status = "failed"; d.start_at = null; d.ends_at = null; break;
-    case "done": live(320000); seed(d.me, 15, [5, 9], now - 320000); seed(d.opp, 15, [2, 6, 11], now - 320000); finish(d); break;
-    default: break;
+    case "sentwait": d.status = "invited"; d.start_at = null; d.ends_at = null; d.accepted_at = null; d.expires_at = iso(now + 52000); break;
+    default:
+      if (RESULTS[kind]) {
+        const k = RESULTS[kind];
+        live(320000);
+        seed(d.me, k.n || 15, k.me, now - 320000);
+        seed(d.opp, 15, k.opp, now - 320000);
+        finish(d, k);
+      }
+      break;
   }
   const forced = labStr("prompt");
   if (forced && d.status === "live") {
@@ -88,10 +111,27 @@ function makeDuel(kind, meColor) {
   return d;
 }
 
-function finish(d) {
+/* the end, as the server would write it (duel_close + duel_state's result) */
+function finish(d, k = {}) {
   d.status = "done";
   const a = sum(d.me), b = sum(d.opp);
-  d.result = { winner: a === b ? null : a > b ? d.me.id : d.opp.id, draw: a === b, xp_me: a > b ? 30 : a === b ? 20 : 10, review: [] };
+  const quit = k.gaveUp ? d.me.id : null;
+  const draw = !quit && (k.draw || a === b);
+  const winner = quit ? d.opp.id : draw ? null : a > b ? d.me.id : d.opp.id;
+  const n = d.me.answers.length;
+  const xp = k.xp != null ? k.xp : quit || n < 3 ? 0 : draw ? 20 : winner === d.me.id ? 30 : 10;
+  const review = d.questions.map((q, idx) => {
+    const my = d.me.answers[idx];
+    if (my && my.correct) return null;
+    const given = !my ? null : q.kind === "choice" ? String((Number(q.answer) + 1) % 4) : String(Number(q.answer) + 3);
+    return { idx, payload: { prompt: q.prompt, choices: q.choices, topic: q.topic, chapter: q.chapter }, right: q.answer, given };
+  }).filter(Boolean);
+  const ms = d.me.answers.map((x) => x.ms || 6000);
+  d.result = {
+    winner, draw, xp_me: xp, gave_up: quit, comeback_by: k.comeback && winner === d.me.id ? d.me.id : null, review,
+    best_streak: d.me.answers.reduce((m, x) => Math.max(m, x.streak), 0),
+    avg_ms: ms.length ? Math.round(ms.reduce((s2, x) => s2 + x, 0) / ms.length) : null,
+  };
 }
 const sum = (p) => p.answers.reduce((s, a) => s + a.points, 0);
 const lanes = (p) => Array.from({ length: 15 }, (_, i) => { const a = p.answers[i]; return a ? a.correct : null; });
@@ -125,7 +165,7 @@ function makeServer(kind, meColor) {
       questions: d.status === "live" || d.status === "done"
         ? d.questions.map((q, idx) => ({ idx, kind: q.kind, payload: { prompt: q.prompt, choices: q.choices, topic: q.topic, chapter: q.chapter } })).filter((q) => d.status === "done" || q.idx <= myIdx)
         : [],
-      emotes: [], _sent: now, _recv: now,
+      emotes: d.emotes.map((e) => ({ ...e })), _sent: now, _recv: now,
     };
     if (d.status === "done") r.result = d.result;
     return r;
@@ -146,6 +186,10 @@ function makeServer(kind, meColor) {
     }, kind === "waiting" || kind === "lastq" ? R(2500, 5000) : R(4000, 11000));
   }
   if (d.status === "live") oppTurn();
+  // the friend answers with an emote a moment after the end (the realtime hint 'emote' → state)
+  let emoteT = null;
+  if (d.status === "done" && kind !== "giveup") emoteT = setTimeout(() => { d.emotes.push({ uid: d.opp.id, emote: kind === "lose" ? "again" : "gg" }); hint("emote"); }, 2500);
+  let cooled = false;
   if (kind === "finishing") setTimeout(() => { finish(d); hint("duel_end"); }, 4500);
 
   const api = {
@@ -175,21 +219,34 @@ function makeServer(kind, meColor) {
       hint("duel_start"); oppTurn();
       return { ok: true };
     },
-    giveUp: async () => { await wait(200); if (d.status !== "live") return { error: "not_live" }; d.status = "done"; d.result = { winner: d.opp.id, draw: false, xp_me: 0, gave_up: d.me.id, review: [] }; hint("duel_end"); return { ok: true }; },
+    giveUp: async () => { await wait(200); if (d.status !== "live") return { error: "not_live" }; finish(d, { gaveUp: true }); hint("duel_end"); return { ok: true }; },
     answerInvite: async () => ({ error: "gone" }),
     cancel: async () => ({ status: "cancelled" }),
-    invite: async () => { await wait(500); return { id: DUEL, expires_at: iso(Date.now() + 60000) }; },
+    invite: async () => {
+      await wait(500);
+      if (labStr("cd") && !cooled) { cooled = true; return { error: "cooldown", wait_s: 12 }; }
+      return { id: ID(501), expires_at: iso(Date.now() + 60000) };
+    },
+    emote: async (id, e) => {
+      await wait(250);
+      if (d.status !== "done") return { error: "not_done" };
+      if (d.emotes.filter((x) => x.uid === d.me.id).length >= 3) return { error: "limit" };
+      d.emotes.push({ uid: d.me.id, emote: e }); hint("emote");
+      return { ok: true };
+    },
+    report: async () => { await wait(500); return { ok: true }; },
   };
   const subscribeFn = (topic, onHint, opts) => {
     listeners.add(onHint);
     setTimeout(() => { opts && opts.onStatus && opts.onStatus(true); onHint("sync"); }, 50);
     return () => { listeners.delete(onHint); };
   };
-  const stop = () => clearTimeout(oppTimer);
+  const stop = () => { clearTimeout(oppTimer); clearTimeout(emoteT); };
   return { api, subscribeFn, stop };
 }
 
-const NAV = ["invite", "accepted", "faceoff", "arena", "hot", "lastq", "locked", "waiting", "finishing", "failed", "done"];
+const NAV = ["invite", "sentwait", "accepted", "faceoff", "arena", "hot", "lastq", "locked", "waiting", "finishing", "failed", "done",
+  "win", "lose", "draw", "perfect", "comeback", "xp0", "few", "giveup"];
 
 export default function ArenaLab({ kind, color = "teal" }) {
   const account = useMemo(() => ({ id: "lab", username: "עבד", avatar: color, grade: 8, level: 5 }), [color]);
@@ -214,7 +271,8 @@ export default function ArenaLab({ kind, color = "teal" }) {
             onDecline={async () => { setBusy("no"); await wait(400); setBusy(""); setGone("declined"); }} />
         </div>
       ) : (
-        <PlayView key={kind} id={DUEL} ready account={account} api={srv.api} subscribeFn={srv.subscribeFn} />
+        <PlayView key={kind} id={DUEL} ready account={account} api={srv.api} subscribeFn={srv.subscribeFn}
+          navigate={(url) => { location.href = url === "/duel" ? `?s=hub&c=${color}` : `?s=sentwait&c=${color}`; }} />
       )}
       <nav className="dl-labnav" aria-label="מצבי תצוגה">
         <a href={`?s=hub&c=${color}`}>hub</a>

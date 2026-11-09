@@ -1,5 +1,5 @@
 /* Local-only preview of the duel hub with sample data.
-   ?s=hub|sheet|waiting|empty|guest|soon · arena: invite|accepted|faceoff|arena|hot|lastq|locked|waiting|finishing|failed|done  &c=<my colour>
+   ?s=hub|sheet|waiting|empty|guest|soon · arena: invite|sentwait|accepted|faceoff|arena|hot|lastq|locked|waiting|finishing|failed|done · result: win|lose|draw|perfect|comeback|xp0|few|giveup (&cd=1)  &c=<my colour>
    Shows "not found" on the live site (open locally and on preview links). */
 import { notFound } from "next/navigation";
 import "@/styles/hero.css";
