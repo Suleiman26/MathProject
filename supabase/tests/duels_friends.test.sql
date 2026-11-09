@@ -199,8 +199,8 @@ select is((select count(*)::int from json_array_elements(
              public.admin_reports((select token from public.admin_sessions limit 1))) r
             where r->>'reason' = 'spam' and r->>'reported' = 'duel_carol' and r->>'reporter' = 'duel_alice'), 1, 'admin sees the report');
 select is(public.admin_report_done((select token from public.admin_sessions limit 1),
-            (select id from public.reports where reason = 'spam' limit 1))->>'ok', 'true', 'admin marks the report done');
-select ok((select done from public.reports where reason = 'spam' limit 1), 'report is done');
+            (select id from public.reports where reason = 'spam' and reporter = pg_temp.uid('duel_alice') limit 1))->>'ok', 'true', 'admin marks the report done');
+select ok((select done from public.reports where reason = 'spam' and reporter = pg_temp.uid('duel_alice') limit 1), 'report is done');
 
 -- ── admin: switch + testers ─────────────────────────────────────────────────
 select is(public.admin_set_setting((select token from public.admin_sessions limit 1), 'duels', '"maybe"')->>'error', 'value', 'switch rejects unknown values');
