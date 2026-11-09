@@ -12,7 +12,7 @@
 // diagonal, cone slant height, pyramid apothem and height; the box scale
 // factor k (a small number worked out from the small printed ratio).
 import { randInt, pick, shuffle } from '../rng.js';
-import { numberQuestion } from '../choices.js';
+import { numberQuestion, within } from '../choices.js';
 
 const PY_TRIPLES = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [9, 12, 15]]; // L16
 // port of pickTriple() — src/topics/solids3d/Topic.jsx L18
@@ -26,9 +26,8 @@ function pickQuad(r) {
 }
 
 const int = (w) => Number.isInteger(w) && w > 0;
-// lengths, areas, volumes and angles: no 0 among the choices
-const POS = { accept: (t) => t !== '0' };
-const q = (r, want, prompt, ans, wrongs, meta, opts) => numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { ...POS, ...opts });
+// lengths, areas, volumes: no 0 and nothing far from the answer's size
+const q = (r, want, prompt, ans, wrongs, meta, opts) => numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { accept: within(ans), ...opts });
 // numbers next to the ones printed in the question: with them among the
 // decoys, "the choice closest to a printed number" can't find the answer
 // (Pythagoras: the hypotenuse is just above the longer leg)
@@ -123,8 +122,10 @@ export function pyramid(r, want) {
 /* ── 6. sphere ─ genSphere() L1013; Ch6Q1 L1032 (V = ⁴⁄₃πr³), Ch6Q2 L1045 (S = 4πr²), Ch6Q3 L1058 (S → r → V) */
 export function sphere(r, want) {
   const v = pick(r, ['vol', 'surf', 'radius', 'sToV']);
-  // duel limit (choices): S → V not with r = 3 (V = S = 36π, the answer would be printed)
-  const rr = pick(r, v === 'sToV' && want !== 'number' ? [6, 9, 12] : [3, 6, 9, 12]);
+  // duel limits (mental arithmetic): r ≤ 6 — his 3 or 6 when the volume is involved
+  // (⁴⁄₃r³ whole), 2–6 for the surface and the radius; S → V as choices only r = 6
+  // (r = 3 gives V = S = 36π, the answer would be printed)
+  const rr = v === 'surf' || v === 'radius' ? randInt(r, 2, 6) : v === 'sToV' && want !== 'number' ? 6 : pick(r, [3, 6]);
   const S = 4 * rr * rr, V = (4 / 3) * rr ** 3;
   if (v === 'vol') return q(r, want, `$r = ${rr}$. חשבו את נפח הכדור: $V = ?π$`, V, [4 * rr ** 3, S, rr ** 3, (4 / 3) * rr * rr], { v, r: rr });
   if (v === 'surf') return q(r, want, `$r = ${rr}$. חשבו את שטח הפנים של הכדור: $S = ?π$`, S, [4 * rr, rr * rr, 2 * rr * rr, V], { v, r: rr });

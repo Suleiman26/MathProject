@@ -176,6 +176,14 @@ export function guessScores(q) {
     const left = d.filter((x) => x !== null);
     out['near a printed number'] = left.length ? among(d.map((x, i) => (x !== null && close(x, Math.min(...left)) ? i : -1)).filter((i) => i >= 0)) : null;
   }
+  // angle questions: "the only nice angle" — the choices that are multiples of 5 / 10 / 15
+  // (random among them; fires when 1–3 of the 4 are)
+  if (/°|מעלות|הזווית/.test(q.prompt) && cs.every((c) => /^\d+$/.test(c))) {
+    for (const d of [5, 10, 15]) {
+      const S = cs.map((c, i) => (Number(c) % d === 0 ? i : -1)).filter((i) => i >= 0);
+      out[`only ×${d} (angle)`] = S.length && S.length < 4 ? among(S) : null;
+    }
+  }
   // extreme numbers, over EVERY number printed in a choice (coefficients, exponents,
   // roots, fractions, "a : b"): sum, first, last; and how many it shares with the prompt
   const nums = toks.map((t) => t.map(Number));

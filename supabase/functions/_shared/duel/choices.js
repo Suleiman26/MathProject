@@ -447,6 +447,27 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
 }
 
 /**
+ * An `accept` rule for lengths, areas, volumes: no 0, and no choice far from the
+ * answer's size (a "±50 / ±100" decoy of a big mistake, or "2" next to 102):
+ * every choice within ×/÷ f of the answer.
+ */
+export function within(ans, f = 6) {
+  return (t) => { const v = valueOf(t); return v > 0 && v >= ans / f && v <= ans * f; };
+}
+
+/**
+ * Options for an angle answer that is a multiple of 15° (his angle lists): only
+ * real mistakes and other multiples of 15° in (0°, max) (max included when
+ * `incl`), no ±k decoys — so "the only nice angle" can't find the answer.
+ */
+export function niceAngleOpts(ans, max, incl = false) {
+  const ok = (v) => v > 0 && v % 15 === 0 && (incl ? v <= max : v < max);
+  const extra = [];
+  for (let a = 15; a <= max; a += 15) if (a !== ans && ok(a)) extra.push(String(a));
+  return { decoys: false, extra, accept: (t) => ok(valueOf(t)) };
+}
+
+/**
  * A makeChoices `must` rule for small answers among small printed numbers: one of
  * the 3 wrongs is at least as close to a number printed in the prompt (printed
  * ones count, at distance 0) as the answer, so "the choice nearest a number in the

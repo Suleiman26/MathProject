@@ -8,12 +8,12 @@
 // Duel limits: arc chapter's "sector perimeter" (kπ + 2r, two parts) is not
 // asked.
 import { randInt, pick } from '../rng.js';
-import { numberQuestion, choiceQuestion } from '../choices.js';
+import { numberQuestion, choiceQuestion, within, niceAngleOpts } from '../choices.js';
 
 const int = (w) => Number.isInteger(w) && w > 0;
-// lengths, areas and angles: no 0 among the choices
-const POS = { accept: (t) => t !== '0' };
-const q = (r, want, prompt, ans, wrongs, meta, opts) => numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { ...POS, ...opts });
+// lengths, areas: no 0 and nothing far from the answer's size; the angle answers
+// (multiples of 15° from his tables) pass niceAngleOpts
+const q = (r, want, prompt, ans, wrongs, meta, opts) => numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { accept: within(ans), ...opts });
 
 // port of fmtFrac() — src/topics/circle/Topic.jsx L22 (as duel markup: \frac{π}{3}, \frac{2π}{3}, 2π)
 export function piFrac(n, d) {
@@ -39,7 +39,7 @@ export function radians(r, want) {
     const f = pick(r, turnFracs);
     // mistakes: a half turn (180), forgot the numerator
     return q(r, want, `הזווית היא $\\frac{${f.num}}{${f.den}}$ מסיבוב שלם. כמה מעלות היא?`, f.deg,
-      [(180 * f.num) / f.den, 360 / f.den, (90 * f.num) / f.den], { v, num: f.num, den: f.den });
+      [(180 * f.num) / f.den, 360 / f.den, (90 * f.num) / f.den], { v, num: f.num, den: f.den }, niceAngleOpts(f.deg, 360)); // a part of a turn: < 360°
   }
   if (v === 'thetaArc') {
     const rr = randInt(r, 2, 9), theta = pick(r, [1, 2, 3, 0.5, 1.5, 2.5]);
@@ -47,13 +47,13 @@ export function radians(r, want) {
     // choices: the other angles of his list (no ×10 / ÷10 decoys), + r ÷ L, L − r
     const extra = [0.5, 1, 1.5, 2, 2.5, 3].filter((t) => t !== theta).map(String);
     const wrongs = [rr / L, L - rr].filter((w) => w > 0 && Number.isInteger(w * 2) && w <= 6);
-    return numberQuestion(r, want, `הרדיוס הוא ${rr}, ואורך הקשת הוא ${L}. מה הזווית ברדיאנים?`, theta, wrongs,
+    return numberQuestion(r, want, `הרדיוס הוא $${rr}$, ואורך הקשת הוא $${L}$. מה הזווית ברדיאנים?`, theta, wrongs,
       { v, r: rr, L }, { decoys: false, extra });
   }
   if (v === 'radToDeg') {
     const rv = pick(r, radVals);
     // mistakes: π = 360°, half of it, the supplement
-    return q(r, want, `המר $${piFrac(rv.num, rv.den)}$ רדיאנים למעלות`, rv.deg, [2 * rv.deg, rv.deg / 2, 180 - rv.deg], { v, num: rv.num, den: rv.den });
+    return q(r, want, `המר $${piFrac(rv.num, rv.den)}$ רדיאנים למעלות`, rv.deg, [2 * rv.deg, rv.deg / 2, 180 - rv.deg], { v, num: rv.num, den: rv.den }, niceAngleOpts(rv.deg, 360, true));
   }
   if (v === 'arcRad') {
     let rv, rr, coeff;
@@ -66,7 +66,7 @@ export function radians(r, want) {
     }
     if (!ok(coeff)) { rv = radVals[3]; rr = 6; coeff = 3; }
     // mistakes: θ upside down, forgot the denominator, twice
-    return q(r, want, `$r = ${rr}$, $θ = ${piFrac(rv.num, rv.den)}$ rad. חשבו אורך קשת: $L = ?π$`, coeff,
+    return q(r, want, `$r = ${rr}$, $θ = ${piFrac(rv.num, rv.den)}$ רדיאנים. חשבו את אורך הקשת: $L = ?π$`, coeff,
       [(rr * rv.den) / rv.num, rr * rv.num, 2 * coeff, rr], { v, r: rr, num: rv.num, den: rv.den });
   }
   // degToRad: choices = his table's radian values
@@ -122,6 +122,8 @@ export function arc(r, want) {
   const ok = (x) => Number.isInteger(x) && (want === 'number' || v !== 'arcLen' || (x >= 3 && x !== rr));
   for (let i = 0; i < 200; i++) {
     angle = pick(r, ANG); rr = randInt(r, 2, 15); arcCoeff = (angle * rr) / 180;
+    // choices: θ = 180° fits every r, so it would be ~37% of the central angles — 3 in 4 re-rolled
+    if (v === 'findAngle' && want !== 'number' && angle === 180 && r() < 0.75) continue;
     if (ok(arcCoeff)) break;
   }
   if (!ok(arcCoeff)) { angle = 90; rr = 6; arcCoeff = 3; }
@@ -129,7 +131,7 @@ export function arc(r, want) {
     [2 * rr, (angle * rr) / 360, (angle * rr * rr) / 360, 2 * arcCoeff], { v, r: rr, angle });
   // mistakes: 360 instead of 180, half, the supplement
   return q(r, want, `אורך הקשת הוא $${arcCoeff === 1 ? '' : arcCoeff}π$, $r = ${rr}$. מצאו את הזווית המרכזית: $θ = ?$`, angle,
-    [(360 * arcCoeff) / rr, (90 * arcCoeff) / rr, 180 - angle, 360 - angle], { v, L: arcCoeff, r: rr });
+    [(360 * arcCoeff) / rr, (90 * arcCoeff) / rr, 180 - angle, 360 - angle], { v, L: arcCoeff, r: rr }, niceAngleOpts(angle, 360, true));
 }
 
 /* ── 6. all together ─ port of genCh5() — src/topics/circle/Topic.jsx L501 ── */

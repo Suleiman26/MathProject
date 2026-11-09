@@ -13,13 +13,13 @@
 // Typed only (drawn on typed slots only): rhombus side and isosceles-trapezoid
 // height (Pythagoras: the answer sits next to a printed length, so "the
 // choice closest to a printed number" would find it).
-// Angle choices are < 180° and include other "nice" angles (multiples of 15°).
+// Angle choices: only multiples of 15° below 180° (real mistakes + other such angles).
+// Length / area choices stay within ×/÷ 6 of the answer.
 import { randInt, pick } from '../rng.js';
-import { numberQuestion } from '../choices.js';
+import { numberQuestion, within, niceAngleOpts } from '../choices.js';
 
 const ANGLES = [30, 45, 60, 90, 120, 150]; // L15
 const ANGLES_NO90 = [30, 45, 60, 120, 150]; // L16
-const NICE = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165];
 const PY_TRIPLES = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [9, 12, 15], [8, 15, 17], [12, 16, 20], [15, 20, 25]]; // L17
 
 // port of pickTriple() — src/topics/quadrilaterals/Topic.jsx L18
@@ -30,14 +30,11 @@ function pickTriple(r, maxLeg) {
 }
 
 const int = (w) => Number.isInteger(w) && w > 0;
-// lengths, areas and angles: no 0 among the choices; in an angle question (° in
-// the prompt) no choice of 180 or more (no such angle in a triangle / convex quadrilateral)
+// lengths and areas: no 0 and nothing far from the answer's size; angles (° in the
+// prompt, always a multiple of 15° here): only multiples of 15° below 180° (convex)
 const q = (r, want, prompt, ans, wrongs, meta, opts) => {
-  const angle = prompt.includes('°');
-  const accept = (t) => t !== '0' && !(angle && Number(t) >= 180);
-  // angles: other "nice" angles (multiples of 15°) as decoys, like the given ones
-  const extra = angle ? NICE.filter((a) => a !== ans).map(String) : undefined;
-  return numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { accept, extra, ...opts });
+  const base = prompt.includes('°') ? niceAngleOpts(ans, 180) : { accept: within(ans) };
+  return numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { ...base, ...opts });
 };
 // numbers next to the ones printed in the question: with them among the
 // decoys, "the choice closest to a printed number" can't find the answer
@@ -172,7 +169,7 @@ export function trapezoid(r, want) {
     const [b1, b2] = trapPair(r);
     const l1 = randInt(r, 2, 20), l2 = randInt(r, 2, 20);
     const P = b1 + b2 + l1 + l2;
-    return q(r, want, `${T} — היקף: $b₁ = ${b1}$, $b₂ = ${b2}$, שוק1 $= ${l1}$, שוק2 $= ${l2}$. $P = ?$`,
+    return q(r, want, `${T} — היקף: $b₁ = ${b1}$, $b₂ = ${b2}$, השוק הראשונה $= ${l1}$, השוק השנייה $= ${l2}$. $P = ?$`,
       P, [P - l1, P - l2, 2 * (b1 + b2)], { v, b1, b2, l1, l2 });
   }
   if (v === 'side') { // genTrapGenSide() L782

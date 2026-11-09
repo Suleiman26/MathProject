@@ -13,14 +13,14 @@
 // is every angle choice. Typed only (drawn on typed slots only): Pythagoras
 // (hypotenuse / missing leg — next to a printed side).
 import { randInt, pick } from '../rng.js';
-import { numberQuestion } from '../choices.js';
+import { numberQuestion, within } from '../choices.js';
 
 const int = (w) => Number.isInteger(w) && w > 0;
 // lengths, areas and angles: no 0 among the choices; in an angle question (° in
 // the prompt) no choice of 180 or more (no such angle in a triangle / convex quadrilateral)
 const q = (r, want, prompt, ans, wrongs, meta, opts) => {
   const angle = prompt.includes('°');
-  const accept = (t) => t !== '0' && !(angle && Number(t) >= 180);
+  const accept = angle ? (t) => t !== '0' && Number(t) < 180 : within(ans);
   return numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { accept, ...opts });
 };
 // numbers next to the ones printed in the question: with them among the
@@ -98,8 +98,13 @@ export function special(r, want) {
     const area = (legA * legB) / 2;
     if (v === 'rightArea') {
       // mistakes: forgot ÷ 2, used the hypotenuse, added
-      return q(r, want, `משולש ישר-זווית, הניצבים: $${legA}$ ו-$${legB}$. שטח המשולש $= ?$`, area,
-        [legA * legB, (legA * hyp) / 2, legA + legB], { v, legA, legB });
+      // the other triangles' areas as decoys (whole and "round" like the answer), and
+      // round answers (30, 60, 120, 150) among other multiples of 15
+      const args = [r, want, `משולש ישר-זווית, הניצבים: $${legA}$ ו-$${legB}$. שטח המשולש $= ?$`, area,
+        [legA * legB, (legA * hyp) / 2, legA + legB], { v, legA, legB }];
+      const extra = [...pyTriples.map((t) => (t[0] * t[1]) / 2), area - 15, area + 15, area + 30].filter((x) => x > 0 && x !== area).map(String);
+      const m15 = (ts) => ts.filter((t) => Number(t) % 15 === 0).length >= 1;
+      try { return q(...args, { extra, must: m15 }); } catch { return q(...args, { extra }); }
     }
     if (v === 'rightLeg') {
       // "ניצב אחד = …, שטח המשולש = …. מצאו את הניצב השני" (L204); mistakes: forgot × 2, area − leg

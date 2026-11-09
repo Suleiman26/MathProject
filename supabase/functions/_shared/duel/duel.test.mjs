@@ -11,7 +11,7 @@ import { mulberry32, randInt, pick, shuffle } from './rng.js';
 import { makeChoices } from './choices.js';
 import { checkAnswer, parseNum } from './answer.js';
 import { GENERATORS } from './registry.js';
-import { buildDuel, poolFor } from './build.js';
+import { buildDuel, poolFor, GEN_CAP } from './build.js';
 import {
   close, powLoop, evalTokens, mathOf, tokenize, linSide, TYPED_ONLY, typedOnly, valueOf,
   contractTests,
@@ -247,6 +247,24 @@ test('buildDuel spreads over topics first, then generators', () => {
       }
     }
   }
+});
+
+test('buildDuel: no generator more than 4 times when the pool allows (one-generator topics do not fill a duel)', () => {
+  for (const grade of [7, 8, 9]) for (const subject of ['random', 'num', 'alg', 'fn', 'geo']) {
+    const pool = poolFor({ grade, subject });
+    if (!pool.length) continue;
+    const cap = Math.max(GEN_CAP, Math.ceil(15 / pool.length)); // grade 7 alg: equation-solver alone → 15
+    for (let seed = 1; seed <= 60; seed++) {
+      const qs = buildDuel(seed * 7717 + 1, { grade, subject });
+      const per = {};
+      for (const q of qs) per[q.gen] = (per[q.gen] || 0) + 1;
+      assert.ok(Math.max(...Object.values(per)) <= cap, `${grade}/${subject}/${seed}: ${JSON.stringify(per)}`);
+      for (const i of [3, 7, 11]) assert.equal(qs[i].kind, 'number', `${grade}/${subject}/${seed} slot ${i}`);
+    }
+  }
+  assert.equal(GEN_CAP, 4);
+  // grade 9 functions: intersection (one generator) gets at most 4 of 15
+  for (let seed = 1; seed <= 60; seed++) assert.ok(buildDuel(seed, { grade: 9, subject: 'fn' }).filter((q) => q.gen === 'ix.lines').length <= 4);
 });
 
 test('poolFor filters by grade and world', () => {
