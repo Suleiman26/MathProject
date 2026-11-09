@@ -99,6 +99,7 @@ select pg_temp.befriend('dc_d', 'dc_a');
 select pg_temp.befriend('dc_e', 'dc_f');
 select pg_temp.befriend('dc_g', 'dc_h');
 update public.site_settings set value = '"on"' where key = 'duels';
+delete from vault.secrets where name = 'duel_secret';           -- a dev database may hold one already (rolled back below)
 select vault.create_secret('test-secret', 'duel_secret');
 
 -- ── answer check (mirror of supabase/functions/_shared/duel/answer.js) ──────
