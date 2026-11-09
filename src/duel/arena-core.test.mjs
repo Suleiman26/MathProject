@@ -251,10 +251,14 @@ test("keypad keys: only when nothing else wants them", () => {
   assert.equal(keypadKeyTarget(body, pad, false), "free");
   assert.equal(keypadKeyTarget(null, pad, false), "free");
   assert.equal(keypadKeyTarget(key5, pad, false), "key");
-  assert.equal(keypadKeyTarget(giveUp, pad, false), "ignore");    // Enter on "ויתור" opens the sheet, never sends
-  assert.equal(keypadKeyTarget(link, pad, false), "ignore");
-  assert.equal(keypadKeyTarget(input, pad, false), "ignore");
-  assert.equal(keypadKeyTarget(sheetBtn, pad, false), "ignore");  // digits / Enter inside the give-up sheet
+  assert.equal(keypadKeyTarget(giveUp, pad, false, "Enter"), "ignore");   // Enter on "ויתור" opens the sheet, never sends
+  assert.equal(keypadKeyTarget(giveUp, pad, false, " "), "ignore");
+  assert.equal(keypadKeyTarget(link, pad, false, "Enter"), "ignore");
+  // focus back on "ויתור" after the sheet closes: typing still reaches the keypad
+  for (const k of ["7", "Backspace", "-", "/", "."]) assert.equal(keypadKeyTarget(giveUp, pad, false, k), "free");
+  assert.equal(keypadKeyTarget(link, pad, false, "4"), "free");
+  assert.equal(keypadKeyTarget(input, pad, false, "4"), "ignore");
+  assert.equal(keypadKeyTarget(sheetBtn, pad, false, "9"), "ignore");  // digits / Enter inside the give-up sheet
   assert.equal(keypadKeyTarget(sheet, pad, false), "ignore");
   assert.equal(keypadKeyTarget(body, pad, true), "ignore");       // a sheet is open (html.dl-locked), focus not moved yet
 });

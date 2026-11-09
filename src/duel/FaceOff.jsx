@@ -13,7 +13,7 @@ import { sfx } from "./fx";
 
 function Half({ who, p, pos }) {
   return (
-    <div className={"fo-half " + pos}>
+    <div className={"dfo-half " + pos}>
       <Avatar account={p} size={96} />
       <b dir="auto">{p.username}</b>
       <small>{p.level ? `רמה ${p.level} · ${rankOf(p.level)}` : " "}</small>
@@ -42,14 +42,14 @@ export function FaceOff({ me, opp, startAt, offset, preparing, failedSoon }) {
 
   const text = cd.phase === "count" ? String(cd.n) : cd.phase === "go" ? "יאללה!" : "";
   return (
-    <div className={"fo" + (text ? " counting" : "")} role="status" aria-live="assertive" aria-label={text ? (cd.phase === "go" ? "יאללה!" : `מתחילים בעוד ${cd.n}`) : "פנים מול פנים"}>
+    <div className={"dfo" + (text ? " counting" : "")} role="status" aria-live="assertive" aria-label={text ? (cd.phase === "go" ? "יאללה!" : `מתחילים בעוד ${cd.n}`) : "פנים מול פנים"}>
       <Half who="op" p={opp} pos="t" />
-      <div className="fo-vs" aria-hidden="true">VS</div>
+      <div className="dfo-vs" aria-hidden="true">VS</div>
       <Half who="me" p={me} pos="b" />
-      {text && <div className={"fo-count" + (cd.phase === "go" ? " go" : "")} aria-hidden="true"><span key={text}>{text}</span></div>}
+      {text && <div className={"dfo-count" + (cd.phase === "go" ? " go" : "")} aria-hidden="true"><span key={text}>{text}</span></div>}
       {preparing && !text && (
-        <div className="fo-prep" aria-hidden="true">
-          <span className="fo-dots"><i /><i /><i /></span>
+        <div className="dfo-prep" aria-hidden="true">
+          <span className="dfo-dots"><i /><i /><i /></span>
           {failedSoon ? "עוד רגע…" : "מכינים את השאלות…"}
         </div>
       )}

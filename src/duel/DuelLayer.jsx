@@ -7,7 +7,7 @@
    - the invite drop-in (InviteDrop) for the first live invite — a card, never a
      modal — "לא עכשיו" declines, "קבל/י" accepts and goes to /duel/<id>;
    - a slim "חזרה לדו-קרב" pill when I have a live duel and I'm not on its page.
-   Styles: src/styles/duel-arena.css (.inv*, .ar-pill) + duel.css (.dl-btn). */
+   Styles: src/styles/duel-arena.css (.inv*, .dar-pill) + duel.css (.dl-btn). */
 import "../styles/duel.css";
 import "../styles/duel-arena.css";
 import { useEffect, useRef, useState } from "react";
@@ -73,18 +73,28 @@ export default function DuelLayer() {
     if (yes) router.push(`/duel/${id}`);
   }
 
+  // screen readers: one always-mounted, empty live region gets the line when a NEW invite drops in
+  // (a card that mounts with its text already inside is often not read)
+  const [said, setSaid] = useState("");
+  const shownId = shown && !shown.gone ? shown.id : null;
+  useEffect(() => {
+    if (!shownId || !shown) { setSaid(""); return; }
+    setSaid(`${shown.from && shown.from.username ? shown.from.username : ""} מאתגר/ת אותך לדו-קרב`);
+  }, [shownId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const pill = presence.liveId && path !== `/duel/${presence.liveId}` && path !== "/duel" ? presence.liveId : null;
 
   return (
     <>
+      <div className="dar-sr" role="status" aria-live="polite" aria-atomic="true">{said}</div>
       {shown && (
         <InviteDrop key={shown.id} invite={shown} offset={presence.offset} busy={busy} gone={shown.gone}
           onAccept={() => answer(true)} onDecline={() => answer(false)} />
       )}
       {pill && (
-        <Link className="ar-pill" href={`/duel/${pill}`}>
-          <span className="ar-pill-dot" aria-hidden="true" />
-          חזרה לדו-קרב
+        <Link className="dar-pill" href={`/duel/${pill}`} aria-label="חזרה לדו-קרב">
+          <span className="dar-pill-dot" aria-hidden="true" />
+          <span aria-hidden="true"><span className="dar-pill-long">חזרה ל</span>דו-קרב</span>
         </Link>
       )}
     </>

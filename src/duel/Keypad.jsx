@@ -40,7 +40,7 @@ export function Keypad({ onSend, disabled, dim, sending, keys = { fraction: fals
   useEffect(() => {
     const h = (e) => {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
-      const where = keypadKeyTarget(e.target, root.current, document.documentElement.classList.contains("dl-locked"));
+      const where = keypadKeyTarget(e.target, root.current, document.documentElement.classList.contains("dl-locked"), e.key);
       if (where === "ignore") return;
       if (e.key === "Enter") {
         if (where === "key") return;                 // a focused keypad button: Enter presses that button

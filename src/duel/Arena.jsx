@@ -8,14 +8,14 @@
    a calm "מחכים ל…" panel while the opponent's lane keeps moving. Time up
    while the server still says live: "מסיימים…" — the result is never decided
    on the phone. Everything here is drawn from props; Play.jsx owns the state. */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Avatar } from "@/account/ui";
 import { serverNow } from "./clock";
 import { lockLeft, streakLabel, keypadFor, QUESTIONS, toName, andName } from "./arena-core";
 import { Hud } from "./Hud";
 import { MathText, MathSpan } from "./MathText";
 import { Keypad } from "./Keypad";
-import { mathLength, promptSize } from "./math-core";
+import { mathLength, promptSize, fitPrompt } from "./math-core";
 import { Sheet } from "./Sheet";
 
 function LockOverlay({ until, offset, right, kind }) {
@@ -28,7 +28,7 @@ function LockOverlay({ until, offset, right, kind }) {
   }, [until, offset]);
   const n = Math.max(1, Math.ceil(left / 1000));
   return (
-    <div className="ar-lock" role="alert">
+    <div className="dar-lock" role="alert">
       <div>
         <b key={n}>{n}</b>
         <span>טעות — נעילה קצרה</span>
@@ -38,16 +38,51 @@ function LockOverlay({ until, offset, right, kind }) {
   );
 }
 
+/* Shrink-to-fit before paint: a math island (nowrap) wider than the card makes the whole prompt smaller
+   (floor ≈ 1.2rem); only if even that can't hold it, the island wraps — and then only before an operator
+   (MathText mathBreaks). Re-fits when the card's width changes and once the font has loaded. */
+function useFitPrompt(boxRef, key) {
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const h = box && box.querySelector(".dar-prompt");
+    if (!h) return;
+    let lastW = -1, raf = 0, alive = true;
+    const fit = (force) => {
+      if (!alive) return;
+      const avail = box.clientWidth;
+      if (!force && avail === lastW) return;
+      lastW = avail;
+      h.style.fontSize = ""; h.style.maxWidth = ""; delete h.dataset.fit;
+      const isl = [...h.querySelectorAll(".dmx")];
+      if (!isl.length || !avail) return;
+      const widest = Math.max(...isl.map((e) => e.getBoundingClientRect().width));
+      if (widest > h.clientWidth) h.style.maxWidth = "none";
+      const fontPx = parseFloat(getComputedStyle(h).fontSize);
+      const r = fitPrompt({ widest, avail, fontPx });
+      if (r.fontPx !== fontPx) h.style.fontSize = r.fontPx + "px";
+      if (r.wrap) h.dataset.fit = "wrap";
+    };
+    fit(true);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fit(true));
+    let ro = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => fit(false)); });
+      ro.observe(box);
+    }
+    return () => { alive = false; if (ro) ro.disconnect(); cancelAnimationFrame(raf); };
+  }, [boxRef, key]);
+}
+
 function Choices({ q, fb, busy, onAnswer }) {
   const choices = (q.payload && q.payload.choices) || [];
   const long = choices.some((c) => mathLength(c) > 6);
   const tall = choices.some((c) => /\\frac|\\sqrt/.test(c));
   return (
-    <div className={"ar-ans" + (long ? " long" : "") + (tall ? " tall" : "")}>
+    <div className={"dar-ans" + (long ? " long" : "") + (tall ? " tall" : "")}>
       {choices.map((c, i) => {
         const picked = fb && fb.idx === q.idx && String(fb.given) === String(i);
         const isRight = fb && fb.idx === q.idx && fb.right != null && String(fb.right) === String(i);
-        const cls = "ar-a" + (picked ? (fb.correct ? " good" : " bad") : "") + (!picked && isRight && !fb.correct ? " show" : "");
+        const cls = "dar-a" + (picked ? (fb.correct ? " good" : " bad") : "") + (!picked && isRight && !fb.correct ? " show" : "");
         return (
           <button key={i} type="button" className={cls} disabled={busy || !!fb} onClick={(e) => onAnswer(String(i), e.currentTarget)}>
             <MathSpan src={c} />
@@ -71,6 +106,8 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
   const streak = streakLabel(me.streak || 0);
 
   const [giveErr, setGiveErr] = useState("");
+  const qbRef = useRef(null);
+  useFitPrompt(qbRef, q ? q.idx + ":" + q.payload.prompt : "none");
   async function giveUp() {
     setGiving(true); setGiveErr("");
     let msg = null;
@@ -81,50 +118,50 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
   }
 
   return (
-    <div className={"ar" + (lastQ ? " lastq" : "")} ref={rootRef}>
+    <div className={"dar" + (lastQ ? " lastq" : "")} ref={rootRef}>
       <Hud me={me} opp={opp} myLanes={state.my_lanes} endsAt={state.ends_at} offset={offset} live={live && !finishing} ping={ping} onHot={onHot} />
 
-      <main className="ar-q">
+      <main className="dar-q">
         {waiting || finishing ? (
-          <div className="ar-wait" role="status" aria-live="polite">
+          <div className="dar-wait" role="status" aria-live="polite">
             <Avatar account={opp} size={72} />
             {finishing ? (
               <><b>מסיימים…</b><p>הזמן נגמר. עוד רגע התוצאה.</p></>
             ) : (
               <><b>סיימת! מחכים {toName(opp.username)}…</b>
-                <p><span className="ar-wait-n">{Math.min(QUESTIONS, opp.idx || 0)}</span> מתוך {QUESTIONS} · הניקוד שלך: <span className="ar-wait-n">{me.score}</span></p>
+                <p><span className="dar-wait-n">{Math.min(QUESTIONS, opp.idx || 0)}</span> מתוך {QUESTIONS} · הניקוד שלך: <span className="dar-wait-n">{me.score}</span></p>
                 <small>אי אפשר לשנות תשובות. כשהדו-קרב ייגמר, התוצאה תופיע פה.</small></>
             )}
           </div>
         ) : (
           <>
-            <div className="ar-meta">
+            <div className="dar-meta">
               <span>שאלה {Math.min(QUESTIONS, idx + 1)} מתוך {QUESTIONS}</span>
-              <span className={"ar-streak" + (streak ? " on" : "")} aria-live="polite">
+              <span className={"dar-streak" + (streak ? " on" : "")} aria-live="polite">
                 {streak && <><img src="/home/hero/fire.webp" alt="" width={20} height={20} decoding="async" />{streak}</>}
               </span>
             </div>
-            <div className="ar-card" key={q ? q.idx : "none"}>
+            <div className="dar-card" key={q ? q.idx : "none"}>
               {q ? (
-                <div className="ar-qb">
-                  <MathText as="h2" className={"ar-prompt sz-" + promptSize(q.payload.prompt)} text={q.payload.prompt} />
-                  {(lastQ || q.kind === "number") && <p className="ar-sub">{lastQ ? "שאלה אחרונה — שווה כפול!" : "הקלידו את התשובה"}</p>}
+                <div className="dar-qb" ref={qbRef}>
+                  <MathText as="h2" className={"dar-prompt sz-" + promptSize(q.payload.prompt)} text={q.payload.prompt} />
+                  {(lastQ || q.kind === "number") && <p className="dar-sub">{lastQ ? "שאלה אחרונה — שווה כפול!" : "הקלידו את התשובה"}</p>}
                 </div>
               ) : (
-                <div className="ar-skel" aria-busy="true" aria-label="טוענים את השאלה"><i /><i /></div>
+                <div className="dar-skel" aria-busy="true" aria-label="טוענים את השאלה"><i /><i /></div>
               )}
             </div>
-            <div className="ar-bottom">
+            <div className="dar-bottom">
               {q && q.kind === "number" ? (
                 <Keypad onSend={(given) => onAnswer(given, null)} disabled={busy || !!fb || !!locked} dim={!!locked} sending={busy && !fb}
                   keys={keypadFor(q)} resetKey={q.idx} />
               ) : q ? (
                 <Choices q={q} fb={fb} busy={busy || !!locked} onAnswer={onAnswer} />
               ) : (
-                <div className="ar-ans ghost"><i /><i /><i /><i /></div>
+                <div className="dar-ans ghost"><i /><i /><i /><i /></div>
               )}
               {fb && fb.idx === idx && q && q.kind === "number" && (
-                <p className={"ar-typed " + (fb.correct ? "good" : "bad")} role="status">{fb.correct ? "נכון!" : "לא נכון"}</p>
+                <p className={"dar-typed " + (fb.correct ? "good" : "bad")} role="status">{fb.correct ? "נכון!" : "לא נכון"}</p>
               )}
             </div>
             {locked && <LockOverlay until={lockUntil} offset={offset} right={fb && !fb.correct ? fb.right : null} kind={q && q.kind} />}
@@ -132,16 +169,16 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
         )}
       </main>
 
-      <footer className="ar-foot">
-        <button type="button" className="ar-giveup" onClick={() => { setGiveErr(""); setConfirm(true); }}>ויתור</button>
+      <footer className="dar-foot">
+        <button type="button" className="dar-giveup" onClick={() => { setGiveErr(""); setConfirm(true); }}>ויתור</button>
       </footer>
 
-      <div className={"ar-banner" + (banner ? " on " + banner.kind : "")} aria-live="assertive" role={banner ? "status" : undefined}>
+      <div className={"dar-banner" + (banner ? " on " + banner.kind : "")} aria-live="assertive" role={banner ? "status" : undefined}>
         {banner ? banner.text : ""}
       </div>
 
       {confirm && (
-        <Sheet open={confirm} onClose={() => setConfirm(false)} label="לוותר על הדו-קרב?" className="ar-confirm">
+        <Sheet open={confirm} onClose={() => setConfirm(false)} label="לוותר על הדו-קרב?" className="dar-confirm">
           <h3 className="dl-sh-t">לוותר על הדו-קרב?</h3>
           <p className="dl-sh-m">זה ייחשב כהפסד, {andName(opp.username)} ינצח/תנצח. אפשר גם להישאר ולהמשיך — כל תשובה נכונה שווה נקודות.</p>
           {giveErr && <p className="dl-err" role="alert">{giveErr}</p>}

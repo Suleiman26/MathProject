@@ -52,8 +52,8 @@ function Shell({ children, dark, vars, avatar }) {
 
 function Card({ title, lead, children }) {
   return (
-    <div className="ar-end">
-      <section className="ar-end-card">
+    <div className="dar-end">
+      <section className="dar-end-card">
         {title && <h1>{title}</h1>}
         {lead && <p>{lead}</p>}
         {children}
@@ -339,7 +339,7 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
   if (phase === "loading") {
     return (
       <Shell dark vars={vars} avatar={account.avatar}>
-        <div className="ar-loading" role="status" aria-live="polite"><span className="fo-dots"><i /><i /><i /></span>{net ? "אין חיבור… מנסים שוב" : "נכנסים לזירה…"}</div>
+        <div className="dar-loading" role="status" aria-live="polite"><span className="dfo-dots"><i /><i /><i /></span>{net ? "אין חיבור… מנסים שוב" : "נכנסים לזירה…"}</div>
       </Shell>
     );
   }
@@ -348,7 +348,7 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
     const invite = { id: st.id, from: st.opp, subject: st.subject, expires_at: st.expires_at, h2h: null };
     return (
       <Shell vars={vars} avatar={account.avatar}>
-        <div className="ar-end"><InviteCard invite={invite} offset={offset} inline busy={inviteBusy} gone={gone} onAccept={() => acceptInvite(true)} onDecline={() => acceptInvite(false)} />
+        <div className="dar-end"><InviteCard invite={invite} offset={offset} inline busy={inviteBusy} gone={gone} onAccept={() => acceptInvite(true)} onDecline={() => acceptInvite(false)} />
           {gone && <div className="dl-row" style={{ maxWidth: 420, margin: "14px auto 0" }}><Link className="dl-btn ghost" href="/duel">לדו-קרב</Link></div>}
         </div>
       </Shell>
@@ -386,10 +386,10 @@ export function PlayView({ id, ready, account, api, subscribeFn }) {
   // arena / waiting / finishing
   return (
     <Shell dark vars={vars} avatar={account.avatar}>
-      {(net || !conn) && phase !== "finishing" && <div className={"ar-net" + (net ? " off" : "")} role="status">{net ? "אין חיבור… מנסים להתחבר" : ""}</div>}
+      {(net || !conn) && phase !== "finishing" && <div className={"dar-net" + (net ? " off" : "")} role="status">{net ? "אין חיבור… מנסים להתחבר" : ""}</div>}
       <Arena state={st} offset={offset} question={question} fb={fb} busy={busy} onAnswer={answer} banner={banner} ping={ping}
         phase={phase} onGiveUp={giveUp} lockUntil={st.me.lock_until} rootRef={rootRef} />
-      {toast && <div className="ar-toast" role="status">{toast}</div>}
+      {toast && <div className="dar-toast" role="status">{toast}</div>}
     </Shell>
   );
 }

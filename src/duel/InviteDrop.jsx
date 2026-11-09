@@ -39,43 +39,43 @@ export function InviteCard({ invite, offset = 0, onAccept, onDecline, busy, inli
   const subject = SUBJECT_LABEL[invite.subject] || invite.subject;
   const expired = left <= 0 || gone;
   return (
-    <div className={"inv" + (inline ? " inline" : "") + (shook ? " shake" : "") + (expired ? " gone" : "")} data-topic={from.avatar || "rose"} ref={card}
+    <div className={"dinv" + (inline ? " inline" : "") + (shook ? " shake" : "") + (expired ? " gone" : "")} data-topic={from.avatar || "rose"} ref={card}
       role="region" aria-label={`${from.username} מאתגר/ת אותך לדו-קרב`}>
-      <div className="inv-top">
+      <div className="dinv-top">
         <Avatar account={from} size={46} />
-        <div className="inv-t">
-          <b aria-live="polite"><span dir="auto">{from.username}</span> מאתגר/ת אותך!</b>
+        <div className="dinv-t">
+          <b><span dir="auto">{from.username}</span> מאתגר/ת אותך!</b>
           <small>דו-קרב · {subject}</small>
         </div>
-        <div className="inv-ring" role="timer" aria-label={`עוד ${s} שניות`}>
+        <div className="dinv-ring" role="timer" aria-label={`עוד ${s} שניות`}>
           <svg viewBox="0 0 46 46" aria-hidden="true">
-            <circle cx="23" cy="23" r={R} className="inv-ring-bg" />
-            <circle cx="23" cy="23" r={R} className="inv-ring-fg" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - Math.min(1, left / INVITE_MS))} />
+            <circle cx="23" cy="23" r={R} className="dinv-ring-bg" />
+            <circle cx="23" cy="23" r={R} className="dinv-ring-fg" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - Math.min(1, left / INVITE_MS))} />
           </svg>
           <span>{s}</span>
         </div>
       </div>
-      <div className="inv-chips">
+      <div className="dinv-chips">
         <span>15 שאלות</span><span>5 דקות</span>
         <span>{played ? <>את/ה <b dir="ltr">{h2h[0]} – {h2h[1]}</b> {from.username}</> : "משחק ראשון ביניכם"}</span>
       </div>
       {expired ? (
-        <p className="inv-gone" role="status">{gone === "declined" ? "ההזמנה נדחתה" : "ההזמנה כבר לא פעילה"}</p>
+        <p className="dinv-gone" role="status">{gone === "declined" ? "ההזמנה נדחתה" : "ההזמנה כבר לא פעילה"}</p>
       ) : (
-        <div className="inv-row">
+        <div className="dinv-row">
           <button type="button" className="dl-btn ghost" disabled={!!busy} onClick={onDecline}>{busy === "no" ? "…" : "לא עכשיו"}</button>
-          <button type="button" className="dl-btn inv-go" disabled={!!busy} onClick={onAccept}>{busy === "yes" ? "נכנסים…" : "קבל/י את האתגר"}</button>
+          <button type="button" className="dl-btn dinv-go" disabled={!!busy} onClick={onAccept}>{busy === "yes" ? "נכנסים…" : "קבל/י את האתגר"}</button>
         </div>
       )}
     </div>
   );
 }
 
-/** the floating version: fixed at the top of the page, above everything (the card itself is the labelled region;
-    only its title is a live region — the 60-s ring and chips are not read out) */
+/** the floating version: fixed at the top of the page, above everything (the card itself is the labelled
+    region; DuelLayer's always-mounted live region announces it — the ring and chips are not read out) */
 export function InviteDrop(props) {
   return (
-    <div className="inv-wrap">
+    <div className="dinv-wrap">
       <InviteCard {...props} />
     </div>
   );

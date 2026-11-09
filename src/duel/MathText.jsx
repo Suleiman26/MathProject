@@ -6,11 +6,13 @@
 
    <MathText text="חזקה שלילית: $4^{−3} = ?$" />     prose with islands
    <MathSpan src="\frac{1}{64}" />                      one plain-math string (a choice) */
-import { splitProse, parseMath, mathToText, proseToText, isMathOnly } from "./math-core";
+import { splitProse, parseMath, mathToText, proseToText, isMathOnly, mathBreaks } from "./math-core";
 
-function Nodes({ nodes }) {
+/* brk: spaces become no-break except right before an operator (math-core mathBreaks) — only matters
+   when the prompt has to wrap ([data-fit="wrap"]); nowrap islands look the same */
+function Nodes({ nodes, brk }) {
   return nodes.map((n, i) => {
-    if (n.t === "txt") return <span key={i}>{n.v}</span>;
+    if (n.t === "txt") return <span key={i}>{brk ? mathBreaks(n.v) : n.v}</span>;
     if (n.t === "sup") return <sup key={i} className="dmx-sup"><Nodes nodes={n.b} /></sup>;
     if (n.t === "sqrt") return <span key={i} className="dmx-sqrt"><span className="dmx-rad" aria-hidden="true">√</span><span className="dmx-body"><Nodes nodes={n.b} /></span></span>;
     if (n.t === "frac") return <span key={i} className="dmx-frac"><span className="dmx-num"><Nodes nodes={n.n} /></span><span className="dmx-den"><Nodes nodes={n.d} /></span></span>;
@@ -18,11 +20,11 @@ function Nodes({ nodes }) {
   });
 }
 
-export function MathSpan({ src, className = "", block }) {
+export function MathSpan({ src, className = "", block, breaks }) {
   const nodes = parseMath(src);
   return (
     <span className={"dmx" + (block ? " dmx-block" : "") + (className ? " " + className : "")} dir="ltr" role="math" aria-label={mathToText(src)}>
-      <Nodes nodes={nodes} />
+      <Nodes nodes={nodes} brk={breaks} />
     </span>
   );
 }
@@ -32,7 +34,7 @@ export function MathText({ text, className = "", as: Tag = "span" }) {
   const only = isMathOnly(text);
   return (
     <Tag className={"dmx-p" + (only ? " only" : "") + (className ? " " + className : "")} aria-label={proseToText(text)}>
-      {parts.map((p, i) => (p.math ? <MathSpan key={i} src={p.v} /> : <span key={i} aria-hidden="true">{p.v}</span>))}
+      {parts.map((p, i) => (p.math ? <MathSpan key={i} src={p.v} breaks /> : <span key={i} aria-hidden="true">{p.v}</span>))}
     </Tag>
   );
 }

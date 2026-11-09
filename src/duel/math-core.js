@@ -105,12 +105,37 @@ export function isMathOnly(text) {
   return parts.length > 0 && parts.every((p) => p.math || !p.v.trim());
 }
 
-/** the prompt's size step on the arena card (CSS .ar-prompt.sz-*): short prose big (2rem at 375 px),
+/** the prompt's size step on the arena card (CSS .dar-prompt.sz-*): short prose big (2rem at 375 px),
     long prose smaller so 4 lines + the keypad still fit a phone; short math-only prompts
     the biggest (the mockup's 44 px) */
 export function promptSize(text) {
   const t = String(text == null ? "" : text);
   const n = t.replace(/\\(frac|sqrt)|[$\{\}]/g, "").replace(/\s+/g, " ").trim().length;
-  if (isMathOnly(t)) return n <= 12 ? "xl" : n <= 20 ? "s" : "m";
-  return n <= 34 ? "s" : n <= 62 ? "m" : "l";
+  // the longest island never wraps on its own (.dmx is nowrap): a long expression takes a smaller step
+  const island = Math.max(0, ...splitProse(t).filter((p) => p.math).map((p) => mathLength(p.v)));
+  const step = isMathOnly(t) ? (n <= 12 ? 0 : n <= 20 ? 1 : 2) : (n <= 34 ? 1 : n <= 62 ? 2 : 3);
+  const need = island > 20 ? 3 : island > 14 ? 2 : 0;
+  return ["xl", "s", "m", "l"][Math.max(step, need)];
+}
+
+/** Break chances inside one math island, used only if even the smallest size can't fit it:
+    every space becomes a no-break space except the one right BEFORE an operator, so a
+    line can only end before "−", "+", "×", "÷", "=" … and the operator starts the next line
+    ("−1 × (−27) ÷ 3 + (−15)" / "− (−13) = ?"), never a dangling "−" at a line end. */
+export function mathBreaks(s) {
+  return String(s == null ? "" : s)
+    .replace(/ (?=[−+×÷=·:<>≤≥≠-] )/g, "\u0001")
+    .replace(/ /g, "\u00a0")
+    .replace(/\u0001/g, " ");
+}
+
+/** Shrink-to-fit for the prompt: widest = the widest math island (px), avail = the card's width,
+    fontPx = the prompt's step size. → { fontPx, wrap }: unchanged when it fits; else scaled down
+    (never under floorPx ≈ 1.2rem); only when even the floor can't hold it → wrap (before operators)
+    at a readable size (≤ 24 px). */
+export function fitPrompt({ widest, avail, fontPx, floorPx = 19.2 }) {
+  if (!(widest > 0) || !(avail > 0) || widest <= avail) return { fontPx, wrap: false };
+  const scaled = Math.floor((fontPx * avail / widest) * 0.97 * 10) / 10;
+  if (scaled >= floorPx) return { fontPx: scaled, wrap: false };
+  return { fontPx: Math.max(floorPx, Math.min(fontPx, 24)), wrap: true };
 }

@@ -2,7 +2,7 @@
    The question markup (Task 2) → tree: $…$ islands, \frac, \sqrt, ^{n}. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { splitProse, parseMath, mathToText, proseToText, mathLength, isMathOnly, promptSize } from "./math-core.js";
+import { splitProse, parseMath, mathToText, proseToText, mathLength, isMathOnly, promptSize, mathBreaks, fitPrompt } from "./math-core.js";
 
 test("prose splits into Hebrew text and math islands", () => {
   assert.deepEqual(splitProse("פתרו את המשוואה: $2x + 4 = x + 7$ — $x = ?$"), [
@@ -53,4 +53,29 @@ test("prompt size steps: short prose big, long prose smaller, short pure math bi
   assert.equal(promptSize("פתרו את המשוואה: $2x + 2 = x − 1$ — $x = ?$"), "m");
   assert.equal(promptSize("היחס בין עפרונות אדומים לעפרונות כחולים הוא $3 : 2$, ובסך הכל יש 15 עפרונות. כמה עפרונות אדומים?"), "l");
   assert.equal(promptSize(""), "s");
+});
+
+test("prompt size: the longest math island picks a smaller step (it never wraps on its own)", () => {
+  assert.equal(promptSize("תרגול מקיף — סדר פעולות חשבון: $−1 × (−27) ÷ 3 + (−15) − (−13) = ?$"), "l");
+  assert.equal(promptSize("$−14 + 7 × 7 − (−9) ÷ 9 = ?$"), "m");
+  assert.equal(promptSize("חשבו: $3 + 4 × 2 − 1 = ?$"), "s");
+});
+
+test("math breaks: a line may only end right before an operator", () => {
+  const nb = "\u00a0";
+  assert.equal(mathBreaks("−14 + 7 × 7 − (−9) ÷ 9 = ?"), `−14 +${nb}7 ×${nb}7 −${nb}(−9) ÷${nb}9 =${nb}?`);
+  assert.equal(mathBreaks("2x + 4 = 10"), `2x +${nb}4 =${nb}10`);
+  assert.equal(mathBreaks("3 : 4"), `3 :${nb}4`);
+  assert.equal(mathBreaks("x"), "x");
+  // no break opportunity after an operator: the next line never begins with a number after a dangling "−"
+  assert.ok(!/[−+×÷=] /.test(mathBreaks("−1 × (−27) ÷ 3 + (−15) − (−13) = ?")));
+});
+
+test("fit: fits → same size; too wide → scaled down to the floor; beyond the floor → wrap", () => {
+  assert.deepEqual(fitPrompt({ widest: 300, avail: 339, fontPx: 28 }), { fontPx: 28, wrap: false });
+  const a = fitPrompt({ widest: 400, avail: 339, fontPx: 28 });
+  assert.equal(a.wrap, false); assert.ok(a.fontPx < 28 && a.fontPx >= 19.2 && a.fontPx * 400 / 28 <= 339);
+  assert.deepEqual(fitPrompt({ widest: 700, avail: 284, fontPx: 24.8 }), { fontPx: 24, wrap: true });
+  assert.deepEqual(fitPrompt({ widest: 700, avail: 284, fontPx: 20 }), { fontPx: 20, wrap: true });
+  assert.deepEqual(fitPrompt({ widest: 0, avail: 284, fontPx: 20 }), { fontPx: 20, wrap: false });
 });

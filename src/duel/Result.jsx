@@ -11,13 +11,13 @@ export default function Result({ state, onRematch, rematchBusy, rematchError }) 
   const win = r.winner === me.id, draw = !!r.draw;
   const title = draw ? "תיקו!" : win ? "ניצחת!" : `הפעם ${opp.username}…`;
   return (
-    <div className={"rs" + (win ? " win" : draw ? " draw" : " lose")} role="status" aria-live="polite">
+    <div className={"drs" + (win ? " win" : draw ? " draw" : " lose")} role="status" aria-live="polite">
       <h1>{title}</h1>
-      <div className="rs-pods" dir="ltr">
-        <div className="rs-pod me"><Avatar account={me} size={64} /><b>{me.score}</b><small>את/ה</small></div>
-        <div className="rs-pod op"><Avatar account={opp} size={64} /><b>{opp.score}</b><small dir="auto">{opp.username}</small></div>
+      <div className="drs-pods" dir="ltr">
+        <div className="drs-pod me"><Avatar account={me} size={64} /><b>{me.score}</b><small>את/ה</small></div>
+        <div className="drs-pod op"><Avatar account={opp} size={64} /><b>{opp.score}</b><small dir="auto">{opp.username}</small></div>
       </div>
-      <p className="rs-facts">{me.ok || 0}/15 נכונות{r.xp_me ? ` · +${r.xp_me} נק׳` : ""}{r.gave_up ? (r.gave_up === me.id ? " · ויתרת" : ` · ${opp.username} ויתר/ה`) : ""}</p>
+      <p className="drs-facts">{me.ok || 0}/15 נכונות{r.xp_me ? ` · +${r.xp_me} נק׳` : ""}{r.gave_up ? (r.gave_up === me.id ? " · ויתרת" : ` · ${opp.username} ויתר/ה`) : ""}</p>
       {rematchError && <p className="dl-err" role="alert">{rematchError}</p>}
       <div className="dl-row">
         <Link className="dl-btn ghost" href="/duel">חזרה</Link>

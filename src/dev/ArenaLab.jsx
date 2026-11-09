@@ -2,7 +2,8 @@
 /* A fake duel for the arena screens (local preview only: app/dev/duel).
    ?s=invite | accepted | faceoff | arena | hot | lastq | locked | waiting | finishing | failed | done
    extra (arena only): &q=<n> starts at question n+1 (n answered, all right); &slow=<ms> makes every
-   state() take that long (a slow network — the "next question" loop must still make progress)
+   state() take that long (a slow network — the "next question" loop must still make progress);
+   &prompt=<text> replaces the current question's prompt (stress-test long math), &typed=1 makes it a typed one
    No database: a small in-memory "server" with the real question engine
    (buildDuel) and the real answer rules (checkAnswer), an opponent that
    answers every few seconds (78 % right), realtime hints as function calls,
@@ -43,6 +44,11 @@ function labParam(k) {
   return v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v);
 }
 
+function labStr(k) {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get(k);
+}
+
 function makeDuel(kind, meColor) {
   const now = Date.now();
   const d = {
@@ -69,9 +75,15 @@ function makeDuel(kind, meColor) {
     case "locked": live(60000); seed(d.me, 4, [3], now - 60000); d.me.answers[3].at = now - 200; seed(d.opp, 3, [], now - 60000); break;
     case "waiting": live(180000); seed(d.me, 15, [5], now - 180000); seed(d.opp, 9, [2], now - 180000); break;
     case "finishing": live(300400); seed(d.me, 15, [5], now - 300400); seed(d.opp, 13, [2], now - 300400); break;   // time up, inside the 2-s grace
+    case "_": break;
     case "failed": d.status = "failed"; d.start_at = null; d.ends_at = null; break;
     case "done": live(320000); seed(d.me, 15, [5, 9], now - 320000); seed(d.opp, 15, [2, 6, 11], now - 320000); finish(d); break;
     default: break;
+  }
+  const forced = labStr("prompt");
+  if (forced && d.status === "live") {
+    const i = Math.min(14, d.me.answers.length);
+    d.questions[i] = { ...d.questions[i], prompt: forced, ...(labStr("typed") ? { kind: "number", choices: undefined } : {}) };
   }
   return d;
 }

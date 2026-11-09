@@ -23,23 +23,23 @@ export function Timer({ endsAt, offset, onHot }) {
   const say = left > 0 && left <= 10000 ? "נשארו 10 שניות" : hot ? "נשארו 30 שניות" : "";
   return (
     <>
-      <div className={"ar-timer" + (hot ? " hot" : "")} role="timer" aria-label={"נשארו " + fmtClock(left)}>
+      <div className={"dar-timer" + (hot ? " hot" : "")} role="timer" aria-label={"נשארו " + fmtClock(left)}>
         {fmtClock(left)}
       </div>
-      <span className="ar-sr" aria-live="polite">{say}</span>
+      <span className="dar-sr" aria-live="polite">{say}</span>
     </>
   );
 }
 
 function Score({ value }) {
   const n = useCountUp(value, 500);
-  return <b className="ar-sc">{n}</b>;
+  return <b className="dar-sc">{n}</b>;
 }
 
 export function Lane({ lanes, idx, live, who, name }) {
   const ok = (lanes || []).filter((v) => v === true).length;
   return (
-    <div className={"ar-lane " + who} role="img" aria-label={`${name}: ${ok} נכונות מתוך ${Math.min(QUESTIONS, idx || 0)} שנענו`}>
+    <div className={"dar-lane " + who} role="img" aria-label={`${name}: ${ok} נכונות מתוך ${Math.min(QUESTIONS, idx || 0)} שנענו`}>
       {Array.from({ length: QUESTIONS }, (_, i) => <i key={i} className={laneClass(lanes, i, idx, live)} />)}
     </div>
   );
@@ -48,28 +48,28 @@ export function Lane({ lanes, idx, live, who, name }) {
 export function Hud({ me, opp, myLanes, endsAt, offset, live, ping, onHot }) {
   const w = tugWidth(me.score, opp.score);
   return (
-    <header className="ar-hud">
-      <div className="ar-hud-row">
-        <div className="ar-p me">
+    <header className="dar-hud">
+      <div className="dar-hud-row">
+        <div className="dar-p me">
           <Avatar account={me} size={38} />
-          <div><div className="ar-nm">את/ה</div><Score value={me.score} /></div>
+          <div><div className="dar-nm">את/ה</div><Score value={me.score} /></div>
         </div>
         <Timer endsAt={endsAt} offset={offset} onHot={onHot} />
-        <div className="ar-p op">
+        <div className="dar-p op">
           <Avatar account={opp} size={38} />
-          <div><div className="ar-nm" dir="auto">{opp.username}</div><Score value={opp.score} /></div>
+          <div><div className="dar-nm" dir="auto">{opp.username}</div><Score value={opp.score} /></div>
         </div>
       </div>
-      <div className="ar-tug" role="img" aria-label={me.score === opp.score ? "תיקו" : me.score > opp.score ? `את/ה מוביל/ה ב-${me.score - opp.score}` : `${opp.username} מוביל/ה ב-${opp.score - me.score}`}>
+      <div className="dar-tug" role="img" aria-label={me.score === opp.score ? "תיקו" : me.score > opp.score ? `את/ה מוביל/ה ב-${me.score - opp.score}` : `${opp.username} מוביל/ה ב-${opp.score - me.score}`}>
         {/* transform only: the fill scales from the left edge, the knot's runner slides (same look as width / left) */}
-        <div className="ar-tug-track"><div className="ar-tug-op" style={{ transform: `scaleX(${w / 100})` }} /></div>
-        <div className="ar-knot-run" style={{ transform: `translateX(${w}%)` }}><div className="ar-knot" /></div>
+        <div className="dar-tug-track"><div className="dar-tug-op" style={{ transform: `scaleX(${w / 100})` }} /></div>
+        <div className="dar-knot-run" style={{ transform: `translateX(${w}%)` }}><div className="dar-knot" /></div>
       </div>
-      <div className="ar-lanes">
+      <div className="dar-lanes">
         <Lane lanes={myLanes} idx={me.idx} live={live && !me.done} who="me" name="את/ה" />
         <Lane lanes={opp.lanes} idx={opp.idx} live={live && !opp.done} who="op" name={opp.username} />
       </div>
-      <div className={"ar-ping" + (ping ? " on" : "") + (ping && !ping.ok ? " bad" : "")} aria-live="polite">
+      <div className={"dar-ping" + (ping ? " on" : "") + (ping && !ping.ok ? " bad" : "")} aria-live="polite">
         {ping ? <><span dir="auto">{opp.username}</span> {ping.ok ? "ענה/תה ✓" : "טעה/תה ✗"}</> : null}
       </div>
     </header>

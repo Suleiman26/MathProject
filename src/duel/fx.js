@@ -89,7 +89,7 @@ export function sfx(name) {
 /* ── motion ──────────────────────────────────────────────────────────────── */
 export function shake(el, strong) {
   if (!el || reduced()) return;
-  const cls = strong ? "ar-shake" : "ar-shake-sm";
+  const cls = strong ? "dar-shake" : "dar-shake-sm";
   el.classList.remove(cls);
   void el.offsetWidth;
   el.classList.add(cls);
@@ -100,10 +100,10 @@ export function shake(el, strong) {
 
 export function floatPoints(el, text, color) {
   if (!el || typeof document === "undefined") return;
-  const root = el.closest(".ar") || document.body;
+  const root = el.closest(".dar") || document.body;
   const r = el.getBoundingClientRect(), pr = root.getBoundingClientRect();
   const f = document.createElement("b");
-  f.className = "ar-float";
+  f.className = "dar-float";
   f.textContent = text;
   if (color) f.style.color = color;
   f.style.left = (r.left - pr.left + r.width / 2) + "px";

@@ -281,17 +281,21 @@ export function createFetchGate() {
 }
 
 /* ── the keypad's window keydown listener: whose key is it? ────────────────
-   'ignore' — a sheet/dialog is open or the key was meant for a text field, or
-              for a button / link outside the keypad;
+   'ignore' — a sheet/dialog is open, the key was meant for a text field, or it is
+              Enter / Space on a button or link outside the keypad (that press is the
+              button's own — e.g. "ויתור" right after the give-up sheet closes);
    'key'    — a focused keypad button (Enter / Space press that button);
-   'free'   — nothing in particular has focus: the keypad takes it.
-   target / pad are DOM elements (closest / contains); sheetOpen = html.dl-locked. */
-export function keypadKeyTarget(target, pad, sheetOpen) {
+   'free'   — the keypad takes it (digits, ⌫, −, /, . even while focus sits on "ויתור").
+   target / pad are DOM elements (closest / contains); sheetOpen = html.dl-locked; key = event.key. */
+export function keypadKeyTarget(target, pad, sheetOpen, key) {
   if (sheetOpen) return "ignore";
   const t = target && typeof target.closest === "function" ? target : null;
   if (!t) return "free";
   if (t.closest('[role="dialog"], [aria-modal="true"]')) return "ignore";
   if (t.isContentEditable || t.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]')) return "ignore";
-  if (t.closest('button, a[href], [role="button"], summary')) return pad && pad.contains(t) ? "key" : "ignore";
+  if (t.closest('button, a[href], [role="button"], summary')) {
+    if (pad && pad.contains(t)) return "key";
+    return key === "Enter" || key === " " || key === "Spacebar" ? "ignore" : "free";
+  }
   return "free";
 }
