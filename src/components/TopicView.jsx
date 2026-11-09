@@ -55,15 +55,21 @@ export default function TopicView({ slug }) {
     const want = new URLSearchParams(window.location.search).get("ch");
     if (!want) return;
     const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
-    let tries = 0;
+    // The topic's first render can be replaced right after it appears (a click on it then gets lost and
+    // chapter 1 stays open), so: click until that chapter is open and STAYS open for 3 checks in a row.
+    let tries = 0, stable = 0;
+    const done = () => {
+      clearInterval(iv);
+      // keep the address clean, so a refresh does not jump again
+      const u = new URL(window.location.href); u.searchParams.delete("ch"); window.history.replaceState(null, "", u.pathname + u.search + u.hash);
+    };
     const iv = setInterval(() => {
+      tries++;
       const btn = [...document.querySelectorAll("#root :is(.ch-btn, .nav-btn, .ph)")].find((b) => norm(b.textContent) === norm(want));
-      if (btn || ++tries > 20) {
-        clearInterval(iv);
-        if (btn && !btn.classList.contains("active")) btn.click();
-        // keep the address clean, so a refresh does not jump again
-        const u = new URL(window.location.href); u.searchParams.delete("ch"); window.history.replaceState(null, "", u.pathname + u.search + u.hash);
-      }
+      if (btn && btn.classList.contains("active")) { if (++stable >= 3) done(); return; }
+      stable = 0;
+      if (btn) btn.click();
+      if (tries > 40) done();
     }, 100);
     return () => clearInterval(iv);
   }, [loaded]);
