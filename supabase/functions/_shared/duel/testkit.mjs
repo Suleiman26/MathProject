@@ -183,6 +183,10 @@ export function guessScores(q) {
       const S = cs.map((c, i) => (Number(c) % d === 0 ? i : -1)).filter((i) => i >= 0);
       out[`only ×${d} (angle)`] = S.length && S.length < 4 ? among(S) : null;
     }
+    // two rules at once: a "famous" angle (×30 or ×45) that is NOT printed in the question
+    // (the right angle is usually famous, and a printed one is usually the mistake)
+    const F = cs.map((c, i) => ((Number(c) % 30 === 0 || Number(c) % 45 === 0) && !pnums.has(c) ? i : -1)).filter((i) => i >= 0);
+    out['famous angle, not printed'] = F.length && F.length < 4 ? among(F) : null;
   }
   // extreme numbers, over EVERY number printed in a choice (coefficients, exponents,
   // roots, fractions, "a : b"): sum, first, last; and how many it shares with the prompt
@@ -240,7 +244,7 @@ export function variantOf(q) {
    'number' even when 4 choices are asked for. Written here from the meta, on
    its own (the same list sits at the top of topics/powers-roots.js). */
 export const TYPED_ONLY = {
-  'pr.powers': (m) => m.v === 'prod' || m.v === 'rev',
+  'pr.powers': () => true, // prod, rev, calc (final wave: "perfect square" found calc)
   'pr.param': (m) => [0, 2, 4].includes(m.sub),
   'pr.roots': (m) => m.sub === 2 && (m.op === 2 || m.op === 3),
   'pr.mixed': () => true,

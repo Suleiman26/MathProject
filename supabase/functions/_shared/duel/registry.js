@@ -18,7 +18,7 @@
 //     "what to review" to /topics/<topic>?ch=<chapter>); "" for a topic with
 //     no chapter buttons (equation-solver).
 //   • kinds: which answer kinds it can make. TYPED (['number']) = typed only
-//     (pr.mixed); with BOTH, some variants are still typed only (see the top
+//     (pr.powers, pr.mixed); with BOTH, some variants are still typed only (see the top
 //     of topics/powers-roots.js) and come back as kind 'number' on a choice slot.
 //   • make(r, want?) → Question. want = 'number' asks for a typed answer (only
 //     when kinds has it); anything else gives 4 choices where the generator
@@ -61,7 +61,7 @@ const LIST = [
   ['dn.div', 'directed-numbers', '4. חילוק', BOTH, dn.div],
   ['dn.combo', 'directed-numbers', '6. תרגול מקיף', BOTH, dn.combo],
   ['eq.linear', 'equation-solver', '', BOTH, eq.linear],
-  ['pr.powers', 'powers-roots', '1. הבנת חזקות', BOTH, pr.powers],
+  ['pr.powers', 'powers-roots', '1. הבנת חזקות', TYPED, pr.powers],
   ['pr.laws', 'powers-roots', '2. חוקי חזקות', BOTH, pr.laws],
   ['pr.param', 'powers-roots', '3. פרמטרי', BOTH, pr.param],
   ['pr.roots', 'powers-roots', '4. שורשים', BOTH, pr.roots],

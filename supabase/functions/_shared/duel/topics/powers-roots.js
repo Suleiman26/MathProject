@@ -6,8 +6,9 @@
 // TYPED ONLY (kind 'number', even on a choice slot of the duel): every variant
 // whose answer is ONE exponent / coefficient / count worked out from numbers
 // printed in the question —
-//   pr.powers prod + rev, pr.param sub 0, 2, 4, pr.roots op 2, 3, and all of
-//   pr.mixed (chapter 5: its exponent and one-slot templates alike).
+//   all of pr.powers (prod, rev, and calc since the final wave: "the perfect
+//   square" found calc's answer), pr.param sub 0, 2, 4, pr.roots op 2, 3, and all
+//   of pr.mixed (chapter 5: its exponent and one-slot templates alike).
 // As 4 choices their right answer is a sum / half of printed numbers while the
 // real mistakes multiply them, so "the choice nearest a printed number" picked
 // it 50–79% of the time however the decoys were balanced. Typing a small
@@ -61,9 +62,10 @@ export function powers(r, want) {
   const ex = genCh1(r);
   if (ex.mode === 0) {
     const { base, exp, ans } = ex;
-    // mistakes: base × exponent, one factor too few/many
-    const wrongs = [base * exp, Math.pow(base, exp - 1), Math.pow(base, exp + 1)];
-    return numberQuestion(r, want, `הבנת חזקות: $${pw(base, exp)} = ?$`, ans, wrongs, { v: 'calc', base, exp }, POS);
+    // typed only (final wave): as 4 choices (base × exponent, one factor too few/many)
+    // "the perfect square" found the answer ~48% of the time — the right power and its
+    // ±1-exponent neighbours never share squareness. Typing the value is just as quick.
+    return typed(`הבנת חזקות: $${pw(base, exp)} = ?$`, ans, { v: 'calc', base, exp });
   }
   // typed only: the exponent of a printed power ("81 = 3^{?}")
   const { base, exp, ans } = ex;

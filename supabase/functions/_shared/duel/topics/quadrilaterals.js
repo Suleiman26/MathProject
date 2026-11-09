@@ -13,7 +13,8 @@
 // Typed only (drawn on typed slots only): rhombus side and isosceles-trapezoid
 // height (Pythagoras: the answer sits next to a printed length, so "the
 // choice closest to a printed number" would find it).
-// Angle choices: only multiples of 15° below 180° (real mistakes + other such angles).
+// Angle choices: only multiples of 15° below 180° (real mistakes + other such angles),
+// at most one wrong choice printed in the question or not ×30°/×45° (see oneOdd).
 // Length / area choices stay within ×/÷ 6 of the answer.
 import { randInt, pick } from '../rng.js';
 import { numberQuestion, within, niceAngleOpts } from '../choices.js';
@@ -30,10 +31,22 @@ function pickTriple(r, maxLeg) {
 }
 
 const int = (w) => Number.isInteger(w) && w > 0;
+// angle choices: a "famous" angle is ×30° or ×45° (his own angle set and their partners
+// to 180°). Two rules a sharp kid can combine — "the right angle is famous" and "a printed
+// angle is the mistake" — must not find the answer: of the 3 wrong choices at most ONE is
+// printed in the question or not famous (so at least two famous, unprinted wrongs stand
+// next to the answer). The other multiples of 15° stay as rare extras, so the answer is
+// not always the largest choice (150° among famous angles below 180°).
+const famous = (v) => v > 0 && v < 180 && (v % 30 === 0 || v % 45 === 0);
+const oneOdd = (prompt) => {
+  const P = new Set(prompt.match(/\d+/g) || []);
+  return (ts) => ts.filter((t) => P.has(t) || !famous(Number(t))).length <= 1;
+};
 // lengths and areas: no 0 and nothing far from the answer's size; angles (° in the
-// prompt, always a multiple of 15° here): only multiples of 15° below 180° (convex)
+// prompt, always a multiple of 15° here): only multiples of 15° below 180° (convex),
+// with the rule above
 const q = (r, want, prompt, ans, wrongs, meta, opts) => {
-  const base = prompt.includes('°') ? niceAngleOpts(ans, 180) : { accept: within(ans) };
+  const base = prompt.includes('°') ? { ...niceAngleOpts(ans, 180), must: oneOdd(prompt) } : { accept: within(ans) };
   return numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { ...base, ...opts });
 };
 // numbers next to the ones printed in the question: with them among the
