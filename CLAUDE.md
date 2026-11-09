@@ -24,6 +24,7 @@ for this project on Abed's personal accounts.
 | Design system | `src/styles/mp.css` (layers: mp-base < legacy < mp < page). Guide: `DESIGN.md` |
 | Drawing/display fixes per topic | `src/styles/topic-fixes.css` (scoped with `html[data-page="<topic>"]`) |
 | Home page | `app/page.tsx`, `src/home/` |
+| Logo + app icons ("Loop") | sources `design/logo-gpt/` (`loop-master-1024.png`, `loop-maskable-1024.png`); served `app/icon.png`, `app/apple-icon.png`, `public/icon-192/512.png`, `public/icon-maskable-512.png`, `public/brand/logo-loop.png` (in-page logo), `public/og.png`. Phones cache icons hard: a new logo needs a new file name |
 | Admin (PIN 1111) | `app/admin/*`, `src/admin/*`. Entry: quiet "כניסת צוות" link at the bottom of every page (`LegalFooter`). Project status page (`/classic/project-hub.html`) is linked only from the admin |
 | Database (Supabase) | `supabase/migrations`; how to connect: `supabase/README.md`; settings: `src/lib/config.js` |
 | Old plain-HTML site | `public/classic/` (served at `/classic`), git tag `html-v1` |
@@ -93,11 +94,14 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   profile, settings, sign out), avatar, greeting + name, a LEVEL CARD in the student's colour
   (level, points, bar to the next level, a 3D star standing out of it) and four white number tiles
   with small 3D icons (`public/home/hero/*.webp`, sources `design/hero3d/`). When it scrolls away
-  a slim glass bar takes its place (with a fade under it). The hero can also show the student's 3D character
+  a slim glass bar takes its place (with a fade under it). The glass row `.hh-row` needs `position:relative; z-index:30`
+  (its backdrop-filter traps the account menu; without it the menu opens UNDER the header). After any
+  header change, open every menu in the test. HomeHero also paints the phone status bar
+  (`theme-color` + html/body background) in the header colour. The hero can also show the student's 3D character
   (`figure` prop, `src/avatars/`), not switched on yet.
-  **Calm system (2026-11-07, Abed: "too noisy"): `design/home-calm.md`.** The whole signed-in
-  home takes ONE accent = the student's colour (`data-topic={account.avatar}` on `.home.in`);
-  nothing on it sets a topic colour; white cards, no glyphs, no emoji, no rainbow badges.
+  **Calm system (2026-11-07, Abed: "too noisy"): `design/home-calm.md`.** White cards, no glyphs,
+  no emoji, no rainbow badges. (Its first "one colour for everything" version was replaced the same
+  day by "Worlds", below; the student's colour comes from `data-topic={account.avatar}` on `.home.in`.)
   **v2 "Worlds" (same day, Abed: "can't tell the levels apart"):** each area is a world with its own
   fixed colour (`src/home/worlds.js`: num sky, alg violet, fn emerald, geo coral) and 3D art
   (`public/home/worlds/<key>.webp`, sources in `design/worlds/`): banner → tinted tray of white topic
@@ -112,6 +116,27 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   `/dev/railway?s=new|mid|pro|gold&g=7|8|9&c=<student colour, e.g. pink|teal>` (shows "not found" on the live site, works on preview links). Shared rules (levels, points,
   badge names) in `src/lib/progress.js`; database: `account_achievements`,
   `account_topic`, `account_set_goal` (`20261031120000_progress_v2.sql`).
+
+## Duels ("דו-קרב", live since 2026-11-09, switch OFF until Abed turns it on)
+- Live 1v1 friend duels: 15 questions / 5 min. Design: `docs/superpowers/specs/2026-11-07-duels-design.md`,
+  plan + topic audit in `docs/superpowers/`, mockup `design/duel/mockup.html`.
+- Release switch: admin → Settings → דו-קרבים: off / test (only `duel_tester` accounts) / on.
+  Enforced in every DB function (`duel_guard`). Admin also: testers + duel ban (Students), reports,
+  question samples (`/admin/duels/questions`, for Sulaiman to check the math).
+- DB: `supabase/migrations/2026110[89]*_duels_*.sql`; tests `supabase/tests/duels_*.test.sql`
+  (`supabase test db`, incl. a catalog permission test — add new anon functions to its allow-list).
+- Questions: ports of Sulaiman's generators in `supabase/functions/_shared/duel/` (never edit Topic.jsx).
+  Every generator must pass the anti-guessing guard: `node --test supabase/functions/_shared/duel/*.test.mjs`.
+  The site imports that folder: `.vercelignore` must keep uploading it (skipping it broke the build 2026-11-09).
+- Server functions (Supabase, Abed's mathix project): `duel-start` (builds the 15 questions; secret
+  DUEL_SECRET = Vault `duel_secret`), `duel-push` (Web Push; PUSH_SECRET = Vault `push_secret`, VAPID keys;
+  private VAPID key only in Supabase secrets + local `supabase/.env.local`). Deploy: `supabase functions deploy <name>`.
+  CORS allow-list in `supabase/functions/duel-start/core.mjs`.
+- Client: `src/duel/*` (hub, sheet, arena, result), styles `src/styles/duel.css` + `duel-arena.css`
+  (private class prefixes `dl-`, `dar-`, `dkp-`, `dmx-`… — this CSS can load site-wide), mounted lazily by
+  `src/duel/DuelLayerMount.jsx` (loads nothing heavy while duels are off). Dev preview: `/dev/duel?s=…`.
+- Abed's test copy: https://mathix-sooty.vercel.app (Vercel project "mathix" on Abed's account, same live
+  DB; deploy with `npx vercel deploy --prod` from a clean checkout linked to it).
 
 ## Display fixes vs logic
 Prefer CSS in `src/styles/topic-fixes.css` for anything visual. Only touch
