@@ -180,7 +180,15 @@ const demo = {
   admin_export: () => [],
   admin_change_pin: () => ({ error: "preview" }),
   // preview: the switch affects this browser only (same key the site reads)
-  admin_set_setting({ k, v }) { try { localStorage.setItem("mp:set:" + k, v ? "on" : "off"); } catch {} return { ok: true, key: k, value: v }; },
+  admin_set_setting({ k, v }) { try { localStorage.setItem("mp:set:" + k, typeof v === "string" ? v : v ? "on" : "off"); } catch {} return { ok: true, key: k, value: v }; },
+  // duels (preview): the switch is kept in this browser; no testers, duels or reports without the database
+  admin_duels() {
+    let sw = "off"; try { sw = localStorage.getItem("mp:set:duels") || "off"; } catch {}
+    return { switch: sw, testers: [], played: 0, played_7d: 0, players: 0, live: 0, open_reports: 0 };
+  },
+  admin_set_tester: () => ({ error: "preview" }),
+  admin_reports: () => [],
+  admin_report_done: () => ({ ok: true }),
   admin_logout: () => null,
   // fixes board: kept in this browser only until the database is connected
   admin_fixes() {

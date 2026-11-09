@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, SignOut, Backspace, Info, ClipboardText, House, ArrowRight } from "@phosphor-icons/react";
+import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, Sword, SignOut, Backspace, Info, ClipboardText, House, ArrowRight } from "@phosphor-icons/react";
 import { call, login, isPreview } from "./api";
 import { ToastHost } from "./ui";
 
@@ -13,6 +13,7 @@ export const NAV = [
   { href: "/admin/content", label: "תוכן", short: "תוכן", Icon: Stack, sub: "כיתות, קטגוריות ונושאים. גררו כדי לשנות סדר." },
   { href: "/admin/analytics", label: "ניתוח", short: "ניתוח", Icon: ChartBar, sub: "איפה התלמידים מצליחים ואיפה נתקעים" },
   { href: "/admin/students", label: "תלמידים", short: "תלמידים", Icon: Users, sub: "פעילות התלמידים (אנונימית עד שתהיה הרשמה)" },
+  { href: "/admin/duels", label: "דו-קרב", short: "דו-קרב", Icon: Sword, sub: "דיווחים של תלמידים ובדיקת השאלות של הדו-קרבים" },
   { href: "/admin/sales", label: "מכירות", short: "מכירות", Icon: CreditCard, sub: "מנויים, הכנסות ותוכניות מחיר" },
   { href: "/admin/settings", label: "הגדרות", short: "הגדרות", Icon: Gear, sub: "קוד כניסה, חיבור ונתונים" },
 ];

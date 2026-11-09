@@ -449,7 +449,7 @@ html, .adm-root body { min-height: 100%; }
   .adm-root .mtop .brand { padding: 0; }
   .adm-root .mtop .brand svg { width: 30px; height: 30px; }
   .adm-root .bnav {
-    display: grid; grid-template-columns: repeat(7, 1fr);
+    display: grid; grid-template-columns: repeat(8, 1fr);
     position: fixed; inset: auto 0 0 0; z-index: 40;
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--surface) 92%, transparent);
@@ -878,3 +878,127 @@ html, .adm-root body { min-height: 100%; }
 }
 .adm-root .pin-back:hover { color: var(--ink); }
 .adm-root .pin-back:active { transform: scale(.97); }
+
+/* ── Duels (Task 10): switch, tester, reports, question samples ─────────── */
+/* Settings → the 3-state switch */
+.adm-root .du-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.adm-root .du-mode {
+  display: grid; gap: 6px; align-content: start; text-align: start; padding: 14px 14px 13px;
+  border-radius: 16px; border: 1px solid var(--line); background: var(--surface); cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.adm-root .du-mode:disabled { cursor: default; }
+@media (hover: hover) and (pointer: fine) { .adm-root .du-mode:not([aria-checked="true"]):not(:disabled):hover { background: var(--surface-2); } }
+.adm-root .du-mode:focus-visible { outline: none; box-shadow: var(--ring); }
+.adm-root .du-mode-h { display: flex; align-items: center; gap: 8px; }
+.adm-root .du-mode-h i { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--line-strong); }
+.adm-root .du-mode.test .du-mode-h i { background: var(--warn-500); }
+.adm-root .du-mode.on .du-mode-h i { background: var(--ok-500); }
+.adm-root .du-mode-h b { font-weight: 700; font-size: .98rem; }
+.adm-root .du-mode-h small { margin-inline-start: auto; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; background: var(--surface-3); color: var(--ink-2); }
+.adm-root .du-mode-t { font-size: .84rem; line-height: 1.55; color: var(--ink-3); }
+.adm-root .du-mode[aria-checked="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.adm-root .du-mode.test[aria-checked="true"] { border-color: var(--warn-500); box-shadow: 0 0 0 1px var(--warn-500); background: var(--warn-50); }
+.adm-root .du-mode.test[aria-checked="true"] small { background: var(--warn-100); color: var(--warn-900); }
+.adm-root .du-mode.on[aria-checked="true"] { border-color: var(--ok-600); box-shadow: 0 0 0 1px var(--ok-600); background: var(--ok-50); }
+.adm-root .du-mode.on[aria-checked="true"] small { background: var(--ok-100); color: var(--ok-800); }
+.adm-root .du-mode[aria-checked="true"] .du-mode-t { color: var(--ink-2); }
+.adm-root .du-ask { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; margin-top: 10px; padding: 12px 14px; border-radius: 14px; background: var(--ok-50); border: 1px solid var(--ok-200); font-size: .9rem; color: var(--ok-900); }
+.adm-root .du-ask-b { display: inline-flex; gap: 8px; }
+.adm-root .du-testers { margin-top: 14px; padding-top: 8px; border-top: 1px solid var(--line); }
+.adm-root .du-chips { list-style: none; margin: 4px 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.adm-root .du-chips li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); font-size: .86rem; }
+.adm-root .du-chips li b { font-weight: 600; }
+.adm-root .du-chips li small { color: var(--ink-3); font-size: .74rem; }
+.adm-root .du-chips .acct-av { flex: none; }
+@media (max-width: 760px) { .adm-root .du-modes { grid-template-columns: minmax(0, 1fr); } }
+
+/* Students → a student → duels */
+.adm-root .st-duel { margin: 2px 0 16px; padding: 12px 14px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
+.adm-root .st-duel-h { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.adm-root .st-duel-h > span:nth-child(2) { display: grid; min-width: 0; }
+.adm-root .st-duel-h b { font-weight: 700; }
+.adm-root .st-duel-h small { font-size: .78rem; color: var(--ink-3); }
+.adm-root .st-duel-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); }
+.adm-root .st-duel-sw.busy { opacity: .5; }
+.adm-root .st-duel-n { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0 0; font-size: .84rem; color: var(--ink-3); }
+.adm-root .st-duel-n b { color: var(--ink); font-weight: 700; }
+.adm-root .st-duel-n .warn { display: inline-flex; align-items: center; gap: 4px; color: var(--bad-700); font-weight: 600; }
+.adm-root .st-duel-n span:has(> svg) { display: inline-flex; align-items: center; gap: 4px; }
+
+/* דו-קרב page: tabs + reports */
+.adm-root .du-tabs { display: flex; gap: 4px; margin: -4px 0 4px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.adm-root .du-tabs a { padding: 10px 14px; margin-bottom: -1px; border-bottom: 2px solid transparent; text-decoration: none; color: var(--ink-3); font-weight: 600; font-size: .92rem; white-space: nowrap; }
+.adm-root .du-tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+@media (hover: hover) and (pointer: fine) { .adm-root .du-tabs a:not([aria-current]):hover { color: var(--ink-2); } }
+.adm-root .a-kpi.warn { background: var(--warn-50); border-color: var(--warn-200); }
+.adm-root .a-kpi.warn .a-kpi-i { background: var(--warn-100); color: var(--warn-800); }
+.adm-root .du-reports { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.adm-root .du-rep { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
+.adm-root .du-rep.done { background: transparent; }
+.adm-root .du-rep.done .du-rep-m { opacity: .6; }
+.adm-root .du-rep-ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--bad-50); color: var(--bad-600); }
+.adm-root .du-rep.spam .du-rep-ic { background: var(--warn-50); color: var(--warn-600); }
+.adm-root .du-rep.other .du-rep-ic { background: var(--surface-3); color: var(--ink-2); }
+.adm-root .du-rep.done .du-rep-ic { background: var(--surface-3); color: var(--ink-3); }
+.adm-root .du-rep-m { display: grid; gap: 4px; min-width: 0; }
+.adm-root .du-rep-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.adm-root .du-rep-h .du-who { font-size: 1rem; font-weight: 700; }
+.adm-root .du-reason { font-size: .9rem; color: var(--ink-2); }
+.adm-root .du-rep-m > small { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: .8rem; color: var(--ink-3); }
+.adm-root .du-who { padding: 0; border: 0; background: none; cursor: pointer; font-weight: 600; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+.adm-root .du-who:hover { text-decoration-color: currentColor; }
+.adm-root .du-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; background: var(--surface-3); color: var(--ink-2); font-size: .74rem; }
+.adm-root .du-chip.warn { background: var(--bad-50); color: var(--bad-700); }
+.adm-root .du-done { display: inline-flex; align-items: center; gap: 4px; font-size: .84rem; font-weight: 600; color: var(--ok-700); }
+@media (max-width: 560px) {
+  .adm-root .du-rep { grid-template-columns: auto minmax(0, 1fr); padding: 12px; }
+  .adm-root .du-rep > .abtn, .adm-root .du-rep > .du-done { grid-column: 1 / -1; justify-self: stretch; justify-content: center; }
+}
+
+/* דו-קרב → שאלות דו-קרב (samples for Sulaiman) */
+.adm-root .dq-intro { margin-top: 16px; }
+.adm-root .dq-lead { margin: 0 0 12px; font-size: .92rem; line-height: 1.65; color: var(--ink-2); max-width: 72ch; }
+.adm-root .dq-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.adm-root .dq-set { font-size: .88rem; color: var(--ink-3); margin-inline-end: 4px; }
+.adm-root .dq-set b { color: var(--ink); font-weight: 700; }
+.adm-root .dq-gap { flex: 1; }
+.adm-root .dq-jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 8px; }
+.adm-root .dq-jump a { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); text-decoration: none; font-size: .86rem; font-weight: 600; color: var(--ink-2); }
+.adm-root .dq-jump a small { font-size: .74rem; color: var(--ink-3); font-weight: 500; }
+@media (hover: hover) and (pointer: fine) { .adm-root .dq-jump a:hover { background: var(--surface-3); } }
+.adm-root .dq-topic { margin-top: 28px; scroll-margin-top: 72px; }
+.adm-root .dq-topic-h { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.adm-root .dq-topic-h h2 { margin: 0; font-size: 1.3rem; font-weight: 700; }
+.adm-root .dq-topic-h small { display: block; margin-top: 2px; font-size: .84rem; color: var(--ink-3); }
+.adm-root .dq-gen { padding: 14px; margin-bottom: 10px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); }
+.adm-root .dq-gen-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 10px; }
+.adm-root .dq-gen-h > b { font-size: 1rem; font-weight: 700; }
+.adm-root .dq-gen-h code { margin-inline-start: auto; font-size: .74rem; color: var(--ink-3); }
+.adm-root .dq-kinds { display: inline-flex; gap: 4px; }
+.adm-root .dq-k { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: .74rem; font-weight: 600; background: var(--surface-3); color: var(--ink-2); }
+.adm-root .dq-k.typed { background: #eaf2fc; color: #1f5fae; }
+.adm-root .dq-qs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1100px) { .adm-root .dq-qs { grid-template-columns: minmax(0, 1fr); } }
+.adm-root .dq-q { display: grid; gap: 10px; align-content: start; padding: 12px; border-radius: 14px; background: var(--surface-2); min-width: 0; }
+.adm-root .dq-q-n { font-size: .74rem; font-weight: 600; color: var(--ink-3); }
+.adm-root .dq-prompt { margin: 0; font-size: 1.04rem; line-height: 1.7; color: var(--ink); overflow-wrap: anywhere; }
+.adm-root .dq-prompt .dmx { font-weight: 700; white-space: normal; }
+.adm-root .dq-ch { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.adm-root .dq-ch li { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 42px; padding: 6px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 1rem; font-weight: 600; }
+.adm-root .dq-ch li.ok { background: var(--ok-50); border-color: var(--ok-500); box-shadow: 0 0 0 1px var(--ok-500); color: var(--ok-900); }
+.adm-root .dq-ok { display: inline-flex; align-items: center; gap: 3px; font-size: .72rem; font-weight: 700; color: var(--ok-700); }
+.adm-root .dq-typed { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--ok-50); border: 1px solid var(--ok-500); font-size: .84rem; color: var(--ok-800); }
+.adm-root .dq-typed b { font-size: 1.1rem; font-weight: 800; color: var(--ok-900); }
+.adm-root .dq-typed small { color: var(--ok-700); }
+.adm-root .dq-meta summary { cursor: pointer; font-size: .74rem; color: var(--ink-3); }
+.adm-root .dq-meta code { display: block; margin-top: 4px; font-size: .72rem; color: var(--ink-3); overflow-wrap: anywhere; text-align: left; }
+.adm-root .dq-q.err { background: var(--bad-50); color: var(--bad-700); }
+.adm-root .dq-q.err p { margin: 0; display: flex; align-items: center; gap: 6px; font-size: .86rem; }
+@media (max-width: 560px) {
+  .adm-root .dq-gap { display: none; }
+  .adm-root .dq-tools .seg { flex-basis: 100%; overflow-x: auto; }
+  .adm-root .dq-topic-h { align-items: flex-start; }
+  .adm-root .dq-gen { padding: 12px; border-radius: 16px; }
+  .adm-root .dq-gen-h code { margin-inline-start: 0; }
+}

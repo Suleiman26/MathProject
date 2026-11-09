@@ -1,8 +1,10 @@
 'use client';
 import { useEffect, useState } from "react";
-import { Lock, DownloadSimple, ShieldCheck, Database, Keyboard, UsersThree, Envelope, CheckCircle } from "@phosphor-icons/react";
+import Link from "next/link";
+import { Lock, DownloadSimple, ShieldCheck, Database, Keyboard, UsersThree, Envelope, CheckCircle, Sword } from "@phosphor-icons/react";
 import { useAdmin, PageHead } from "../AdminShell";
-import { Card, Seg, Switch, useToast, fmt } from "../ui";
+import { Card, Seg, Switch, useToast, fmt, GRADE } from "../ui";
+import { Avatar } from "@/account/ui";
 import { getSetting } from "../api";
 import { mpData } from "@/lib/mp-data";
 import { PERIODS } from "./Dashboard";
@@ -52,6 +54,7 @@ export default function Settings() {
     <>
       <PageHead />
       <div className="bento" style={{ alignItems: "start" }}>
+        <DuelsCard a={a} toast={toast} />
         <AccountsCard a={a} toast={toast} />
         <Card title="מקלדת מתמטית" className="span-6" action={keypad == null ? null : <Switch on={keypad} onChange={toggleKeypad} label="מקלדת מתמטית" />}>
           <div className="stat-line"><span><Keyboard size={16} /> בטלפון ובטאבלט</span><b>{keypad == null ? "…" : keypad ? "פועלת" : "כבויה"}</b></div>
@@ -131,6 +134,73 @@ function AccountsCard({ a, toast }) {
           <label className="field" style={{ margin: 0 }}><span>סיסמה חדשה</span><input type="text" value={reset.pw} onChange={(e) => setReset({ ...reset, pw: e.target.value })} autoComplete="off" /></label>
           <button type="button" className="abtn pri" onClick={doReset}>איפוס</button>
         </div>
+      </div>
+    </Card>
+  );
+}
+
+/* Duels release switch (spec §7.6): site_settings.duels = off | test | on.
+   The database enforces it in every friend/duel function (duel_guard), so this is
+   not just hiding buttons. Testers: accounts.duel_tester, set in Students → a student. */
+export const DUEL_MODES = [
+  { v: "off", label: "כבוי", tone: "off", text: "אף תלמיד לא רואה דו-קרבים: אין אריח בדף הבית, אין פריט בתפריט, והשרת חוסם כל ניסיון להיכנס." },
+  { v: "test", label: "בדיקה", tone: "test", text: "רק תלמידים שסומנו כבודקים רואים ומשחקים. כל השאר לא רואים כלום, כאילו הדו-קרבים כבויים." },
+  { v: "on", label: "פתוח לכולם", tone: "on", text: "כל תלמיד/ה עם חשבון רואה את הדו-קרבים, מוסיף/ה חברים ומזמין/ה לדו-קרב." },
+];
+
+function DuelsCard({ a, toast }) {
+  const [d, setD] = useState(null);
+  const [ask, setAsk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const load = () => a.run("admin_duels", {}).then(setD).catch(() => setD({ switch: null, testers: [] }));
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function pick(v) {
+    if (!d || busy || v === d.switch) { setAsk(false); return; }
+    if (v === "on" && !ask) { setAsk(true); return; }
+    setAsk(false); setBusy(true);
+    const before = d.switch;
+    setD({ ...d, switch: v });
+    try {
+      const r = await a.run("admin_set_setting", { k: "duels", v });
+      if (!r || !r.ok) throw new Error(r && r.error ? r.error : "not saved");
+      toast(v === "off" ? "הדו-קרבים כבויים" : v === "test" ? "הדו-קרבים פתוחים לבודקים בלבד" : "הדו-קרבים פתוחים לכל התלמידים");
+    } catch (e) { setD((x) => ({ ...x, switch: before })); toast("לא נשמר: " + e.message, true); }
+    finally { setBusy(false); }
+  }
+
+  const cur = d && d.switch;
+  const testers = (d && d.testers) || [];
+  return (
+    <Card title="דו-קרבים" sub="מי יכול לשחק דו-קרב מול חברים" className="span-12" action={<Sword size={18} className="muted" />}>
+      <div className="du-modes" role="radiogroup" aria-label="מצב הדו-קרבים">
+        {DUEL_MODES.map((m) => (
+          <button key={m.v} type="button" role="radio" aria-checked={cur === m.v} disabled={!d || busy}
+            className={"du-mode " + m.tone} onClick={() => pick(m.v)}>
+            <span className="du-mode-h"><i aria-hidden="true" /><b>{m.label}</b>{cur === m.v && <small>המצב עכשיו</small>}</span>
+            <span className="du-mode-t">{m.text}</span>
+          </button>
+        ))}
+      </div>
+      {ask && (
+        <div className="du-ask" role="alert">
+          <span>לפתוח את הדו-קרבים לכל התלמידים? כל מי שיש לו חשבון יראה אותם בדף הבא שיפתח באתר.</span>
+          <span className="du-ask-b">
+            <button type="button" className="abtn pri sm" onClick={() => pick("on")}>כן, לפתוח לכולם</button>
+            <button type="button" className="abtn sm" onClick={() => setAsk(false)}>ביטול</button>
+          </span>
+        </div>
+      )}
+      <div className="du-testers">
+        <div className="stat-line"><span><UsersThree size={16} /> בודקים</span><b>{d ? fmt(testers.length) : "…"}</b></div>
+        {testers.length > 0 ? (
+          <ul className="du-chips">
+            {testers.map((t) => (
+              <li key={t.id}><Avatar account={t} size={24} /><b>{t.username}</b>{GRADE[t.grade] && <small>{GRADE[t.grade]}</small>}</li>
+            ))}
+          </ul>
+        ) : d && <p className="note">עוד אין בודקים.</p>}
+        <p className="note">מסמנים בודק/ת ב<Link href="/admin/students">תלמידים</Link>: לוחצים על שורה של תלמיד/ה רשום/ה ← &quot;בודק/ת דו-קרבים&quot;. פתיחה מגיעה לתלמיד/ה בדף הבא שנפתח באתר; סגירה מגיעה גם למי שכבר באתר, תוך פחות מדקה.{a.preview && " (במצב תצוגה אין בודקים: זמין אחרי חיבור המסד.)"}</p>
       </div>
     </Card>
   );

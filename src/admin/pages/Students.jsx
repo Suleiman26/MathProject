@@ -5,9 +5,9 @@
    Data: admin_students / admin_student (20261102100000_admin_students_accounts.sql). */
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Users, Sparkle, ArrowsClockwise, DeviceMobile, Desktop, MagnifyingGlass, Warning, X } from "@phosphor-icons/react";
+import { Users, Sparkle, ArrowsClockwise, DeviceMobile, Desktop, MagnifyingGlass, Warning, X, Sword, Flag } from "@phosphor-icons/react";
 import { useAdmin, useData, PageHead } from "../AdminShell";
-import { Card, Kpi, Meter, Seg, Empty, TopicIcon, fmt, pct, ago, whoName, GRADE } from "../ui";
+import { Card, Kpi, Meter, Seg, Switch, Empty, TopicIcon, fmt, pct, ago, whoName, GRADE, useToast } from "../ui";
 import { CountUp, Donut, Bars } from "../charts";
 import { Avatar } from "@/account/ui";
 import { PERIODS, topicOf } from "./Dashboard";
@@ -97,8 +97,8 @@ function Who({ x }) {
   );
 }
 
-/* one student's full picture */
-function StudentSheet({ x, catalog, onClose }) {
+/* one student's full picture (also opened from admin → דו-קרב → a report) */
+export function StudentSheet({ x, catalog, onClose }) {
   const a = useAdmin();
   const [on, setOn] = useState(false);
   const [d, setD] = useState(null);
@@ -133,11 +133,50 @@ function StudentSheet({ x, catalog, onClose }) {
         <div className="sheet-b st-b">
           {err ? <Empty icon={<Warning size={28} />} title="לא הצלחנו לטעון">{err.message}</Empty>
             : !d ? <div className="mp-boot" style={{ minHeight: 220 }}><span /></div>
-            : <Detail d={d} catalog={catalog} days={days} />}
+            : <>{d.account && <DuelBox d={d} setD={setD} />}<Detail d={d} catalog={catalog} days={days} /></>}
         </div>
       </div>
     </div>,
     document.querySelector(".adm-root") || document.body
+  );
+}
+
+/* duels: the tester switch (accounts.duel_tester → admin_set_tester) and the
+   student's duel numbers (admin_student → duel, 20261108130000_duels_admin.sql) */
+function DuelBox({ d, setD }) {
+  const a = useAdmin();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const acc = d.account, du = d.duel || {};
+  const on = !!acc.duel_tester;
+  async function flip(v) {
+    setBusy(true);
+    try {
+      const r = await a.run("admin_set_tester", { account: acc.id, on: v });
+      if (!r || !r.ok) throw new Error(r && r.error === "preview" ? "זמין אחרי חיבור המסד" : (r && r.error) || "not saved");
+      setD({ ...d, account: { ...acc, duel_tester: v }, duel: { ...du, tester: v } });
+      toast(v ? `${acc.username} בודק/ת דו-קרבים` : `${acc.username} כבר לא בודק/ת`);
+    } catch (e) { toast("לא נשמר: " + e.message, true); }
+    finally { setBusy(false); }
+  }
+  const played = +du.played || 0;
+  return (
+    <div className="st-duel">
+      <div className="st-duel-h">
+        <span className="st-duel-ic"><Sword size={18} /></span>
+        <span>
+          <b>בודק/ת דו-קרבים</b>
+          <small>{on ? "רואה ומשחק/ת דו-קרבים גם כשהם במצב בדיקה" : "כשהדו-קרבים במצב בדיקה, רק בודקים רואים אותם"}</small>
+        </span>
+        <span className={busy ? "st-duel-sw busy" : "st-duel-sw"}><Switch on={on} onChange={busy ? () => {} : flip} label="בודק/ת דו-קרבים" /></span>
+      </div>
+      <p className="st-duel-n">
+        {played
+          ? <><span><b>{fmt(played)}</b> דו-קרבים</span><span><b>{fmt(du.wins)}</b> ניצחונות</span><span><b>{fmt(du.losses)}</b> הפסדים</span>{+du.draws > 0 && <span><b>{fmt(du.draws)}</b> תיקו</span>}<span><b>{fmt(du.xp)}</b> נקודות דו-קרב</span>{du.last && <span>אחרון {ago(du.last)}</span>}</>
+          : <span>עוד לא שיחק/ה דו-קרב</span>}
+        {+du.reported > 0 && <span className={+du.reported_open > 0 ? "warn" : ""}><Flag size={14} weight="fill" /> דווח/ה {fmt(du.reported)} {+du.reported === 1 ? "פעם" : "פעמים"}{+du.reported_open > 0 ? ` (${+du.reported_open === 1 ? "אחד פתוח" : fmt(du.reported_open) + " פתוחים"})` : ""}</span>}
+      </p>
+    </div>
   );
 }
 
