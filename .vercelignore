@@ -1,5 +1,16 @@
 # Not part of the website: never uploaded to Vercel
-supabase/
+# supabase/: everything is skipped EXCEPT supabase/functions/_shared/duel/ (the duel
+# question engine — the site imports it via src/duel/samples.js). Vercel's ignore file
+# doesn't support "!" re-includes, so the other parts are listed one by one.
+supabase/migrations/
+supabase/tests/
+supabase/functions/duel-start/
+supabase/functions/duel-push/
+supabase/config.toml
+supabase/.gitignore
+supabase/.temp/
+supabase/.branches/
+supabase/.env*
 tools/
 templates/
 *.md
