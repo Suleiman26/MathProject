@@ -275,7 +275,8 @@ export function HubView({ account, data, history, presence, actions, state, erro
             </Link>
           )}
 
-          <OnlineNow friends={friends} me={account} onPick={openSheet} onShare={share} canShare={canShare} hasFriends={friends.length > 0} />
+          {/* no friends yet: the friends card already says what to do (and the code is right below) — no second empty box */}
+          {friends.length > 0 && <OnlineNow friends={friends} me={account} onPick={openSheet} onShare={share} canShare={canShare} hasFriends />}
           <p className="dl-live dl-live-top" role="status" aria-live="polite">{copied === "link" ? "הקישור הועתק" : copied === "code" ? "הקוד הועתק" : " "}</p>
 
           <div className="dl-cols">
@@ -303,7 +304,7 @@ export function HubView({ account, data, history, presence, actions, state, erro
               <section className="dl-card dl-friends" aria-labelledby="dl-fr-h">
                 <div className="dl-card-h">
                   <h2 id="dl-fr-h">החברים</h2>
-                  {friends.length > 0 && <span className="dl-count">{online ? <><i className="dl-online-i" aria-hidden="true" />{online} מחוברים{SEP}</> : null}{friends.length}</span>}
+                  {friends.length > 0 && <span className="dl-count">{online ? <><i className="dl-online-i" aria-hidden="true" />{online === 1 ? "1 מחובר/ת" : `${online} מחוברים`}{SEP}</> : null}{friends.length}</span>}
                 </div>
                 {friends.length === 0 ? (
                   <div className="dl-empty">

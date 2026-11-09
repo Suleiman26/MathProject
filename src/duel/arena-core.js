@@ -245,7 +245,8 @@ export function colorVars(meAvatar, oppAvatar) {
 /* ── copy ─────────────────────────────────────────────────────────────────── */
 /* "ל" + a Latin username needs a hyphen: "ל-noa"; Hebrew names glue: "לנועה" */
 export const toName = (n) => (/^[A-Za-z0-9]/.test(String(n || "")) ? "ל-" : "ל") + n;
-export const atName = (n) => (/^[A-Za-z0-9]/.test(String(n || "")) ? "את-" : "את ") + n;
+// "את" is its own word (never hyphenated, also before a Latin name): "עקפת את noa!"
+export const atName = (n) => "את " + n;
 /* "ו" + name: "ו-noa" / "ונועה" */
 export const andName = (n) => (/^[A-Za-z0-9]/.test(String(n || "")) ? "ו-" : "ו") + n;
 

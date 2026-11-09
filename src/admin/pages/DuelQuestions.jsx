@@ -103,7 +103,7 @@ export default function DuelQuestions() {
         <nav className="dq-jump" aria-label="מעבר לנושא">
           {shown.map((t) => <a key={t.topic} href={"#dq-" + t.topic}>{t.name} <small>{t.gens.length}</small></a>)}
         </nav>
-        <p className="note">{fmt(nGen)} סוגי שאלות · {fmt(shown.length)} נושאים. תחומים בלי שאלות עדיין (פונקציות, גיאומטריה) לא מופיעים.</p>
+        <p className="note">{fmt(nGen)} סוגי שאלות · {fmt(shown.length)} נושאים. פרקים שעוד לא הועברו לדו-קרבים לא מופיעים.</p>
       </Card>
 
       {shown.map((t) => (

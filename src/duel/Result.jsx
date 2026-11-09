@@ -142,7 +142,7 @@ function ReportSheet({ open, onClose, player, onReport }) {
                 onKeyDown={(e) => radioKeys(e, REPORT_REASONS.map((x) => x.id), r.id, setReason)}>{r.label}</button>
             ))}
           </div>
-          <p className="dl-sh-m">הדיווח מגיע לצוות האתר בלבד, בלי ש{name} ידע/תדע.</p>
+          <p className="dl-sh-m">הדיווח מגיע לצוות האתר בלבד, בלי ש{/^[A-Za-z0-9]/.test(String(name || "")) ? "-" : ""}<bdi>{name}</bdi> ידע/תדע.</p>
           {err && <p className="dl-err" role="alert">{err}</p>}
           <div className="dl-row">
             <button type="button" className="dl-btn ghost" onClick={close} disabled={busy}>ביטול</button>

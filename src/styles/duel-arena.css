@@ -204,7 +204,9 @@ body:has(> .duel-play.dark) { background: #0b1020; }
 .dar-giveup:focus-visible { box-shadow: 0 0 0 3px var(--me-3); border-radius: 999px; }
 
 /* connection notes */
-.dar-net { position: fixed; top: calc(8px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 20; }
+/* under the HUD (never over the timer or the scores), in the empty middle of the "question n of 15" line */
+.dar-net { position: fixed; top: calc(124px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 20; white-space: nowrap; }
+@media (min-width: 600px) { .dar-net { top: 142px; } }
 .dar-net:empty { display: none; }
 .dar-net.off { background: #f59e0b; color: #1c1917; font-size: .8rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; box-shadow: 0 8px 20px -10px rgb(0 0 0 / .5); animation: dar-rise 260ms var(--ease-out) backwards; }
 .dar-toast { position: fixed; bottom: calc(84px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 20; background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: .9rem; font-weight: 600; white-space: nowrap; animation: dar-rise 260ms var(--ease-out) backwards; }
