@@ -46,8 +46,9 @@ export async function mixSeed(secret, seed, id) {
 
 // the live site, local dev, and this project's Vercel previews (<project>-<hash>-<team>.vercel.app,
 // <project>-git-<branch>-<team>.vercel.app — project "mathproject", team "math-project")
-const ORIGINS = new Set(["https://mathproject-gamma.vercel.app", "http://localhost:5180"]);
-const PREVIEW = /^https:\/\/mathproject-[a-z0-9-]+\.vercel\.app$/;
+// + Abed's test copy "mathix" (project mathix, team abed-shalgams-projects)
+const ORIGINS = new Set(["https://mathproject-gamma.vercel.app", "https://mathix-sooty.vercel.app", "http://localhost:5180"]);
+const PREVIEW = /^https:\/\/(mathproject|mathix)-[a-z0-9-]+\.vercel\.app$/;
 
 /** CORS headers: the live site, local dev (5180) and this project's Vercel previews; nobody else. */
 export function corsHeaders(origin) {
