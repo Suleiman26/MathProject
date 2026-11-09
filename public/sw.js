@@ -5,14 +5,26 @@
      {t:'invite', id, title, body, url:'/duel', tag:'duel-<id>'}                       */
 
 self.addEventListener("install", () => self.skipWaiting());
+
+// The only place a notification may lead: a duel page on THIS site. Parsed with the real URL
+// parser (tabs, newlines, "//host", "\\host", "https://…" all resolve to their true origin),
+// then the origin and the path are checked. Anything else → "/duel".
+function duelUrl(raw) {
+  if (typeof raw !== "string" || !raw) return "/duel";
+  try {
+    const u = new URL(raw, self.location.origin);
+    if (u.origin !== self.location.origin) return "/duel";
+    if (u.pathname !== "/duel" && !u.pathname.startsWith("/duel/")) return "/duel";
+    return u.pathname + u.search;
+  } catch (_) { return "/duel"; }
+}
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener("push", (e) => {
   let m = {};
   try { m = e.data ? e.data.json() : {}; } catch (_) { m = {}; }
   const title = typeof m.title === "string" && m.title ? m.title : "הזמנה לדו-קרב!";
-  // a path on this site only: "/…" but never "//host" (a protocol-relative URL would leave the site)
-  const url = typeof m.url === "string" && /^\/(?!\/)/.test(m.url) && !m.url.includes("\\") ? m.url : "/duel";
+  const url = duelUrl(m.url);
   e.waitUntil(
     self.registration.showNotification(title, {
       body: typeof m.body === "string" ? m.body : "",
@@ -30,7 +42,7 @@ self.addEventListener("push", (e) => {
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const raw = e.notification.data && e.notification.data.url;
-  const url = typeof raw === "string" && /^\/(?!\/)/.test(raw) && !raw.includes("\\") ? raw : "/duel";
+  const url = duelUrl(raw);
   e.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     // a tab of the site that is already on the duels: bring it forward (and to /duel).
@@ -41,7 +53,7 @@ self.addEventListener("notificationclick", (e) => {
     });
     if (tab) {
       try { await tab.focus(); } catch (_) {}
-      if (new URL(tab.url).pathname !== url) { try { await tab.navigate(url); } catch (_) {} }
+      if (new URL(tab.url).pathname !== new URL(url, self.location.origin).pathname) { try { await tab.navigate(url); } catch (_) {} }
       return;
     }
     await self.clients.openWindow(url);
