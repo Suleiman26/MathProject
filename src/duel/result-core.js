@@ -122,7 +122,8 @@ export function topicName(slug) {
 const showNum = (s) => String(s).trim().replace(/^-/, "−");
 
 /** up to `max` review items: the ones I got wrong first (in order), then the ones I didn't reach.
-    → { items: [{ idx, prompt, kind, given, right, missed, href, label }], wrong, unreached } */
+    → { items: [{ idx, prompt, kind, given, right, wrong, href, label }], nWrong, nUnreached }
+    (wrong = answered wrong; false = not reached) */
 export function reviewItems(state, max = REVIEW_MAX) {
   const r = (state && state.result) || {};
   const qs = (state && state.questions) || [];
@@ -144,11 +145,11 @@ export function reviewItems(state, max = REVIEW_MAX) {
     const given = x.given == null ? null : kind === "choice" ? fromChoice(x.given) : String(x.given).trim() === "" ? null : showNum(x.given);
     const chapter = String(p.chapter || "").trim();
     return {
-      idx: x.idx, prompt: String(p.prompt), kind, right, given, missed: x.given != null,
+      idx: x.idx, prompt: String(p.prompt), kind, right, given, wrong: x.given != null,
       href: reviewHref(p.topic, chapter), label: chapter || topicName(p.topic) || "התרגול",
     };
   });
-  return { items, wrong: wrong.length, unreached: unreached.length };
+  return { items, nWrong: wrong.length, nUnreached: unreached.length };
 }
 
 /* ── the podium ──────────────────────────────────────────────────────────── */
@@ -189,9 +190,10 @@ export function announce(state) {
 }
 
 /* ── the revenge button ──────────────────────────────────────────────────── */
-/** "נקמה! עוד סיבוב" is the loser's line; the winner / a draw just asks for another round */
+/** "נקמה! עוד סיבוב" is the loser's line; the winner, a draw, or someone who gave up just asks for another round */
 export function rematchLabel(state) {
-  return outcome(state).kind === "lose" ? "נקמה! עוד סיבוב" : "עוד סיבוב";
+  const o = outcome(state);
+  return o.kind === "lose" && o.gaveUp !== "me" ? "נקמה! עוד סיבוב" : "עוד סיבוב";
 }
 /** seconds left on the 30-s send cooldown (from the server's wait_s, counted on this phone) */
 export function waitLeft(untilMs, nowMs) {

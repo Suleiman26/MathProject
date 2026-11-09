@@ -109,11 +109,11 @@ test("reviewItems: wrong ones first, then unreached; choice indexes become the c
   ];
   const qs = [{ idx: 2, kind: "choice" }, { idx: 9, kind: "number" }, { idx: 12, kind: "number" }, { idx: 13, kind: "number" }];
   const r = reviewItems(st({ result: { review }, questions: qs }));
-  assert.equal(r.wrong, 2); assert.equal(r.unreached, 2);
+  assert.equal(r.nWrong, 2); assert.equal(r.nUnreached, 2);
   assert.deepEqual(r.items.map((x) => x.idx), [2, 12, 9]);
-  assert.equal(r.items[0].right, "−21"); assert.equal(r.items[0].given, "21"); assert.equal(r.items[0].missed, true);
+  assert.equal(r.items[0].right, "−21"); assert.equal(r.items[0].given, "21"); assert.equal(r.items[0].wrong, true);
   assert.equal(r.items[1].right, "−8"); assert.equal(r.items[1].given, "8");
-  assert.equal(r.items[2].given, null); assert.equal(r.items[2].missed, false);
+  assert.equal(r.items[2].given, null); assert.equal(r.items[2].wrong, false);
   assert.equal(r.items[2].href, "/topics/equation-solver");
   assert.equal(r.items[2].label, "משוואות");                           // no chapter → the topic's name
   assert.equal(r.items[0].label, "כפל וחילוק");
@@ -151,6 +151,7 @@ test("announce: one sentence with the result, scores, right answers and XP", () 
 test("rematch: revenge is the loser's word; the cooldown counts down in whole seconds", () => {
   assert.equal(rematchLabel(st({ result: { winner: OP } })), "נקמה! עוד סיבוב");
   assert.equal(rematchLabel(st()), "עוד סיבוב");
+  assert.equal(rematchLabel(st({ result: { winner: OP, gave_up: ME, xp_me: 0 } })), "עוד סיבוב");   // after giving up: no "revenge"
   assert.equal(waitLeft(10500, 0), 11);
   assert.equal(waitLeft(0, 5), 0);
 });

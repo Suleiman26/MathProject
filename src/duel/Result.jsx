@@ -159,7 +159,7 @@ function ReviewItem({ it }) {
     <li className="drs-li">
       <MathText as="p" className="drs-li-q" text={it.prompt} />
       <p className="drs-li-a">
-        {it.missed ? (
+        {it.wrong ? (
           <span className="drs-given"><small>ענית</small><s>{it.given != null ? <MathSpan src={it.given} /> : "—"}</s></span>
         ) : (
           <span className="drs-given none"><small>לא הספקת</small></span>
@@ -176,7 +176,7 @@ function ReviewItem({ it }) {
   );
 }
 
-export default function Result({ state, onRematch, rematchBusy, rematchError, rematchUntil, onEmote, onReport }) {
+export default function Result({ state, onRematch, rematchBusy, rematchError, rematchUntil, rematchInvite, onAcceptRematch, onEmote, onReport }) {
   const me = state.me || {}, opp = state.opp || {};
   const o = outcome(state);
   const h = headline(state);
@@ -215,12 +215,31 @@ export default function Result({ state, onRematch, rematchBusy, rematchError, re
     }
   }, [oppEmote && oppEmote.n]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // the two bubbles both point in toward the middle: if mine would meet theirs (columns of similar height),
+  // mine drops below theirs, keeping a small gap
+  // (measured once the pop-in has finished: its scale would shrink the boxes)
+  useEffect(() => {
+    const root = rootRef.current;
+    const place = () => {
+      const mine = root && root.querySelector(".drs-bub.me"), theirs = root && root.querySelector(".drs-bub.op");
+      if (!mine) return;
+      mine.style.marginTop = "";
+      if (!theirs) return;
+      const a = mine.getBoundingClientRect(), b = theirs.getBoundingClientRect();
+      const gapX = Math.max(b.left - a.right, a.left - b.right), gapY = Math.max(b.top - a.bottom, a.top - b.bottom);
+      if (gapX < 10 && gapY < 8) mine.style.marginTop = Math.ceil(b.bottom + 8 - a.top) + "px";
+    };
+    const t = setTimeout(place, reduced() ? 0 : 500);
+    window.addEventListener("resize", place);
+    return () => { clearTimeout(t); window.removeEventListener("resize", place); };
+  }, [myEmote && myEmote.n, oppEmote && oppEmote.n, done]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // the 30-s send cooldown, counted down on the button
   const [now, setNow] = useState(() => Date.now());
   const wait = waitLeft(rematchUntil || 0, now);
   useEffect(() => {
     if (!rematchUntil || rematchUntil <= Date.now()) return;
-    const t = setInterval(() => setNow(Date.now()), 250);
+    const t = setInterval(() => { const n = Date.now(); setNow(n); if (n >= rematchUntil) clearInterval(t); }, 250);
     return () => clearInterval(t);
   }, [rematchUntil]);
 
@@ -273,8 +292,8 @@ export default function Result({ state, onRematch, rematchBusy, rematchError, re
         ) : rv.items.length > 0 && (
           <section className="drs-learn" aria-labelledby="drs-learn-t">
             <h2 id="drs-learn-t">מה כדאי לחזור עליו</h2>
-            {rv.wrong + rv.unreached > rv.items.length && (
-              <p className="drs-learn-n">הנה {rv.items.length} מתוך {rv.wrong + rv.unreached}</p>
+            {rv.nWrong + rv.nUnreached > rv.items.length && (
+              <p className="drs-learn-n">הנה {rv.items.length} מתוך {rv.nWrong + rv.nUnreached}</p>
             )}
             <ol className="drs-list">{rv.items.map((it) => <ReviewItem key={it.idx} it={it} />)}</ol>
           </section>
@@ -283,14 +302,21 @@ export default function Result({ state, onRematch, rematchBusy, rematchError, re
 
       <footer className="drs-foot">
         <div className="drs-foot-in">
-          {wait > 0 ? (
+          {rematchInvite ? (
+            <p className="drs-foot-note" role="status">{rematchInvite.name} כבר הזמין/ה אותך לסיבוב נוסף</p>
+          ) : wait > 0 ? (
             <p className="drs-foot-note" role="status">אפשר לשלוח אתגר אחד כל 30 שניות</p>
           ) : rematchError ? (
             <p className="dl-err" role="alert">{rematchError}</p>
           ) : null}
           <div className="drs-btns">
             <Link className="dl-btn ghost drs-back" href="/duel">חזרה</Link>
-            {onRematch && opp.id && (
+            {rematchInvite && onAcceptRematch ? (
+              <button type="button" className="dl-btn accent drs-again" disabled={!!rematchBusy}
+                onClick={(e) => { e.stopPropagation(); onAcceptRematch(); }}>
+                {rematchBusy ? "רגע…" : "לקבל את ההזמנה"}
+              </button>
+            ) : onRematch && opp.id && (
               <button type="button" className={"dl-btn accent drs-again" + (wait > 0 ? " cd" : "")} disabled={!!rematchBusy || wait > 0}
                 onClick={(e) => { e.stopPropagation(); onRematch(); }}>
                 {rematchBusy ? "שולחים…" : wait > 0 ? <span className="drs-wait">אפשר שוב בעוד {wait} שנ׳</span> : rematchLabel(state)}

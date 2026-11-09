@@ -248,7 +248,7 @@ body:has(> .duel-play.dark) { background: #0b1020; }
    fade into the page instead of standing on a line), the crown, then calm
    white surfaces for facts / review, and the two buttons under the thumb. */
 .drs {
-  --base: 72px; --span: clamp(90px, 20vh, 170px); --page: #f6f6f9;
+  --base: 72px; --span: clamp(80px, 16vh, 150px); --page: #f6f6f9;
   position: relative; isolation: isolate; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
   overflow-x: clip; background: var(--page); color: var(--ink-a); -webkit-tap-highlight-color: transparent;
 }
@@ -329,7 +329,7 @@ body:has(> .duel-play.dark) { background: #0b1020; }
   font-size: .84rem; font-weight: 700; white-space: nowrap; box-shadow: 0 10px 24px -10px rgb(15 23 42 / .5); animation: drs-bub 460ms var(--pop-hard) both;
 }
 .drs-bub::after { content: ""; position: absolute; bottom: -5px; width: 12px; height: 12px; background: #fff; border-radius: 2px; transform: rotate(45deg); }
-.drs-bub.me { right: calc(50% + 20px); transform-origin: 100% 100%; } .drs-bub.me::after { right: 10px; }
+.drs-bub.me { right: calc(50% + 22px); transform-origin: 100% 100%; } .drs-bub.me::after { right: 10px; }   /* Result.jsx moves mine down if it would meet theirs */
 .drs-bub.op { left: calc(50% + 20px); transform-origin: 0 100%; } .drs-bub.op::after { left: 10px; }
 .drs-bub > span { position: relative; z-index: 1; }
 @keyframes drs-bub { from { opacity: 0; transform: scale(.4) translateY(8px); } }
@@ -394,8 +394,8 @@ body:has(> .duel-play.dark) { background: #0b1020; }
 
 /* the buttons under the thumb: the page fades in behind them (no bar, no line) */
 .drs-foot {
-  position: sticky; bottom: 0; z-index: 5; margin-top: 14px; padding: 26px 16px calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--page) 0%, transparent), var(--page) 40%);
+  position: sticky; bottom: 0; z-index: 5; margin-top: 14px; padding: 22px 16px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--page) 0%, transparent), var(--page) 20px);   /* fades above, solid from the note down */
 }
 .drs-foot-in { max-width: 488px; margin: 0 auto; }
 .drs-foot-note { margin: 0 0 8px; text-align: center; font-size: .84rem; font-weight: 500; color: var(--ink-c); }
@@ -478,6 +478,6 @@ html.kp-open .dar-pill { display: none; }
 
 /* ── reduced motion: still bars, no shake, no heartbeat ──────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .duel-play *, .dinv-wrap *, .dar-pill, .dar-pill * { animation: none !important; transition-duration: 1ms !important; }
+  .duel-play *, .dinv-wrap *, .dar-pill, .dar-pill * { animation: none !important; transition-duration: 1ms !important; transition-delay: 0s !important; }
 }
 }

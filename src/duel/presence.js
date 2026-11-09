@@ -47,6 +47,8 @@ function attach(tok) {
 }
 
 const refresh = () => poller.refresh();
+/** ping now from outside a component (e.g. the result screen after a 'busy' rematch) */
+export const refreshPresence = refresh;
 
 export function usePresence() {
   const { ready, tok, account } = useAccount();

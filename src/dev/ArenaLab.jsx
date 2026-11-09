@@ -2,7 +2,8 @@
 /* A fake duel for the arena screens (local preview only: app/dev/duel).
    ?s=invite | sentwait | accepted | faceoff | arena | hot | lastq | locked | waiting | finishing | failed | done
    results (Task 8): win | lose | draw | perfect | comeback | xp0 (daily cap) | few (< 3 answers) | giveup
-     &cd=1 → the first rematch answers "cooldown 12 s"; the opponent sends an emote 2.5 s in
+     &cd=1 → the first rematch answers "cooldown 12 s"; &busy=1 → the friend's own rematch got there first;
+     the opponent sends an emote 2.5 s in
    extra (arena only): &q=<n> starts at question n+1 (n answered, all right); &slow=<ms> makes every
    state() take that long (a slow network — the "next question" loop must still make progress);
    &prompt=<text> replaces the current question's prompt (stress-test long math), &typed=1 makes it a typed one
@@ -220,11 +221,14 @@ function makeServer(kind, meColor) {
       return { ok: true };
     },
     giveUp: async () => { await wait(200); if (d.status !== "live") return { error: "not_live" }; finish(d, { gaveUp: true }); hint("duel_end"); return { ok: true }; },
-    answerInvite: async () => ({ error: "gone" }),
+    answerInvite: async (id) => { await wait(400); return id === ID(502) ? { status: "accepted" } : { error: "gone" }; },
+    ping: async () => ({ now: iso(Date.now()), live: null,
+      invites: labStr("busy") ? [{ id: ID(502), from: { id: d.opp.id, username: d.opp.username, avatar: d.opp.avatar }, subject: d.subject, expires_at: iso(Date.now() + 55000) }] : [] }),
     cancel: async () => ({ status: "cancelled" }),
     invite: async () => {
       await wait(500);
       if (labStr("cd") && !cooled) { cooled = true; return { error: "cooldown", wait_s: 12 }; }
+      if (labStr("busy")) return { error: "busy" };
       return { id: ID(501), expires_at: iso(Date.now() + 60000) };
     },
     emote: async (id, e) => {
