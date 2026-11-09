@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowsClockwise, Flag, CheckCircle, Sword, Lightning, Warning, UsersThree, Gear } from "@phosphor-icons/react";
+import { ArrowsClockwise, Flag, CheckCircle, Sword, Lightning, Warning, UsersThree, Gear, Prohibit } from "@phosphor-icons/react";
 import { useAdmin, useData, PageHead } from "../AdminShell";
 import { Card, Kpi, Seg, Empty, useToast, fmt, ago } from "../ui";
 import { StudentSheet } from "./Students";
@@ -63,6 +63,18 @@ export default function Duels() {
     finally { setBusy(null); }
   }
 
+  // "חסימה מדו-קרבים" straight from a report row (admin_set_duel_ban); every row of that student follows
+  async function ban(r, v) {
+    setBusy(r.id);
+    try {
+      const res = await a.run("admin_set_duel_ban", { account: r.reported_id, banned: v });
+      if (!res || !res.ok) throw new Error(res && res.error === "preview" ? "זמין אחרי חיבור המסד" : (res && res.error) || "not saved");
+      setList((l) => l.map((x) => (x.reported_id === r.reported_id ? { ...x, reported_banned: v } : x)));
+      toast(v ? `${r.reported} חסום/ה מדו-קרבים` : `החסימה של ${r.reported} הוסרה`);
+    } catch (e) { toast("לא נשמר: " + e.message, true); }
+    finally { setBusy(null); }
+  }
+
   const tools = <button type="button" className="ibtn" onClick={load} aria-label="רענון"><ArrowsClockwise size={18} /></button>;
   if (err) return <><PageHead tools={tools} /><DuelTabs /><Card><Empty icon={<Warning size={30} />} title="לא הצלחנו לטעון">{err.message}</Empty></Card></>;
   if (!ov || !list) return <><PageHead tools={tools} /><DuelTabs /><div className="mp-boot" style={{ minHeight: 300 }}><span /></div></>;
@@ -83,7 +95,7 @@ export default function Duels() {
         <Kpi tone={ov.open_reports ? "warn" : ""} icon={<Flag size={17} />} label="דיווחים פתוחים" value={fmt(open.length)} sub={list.length === 1 ? "דיווח אחד בסך הכול" : `${fmt(list.length)} דיווחים בסך הכול`} />
       </div>
 
-      <Card title="דיווחים" className="mt" sub="תלמידים מדווחים לצוות על חבר/ה (בלי שהצד השני יודע). לחיצה על שם פותחת את כל הפרטים על התלמיד/ה, ושם אפשר גם להוריד בודק/ת."
+      <Card title="דיווחים" className="mt" sub="תלמידים מדווחים לצוות על חבר/ה (בלי שהצד השני יודע). לחיצה על שם פותחת את כל הפרטים על התלמיד/ה. הכפתור חסימה מדו-קרבים סוגר לתלמיד/ה את הדו-קרבים והחברים (בלי שיידע/תדע), והתרגול נשאר פתוח."
         action={<Seg value={show} onChange={setShow} label="אילו דיווחים" options={[["open", `פתוחים (${fmt(open.length)})`], ["all", "הכל"]]} />}>
         {rows.length ? (
           <ul className="du-reports">
@@ -102,9 +114,14 @@ export default function Duels() {
                     {+r.reported_total > 1 && <span className="du-chip warn"><UsersThree size={13} /> דווח/ה {fmt(r.reported_total)} פעמים בסך הכול</span>}
                   </small>
                 </div>
-                {r.done
-                  ? <span className="du-done"><CheckCircle size={17} weight="fill" />טופל</span>
-                  : <button type="button" className="abtn sm" disabled={busy === r.id} onClick={() => done(r)}><CheckCircle size={16} />טופל</button>}
+                <span className="du-rep-act">
+                  {r.reported_id && (r.reported_banned
+                    ? <button type="button" className="abtn sm" disabled={busy === r.id} onClick={() => ban(r, false)} title="הסרת החסימה מדו-קרבים"><Prohibit size={16} />חסום/ה · ביטול</button>
+                    : <button type="button" className="abtn sm" disabled={busy === r.id} onClick={() => ban(r, true)}><Prohibit size={16} />חסימה מדו-קרבים</button>)}
+                  {r.done
+                    ? <span className="du-done"><CheckCircle size={17} weight="fill" />טופל</span>
+                    : <button type="button" className="abtn sm" disabled={busy === r.id} onClick={() => done(r)}><CheckCircle size={16} />טופל</button>}
+                </span>
               </li>
             ))}
           </ul>

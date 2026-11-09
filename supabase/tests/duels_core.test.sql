@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(246);
+select plan(247);
 
 -- ── helpers ─────────────────────────────────────────────────────────────────
 create temporary table t_acc (name text primary key, tok text, id uuid);
@@ -196,6 +196,8 @@ select is(public.duel_put_questions('test-secret', pg_temp.d('d1'), pg_temp.rows
 select is((select count(*)::int from public.duel_questions where duel_id = pg_temp.d('d1')), 15, '15 questions stored');
 
 -- ── state: questions without answers ────────────────────────────────────────
+select is(jsonb_array_length(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'), 0, 'live but before start_at: no question yet (no peeking in the face-off)');
+update public.duels set start_at = now() - interval '1 second', ends_at = now() + interval '299 seconds' where id = pg_temp.d('d1');
 select is(jsonb_array_length(pg_temp.st('dc_a', pg_temp.d('d1'))->'questions'), 1, 'live: only the current question is shown');
 select ok(position('"answer"' in (pg_temp.st('dc_a', pg_temp.d('d1'))->'questions')::text) = 0, 'no "answer" key anywhere in questions');
 select ok(position('"tol"' in (pg_temp.st('dc_a', pg_temp.d('d1'))->'questions')::text) = 0, 'no "tol" key in questions');
@@ -209,6 +211,8 @@ select is(pg_temp.st('dc_a', pg_temp.d('d1'))->'opp'->'lanes', '[null,null,null,
 select ok(pg_temp.st('dc_a', pg_temp.d('d1')) ? 'now', 'state carries the server time');
 select is(public.duel_state(pg_temp.tok('dc_c'), pg_temp.d('d1'))::jsonb, '{"error":"gone"}'::jsonb, 'an outsider cannot read the duel');
 
+-- back to "4 s before the start" for the answering tests
+update public.duels set start_at = now() + interval '4 seconds', ends_at = now() + interval '304 seconds' where id = pg_temp.d('d1');
 -- ── answering + scoring ─────────────────────────────────────────────────────
 select is(public.duel_answer(pg_temp.tok('dc_a'), pg_temp.d('d1'), 0, '0')::jsonb, '{"error":"not_live"}'::jsonb, 'answer before start → not_live');
 select is(pg_temp.play('dc_a', pg_temp.d('d1'), 0, '0'), '{"correct":true,"right":"0","points":142,"score":142,"streak":1,"lock_until":null}'::jsonb,

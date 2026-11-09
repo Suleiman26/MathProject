@@ -919,6 +919,8 @@ html, .adm-root body { min-height: 100%; }
 .adm-root .st-duel-h > span:nth-child(2) { display: grid; min-width: 0; }
 .adm-root .st-duel-h b { font-weight: 700; }
 .adm-root .st-duel-h small { font-size: .78rem; color: var(--ink-3); }
+.adm-root .st-duel-h + .st-duel-h { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.adm-root .st-duel-h.ban .st-duel-ic { background: var(--bad-50); color: var(--bad-600); }
 .adm-root .st-duel-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); }
 .adm-root .st-duel-sw.busy { opacity: .5; }
 .adm-root .st-duel-n { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0 0; font-size: .84rem; color: var(--ink-3); }
@@ -940,6 +942,9 @@ html, .adm-root body { min-height: 100%; }
 .adm-root .du-rep-ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--bad-50); color: var(--bad-600); }
 .adm-root .du-rep.spam .du-rep-ic { background: var(--warn-50); color: var(--warn-600); }
 .adm-root .du-rep.other .du-rep-ic { background: var(--surface-3); color: var(--ink-2); }
+/* report row actions: "block from duels" + "handled" (final wave); they wrap under the text on phones */
+.adm-root .du-rep-act { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+@media (max-width: 640px) { .adm-root .du-rep { grid-template-columns: auto minmax(0, 1fr); } .adm-root .du-rep-act { grid-column: 1 / -1; justify-content: flex-start; } }
 .adm-root .du-rep.done .du-rep-ic { background: var(--surface-3); color: var(--ink-3); }
 .adm-root .du-rep-m { display: grid; gap: 4px; min-width: 0; }
 .adm-root .du-rep-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }

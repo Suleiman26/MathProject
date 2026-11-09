@@ -187,6 +187,7 @@ const demo = {
     return { switch: sw, testers: [], played: 0, played_7d: 0, players: 0, live: 0, open_reports: 0 };
   },
   admin_set_tester: () => ({ error: "preview" }),
+  admin_set_duel_ban: () => ({ error: "preview" }),
   admin_reports: () => [],
   admin_report_done: () => ({ ok: true }),
   admin_logout: () => null,

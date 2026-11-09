@@ -5,7 +5,7 @@
    Data: admin_students / admin_student (20261102100000_admin_students_accounts.sql). */
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Users, Sparkle, ArrowsClockwise, DeviceMobile, Desktop, MagnifyingGlass, Warning, X, Sword, Flag } from "@phosphor-icons/react";
+import { Users, Sparkle, ArrowsClockwise, DeviceMobile, Desktop, MagnifyingGlass, Warning, X, Sword, Flag, Prohibit } from "@phosphor-icons/react";
 import { useAdmin, useData, PageHead } from "../AdminShell";
 import { Card, Kpi, Meter, Seg, Switch, Empty, TopicIcon, fmt, pct, ago, whoName, GRADE, useToast } from "../ui";
 import { CountUp, Donut, Bars } from "../charts";
@@ -149,6 +149,18 @@ function DuelBox({ d, setD }) {
   const [busy, setBusy] = useState(false);
   const acc = d.account, du = d.duel || {};
   const on = !!acc.duel_tester;
+  const banned = !!acc.duel_banned;
+  // a duel ban (admin_set_duel_ban): the student sees duels as closed, open duels end now
+  async function ban(v) {
+    setBusy(true);
+    try {
+      const r = await a.run("admin_set_duel_ban", { account: acc.id, banned: v });
+      if (!r || !r.ok) throw new Error(r && r.error === "preview" ? "זמין אחרי חיבור המסד" : (r && r.error) || "not saved");
+      setD({ ...d, account: { ...acc, duel_banned: v }, duel: { ...du, banned: v } });
+      toast(v ? `${acc.username} חסום/ה מדו-קרבים` : `החסימה של ${acc.username} הוסרה`);
+    } catch (e) { toast("לא נשמר: " + e.message, true); }
+    finally { setBusy(false); }
+  }
   async function flip(v) {
     setBusy(true);
     try {
@@ -169,6 +181,14 @@ function DuelBox({ d, setD }) {
           <small>{on ? "רואה ומשחק/ת דו-קרבים גם כשהם במצב בדיקה" : "כשהדו-קרבים במצב בדיקה, רק בודקים רואים אותם"}</small>
         </span>
         <span className={busy ? "st-duel-sw busy" : "st-duel-sw"}><Switch on={on} onChange={busy ? () => {} : flip} label="בודק/ת דו-קרבים" /></span>
+      </div>
+      <div className={"st-duel-h" + (banned ? " ban" : "")}>
+        <span className="st-duel-ic"><Prohibit size={18} /></span>
+        <span>
+          <b>חסימה מדו-קרבים</b>
+          <small>{banned ? "חסום/ה: רואה את הדו-קרבים כסגורים, בלי לדעת שנחסם/ה" : "חוסם/ת רק את הדו-קרבים והחברים. התרגול נשאר פתוח"}</small>
+        </span>
+        <span className={busy ? "st-duel-sw busy" : "st-duel-sw"}><Switch on={banned} onChange={busy ? () => {} : ban} label="חסימה מדו-קרבים" /></span>
       </div>
       <p className="st-duel-n">
         {played
