@@ -17,15 +17,19 @@
 //   • chapter = the exact chapter name in src/home/chapters.js (used to link
 //     "what to review" to /topics/<topic>?ch=<chapter>); "" for a topic with
 //     no chapter buttons (equation-solver).
-//   • kinds: which answer kinds it can make; every generator can make 'choice'.
+//   • kinds: which answer kinds it can make. TYPED (['number']) = typed only
+//     (pr.mixed); with BOTH, some variants are still typed only (see the top
+//     of topics/powers-roots.js) and come back as kind 'number' on a choice slot.
 //   • make(r, want?) → Question. want = 'number' asks for a typed answer (only
-//     when kinds has it); anything else gives 4 choices.
+//     when kinds has it); anything else gives 4 choices where the generator
+//     (and the variant it drew) can make them, else a typed question.
 import * as dn from './topics/directed-numbers.js';
 import * as eq from './topics/equation-solver.js';
 import * as pr from './topics/powers-roots.js';
 import * as rp from './topics/ratio-percent.js';
 
 const BOTH = ['choice', 'number'];
+const TYPED = ['number'];
 
 const TOPICS = {
   'directed-numbers': { grade: 7, world: 'num' },
@@ -45,7 +49,7 @@ const LIST = [
   ['pr.laws', 'powers-roots', '2. חוקי חזקות', BOTH, pr.laws],
   ['pr.param', 'powers-roots', '3. פרמטרי', BOTH, pr.param],
   ['pr.roots', 'powers-roots', '4. שורשים', BOTH, pr.roots],
-  ['pr.mixed', 'powers-roots', '5. הכל יחד', BOTH, pr.mixed],
+  ['pr.mixed', 'powers-roots', '5. הכל יחד', TYPED, pr.mixed],
   ['rp.ratio', 'ratio-percent', '1. יחס', BOTH, rp.ratio],
   ['rp.proportion', 'ratio-percent', '2. פרופורציה', BOTH, rp.proportion],
   ['rp.convert', 'ratio-percent', '3. המרות', BOTH, rp.convert],
@@ -61,7 +65,7 @@ export const GENERATORS = LIST.map(([id, topic, chapter, kinds, fn]) => ({
   world: TOPICS[topic].world,
   kinds,
   make: (r, want) => {
-    const q = fn(r, kinds.includes(want) ? want : 'choice');
+    const q = fn(r, kinds.includes(want) ? want : kinds[0]);
     return { gen: id, topic, chapter, ...q };
   },
 }));

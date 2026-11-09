@@ -49,6 +49,7 @@ function evalMath(src, env = {}) {
     let v = power();
     for (;;) {
       if (s[i] === '·') { i++; v *= power(); continue; }
+      if (s[i] === '÷') { i++; v /= power(); continue; }
       if (i < s.length && s[i] !== '}' && s[i] !== ')' && s[i] !== '+' && s[i] !== '-') { v *= power(); continue; }
       return v;
     }
@@ -167,6 +168,14 @@ function guessScores(q) {
   const inP = cs.map((c, i) => (/^−?\d+(\.\d+)?$/.test(c) && pnums.has(c.replace('−', '')) ? i : -1)).filter((i) => i >= 0);
   out['number from the prompt'] = among(inP);
   out['not from the prompt'] = inP.length && inP.length < 4 ? among(cs.map((_, i) => i).filter((i) => !inP.includes(i))) : null;
+  // near a printed number: a sharp kid knows the answer is not a number shown in
+  // the question, but close to one — drop the printed ones, pick the closest
+  const pv = [...pnums].map(Number);
+  if (pv.length && cs.every((c) => /^−?\d+(\.\d+)?$/.test(c))) {
+    const d = cs.map((c, i) => (inP.includes(i) ? null : Math.min(...pv.map((p) => Math.abs(p - Number(c.replace('−', '-')))))));
+    const left = d.filter((x) => x !== null);
+    out['near a printed number'] = left.length ? among(d.map((x, i) => (x !== null && close(x, Math.min(...left)) ? i : -1)).filter((i) => i >= 0)) : null;
+  }
   // extreme numbers, over EVERY number printed in a choice (coefficients, exponents,
   // roots, fractions, "a : b"): sum, first, last; and how many it shares with the prompt
   const nums = toks.map((t) => t.map(Number));
@@ -216,6 +225,32 @@ function variantOf(q) {
     .filter((k) => m[k] !== undefined && !/^[a-z]$/.test(String(m[k])))
     .map((k) => `${k}=${m[k]}`).join(',');
   return key || 'all';
+}
+
+/* Typed-only variants (fix round 5): one exponent / coefficient / count worked
+   out from numbers printed in the question. They must come back as kind
+   'number' even when 4 choices are asked for. Written here from the meta, on
+   its own (the same list sits at the top of topics/powers-roots.js). */
+const TYPED_ONLY = {
+  'pr.powers': (m) => m.v === 'prod' || m.v === 'rev',
+  'pr.param': (m) => [0, 2, 4].includes(m.sub),
+  'pr.roots': (m) => m.sub === 2 && (m.op === 2 || m.op === 3),
+  'pr.mixed': () => true,
+};
+const typedOnly = (q) => !!(TYPED_ONLY[q.gen] && TYPED_ONLY[q.gen](q.meta || {}));
+
+/* The prompt's own equation with the answer put in place of its one "?":
+   both sides evaluated (own evaluator) at two sets of letter values. Checks
+   one-slot answers against the TEXT the student sees, not only the meta. */
+const LETTERS = [
+  { x: 1.37, y: 2.29, z: 3.11, a: 1.73, b: 2.57, m: 1.19, n: 2.83, t: 3.37 },
+  { x: 2.71, y: 1.21, z: 1.53, a: 3.07, b: 1.31, m: 2.39, n: 1.47, t: 1.83 },
+];
+function promptHolds(q, ansText) {
+  const m = mathOf(q.prompt);
+  if ((m.match(/\?/g) || []).length !== 1 || m.split('=').length !== 2) return null; // "? · ?" (law 3)
+  const [lhs, rhs] = m.split('=');
+  return LETTERS.every((env) => close(evalMath(lhs, env), evalMath(rhs.replace('?', `(${ansText})`), env)));
 }
 
 /* Left-hand sides of powers-roots ch5 templates, evaluated at x = X, y = Y. */
@@ -410,13 +445,15 @@ test('registry: every generator has its metadata and an independent check', () =
     assert.ok([7, 8, 9].includes(g.grade), g.id);
     assert.ok(['num', 'alg', 'fn', 'geo'].includes(g.world), g.id);
     assert.equal(typeof g.chapter, 'string');
-    assert.ok(g.kinds.includes('choice'), g.id + ' must support choice');
+    assert.ok(g.kinds.includes('number'), g.id + ' must support typed answers');
+    // only a generator whose every variant is typed-only may skip 'choice'
+    assert.equal(g.kinds.includes('choice'), !(TYPED_ONLY[g.id] && TYPED_ONLY[g.id]({})), g.id + ' kinds');
     assert.ok(EXPECT[g.id], 'no independent check for ' + g.id);
   }
 });
 
 for (const g of GENERATORS) {
-  for (const want of g.kinds) {
+  for (const want of ['choice', 'number']) {
     test(`${g.id} (${want}) × 1000: well formed and right`, () => {
       const r = mulberry32(1000 + g.id.length * 31 + (want === 'number' ? 7 : 0));
       for (let run = 0; run < 1000; run++) {
@@ -425,7 +462,8 @@ for (const g of GENERATORS) {
         assert.equal(q.gen, g.id);
         assert.equal(q.topic, g.topic);
         assert.equal(q.chapter, g.chapter);
-        assert.equal(q.kind, want, where);
+        // typed-only variants are typed even when 4 choices are asked for
+        assert.equal(q.kind, typedOnly(q) ? 'number' : want, where);
         assert.ok(typeof q.prompt === 'string' && q.prompt.trim().length > 0, where);
         assert.ok(!/NaN|undefined|null|Infinity/.test(q.prompt), where);
         assert.ok(!/(^|[\s(=+×÷·])-\d/.test(q.prompt), 'ASCII minus in prompt: ' + where);
@@ -457,6 +495,16 @@ for (const g of GENERATORS) {
           assert.ok(Number.isFinite(parseNum(q.answer)), where);
           assert.equal(checkAnswer(q, q.answer), true);
         }
+        // powers and roots: the answer makes the prompt's own equation true, and
+        // no wrong choice does
+        if (g.topic === 'powers-roots') {
+          const ansText = q.kind === 'number' ? q.answer : q.choices[Number(q.answer)];
+          const ok = promptHolds(q, ansText);
+          if (ok !== null) {
+            assert.ok(ok, 'prompt says otherwise: ' + where);
+            if (q.kind === 'choice') for (const c of q.choices) if (c !== ansText) assert.ok(!promptHolds(q, c), 'a wrong choice fits the prompt: ' + where);
+          }
+        }
         const exp = EXPECT[g.id](q.meta, q);
         if (q.kind === 'number') {
           assert.ok(close(parseNum(q.answer), exp.value), `expected ${exp.value}: ` + where);
@@ -487,11 +535,16 @@ for (const g of GENERATORS) {
         const gr = (groups[key] = groups[key] || {});
         for (const [name, h] of Object.entries(s)) { const t = (gr[name] = gr[name] || [0, 0]); t[0] += h === null ? 0.25 : h; t[1]++; }
       };
-      // at least GUARD_RUNS, and on until every variant has 200 questions (max 3×)
+      // at least GUARD_RUNS choice questions, and on until every variant has 200
+      // (typed-only variants are skipped: they never show choices)
       const seen = {};
-      for (let i = 0; i < GUARD_RUNS * 3; i++) {
-        if (i >= GUARD_RUNS && Math.min(...Object.values(seen)) >= 200) break;
+      let nChoice = 0;
+      for (let i = 0; i < GUARD_RUNS * 6; i++) {
+        if (nChoice >= GUARD_RUNS && Math.min(...Object.values(seen)) >= 200) break;
+        if (i >= GUARD_RUNS * 3 && nChoice >= GUARD_RUNS) break;
         const q = g.make(r, 'choice');
+        if (q.kind !== 'choice') { assert.ok(typedOnly(q), 'typed on a choice slot: ' + q.prompt); continue; }
+        nChoice++;
         const s = guessScores(q);
         const v = variantOf(q);
         seen[v] = (seen[v] || 0) + 1;
@@ -503,6 +556,9 @@ for (const g of GENERATORS) {
           if (n >= GUARD_MIN && h / n > 0.4) bad.push(`seed ${seed} ${key} "${name}" ${(h / n * 100).toFixed(1)}% of ${n}`);
         }
       }
+      // a typed-only generator never shows choices; every other one keeps enough of them
+      if (g.kinds.includes('choice')) assert.ok(nChoice >= GUARD_RUNS, `${g.id}: only ${nChoice} choice questions`);
+      else assert.equal(nChoice, 0, g.id);
     }
     assert.deepEqual(bad, [], `${g.id} leaks: ${bad.join('; ')}`);
   });
@@ -568,5 +624,22 @@ test('buildDuel over many seeds, grades and subjects', () => {
         assert.ok(qs.every((q) => pool.some((g) => g.id === q.gen)));
       }
     }
+  }
+});
+
+test('buildDuel stays mostly choice although some powers questions are typed only', () => {
+  for (const [grade, subject] of [[8, 'num'], [9, 'num'], [8, 'random'], [9, 'random']]) {
+    let choice = 0, total = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const qs = buildDuel(seed * 104729, { grade, subject });
+      const c = qs.filter((q) => q.kind === 'choice').length;
+      // more than half of every duel is 4 choices; slots 3, 7, 11 stay typed
+      assert.ok(c >= 8, `${grade}/${subject}/${seed}: only ${c} choice questions`);
+      for (const i of [3, 7, 11]) assert.equal(qs[i].kind, 'number');
+      // a typed question on a choice slot is always a typed-only variant
+      qs.forEach((q, i) => { if (![3, 7, 11].includes(i) && q.kind === 'number') assert.ok(typedOnly(q), q.prompt); });
+      choice += c; total += qs.length;
+    }
+    assert.ok(choice / total >= 0.6, `${grade}/${subject}: ${(choice / total * 100).toFixed(1)}% choice`);
   }
 });

@@ -20,10 +20,14 @@
 //                         the distance and prompt guessers above, so they are
 //                         scored only for expression / fraction choices);
 //   • covered           — every number of the choice appears in another choice
-//                         (the answer as the hub of its mistakes).
-// Whole expressions as 4 choices (x³y², 3√2, 2⁵) leak through that last family
-// whatever the decoys, so the topic ports ask ONE slot of such an answer
-// (coefficient or exponent, "…= ?x^{12}") as plain numbers instead.
+//                         (the answer as the hub of its mistakes);
+//   • near the prompt   — leave out the numbers printed in the question, then
+//                         the choice closest to any of them (plain numbers).
+// Whole expressions as 4 choices (x³y², 3√2, 2⁵) leak through the extreme-
+// number family whatever the decoys, so the topic ports ask ONE slot of such
+// an answer ("…= ?x^{12}"); and one exponent / coefficient worked out from
+// printed numbers leaks through "near the prompt", so those are typed only
+// (list at the top of topics/powers-roots.js).
 // So makeChoices builds candidates — real typical mistakes, two mistakes in
 // one (a "web" around the answer, not a star), then decoys — and scores sets
 // of 3 wrongs:
@@ -299,6 +303,13 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
   const KEYS = kf.map((f) => { const k = keyer(); return Int32Array.from(all, (c) => k(f(c))); });
   const pnums = new Set(opts.prompt ? opts.prompt.match(NUM) || [] : []);
   const inP = all.map((c) => (plain(c.t) !== null && pnums.has(c.t.replace(MINUS, '')) ? 1 : 0));
+  // "near a printed number": leave out the numbers printed in the prompt, then
+  // the choice closest to any of them (plain-number sets only; a printed one
+  // counts as far away)
+  const PV = [...pnums].map(Number);
+  const nearP = all.every((c) => plain(c.t) !== null) && PV.length
+    ? all.map((c, q) => (inP[q] ? 1e12 : Math.min(...PV.map((p) => Math.abs(p - c.v)))))
+    : null;
   // extreme numbers (expression / fraction choices only; plain numbers are
   // covered by the distance rank and the prompt guesser)
   const plainAll = all.every((c) => plain(c.t) !== null);
@@ -323,7 +334,7 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
   if (useA) [tV, tA] = jointTarget(r, lowV, lowA);
   else if (rankable) tV = target(lowV);
   const tL = randInt(r, 0, 3); // 0: may be the shortest, 3: may be the longest
-  const free = Array.from({ length: KEYS.length + 4 + EXT.length + 1 }, () => r() < 0.25); // guessers let off this time
+  const free = Array.from({ length: KEYS.length + 4 + EXT.length + 2 }, () => r() < 0.25); // guessers let off this time
   const best = W_STRICT + (tV >= 0 ? W_RANK : 0) + (tA >= 0 ? W_RANK : 0);
 
   // share of a "pick the max of x" guesser that the answer gets, minus chance
@@ -395,6 +406,8 @@ export function makeChoices(r, correct, wrongs, opts = {}) {
       const cov = S.map((x) => P[x][1].length > 0 && P[x][1].every((tok) => S.some((y) => y !== x && P[y][1].includes(tok))) ? 1 : 0);
       pen += over(cov[0], cov[1], cov[2], cov[3], true);
     }
+    // near a printed number (not one of them)
+    if (nearP && !free[G + 5 + EXT.length]) pen += over(nearP[0], nearP[i], nearP[j], nearP[k], false);
     return sc - W_GUESS * pen;
   };
 

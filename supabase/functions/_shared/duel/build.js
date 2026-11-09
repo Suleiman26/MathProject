@@ -20,8 +20,9 @@ const toEnd = (arr, item) => { arr.splice(arr.indexOf(item), 1); arr.push(item);
  * that topic, so a one-generator topic (equation-solver) gets its fair share.
  * No prompt repeats. Slots 3, 7 and 11 are 'number' questions when the pool
  * has a generator that can make one (topics/generators that can are tried
- * first there); all other slots are 'choice'. Throws 'empty_pool' when no
- * generator fits.
+ * first there); all other slots ask for 'choice' (a typed-only generator or
+ * variant gives a typed question there; duel.test.mjs keeps the mix mostly
+ * choice). Throws 'empty_pool' when no generator fits.
  */
 export function buildDuel(seed, { grade, subject }) {
   const pool = poolFor({ grade, subject });
@@ -35,13 +36,17 @@ export function buildDuel(seed, { grade, subject }) {
   const out = [];
   for (let idx = 0; idx < DUEL_LENGTH; idx++) {
     const want = anyNumber && NUMBER_SLOTS.includes(idx) ? 'number' : 'choice';
+    // a number slot tries the topics / generators that can type first; a choice
+    // slot keeps the plain rotation (a typed-only generator or variant there
+    // simply gives a typed question)
+    const first = (g) => want === 'choice' || can(g, want);
     const topicOrder = [
-      ...topics.filter((t) => gens[t].some((g) => can(g, want))),
-      ...topics.filter((t) => !gens[t].some((g) => can(g, want))),
+      ...topics.filter((t) => gens[t].some(first)),
+      ...topics.filter((t) => !gens[t].some(first)),
     ];
     let q = null;
     for (const t of topicOrder) {
-      const order = [...gens[t].filter((g) => can(g, want)), ...gens[t].filter((g) => !can(g, want))];
+      const order = [...gens[t].filter(first), ...gens[t].filter((g) => !first(g))];
       for (const g of order) {
         for (let tries = 0; tries < 40 && !q; tries++) {
           const c = g.make(r, want);
