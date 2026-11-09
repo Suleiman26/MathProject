@@ -64,12 +64,13 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
 
   useEffect(() => { if (open) { setErr(""); setSubject("random"); setSending(false); } }, [open, friend && friend.id]);
   const [eng, setEng] = useState(engine);
+  const [engFail, setEngFail] = useState(false);   // the engine chunk didn't load (offline / a new deploy): offer a retry
   useEffect(() => {
-    if (!open || eng) return;
+    if (!open || eng || engFail) return;
     let dead = false;
-    preloadEngine().then((m) => { if (!dead && m) setEng(m); });
+    preloadEngine().then((m) => { if (dead) return; if (m) setEng(m); else setEngFail(true); });
     return () => { dead = true; };
-  }, [open, eng]);
+  }, [open, eng, engFail]);
   // one clock for the ring and the cooldown
   useEffect(() => {
     if (!open) return;
@@ -92,13 +93,14 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
   const subjects = eng ? eng.subjectsFor(me && me.grade, friend.grade).filter((s) => !s.empty) : SUBJECTS;
   const keys = ["random", ...subjects.map((s) => s.key)];
   const noQuestions = eng ? eng.randomEmpty(me && me.grade, friend.grade) : false;
-  const loading = !eng;
+  const loading = !eng && !engFail;
   const mine = wait && wait.friend && wait.friend.id === friend.id ? wait : null;     // the wait shown in THIS sheet
   const otherWait = wait && !mine;                                                   // an open invite to someone else
   const left = mine && mine.invite ? (Date.parse(mine.invite.expires_at) - serverNow(offset)) / 1000 : 0;
 
   async function send() {
-    if (sending || loading || cdLeft > 0 || noQuestions || otherWait) return;
+    if (engFail) { setEngFail(false); return; }      // "try again": the effect above loads the engine again
+    if (sending || loading || !eng || cdLeft > 0 || noQuestions || otherWait) return;
     setSending(true); setErr("");
     const r = await api.invite(friend.id, subject);
     setSending(false);
@@ -146,10 +148,11 @@ export function ChallengeSheet({ open, onClose, friend, me, offset = 0, api, coo
             </div>
           )}
           {err && <p className="dl-err" role="alert">{err}</p>}
+          {engFail && <p className="dl-err" role="alert">לא הצלחנו לטעון את הדו-קרב. בדקו את החיבור ונסו שוב</p>}
           <div className="dl-ch-foot">
-            <button type="button" className={"dl-btn send" + (cdLeft > 0 ? " cd" : "")} onClick={send} disabled={sending || loading || cdLeft > 0 || noQuestions || !!otherWait}
-              style={cdLeft > 0 ? { "--cd": (cdLeft / (COOLDOWN_MS / 1000)).toFixed(3) } : undefined}>
-              <span>{sending ? "שולחים…" : cdLeft > 0 ? `אפשר לשלוח שוב בעוד ${cdLeft} שנ׳` : `שליחת אתגר ${toName(name)}`}</span>
+            <button type="button" className={"dl-btn send" + (cdLeft > 0 && !engFail ? " cd" : "")} onClick={send} disabled={!engFail && (sending || loading || cdLeft > 0 || noQuestions || !!otherWait)}
+              style={cdLeft > 0 && !engFail ? { "--cd": (cdLeft / (COOLDOWN_MS / 1000)).toFixed(3) } : undefined}>
+              <span>{engFail ? "לנסות שוב" : sending ? "שולחים…" : cdLeft > 0 ? `אפשר לשלוח שוב בעוד ${cdLeft} שנ׳` : `שליחת אתגר ${toName(name)}`}</span>
             </button>
             <p className="dl-sr" role="status" aria-live="polite">{cdNote}</p>
             <p className="dl-ch-note">15 שאלות · 5 דקות · אותן שאלות לשניכם</p>
