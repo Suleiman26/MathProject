@@ -106,12 +106,12 @@ html[data-page="powers-roots"] .sq-details summary::after { content: "פתיחה
 html[data-page="powers-roots"] .sq-details[open] summary::after { content: "סגירה ▴"; }
 html[data-page="powers-roots"] .sq-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; }
 html[data-page="powers-roots"] .sq-table { border-collapse: separate; border-spacing: 2px; margin: 0 auto; font-variant-numeric: tabular-nums; }
-html[data-page="powers-roots"] .sq-table th, html[data-page="powers-roots"] .sq-table td { width: 34px; height: 30px; text-align: center; font-size: 13px; border-radius: 6px; }
+html[data-page="powers-roots"] .sq-table th, html[data-page="powers-roots"] .sq-table td { width: 34px; height: 30px; text-align: center; font-size: .9rem; border-radius: 6px; }
 html[data-page="powers-roots"] .sq-table th { color: var(--a-700, #6d28d9); font-weight: 700; background: var(--a-100, #ede9fe); }
 html[data-page="powers-roots"] .sq-table td { background: var(--surface, #fff); color: var(--ink-3, #78716c); }
 html[data-page="powers-roots"] .sq-table td.d { background: var(--a-600, #7c3aed); color: #fff; font-weight: 800; }
 html[data-page="powers-roots"] .sq-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
-html[data-page="powers-roots"] .sq-chips span { padding: 4px 10px; border-radius: 999px; background: var(--surface, #fff); border: 1px solid var(--a-200, #ddd6fe); color: var(--a-800, #5b21b6); font-weight: 700; font-size: 14px; white-space: nowrap; }
+html[data-page="powers-roots"] .sq-chips span { padding: 4px 10px; border-radius: 999px; background: var(--surface, #fff); border: 1px solid var(--a-200, #ddd6fe); color: var(--a-800, #5b21b6); font-weight: 700; font-size: .95rem; white-space: nowrap; }
 @media (max-width: 420px) {
   html[data-page="powers-roots"] .sq-table th, html[data-page="powers-roots"] .sq-table td { width: 27px; height: 26px; font-size: 11.5px; border-radius: 5px; }
   html[data-page="powers-roots"] .be-b { font-size: 38px; }
@@ -268,8 +268,9 @@ html[data-page="equation-solver"] .pv-par { font-size: 1.7rem; font-weight: 300;
 @keyframes pv-in { from { opacity: 0; } to { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { html[data-page="equation-solver"] .pv-ghost { animation: none; } }
 
-/* Parabola: its unnamed toggle buttons were 35px; finger-sized like the rest */
-html[data-page="parabola-practice"] #root .card button { min-height: 40px; }
+/* Parabola: its unnamed toggle buttons were 35px; finger-sized like the rest
+   (44px; the check button keeps its own 56px from mp.css) */
+html[data-page="parabola-practice"] #root .card button:not(.mp-check) { min-height: 44px; }
 
 /* ── 3D shapes (2026-10-31): the 3D view that replaces the flat sketches ── */
 html[data-page="solids3d"] .s3d {
@@ -289,18 +290,18 @@ html[data-page="solids3d"] .s3d-tag {
   position: absolute; top: 0; left: 0; opacity: 0; will-change: transform;
   display: inline-block; padding: 2px 8px; border-radius: 999px; direction: ltr; white-space: nowrap;
   background: #fff; border: 1.5px solid var(--line, #e2e8f0);
-  box-shadow: 0 1px 3px rgb(0 0 0 / .1); font-size: 12.5px; font-weight: 700; line-height: 1.3; padding: 1px 7px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / .1); font-size: .9rem; font-weight: 700; line-height: 1.3; padding: 1px 7px;
 }
 html[data-page="solids3d"] .s3d { margin-bottom: 28px; }
 html[data-page="solids3d"] .s3d-hint {
   position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%);
-  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  padding: 3px 10px; border-radius: 999px; font-size: .9rem; font-weight: 600; white-space: nowrap;
   color: var(--ink-3, #64748b); background: rgb(255 255 255 / .85); border: 1px solid var(--line, #e2e8f0);
   pointer-events: none; transition: opacity .4s ease;
 }
 html[data-page="solids3d"] .s3d-hint.gone { opacity: 0; }
 html[data-page="solids3d"] .s3d-reset {
-  position: absolute; top: 4px; inset-inline-start: 4px; width: 40px; height: 40px; min-height: 40px; padding: 0;
+  position: absolute; top: 4px; inset-inline-start: 4px; width: 44px; height: 44px; min-height: 44px; padding: 0;
   border-radius: 50%; border: 1px solid var(--line, #e2e8f0); background: rgb(255 255 255 / .9);
   color: var(--ink-2, #475569); font-size: 18px; line-height: 1; box-shadow: var(--sh-1);
 }
@@ -329,12 +330,12 @@ html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-step {
 html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-step::before {
   content: counter(ex); position: absolute; inset-inline-start: 0; top: 1px;
   width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--a-100, #ccfbf1); color: var(--a-800, #115e59); font-weight: 700; font-size: 14px;
+  background: var(--a-100, #ccfbf1); color: var(--a-800, #115e59); font-weight: 700; font-size: .9rem;
 }
-html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-text { font-size: 15px; line-height: 1.7; color: var(--ink-2, #4f4d48); }
+html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-text { font-size: .95rem; font-weight: 500; line-height: 1.7; color: var(--ink-2, #4f4d48); margin: 0; }
 html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-math {
   display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px;
-  margin: 8px 0 0; font-size: 1.15rem;
+  margin: 8px 0 0; font-size: clamp(1.2rem, 5vw, 1.45rem);
 }
 html[data-page="circle"] .info-box .ex-card {
   margin-top: 14px; padding: 14px 14px 16px; border-radius: 12px; background: var(--surface, #fff);
@@ -343,46 +344,46 @@ html[data-page="circle"] .info-box .ex-card > p { margin-bottom: 4px; }
 html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-card bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 @media (max-width: 420px) {
   html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-step { padding-inline-start: 0; padding-top: 32px; }
-  html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-math { font-size: 1rem; }
+  html:is([data-page="quadrilaterals"], [data-page="circle"]) .ex-math { font-size: 1.15rem; padding: 12px 10px; }
 }
 }
 
 
 /* parabola: fractions drawn numerator over denominator (Sulaiman, fixes board #54) */
-html[data-page="parabola-practice"] .pp-fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 3px; font-size: .92em; line-height: 1.15; unicode-bidi: isolate; }
+html[data-page="parabola-practice"] .pp-fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 3px; font-size: max(.92em, .9rem); line-height: 1.15; unicode-bidi: isolate; }
 html[data-page="parabola-practice"] .pp-fr > span { padding: 0 3px; white-space: nowrap; }
 html[data-page="parabola-practice"] .pp-fr > span:first-child { border-bottom: 1.6px solid currentColor; padding-bottom: 2px; }
 html[data-page="parabola-practice"] .pp-fr > span:last-child { padding-top: 2px; }
 
 /* ratio-percent 1א/1ב (Sulaiman, fixes board #45, #46): step-by-step reducing, ratio → amounts */
-html[data-page="ratio-percent"] .rp-hint { font-size: 13px; color: #475569; margin: -2px 0 6px; }
+html[data-page="ratio-percent"] .rp-hint { font-size: .9rem; color: #475569; margin: -2px 0 6px; }
 html[data-page="ratio-percent"] .rp-chain { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin: 6px 0 2px; font-size: 18px; font-weight: 700; color: #134e4a; }
 html[data-page="ratio-percent"] .rp-chain .rp-arrow { color: #94a3b8; font-weight: 400; }
 html[data-page="ratio-percent"] .rp-chain .rp-last { color: #16a34a; }
 html[data-page="ratio-percent"] .fb.rp-more { background: #fef9c3; color: #854d0e; }
 html[data-page="ratio-percent"] .rp-table { border-collapse: separate; border-spacing: 0; margin: 12px auto; font-size: 16px; background: #fff; border: 1.5px solid #99f6e4; border-radius: 12px; overflow: hidden; }
 html[data-page="ratio-percent"] .rp-table th, html[data-page="ratio-percent"] .rp-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid #ccfbf1; border-inline-start: 1px solid #ccfbf1; min-width: 56px; }
-html[data-page="ratio-percent"] .rp-table thead th { background: #f0fdfa; color: #0f766e; font-size: 14px; }
-html[data-page="ratio-percent"] .rp-table tbody th { background: #f0fdfa; color: #0f766e; font-size: 14px; }
+html[data-page="ratio-percent"] .rp-table thead th { background: #f0fdfa; color: #0f766e; font-size: .9rem; }
+html[data-page="ratio-percent"] .rp-table tbody th { background: #f0fdfa; color: #0f766e; font-size: .9rem; }
 html[data-page="ratio-percent"] .rp-table tbody tr:last-child > * { border-bottom: 0; }
 html[data-page="ratio-percent"] .rp-table tr > :first-child { border-inline-start: 0; }
 html[data-page="ratio-percent"] .rp-table td { font-weight: 700; color: #134e4a; }
-html[data-page="ratio-percent"] .rp-table input { width: 56px; }
+html[data-page="ratio-percent"] .rp-table input { width: 56px; height: 44px; font-size: 1.1rem; font-weight: 700; text-align: center; }
 html[data-page="ratio-percent"] .rp-table input.rp-bad { border-color: #ef4444; background: #fef2f2; }
 html[data-page="ratio-percent"] .rp-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 320px; margin: 10px auto; direction: ltr; }
-html[data-page="ratio-percent"] .rp-sq { width: 40px; height: 40px; border-radius: 8px; border: 2px solid #cbd5e1; background: #fff; cursor: pointer; padding: 0; box-shadow: none; transition: background .15s, border-color .15s, transform .1s; }
+html[data-page="ratio-percent"] .rp-sq { width: 44px; height: 44px; border-radius: 8px; border: 2px solid #cbd5e1; background: #fff; cursor: pointer; padding: 0; box-shadow: none; transition: background .15s, border-color .15s, transform .1s; }
 html[data-page="ratio-percent"] .rp-sq:active { transform: scale(.92); }
 html[data-page="ratio-percent"] .rp-sq.on { background: #3b82f6; border-color: #2563eb; }
-html[data-page="ratio-percent"] .rp-count { text-align: center; font-size: 14px; color: #475569; margin: 4px 0 10px; }
+html[data-page="ratio-percent"] .rp-count { text-align: center; font-size: .95rem; color: #475569; margin: 4px 0 10px; }
 html[data-page="ratio-percent"] .rp-packs { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 10px 0; direction: ltr; }
 html[data-page="ratio-percent"] .rp-pack { display: inline-flex; flex-wrap: wrap; gap: 4px; max-width: 92px; padding: 8px; border: 2px dashed #94a3b8; border-radius: 12px; background: #f8fafc; }
 html[data-page="ratio-percent"] .rp-pack i { width: 14px; height: 14px; border-radius: 50%; display: block; }
-html[data-page="ratio-percent"] .ans-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; }
+html[data-page="ratio-percent"] .ans-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 1.05rem; font-weight: 600; }
 @media (max-width: 500px) {
-  html[data-page="ratio-percent"] .rp-table { font-size: 14px; }
+  html[data-page="ratio-percent"] .rp-table { font-size: .95rem; }
   html[data-page="ratio-percent"] .rp-table th, html[data-page="ratio-percent"] .rp-table td { padding: 6px 4px; min-width: 0; }
   html[data-page="ratio-percent"] .rp-table input { width: 46px; }
-  html[data-page="ratio-percent"] .rp-sq { width: 36px; height: 36px; }
+  html[data-page="ratio-percent"] .rp-sq { width: 44px; height: 44px; }
 }
 html[data-page="ratio-percent"] :is(span, b, bdi)[dir="ltr"] { direction: ltr; unicode-bidi: isolate; }
 
@@ -400,7 +401,7 @@ html[data-page="pythagoras"] .py-rule { background: #f0fdf4; border-radius: 10px
 html[data-page="pythagoras"] .py-big { display: inline-block; margin-top: 4px; font-size: 22px; font-weight: 700; }
 html[data-page="pythagoras"] .py-intro bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 html[data-page="pythagoras"] .py-ex { background: #fff; border: 2px dashed #a5b4fc; border-radius: 14px; padding: 14px 16px; font-size: 15px; line-height: 1.7; color: #334155; }
-html[data-page="pythagoras"] .py-ex-t { font-weight: 700; color: #4338ca; margin-bottom: 4px; }
+html[data-page="pythagoras"] .py-ex-t { font-weight: 700; color: #4338ca; margin-bottom: 4px; font-size: 1.05rem; }
 html[data-page="pythagoras"] .py-ex p { margin: 0 0 6px; }
 html[data-page="pythagoras"] .py-ex ol { margin: 0 0 6px; padding-inline-start: 20px; }
 html[data-page="pythagoras"] .py-ex li { margin: 2px 0; }
@@ -412,32 +413,33 @@ html[data-page="pythagoras"] .py-ans { color: #15803d; font-weight: 700; }
 
 /* circle (Sulaiman, fixes board #48-#51): radians sub-chapters, π, why πr², formula beside the question */
 html[data-page="circle"] .sub-tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
-html[data-page="circle"] .sub-tab-btn { padding: 8px 16px; border: 2px solid #7dd3fc; border-radius: 10px; background: #f0f9ff; color: #0369a1; font-size: 14px; font-weight: 700; cursor: pointer; }
+html[data-page="circle"] .sub-tab-btn { padding: 8px 16px; border: 2px solid #7dd3fc; border-radius: 10px; background: #f0f9ff; color: #0369a1; font-size: .95rem; font-weight: 700; cursor: pointer; }
 html[data-page="circle"] .sub-tab-btn.active { background: #0369a1; border-color: #0369a1; color: #fff; }
 html[data-page="circle"] .info-box b { color: #075985; }
 html[data-page="circle"] .info-box bdi, html[data-page="circle"] .area-why bdi, html[data-page="circle"] .card bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 html[data-page="circle"] .pi-box { background: #fff; border-radius: 10px; padding: 10px 12px; margin: 4px 0 10px; display: grid; gap: 6px; }
 html[data-page="circle"] .rad-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; justify-content: center; }
-html[data-page="circle"] .rad-facts span { background: #fff; border-radius: 999px; padding: 4px 12px; font-size: 13px; color: #0c4a6e; }
+html[data-page="circle"] .rad-facts span { background: #fff; border-radius: 999px; padding: 4px 12px; font-size: .95rem; color: #0c4a6e; }
 html[data-page="circle"] .rad-def { display: flex; gap: 12px; align-items: center; }
 html[data-page="circle"] .rad-def > svg { flex: 0 0 auto; width: 210px !important; }
 html[data-page="circle"] .rad-def p + p { margin-top: 6px; }
 html[data-page="circle"] .choice-btn.rad-frac { min-width: 56px; padding: 6px 12px; }
 html[data-page="circle"] .area-why { margin-bottom: 14px; }
 html[data-page="circle"] .area-why-t { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer;
-  padding: 11px 14px; border-radius: 12px; background: #fff; border: 2px dashed #7dd3fc; color: #0369a1; font-weight: 700; font-size: 14px; }
+  min-height: 48px; padding: 11px 14px; border-radius: 12px; background: #fff; border: 2px dashed #7dd3fc; color: #0369a1; font-weight: 700; font-size: .95rem; }
 html[data-page="circle"] .area-why-t:focus-visible { outline: 3px solid #7dd3fc; outline-offset: 2px; }
-html[data-page="circle"] .area-why-b { background: #fff; border-radius: 12px; padding: 12px 14px; margin-top: 8px; display: grid; gap: 6px; justify-items: center; font-size: 14px; line-height: 1.7; color: #0c4a6e; }
+html[data-page="circle"] .area-why-b { background: #fff; border-radius: 12px; padding: 12px 14px; margin-top: 8px; display: grid; gap: 6px; justify-items: center; font-size: .95rem; line-height: 1.7; color: #0c4a6e; }
 html[data-page="circle"] .area-why-b p { justify-self: stretch; }
 html[data-page="circle"] .area-q { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
 html[data-page="circle"] .area-q .graph-wrap { margin: 0; }
 html[data-page="circle"] .area-f { display: grid; gap: 4px; justify-items: center; padding: 10px 14px; border-radius: 12px; background: #fefce8; border: 2px solid #fde047; color: #854d0e; }
-html[data-page="circle"] .area-f small { font-size: 12px; font-weight: 700; opacity: .8; }
+html[data-page="circle"] .area-f small { font-size: .9rem; font-weight: 700; opacity: .8; }
 html[data-page="circle"] .area-f b { font-size: 20px; font-weight: 700; white-space: nowrap; }
-html[data-page="circle"] .area-f span { font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-html[data-page="circle"] .area-hint { font-size: 16px; color: #334155; }
+html[data-page="circle"] .area-f span { font-size: .95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+/* the line that asks ("r = 8, θ = 90°. חשב את שטח הגזרה") is the question: ink, --q-ask */
+html[data-page="circle"] .area-hint { font-size: var(--q-ask); font-weight: 600; line-height: 1.45; color: var(--ink); text-wrap: balance; }
 html[data-page="circle"] .pi-btn { background: #e0f2fe; color: #0369a1; font-size: 18px; padding: 4px 14px; font-family: inherit; }
-html[data-page="circle"] .area-note { text-align: center; font-size: 12px; color: #6b7280; margin-top: -2px; }
+html[data-page="circle"] .area-note { text-align: center; font-size: .9rem; color: #6b7280; margin-top: 2px; }
 @media (max-width: 560px) {
   html[data-page="circle"] .rad-def { flex-direction: column; }
   html[data-page="circle"] .area-q { gap: 8px; }
@@ -450,3 +452,259 @@ html[data-page="circle"] :is(.area-why, .pi-box, .info-box) bdi, html[data-page=
 @layer page {
 html[data-page="circle"] .fb.ok + .fb.ok { display: none; }
 }
+
+/* ══ Question UI, per topic (W4, 2026-11-10) ═══════════════════════════════
+   Spec: docs/superpowers/specs/2026-11-10-question-ui-design.md §5. mp.css §12
+   gives every topic the roles (question line, formula hero, answer box, check
+   button, outline secondary); these rules reach what its generic selectors
+   can't, and undo what a topic's own styles.js / inline styles still break.
+   Display only: no text, number or behaviour changes. */
+@layer page {
+
+/* ── shared looks, listed per topic ─────────────────────────────────────── */
+/* the line that asks (spec §3 --q-ask) */
+html[data-page="directed-numbers"] #root .card > p:has(+ .eq-box),
+html[data-page="equations-advanced"] #root .eq-card > .phase-title:not(:has(+ .eq-row)),
+html[data-page="inequalities"] #root .iq-op-t,
+html[data-page="pythagoras"] #root .steps .card.on > p,
+html[data-page="similar-triangles"] #root .card > .hint:has(+ .center),
+html[data-page="parabola-practice"] #root .task-box {
+  color: var(--ink) !important;
+  font-size: var(--q-ask) !important; font-weight: 600 !important; line-height: 1.45;
+  text-wrap: balance;
+}
+/* "how to answer" lines under the formula: readable, one step quieter than the question */
+html[data-page="directed-numbers"] #root .card > p:not(:has(+ .eq-box)),
+html[data-page="equations-advanced"] #root .eq-card > div[style*="color: rgb(85, 85, 85)"],
+html[data-page="intersection"] #root .step-card > .hint {
+  color: var(--ink-2) !important;
+  font-size: 1rem !important; font-weight: 500 !important; line-height: 1.5;
+}
+
+/* a check button the runtime can't recognise (its card has no answer box:
+   tap-the-drawing / pick-a-side questions). Same look as .mp-check. */
+html[data-page="similar-triangles"] #root .btn.bg,
+html[data-page="ratio-percent"] #root .card > .center > .btn.bg:only-child,
+html[data-page="pythagoras"] #root .steps .card .btn.bg,
+html[data-page="directed-numbers"] #root .card > .center > .btn.bg {
+  min-height: var(--ctl-h); min-width: 120px;
+  padding: 0 22px;
+  border-radius: 14px; border: 1px solid var(--a-600);
+  background: var(--a-600); color: #fff;
+  font-size: 1.05rem; font-weight: 700; line-height: 1.2;
+  box-shadow: var(--sh-accent);
+}
+html[data-page="similar-triangles"] #root .btn.bg:disabled,
+html[data-page="ratio-percent"] #root .card > .center > .btn.bg:only-child:disabled,
+html[data-page="pythagoras"] #root .steps .card .btn.bg:disabled,
+html[data-page="directed-numbers"] #root .card > .center > .btn.bg:disabled { opacity: .42; box-shadow: none; }
+@media (max-width: 480px) {
+  html[data-page="similar-triangles"] #root .center > .btn.bg:only-child,
+  html[data-page="ratio-percent"] #root .card > .center > .btn.bg:only-child,
+  html[data-page="pythagoras"] #root .steps .card div:has(> .btn.bg:only-child) > .btn.bg { width: 100%; }
+}
+
+/* phones: small inline text in lessons and under drawings (11–14px set in
+   the exercise code) is lifted to the readability floor (.9rem; lesson
+   panels .95rem). SVG labels are drawings and keep their own sizes. */
+@media (max-width: 640px) {
+  html:is([data-page="circle"], [data-page="directed-numbers"], [data-page="equations-advanced"], [data-page="linear-function"],
+          [data-page="parabola-practice"], [data-page="ratio-percent"], [data-page="triangles"], [data-page="quadratic-solver"],
+          [data-page="solids3d"], [data-page="powers-roots"], [data-page="inequalities"], [data-page="quadrilaterals"],
+          [data-page="similar-triangles"], [data-page="angles-parallel"], [data-page="intersection"], [data-page="pythagoras"])
+    #root :is(p, span, div, b, strong, li, small, td, th, label, bdi, em, h4):not(svg *):is(
+      [style*="font-size: 10px"], [style*="font-size: 11px"], [style*="font-size: 12px"], [style*="font-size: 13px"],
+      [style*="font-size: 14px"], [style*="font-size: 0.7rem"], [style*="font-size: 0.75rem"], [style*="font-size: 0.8rem"],
+      [style*="font-size: 0.85rem"], [style*="font-size: 0.8em"]) {
+    font-size: .9rem !important;
+  }
+  html:is([data-page="circle"], [data-page="equations-advanced"], [data-page="ratio-percent"], [data-page="triangles"],
+          [data-page="powers-roots"], [data-page="quadrilaterals"], [data-page="linear-function"], [data-page="parabola-practice"])
+    #root :is(.info-box, .info, .def-box, .example-box, .explanation, .pw-info, .rules-grid, .law-card)
+    :is(p, span, div, b, strong, li, small, bdi, em, h4):not(svg *):is(
+      [style*="font-size: 11px"], [style*="font-size: 12px"], [style*="font-size: 13px"], [style*="font-size: 14px"]) {
+    font-size: .95rem !important;
+  }
+}
+
+/* phones: lesson paragraphs in every topic read at .95rem (several topics set
+   12–13px in their own CSS) */
+@media (max-width: 640px) {
+  html:is([data-page="angles-parallel"], [data-page="circle"], [data-page="directed-numbers"], [data-page="equation-solver"], [data-page="equations-advanced"], [data-page="inequalities"], [data-page="intersection"], [data-page="linear-function"], [data-page="parabola-practice"], [data-page="powers-roots"], [data-page="pythagoras"], [data-page="quadratic-solver"], [data-page="quadrilaterals"], [data-page="ratio-percent"], [data-page="similar-triangles"], [data-page="solids3d"], [data-page="triangles"])
+    #root :is(.info-box, .info, .def-box, .example-box, .explanation, .pw-info, .rules-grid, .law-card, .formulas-ref) :is(p, li):not(svg *) {
+    font-size: .95rem;
+  }
+}
+
+/* four answer choices: a calm 2 × 2 grid instead of 3 + 1 */
+@media (max-width: 640px) {
+  html:is([data-page="circle"], [data-page="angles-parallel"], [data-page="triangles"], [data-page="quadrilaterals"],
+          [data-page="similar-triangles"], [data-page="powers-roots"], [data-page="ratio-percent"])
+    #root .choice-row:has(> :is(.choice-btn, .eq-choice):nth-child(4):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── circle ─────────────────────────────────────────────────────────────── */
+html[data-page="circle"] #root .info-box .mp-frac { font-size: 1em; }
+html[data-page="circle"] #root .info-box .formula-box { font-size: clamp(1.2rem, 5vw, 1.45rem); }
+html[data-page="circle"] #root .rad-table :is(th, td) { font-size: .9rem; }
+@media (max-width: 420px) {
+  html[data-page="circle"] #root .rad-table :is(th, td) { padding-inline: 3px; }
+}
+
+/* ── directed numbers ───────────────────────────────────────────────────── */
+html[data-page="directed-numbers"] #root .rule-item { font-size: .95rem; }
+html[data-page="directed-numbers"] #root .rules-grid p { font-size: .95rem; }
+html[data-page="directed-numbers"] #root .op-mark-btn { min-height: 44px; min-width: 44px; }
+
+/* ── advanced equations ─────────────────────────────────────────────────── */
+/* "המשוואה:" / "פרק לגורמים:" over the equation is a label, not the question */
+html[data-page="equations-advanced"] #root .eq-card > .phase-title:has(+ .eq-row) { font-size: .9rem; color: var(--ink-3); font-weight: 600; }
+html[data-page="equations-advanced"] #root .eq-card > .phase-title:not(:has(+ .eq-row)) { margin-bottom: 10px; }
+html[data-page="equations-advanced"] #root :is(.section-sub, .formulas-ref-title, .sm-ex-t) { font-size: .95rem; }
+html[data-page="equations-advanced"] #root .sm-ex { font-size: .95rem; }
+html[data-page="equations-advanced"] #root .ltr-m { font-size: inherit; }
+html[data-page="equations-advanced"] #root .ea-arrow { font-size: .9rem; }
+html[data-page="equations-advanced"] #root .ea-explain { font-size: .95rem; }
+html[data-page="equations-advanced"] #root .btn-formula { min-height: 44px; font-size: max(1em, .95rem); }
+/* the two sides of the simplified equation side by side on phones (inline 160px each) */
+@media (max-width: 480px) {
+  html[data-page="equations-advanced"] #root .eq-card > div[style*="direction: ltr"] > div[style*="flex-direction: column"] { flex: 1 1 0; min-width: 0; }
+  html[data-page="equations-advanced"] #root .eq-card > div[style*="direction: ltr"] > div[style*="flex-direction: column"] > input { width: 100% !important; min-width: 0; }
+  html[data-page="equations-advanced"] #root .eq-card > div[style*="direction: ltr"]:has(> div[style*="flex-direction: column"]) { flex-wrap: nowrap !important; gap: 8px !important; }
+}
+
+/* ── inequalities ───────────────────────────────────────────────────────── */
+html[data-page="inequalities"] #root .iq-op-t { text-align: center; }
+/* "x [<][>][≤][≥] [number]": one sentence on one row, not a 3-column grid */
+html[data-page="inequalities"] #root .choice-row:has(> input) {
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 6px;
+}
+html[data-page="inequalities"] #root .choice-row:has(> input) > .choice-btn { flex: 1 1 0; min-width: 34px; max-width: 64px; padding: 0; font-size: 1.25rem; font-weight: 700; }
+html[data-page="inequalities"] #root .choice-row:has(> input) > input { flex: 0 1 84px; min-width: 64px; width: 84px; }
+html[data-page="inequalities"] #root .choice-row:has(> input) > span { flex: none; padding-inline: 2px; }
+html[data-page="inequalities"] #root .nl-toggle { min-width: 44px; min-height: 44px; }
+/* the number box of "apply to both sides" matches the button beside it */
+html[data-page="inequalities"] #root .iq-num { height: var(--ctl-h); width: 96px; font-size: 1.25rem; font-weight: 700; border-radius: 14px; }
+
+/* ── intersection ───────────────────────────────────────────────────────── */
+/* left side = right side: two boxes share the row (inline 110–130px each) */
+html[data-page="intersection"] #root .step-card .ans-row > input { flex: 1 1 0; width: 0 !important; min-width: 96px; max-width: 160px; }
+html[data-page="intersection"] #root .step-card .ans-row { justify-content: center; }
+
+/* ── linear function ────────────────────────────────────────────────────── */
+/* answer rows written as a formula ("A: x = [ ] y = [ ]", "m = Δy / Δx"):
+   the boxes keep 72px+ and the row stays one line where it fits */
+html[data-page="linear-function"] #root .formula-box:has(input) {
+  font-size: 1.3rem; padding: 12px; gap: 6px !important; justify-content: center; align-items: center;
+}
+html[data-page="linear-function"] #root .formula-box input { min-width: 72px; }
+html[data-page="linear-function"] #root .card > .formula-box:has(> input):not(:has(> div)) { flex-wrap: nowrap; }
+html[data-page="linear-function"] #root .card > .formula-box:has(> input):not(:has(> div)) > input { flex: 1 1 0; max-width: 110px; }
+html[data-page="linear-function"] #root .formula-box span[style*="0.7rem"] { color: var(--ink-3) !important; font-weight: 600; }
+/* ch9 "m = (y₂−y₁)/(x₂−x₁) = [Δy] / [Δx] = [m]": formula on the first line, the three boxes on the second */
+@media (max-width: 480px) {
+  html[data-page="linear-function"] #root .formula-box:has(> input[placeholder="Δy"]) {
+    display: grid; grid-template-columns: repeat(5, auto); justify-content: center; row-gap: 10px;
+  }
+  html[data-page="linear-function"] #root .formula-box:has(> input[placeholder="Δy"]) > :nth-child(1) { grid-row: 1; grid-column: 1 / 3; justify-self: end; }
+  html[data-page="linear-function"] #root .formula-box:has(> input[placeholder="Δy"]) > :nth-child(2) { grid-row: 1; grid-column: 3; }
+  html[data-page="linear-function"] #root .formula-box:has(> input[placeholder="Δy"]) > :nth-child(3) { grid-row: 1; grid-column: 4 / 6; justify-self: start; }
+  html[data-page="linear-function"] #root .formula-box:has(> input[placeholder="Δy"]) input { min-width: 64px; width: 64px !important; }
+}
+html[data-page="linear-function"] #root .formula-box span[style*=".8rem"] { color: var(--ink-2) !important; }
+/* "m =" / "b =" labels beside their boxes */
+html[data-page="linear-function"] #root .input-row > label { font-size: 1.2rem; font-weight: 700; color: var(--ink); }
+html[data-page="linear-function"] #root .input-row:has(> label + input) { justify-content: center; }
+/* a check button standing alone under its formula row: full width under the thumb */
+@media (max-width: 480px) {
+  html[data-page="linear-function"] #root :not(.ans-row, .input-row, .actions) > button.mp-check { width: 100%; }
+}
+
+/* ── quadratic function (parabola) ──────────────────────────────────────── */
+html[data-page="parabola-practice"] #root .formula {
+  font-size: var(--q-math-p); font-weight: 700; color: var(--ink);
+  font-variant-numeric: tabular-nums; padding: 12px 14px; border-radius: var(--r-lg);
+  border: 0; box-shadow: inset 0 0 0 1px var(--line);
+}
+/* the task is the question: white, ink, a thin accent spine (not a warning) */
+html[data-page="parabola-practice"] #root .task-box {
+  background: var(--surface); border: 0; border-inline-start: 3px solid var(--a-500);
+  box-shadow: inset 0 0 0 1px var(--line); border-radius: 14px; padding: 12px 14px;
+}
+html[data-page="parabola-practice"] #root .msg-info { font-size: .95rem !important; }
+html[data-page="parabola-practice"] #root .step-dot { font-size: .9rem; }
+html[data-page="parabola-practice"] #root sub { font-size: .9rem; }
+/* the roots formula with boxes ("x = (−[b] ± √…) / 2[a]"): boxes finger-sized; the row scrolls sideways if needed */
+@media (max-width: 560px) {
+  html[data-page="parabola-practice"] #root .pp-template { font-size: 15px; gap: 4px; }
+  html[data-page="parabola-practice"] #root .pp-slot { width: 40px; height: 44px; font-size: 1rem; }
+}
+/* mp.css gives answer boxes 96px; inside this formula the slots keep their own small width */
+html[data-page="parabola-practice"] #root .pp-template .pp-slot { min-width: 0; min-height: 0; padding: 0; border-radius: 9px; }
+/* a = [ ] b = [ ] c = [ ] then the check button under them */
+@media (max-width: 480px) {
+  html[data-page="parabola-practice"] #root .input-row:has(> label ~ label ~ label) {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center; gap: 10px 6px;
+  }
+  html[data-page="parabola-practice"] #root .input-row:has(> label ~ label ~ label) > input { min-width: 0; width: 100%; }
+  html[data-page="parabola-practice"] #root .input-row:has(> label ~ label ~ label) > button { grid-column: 1 / -1; width: 100%; }
+}
+
+/* ── powers & roots ─────────────────────────────────────────────────────── */
+/* base box big on the line, exponent box smaller and raised — both finger-sized */
+html[data-page="powers-roots"] #root .be-template > input { min-width: 72px; height: var(--ctl-h); font-size: 1.4rem; margin-top: 18px; }
+html[data-page="powers-roots"] #root .be-template sup input { min-width: 56px; height: 44px; font-size: 1.1rem; }
+html[data-page="powers-roots"] #root .ans-row > span:has(> sup > input) { font-size: 1.6rem !important; font-weight: 700; display: inline-flex; align-items: flex-start; }
+html[data-page="powers-roots"] #root .ans-row > span > sup:has(> input) { font-size: 1rem; line-height: 1; vertical-align: top; margin-top: -10px; }
+html[data-page="powers-roots"] #root .ans-row sup > input { min-width: 56px; height: 44px; font-size: 1.1rem; }
+html[data-page="powers-roots"] #root .ans-row > sup:has(> input) { font-size: 1rem !important; vertical-align: top; }
+html[data-page="powers-roots"] #root .frac-den input, html[data-page="powers-roots"] #root .frac-num input { min-height: 48px; min-width: 64px; font-size: 1.2rem; }
+html[data-page="powers-roots"] #root .proof-open { min-height: 44px; font-size: .95rem; }
+html[data-page="powers-roots"] #root .law-title { font-size: 1rem; }
+html[data-page="powers-roots"] #root :is(.be-b, .be-e) > em { font-size: .9rem; }
+@media (max-width: 420px) {
+  html[data-page="powers-roots"] #root .sq-table :is(th, td) { width: 30px; height: 30px; font-size: .9rem; }
+}
+
+/* ── Pythagoras ─────────────────────────────────────────────────────────── */
+/* side chips (AB / BC / AC): finger-sized, the chosen one is filled */
+html[data-page="pythagoras"] #root .steps .card div > .btn:not(.bg, .bp[class*="new"]) { min-height: 48px; min-width: 64px; font-size: 1.1rem; font-weight: 700; }
+
+/* ── quadratic equations ────────────────────────────────────────────────── */
+html[data-page="quadratic-solver"] #root .card-title { font-size: 1.15rem; font-weight: 700; color: var(--ink); line-height: 1.35; margin-bottom: 10px; }
+html[data-page="quadratic-solver"] #root .ph { font-size: .9rem; line-height: 1.25; }
+@media (max-width: 560px) {
+  html[data-page="quadratic-solver"] #root .ph { flex: 1 1 0; min-width: 0; padding: 6px 6px; border-radius: 14px; text-align: center; }
+}
+html[data-page="quadratic-solver"] #root .qs-m { font-size: 1rem; }
+html[data-page="quadratic-solver"] #root p.sub { font-size: .9rem; }
+html[data-page="equation-solver"] #root .hdr-sub { font-size: .9rem; }
+html[data-page="quadratic-solver"] #root :is(.qs-case, .qs-example ol) { font-size: .95rem; }
+html[data-page="quadratic-solver"] #root :is(.qs-special, .qs-example) summary::after { font-size: .9rem; }
+html[data-page="quadratic-solver"] #root .act-btn { min-height: 44px; }
+@media (max-width: 560px) {
+  html[data-page="quadratic-solver"] #root .qs-template { font-size: 15px; gap: 4px; }
+  html[data-page="quadratic-solver"] #root .qs-slot { width: 40px; height: 44px; font-size: 1rem; }
+}
+html[data-page="quadratic-solver"] #root .qs-template .qs-slot { min-width: 0; min-height: 0; padding: 0; border-radius: 9px; }
+
+/* ── quadrilaterals ─────────────────────────────────────────────────────── */
+html[data-page="quadrilaterals"] #root .prop-btn { font-size: .95rem; min-height: 44px; padding: 8px 12px; line-height: 1.25; }
+
+/* ── ratio & percent ────────────────────────────────────────────────────── */
+html[data-page="ratio-percent"] #root .ans-row .frac input { min-width: 64px; width: 64px !important; height: 48px; font-size: 1.2rem !important; font-weight: 700; }
+html[data-page="ratio-percent"] #root .ex-eq { font-size: 1rem; }
+html[data-page="ratio-percent"] #root .sub-tab-btn { font-size: .95rem; }
+html[data-page="ratio-percent"] #root .rp-table input { min-height: 44px; }
+
+/* ── 3D shapes ──────────────────────────────────────────────────────────── */
+/* stacked fractions (a²√3 over 4) were .82em of small text: keep them readable */
+html[data-page="solids3d"] #root .frac { font-size: max(.82em, .9rem); }
+
+/* ── triangles ──────────────────────────────────────────────────────────── */
+html[data-page="triangles"] #root .info-steps { font-size: .9rem; }
+html[data-page="triangles"] #root :is(.sub-tab-btn, .classify-badge) { font-size: .95rem; }
+html[data-page="triangles"] #root h4 { font-size: 1rem; }
+
+} /* end W4 */

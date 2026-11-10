@@ -6,8 +6,13 @@
    2. soft sounds: tap, select, correct, wrong, solved
    3. small motion on feedback: pop on correct, shake on wrong,
       confetti when a whole exercise is solved
-   It only WATCHES the page (clicks and DOM changes). It never changes the
-   exercise's state, text or numbers. See DESIGN.md.
+   4. question anatomy (2026-11-10): colours the answer box right / wrong
+      (.mp-right / .mp-wrong), tells the keypad (window "mp:fb" event), keeps
+      the feedback line above the keypad, tags the check button (.mp-check)
+      and folds long lesson panels on phones ("עוד")
+   It only WATCHES the page (clicks and DOM changes) and adds classes,
+   attributes and its own small elements. It never changes the exercise's
+   state, text or numbers. See DESIGN.md ("Question anatomy").
    ========================================================================== */
 import { mpData } from "./mp-data";
 
@@ -261,6 +266,7 @@ export function initRuntime() {
   }
 
   function onMutations(list) {
+    scheduleDecorate();
     if (performance.now() - lastAction > 1600) return; // only react to the student's own actions
     found = null;
     for (var i = 0; i < list.length; i++) {
@@ -291,9 +297,98 @@ export function initRuntime() {
       pendingCheck = null;
       if (found.kind === "bad" && nudgeEmpty(found.el)) return;
       play(found.kind);
-      animate(found.el, found.kind);
+      var marked = markBoxes(found.el, found.kind);
+      if (!marked.length && !cssAnimated(found.el)) animate(found.el, found.kind);
+      else if (found.kind === "win") animate(found.el, found.kind);
       track(found.kind, found.el);
+      announce(found.kind, found.el);
     }
+  }
+
+  /* ── Question anatomy: right / wrong on the box, the keypad contract ──── */
+  // The CSS animates these itself (pop / shake), so no second JS animation.
+  function cssAnimated(el) { return matches(el, ".choice-btn, .eq-choice, input"); }
+  var BOX = 'input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"])';
+  var SCOPE = ".step-card, .card, .eq-card, .section, .tri-box, .history";
+  function shown(el) { return el.offsetParent !== null || (el.getClientRects && el.getClientRects().length > 0); }
+  var lastCheck = null; // {scope, t}: the step whose check button was pressed last
+  function scopeOf(el) {
+    var s = el.closest && el.closest(SCOPE);
+    if (s) {
+      // a "done" step card holds only the solved line: look one level up
+      var up = s.parentElement && s.parentElement.closest(SCOPE);
+      if (!s.querySelector(BOX) && up) s = up;
+      return s;
+    }
+    // feedback outside any card (e.g. the solved banner): the step that was just checked
+    if (lastCheck && performance.now() - lastCheck.t < 2000 && lastCheck.scope.isConnected) return lastCheck.scope;
+    return null;
+  }
+  // bad → every visible, filled, enabled box of that step turns red (until the
+  // student types again); ok / win → green (until its value changes).
+  function markBoxes(el, kind) {
+    var out = [];
+    if (!el || !el.closest) return out;
+    var scope = scopeOf(el);
+    if (!scope) return out;
+    var boxes = scope.querySelectorAll(BOX);
+    for (var i = 0; i < boxes.length; i++) {
+      var b = boxes[i];
+      if (!shown(b) || !String(b.value || "").trim()) continue;
+      if (kind === "bad" && (b.disabled || b.readOnly)) continue;
+      if (b.closest(".op-box, .eqs-box, .slv-opbox, .kp")) continue;
+      // the page marks this box right / wrong itself (e.g. .math-input.correct): keep its verdict
+      if (b.matches(".correct, .wrong, .ok, .err, .bad, .rp-bad, .rp-ok")) continue;
+      b.classList.remove("mp-right", "mp-wrong");
+      void b.offsetWidth; // restart the shake / pop on a repeated answer
+      b.classList.add(kind === "bad" ? "mp-wrong" : "mp-right");
+      b.setAttribute("data-mp-v", b.value);
+      out.push(b);
+    }
+    return out;
+  }
+  // a box whose value changed (typing, a new exercise) loses its colour
+  function sweepMarks() {
+    var m = doc.querySelectorAll("#root input.mp-right, #root input.mp-wrong");
+    for (var i = 0; i < m.length; i++) {
+      if (m[i].value !== m[i].getAttribute("data-mp-v")) { m[i].classList.remove("mp-right", "mp-wrong"); m[i].removeAttribute("data-mp-v"); }
+    }
+  }
+  doc.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t && t.classList && (t.classList.contains("mp-wrong") || t.classList.contains("mp-right"))) {
+      t.classList.remove("mp-wrong", "mp-right"); t.removeAttribute("data-mp-v");
+    }
+  }, true);
+
+  // Tell the keypad (src/components/Keypad.jsx) what happened, AFTER the boxes
+  // are coloured: window "mp:fb" { kind: "ok" | "bad" | "win", el }.
+  // Then keep the feedback line in sight above the open keypad.
+  function announce(kind, el) {
+    leadGlyph(el);
+    try { window.dispatchEvent(new CustomEvent("mp:fb", { detail: { kind: kind, el: el } })); } catch (e) {}
+    if (kind === "bad" || kind === "ok") requestAnimationFrame(function () { keepAboveKeypad(el); });
+  }
+  function keepAboveKeypad(el) {
+    var html = doc.documentElement;
+    if (!el || !el.isConnected || !html.classList.contains("kp-open")) return;
+    var kpH = parseFloat(getComputedStyle(html).getPropertyValue("--kp-h")) || 0;
+    if (!kpH) return;
+    var r = el.getBoundingClientRect();
+    if (!r.height) return;
+    var limit = innerHeight - kpH - 12;
+    var delta = r.bottom - limit;
+    if (delta <= 0) return;
+    delta = Math.min(delta, Math.max(0, r.top - 64)); // never push its top under the top bar
+    if (delta > 0) window.scrollBy({ top: delta, left: 0, behavior: "instant" });
+  }
+  // the page's own "✓ …" / "✗ …" text: the CSS icon replaces the glyph
+  var LEAD = /^[\s\u200f\u200e]*[✓✔✗✘✕✖❌✅🎉]/u;
+  function leadGlyph(el) {
+    if (!el || !el.matches || !el.matches(SEL.ok + ", " + SEL.bad + ", " + SEL.win)) return;
+    var has = LEAD.test(el.textContent || "") && el.firstChild && el.firstChild.nodeType === 3;
+    if (has && !el.hasAttribute("data-mp-lead")) el.setAttribute("data-mp-lead", "");
+    else if (!has && el.hasAttribute("data-mp-lead")) el.removeAttribute("data-mp-lead");
   }
 
   // "Check" pressed with nothing typed: no wrong sound, not counted as a
@@ -335,6 +430,10 @@ export function initRuntime() {
     if (t.matches(".ch-btn, .nav-btn")) setTimeout(function () { track("view"); }, 300);
     // A "check" press that changes nothing while a wrong-answer message is
     // still showing = the same wrong answer again. Say so (and count it).
+    if (isCheck || t.matches(".mp-check")) {
+      var sc = t.closest(SCOPE);
+      if (sc) lastCheck = { scope: sc, t: performance.now() };
+    }
     if (isCheck) {
       // all answer boxes of this step still empty? Then it is not a wrong answer.
       var stepBox = t.closest(".step-card, .card, .eq-card, .section, .tri-box, .history") || doc.getElementById("root");
@@ -350,7 +449,10 @@ export function initRuntime() {
         if (bad && bad.offsetParent !== null && visibleText(bad)) {
           if (pendingTap) { clearTimeout(pendingTap); pendingTap = null; }
           if (nudgeEmpty(bad)) return;
-          play("bad"); animate(bad, "bad"); track("bad", bad);
+          play("bad");
+          if (!markBoxes(bad, "bad").length) animate(bad, "bad");
+          track("bad", bad);
+          announce("bad", bad);
         } else if (emptyPress && emptyPress.box === box) {
           // nothing typed and the exercise shows nothing: point to the empty box
           if (pendingTap) { clearTimeout(pendingTap); pendingTap = null; }
@@ -360,8 +462,114 @@ export function initRuntime() {
     }
   }, true);
 
+  /* ── Decorations that follow the page (display only) ───────────────────
+     - .mp-check on the button that checks an answer (filled accent in mp.css)
+     - data-mp-lead on feedback lines whose own text starts with ✓ / ✗
+     - long lesson panels fold on phones behind an "עוד" button
+     - answer-box colours drop when the value changed (new exercise)
+     Runs once per frame at most, after the page changed. */
+  var CHECK_BTN = /בדוק|בדיקה|בדקו|אישור|^אשר|✓/;
+  var NOT_CHECK = /הבנתי|חדש|הבא|המשך|הסבר|רמז/;
+  var PANELS = ".info-box, .info, .def-box, .example-box, .explanation, .pw-info, .py-intro, .rules-grid";
+  var NO_CHECK_IN = ".banner, .success-banner, .summary-box, .kp, .mp-topbar, .op-box, .eqs-box, .slv-opbox, " + PANELS;
+  var FB_ALL = ".fb.ok, .fb.err, .feedback.ok, .feedback.err, .feedback-ok, .feedback-err, .msg-success, .msg-error, " + SEL.win;
+  var phoneMq = window.matchMedia ? matchMedia("(max-width: 640px)") : null;
+  var decoQueued = false;
+  function scheduleDecorate() {
+    if (decoQueued) return;
+    decoQueued = true;
+    requestAnimationFrame(function () { decoQueued = false; try { decorate(); } catch (e) {} });
+  }
+  function isCheckBtn(b) {
+    if (b.matches(SEL.chip) || b.closest(NO_CHECK_IN)) return false;
+    var t = (b.textContent || "").trim();
+    if (!t || t.length > 24 || !CHECK_BTN.test(t) || NOT_CHECK.test(t)) return false;
+    var sc = b.closest(SCOPE) || b.parentElement;
+    return !!(sc && sc.querySelector(BOX + ", select, .choice-btn, .eq-choice, .btn-formula"));
+  }
+  // "תרגיל חדש", "משוואה חדשה", "פרבולה חדשה"…: a secondary action (outline in mp.css)
+  var NEW_BTN = /חדש|חדשה/;
+  function isNewBtn(b) {
+    if (!b.matches(".bp, .btn-primary, .btn-new, .bo, .btn.orange") || b.closest(".banner, .success-banner, .summary-box")) return false;
+    var t = (b.textContent || "").trim();
+    return t.length <= 24 && NEW_BTN.test(t);
+  }
+  function decorate() {
+    var root = doc.getElementById("root");
+    if (!root) return;
+    sweepMarks();
+    var btns = root.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) {
+      var want = isCheckBtn(btns[i]);
+      if (want !== btns[i].classList.contains("mp-check")) btns[i].classList.toggle("mp-check", want);
+      var nw = !want && isNewBtn(btns[i]);
+      if (nw !== btns[i].classList.contains("mp-new")) btns[i].classList.toggle("mp-new", nw);
+    }
+    var fbs = root.querySelectorAll(FB_ALL);
+    for (var j = 0; j < fbs.length; j++) leadGlyph(fbs[j]);
+    foldPanels(root);
+  }
+  function foldPanels(root) {
+    var on = !!(phoneMq && phoneMq.matches);
+    var ps = root.querySelectorAll(PANELS);
+    for (var i = 0; i < ps.length; i++) {
+      var p = ps[i];
+      if (p.parentElement && p.parentElement.closest(PANELS)) continue; // a panel inside a panel
+      var folded = p.classList.contains("mp-fold");
+      var ctl = p.querySelector("button:not(.mp-more), input, select, textarea, a[href]");
+      if (!on || ctl) { if (folded) unfold(p); continue; }
+      if (folded) {
+        var more = p.querySelector(":scope > .mp-more");
+        if (!more) { unfold(p); folded = false; }
+        else {
+          if (p.lastElementChild !== more) p.appendChild(more); // the page added content after it
+          if (p.scrollHeight < 200) unfold(p);
+          continue;
+        }
+      }
+      if (!shown(p) || p.scrollHeight <= 220) continue;
+      foldOne(p);
+    }
+  }
+  function foldOne(p) {
+    var btn = doc.createElement("button");
+    btn.type = "button";
+    btn.className = "mp-more";
+    btn.textContent = "עוד";
+    btn.setAttribute("aria-expanded", "false");
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var open = !p.classList.contains("mp-open");
+      p.classList.toggle("mp-open", open);
+      btn.textContent = open ? "פחות" : "עוד";
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (!open) {
+        var r = p.getBoundingClientRect();
+        if (r.top < 64) window.scrollBy({ top: r.top - 72, left: 0, behavior: "instant" });
+      }
+    });
+    // the fade at the bottom uses the panel's own background colour
+    var bg = getComputedStyle(p).backgroundColor;
+    if (bg && bg !== "transparent" && !/rgba\(.*,\s*0\)$/.test(bg)) p.style.setProperty("--mp-fold-bg", bg);
+    p.classList.add("mp-fold");
+    p.appendChild(btn);
+  }
+  function unfold(p) {
+    p.classList.remove("mp-fold", "mp-open");
+    p.style.removeProperty("--mp-fold-bg");
+    var more = p.querySelector(":scope > .mp-more");
+    if (more) more.remove();
+  }
+  if (phoneMq) {
+    if (phoneMq.addEventListener) phoneMq.addEventListener("change", scheduleDecorate);
+    else if (phoneMq.addListener) phoneMq.addListener(scheduleDecorate);
+  }
+  if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(scheduleDecorate);
+  window.addEventListener("load", scheduleDecorate);
+
   watch();
   centerShapes();
+  scheduleDecorate();
 
   /* Geometry drawings are often placed off to one side of their frame, which
      leaves an empty strip on phones. Slide the frame (not the shape) so the

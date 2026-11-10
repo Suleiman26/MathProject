@@ -1,62 +1,130 @@
-/* Math keypad (src/components/Keypad.jsx). Docked at the bottom on phones,
-   a bit shorter than the phone's own keyboard, and the page makes room for it. */
+/* Math keypad (src/components/Keypad.jsx). Docked at the bottom on phones (pointer: coarse only),
+   a bit shorter than the phone's own keyboard, and the page makes room for it.
+   Spec: docs/superpowers/specs/2026-11-10-question-ui-design.md §5.5–5.6.
+   Height: 1 + 8 + 36 (bar) + 8 + 4×48 + 3×6 + 8 = 271 px (+ safe area); 255 px on ≤ 700 px tall. */
 @layer page {
-  html.kp-open body { padding-bottom: calc(var(--kp-h, 0px) + 12px); }
+  /* room under the page; `kp-rest` keeps it for a moment after closing so nothing jumps */
+  html.kp-open body, html.kp-rest body { padding-bottom: calc(var(--kp-h, 0px) + 24px); }
 
   .kp {
     position: fixed; inset-inline: 0; bottom: 0; z-index: 60;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--surface-2, #f4f4f1) 88%, transparent);
-    -webkit-backdrop-filter: saturate(1.6) blur(18px); backdrop-filter: saturate(1.6) blur(18px);
-    border-top: 1px solid var(--line, #e5e5e0);
-    box-shadow: 0 -10px 30px -18px rgb(0 0 0 / .25);
+    padding: 0 max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--surface, #fff) 94%, transparent);
+    -webkit-backdrop-filter: saturate(1.4) blur(18px); backdrop-filter: saturate(1.4) blur(18px);
+    border-top: 1px solid var(--line, #e7e5e0);
+    box-shadow: 0 -14px 32px -26px rgb(28 27 25 / .32);
     user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
     touch-action: manipulation;
-    animation: kp-in 180ms cubic-bezier(.32, .72, 0, 1);
+    animation: kp-in 200ms cubic-bezier(.23, 1, .32, 1);
     font-family: var(--font, system-ui);
   }
+  /* closing: a still copy slides away (Keypad.jsx), the real one is already gone */
+  .kp.kp-ghost { pointer-events: none; animation: kp-out 170ms cubic-bezier(.4, 0, 1, 1) forwards; }
   @keyframes kp-in { from { transform: translateY(100%); } to { transform: none; } }
-  @media (prefers-reduced-motion: reduce) { .kp { animation: none; } }
+  @keyframes kp-out { from { transform: none; } to { transform: translateY(100%); } }
 
-  /* top strip: close, normal keyboard, extra symbols, next box */
-  .kp-bar { display: flex; align-items: center; gap: 6px; margin: 0 2px 8px; min-height: 34px; }
+  /* top strip: close, normal keyboard, extra symbols, next box. Opaque, so the page never shows through. */
+  .kp-bar {
+    display: flex; align-items: center; gap: 6px;
+    height: 36px; padding: 8px 2px; margin-bottom: 0; /* the 8 px under the chips is opaque too */
+    margin-inline: calc(-1 * max(8px, env(safe-area-inset-left))) calc(-1 * max(8px, env(safe-area-inset-right)));
+    padding-inline: max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-right));
+    background: var(--surface, #fff);
+    box-sizing: content-box;
+    overflow-x: auto; scrollbar-width: none; /* many symbol chips on a narrow phone: never wider than the screen */
+  }
+  .kp-bar::-webkit-scrollbar { display: none; }
+  .kp-bar > * { flex: none; }
+  .kp-bar > .kp-grow { flex: 1; }
   .kp-grow { flex: 1; }
   .kp-chip {
-    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-    min-width: 40px; height: 34px; padding: 0 12px; margin: 0;
-    border: 1px solid var(--line, #e5e5e0); border-radius: 999px;
-    background: var(--surface, #fff); color: var(--ink-2, #44403c);
-    font: 600 15px/1 var(--font, system-ui); box-shadow: none; cursor: pointer;
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-width: 40px; height: 36px; padding: 0 12px; margin: 0;
+    border: 0; border-radius: 999px;
+    background: var(--surface-3, #f2f1ee); color: var(--ink-2, #4f4d48);
+    font: 600 .875rem/1 var(--font, system-ui); box-shadow: none; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 100ms ease-out, background-color 100ms ease-out;
   }
+  .kp-chip::after { content: ""; position: absolute; inset: -4px -2px; } /* 44 px hit area */
+  .kp-chip svg { flex: none; }
+  .kp-chip:active { transform: scale(.96); }
   .kp-close { padding: 0; width: 40px; }
-  .kp-sym { font-size: 19px; min-width: 44px; color: var(--ink, #1c1b19); }
-  .kp-next { background: var(--a-50, #f0fdfa); border-color: var(--a-200, #99f6e4); color: var(--a-800, #115e59); }
+  .kp-native.kp-compact { padding: 0; width: 44px; }
+  .kp-native.kp-compact span { display: none; }
+  .kp-sym {
+    min-width: 44px; padding: 0 10px;
+    background: var(--a-50, #f0fdfa); color: var(--a-800, #115e59);
+    font: 700 1.15rem/1 var(--font, system-ui);
+  }
+  .kp-next {
+    padding: 0 12px 0 10px;
+    background: var(--surface, #fff); color: var(--a-700, #0f766e);
+    box-shadow: inset 0 0 0 1.5px var(--a-200, #99f6e4);
+  }
+  .kp-sym:active, .kp-next:active { background: var(--a-100, #ccfbf1); }
 
   /* keys */
   .kp-keys { display: grid; gap: 6px; }
   .kp-num .kp-keys { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .kp-math .kp-keys { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .kp-key {
-    height: 46px; min-width: 0; margin: 0; padding: 0;
+    height: 48px; min-width: 0; margin: 0; padding: 0;
     display: flex; align-items: center; justify-content: center;
-    border: 0; border-radius: 11px;
-    background: var(--surface-3, #ecebe6); color: var(--ink, #1c1b19);
-    font: 500 22px/1 var(--font, system-ui);
-    box-shadow: 0 1px 0 rgb(0 0 0 / .12);
-    cursor: pointer; transition: transform 90ms ease-out, background 90ms ease-out;
+    border: 0; border-radius: 12px;
+    background: var(--surface-3, #f2f1ee); color: var(--ink-2, #4f4d48);
+    font: 600 1.3rem/1 var(--font, system-ui);
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 0 rgb(28 27 25 / .08);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform 100ms ease-out, background-color 100ms ease-out;
   }
-  .kp-key.kp-d { background: var(--surface, #fff); font-weight: 600; font-size: 24px; }
+  .kp-key.kp-d {
+    background: var(--surface, #fff); color: var(--ink, #1c1b19);
+    font-size: 1.45rem;
+    box-shadow: 0 0 0 1px var(--line, #e7e5e0), 0 1px 2px rgb(28 27 25 / .06);
+  }
   .kp-key.kp-x { font-style: italic; font-weight: 700; color: var(--a-700, #0f766e); }
-  .kp-key.kp-sq { font-size: 22px; font-weight: 700; }
+  .kp-key.kp-sq { font-weight: 700; }
   .kp-sq-l i { font-style: italic; opacity: .35; margin-inline-end: 1px; }
-  .kp-key.kp-mode { font-size: 16px; font-weight: 700; color: var(--a-700, #0f766e); }
-  .kp-key.kp-ok { grid-row: span 2; height: auto; background: var(--a-600, #0d9488); color: #fff; box-shadow: var(--sh-accent, none); }
-  .kp-key:active { transform: scale(.94); background: var(--a-100, #ccfbf1); }
+  .kp-key.kp-mode { font-size: 1rem; font-weight: 700; color: var(--a-700, #0f766e); }
+  .kp-key.kp-ok {
+    grid-row: span 2; height: auto; border-radius: 14px;
+    background: var(--a-600, #0d9488); color: #fff;
+    box-shadow: var(--sh-accent, 0 6px 16px -8px rgb(13 148 136 / .7));
+  }
+  .kp-key:active { transform: scale(.96); background: var(--a-50, #f0fdfa); }
+  .kp-key.kp-d:active { background: var(--a-50, #f0fdfa); box-shadow: 0 0 0 1px var(--a-200, #99f6e4); }
   .kp-key.kp-ok:active { background: var(--a-700, #0f766e); }
 
-  /* the box being typed into: a clear focus ring, caret stays visible */
-  html.kp-open #root input:focus, html.kp-open #root input.kp-target { outline: 2px solid var(--a-500, #14b8a6); outline-offset: 1px; }
+  /* the box being typed into: accent ring and caret (right / wrong colours stay the page's own) */
+  html.kp-open #root input.kp-target { outline: none; caret-color: var(--a-600, #0d9488); }
+  html.kp-open #root input.kp-target:not(.mp-wrong):not(.mp-right):not(.wrong):not(.correct):not(.ok):not(.err):not(.error) {
+    border-color: var(--a-500, #14b8a6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--a-500, #14b8a6) 28%, transparent);
+  }
 
-  /* small phones: a little shorter */
-  @media (max-height: 700px) { .kp-key { height: 42px; } .kp-bar { min-height: 32px; } .kp-chip { height: 32px; } }
+  /* short phones (≤ 700 px tall): smaller keys, and the top bar slides away while typing */
+  @media (max-height: 700px) {
+    .kp-key { height: 44px; }
+    .mp-topbar { transition: transform 180ms cubic-bezier(.23, 1, .32, 1), border-color var(--t, 180ms) ease, background-color var(--t, 180ms) ease; }
+    html.kp-open .mp-topbar { transform: translateY(-100%); }
+  }
+
+  /* landscape phones: the same keys in 3 rows, a centred column */
+  @media (max-height: 480px) and (orientation: landscape) {
+    .kp-key { height: 40px; }
+    .kp-wide .kp-keys { width: min(100%, 640px); margin-inline: auto; }
+    .kp-wide .kp-bar { padding-inline: max(10px, calc((100vw - 640px) / 2)); }
+    .kp-wide.kp-num .kp-keys { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .kp-wide.kp-math .kp-keys { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    .kp-wide.kp-num .kp-ok { grid-column: span 2; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kp, .kp.kp-ghost { animation: none; }
+    .kp.kp-ghost { display: none; }
+    .mp-topbar { transition: none; }
+  }
 }

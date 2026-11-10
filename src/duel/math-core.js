@@ -124,26 +124,58 @@ export function isMathOnly(text) {
   return parts.length > 0 && parts.every((p) => p.math || !p.v.trim());
 }
 
-/** the prompt's size step on the arena card (CSS .dar-prompt.sz-*): short prose big (2rem at 375 px),
-    long prose smaller so 4 lines + the keypad still fit a phone; short math-only prompts
-    the biggest (the mockup's 44 px) */
+/** The ask line's size step on the arena card (CSS .dar-prompt.sz-*), from the WORDS only
+    (2026-11-10 question UI: the formula rows have their own fixed size, --q-math, and
+    Arena's useFitPrompt shrinks only them — so a long expression never makes the words
+    smaller, and the math is always bigger than the words).
+    "xl" = a prompt with no words at all (one big formula); otherwise s / m / l by the
+    length of the prose lines (inline islands count as part of their line). */
 export function promptSize(text) {
   const t = String(text == null ? "" : text);
+  if (isMathOnly(t)) return "xl";
   const len = (s) => s.replace(/\\(frac|sqrt)|[$\{\}]/g, "").replace(/\s+/g, " ").trim().length;
-  // the longest island never wraps on its own (.dmx is nowrap): a long expression takes a smaller step
-  const island = Math.max(0, ...splitProse(t.replace(/\n/g, " ")).filter((p) => p.math).map((p) => mathLength(p.v)));
-  const need = island > 20 ? 3 : island > 14 ? 2 : 0;
-  const lines = promptLines(t);
-  if (lines.length > 1) {
-    // words + formula lines: size by the words; two or more formula lines take one step down
-    const words = lines.filter((l) => !isMathOnly(l)).map(len).reduce((a, b) => a + b, 0);
-    const shown = lines.filter((l) => isMathOnly(l)).length;
-    const step = (words <= 34 ? 1 : words <= 62 ? 2 : 3) + (shown >= 2 ? 1 : 0);
-    return ["xl", "s", "m", "l"][Math.min(3, Math.max(step, need))];
+  const words = promptLines(t).filter((l) => !isMathOnly(l)).map(len).reduce((a, b) => a + b, 0);
+  return words <= 34 ? "s" : words <= 62 ? "m" : "l";
+}
+
+/** The three roles of a prompt line (question UI spec §4.2):
+    'ask'    — a prose line (has words): what to do;
+    'eq'     — a math-only formula row: what to work with (the hero);
+    'target' — the LAST line, math-only and short, naming the asked quantity: "$b = ?$",
+               "$S = ?π$", "$V = ?\\sqrt{3}$", "$? °$" — or a short "… = ?" when a formula row
+               comes before it. A typed question shows its answer slot in place of the target.
+    A prompt's only line is never a target (it is the whole question). */
+const TARGET_RES = [
+  /^[A-Za-zα-ω][₀-₉]?\s*=\s*\?(\s*[°%₪π]|\s*\\sqrt\{3\})?$/,
+  /^\?\s*[°%π]?$/,
+];
+const mathBody = (line) => splitProse(line).filter((p) => p.math).map((p) => p.v).join(" ").trim();
+export function lineRole(line, i = 0, lines = [line]) {
+  if (!isMathOnly(line)) return "ask";
+  const n = lines.length;
+  if (n > 1 && i === n - 1) {
+    const body = mathBody(line);
+    if (TARGET_RES.some((re) => re.test(body))) return "target";
+    if (/=\s*\?$/.test(body) && mathLength(body) <= 8 && lines.slice(0, i).some((l) => isMathOnly(l))) return "target";
   }
-  const n = len(t);
-  const step = isMathOnly(t) ? (n <= 12 ? 0 : n <= 20 ? 1 : 2) : (n <= 34 ? 1 : n <= 62 ? 2 : 3);
-  return ["xl", "s", "m", "l"][Math.max(step, need)];
+  return "eq";
+}
+
+/** a target line split around its "?": "$S = ?π$" → { before: "S =", after: "π" } (math strings) */
+export function targetParts(line) {
+  const body = mathBody(line);
+  const k = body.indexOf("?");
+  if (k < 0) return { before: body, after: "" };
+  return { before: body.slice(0, k).trim(), after: body.slice(k + 1).trim() };
+}
+
+/** Display-only tidy of prompt lines (proseToText keeps the original for aria): a prose line that
+    ends with a math island followed only by ":" loses that colon when more lines follow — in RTL
+    the colon would land on the far side of the LTR island (":x² + bx + c = 0 לצורה"), and the
+    next line (a formula row) needs no colon. */
+export function tidyLines(lines) {
+  const ls = Array.isArray(lines) ? lines : promptLines(lines);
+  return ls.map((l, i) => (i < ls.length - 1 && !isMathOnly(l) && /\$\s*:\s*$/.test(l) ? l.replace(/\s*:\s*$/, "") : l));
 }
 
 /** Break chances inside one math island, used only if even the smallest size can't fit it:

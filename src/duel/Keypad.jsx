@@ -1,28 +1,57 @@
 'use client';
 /* Duels: the keypad for a typed answer. Digits, "−" (toggles the sign), "⌫",
    and — only when the question can have such an answer (arena-core keypadFor)
-   — "/" for a fraction and "." for a decimal. A typed fraction shows stacked.
-   The send button sits under the thumb. Rules: ./arena-core.js (typeKey, typedOk,
-   keypadKeyTarget). Classes are .dkp* — never .kp*: the topic pages' keypad.css
-   (which stays loaded after client-side navigation) owns .kp and pins it to
-   the bottom of the screen.
-   disabled = no input (request on its way / feedback / lock); dim = also look
-   it (only the lock dims — no flicker between questions). */
-import { useEffect, useRef, useState } from "react";
-import { typeKey, typedOk, typedParts, keypadKeyTarget } from "./arena-core";
+   — "/" for a fraction and "." for a decimal. Rules: ./arena-core.js (typeKey,
+   typedOk, keypadKeyTarget). Classes are .dkp* — never .kp*: the topic pages'
+   keypad.css (which stays loaded after client-side navigation) owns .kp and
+   pins it to the bottom of the screen.
 
-export function Typed({ value, placeholder, unit }) {
+   Question UI (2026-11-10): keys only. What was typed is shown IN the question card
+   (Arena's answer slot, drawn with <Typed>), so the value is lifted: value / onChange.
+   The grid has ONE shape for every question (no jump between questions):
+     1 2 3 ⌫ / 4 5 6 − / 7 8 9 [/ or .] / [.] 0 0 [ ] / send (full width)
+   an extra key that this question doesn't have is an empty cell.
+   disabled = no input (request on its way / feedback / lock); dim = also look it;
+   sending = the send label turns into three pulsing dots; lock = { until, offset }: the keys fade
+   and the send button's place shows the lock countdown (LockBar). */
+import { useEffect, useRef, useState } from "react";
+import { typeKey, typedOk, typedParts, keypadKeyTarget, lockLeft } from "./arena-core";
+import { serverNow } from "./clock";
+
+/** The 2-second lock after a wrong answer (lock_until, server time), shown where the student's next
+    action is: "ממשיכים · 2" with a fill draining over the time that is left (transform only; none
+    under reduced motion — just the number). Typed: it takes the send button's place; choices: a slim
+    pill under them (Arena). */
+export function LockBar({ until, offset, slim }) {
+  const [left, setLeft] = useState(() => lockLeft(until, serverNow(offset)));
+  const [total] = useState(() => Math.max(1, lockLeft(until, serverNow(offset))));
+  useEffect(() => {
+    const tick = () => setLeft(lockLeft(until, serverNow(offset)));
+    tick();
+    const t = setInterval(tick, 100);
+    return () => clearInterval(t);
+  }, [until, offset]);
+  const n = Math.max(1, Math.ceil(left / 1000));
+  return (
+    <div className={"dar-lockbar" + (slim ? " slim" : "")} dir="rtl" role="alert" aria-label={"טעות — נעילה קצרה, ממשיכים בעוד " + n}>
+      <i className="dar-lockbar-fill" style={{ animationDuration: total + "ms" }} aria-hidden="true" />
+      <span aria-hidden="true">ממשיכים · <b key={n}>{n}</b></span>
+    </div>
+  );
+}
+
+/** what was typed, for the answer slot: "−3", a stacked "3/8"; the caret sits after it while typing */
+export function Typed({ value, caret }) {
   const { neg, num, den } = typedParts(value);
-  // the question's unit (°, %, ₪, π) sits after the typed number: "? °" → "60 °"
-  const u = unit ? <span className="dkp-unit">{unit}</span> : null;
-  if (!value) return <><span className="dkp-ph">{placeholder}</span>{u}</>;
+  const c = caret ? <i className="dar-caret" aria-hidden="true" /> : null;
+  if (!value) return c;
   return (
     <>
       {neg && <span className="dkp-neg">−</span>}
       {den == null ? <span>{num}</span> : (
-        <span className="dmx-frac dkp-frac"><span className="dmx-num">{num || " "}</span><span className="dmx-den">{den || " "}</span></span>
+        <span className="dmx-frac dkp-frac"><span className="dmx-num">{num || " "}</span><span className="dmx-den">{den || " "}{den != null && c}</span></span>
       )}
-      {u}
+      {den == null && c}
     </>
   );
 }
@@ -30,13 +59,13 @@ export function Typed({ value, placeholder, unit }) {
 // a tap must not move focus onto the key: Enter on a hardware keyboard then still sends
 const keepFocus = (e) => e.preventDefault();
 
-export function Keypad({ onSend, disabled, dim, sending, keys = { fraction: false, decimal: false }, unit = "", resetKey }) {
-  const [v, setV] = useState("");
+const LABEL = { "⌫": "מחיקה", "−": "מינוס", "/": "קו שבר", ".": "נקודה עשרונית" };
+
+export function Keypad({ value: v = "", onChange, onSend, disabled, dim, sending, keys = { fraction: false, decimal: false }, lock = null }) {
   const root = useRef(null);
-  useEffect(() => { setV(""); }, [resetKey]);
-  const press = (k) => { if (disabled) return; setV((s) => typeKey(s, k)); };
+  const press = (k) => { if (disabled) return; onChange(typeKey(v, k)); };
   const ok = typedOk(v) && !disabled;
-  const send = () => { if (!ok) return; const given = v.replace("−", "-"); onSend(given, v); };
+  const send = () => { if (!ok) return; onSend(v.replace("−", "-"), v); };
 
   // hardware / Bluetooth keyboards too — but never keys meant for something else
   // (a sheet / dialog, a button or link outside the keypad, a text field)
@@ -62,26 +91,25 @@ export function Keypad({ onSend, disabled, dim, sending, keys = { fraction: fals
   });
 
   const extra = keys.fraction && keys.decimal ? ["/", "."] : keys.fraction ? ["/"] : keys.decimal ? ["."] : [];
-  // 4 columns: 1 2 3 ⌫ / 4 5 6 − / 7 8 9 (extra or 0) / … send
-  const row3 = extra.length ? ["7", "8", "9", extra[0]] : ["7", "8", "9", "0"];
-  const row4 = extra.length === 2 ? ["0", extra[1]] : extra.length === 1 ? ["0"] : [];
-  const K = (k) => (
-    <button key={k} type="button" className={"dkp-k" + (/\d/.test(k) ? "" : " dkp-fn")} onMouseDown={keepFocus} onClick={() => press(k)} disabled={disabled}
-      aria-label={k === "⌫" ? "מחיקה" : k === "−" ? "מינוס" : k === "/" ? "קו שבר" : k === "." ? "נקודה עשרונית" : k}>{k}</button>
+  const K = (k, cls = "") => (
+    <button key={k} type="button" className={"dkp-k" + (/\d/.test(k) ? "" : " dkp-fn") + cls} onMouseDown={keepFocus} onClick={() => press(k)} disabled={disabled}
+      aria-label={LABEL[k] || k}>{k}</button>
   );
+  const gap = (n) => <span key={"gap" + n} className="dkp-gap" aria-hidden="true" />;
   return (
-    <div className={"dkp" + (dim ? " dkp-dim" : "")} dir="ltr" ref={root}>
-      <div className="dkp-in" aria-live="polite" aria-label={v ? "התשובה שהוקלדה: " + v : "עוד לא הוקלדה תשובה"}>
-        <Typed value={v} placeholder="?" unit={unit} />
-      </div>
+    <div className={"dkp" + (dim ? " dkp-dim" : "") + (lock ? " dkp-locked" : "")} dir="ltr" ref={root}>
       <div className="dkp-grid">
-        {["1", "2", "3", "⌫", "4", "5", "6", "−", ...row3].map(K)}
-        {row4.map(K)}
-        <button type="button" className={"dkp-go" + (!typedOk(v) || dim ? " dkp-off" : "")} style={{ gridColumn: `span ${4 - row4.length}` }}
-          onMouseDown={keepFocus} onClick={send} disabled={!ok}>
-          {sending ? "…" : "שליחה"}
-        </button>
+        {["1", "2", "3", "⌫", "4", "5", "6", "−", "7", "8", "9"].map((k) => K(k))}
+        {extra[0] ? K(extra[0]) : gap(1)}
+        {extra[1] ? K(extra[1]) : gap(2)}
+        {K("0", " dkp-zero")}
+        {gap(3)}
       </div>
+      {lock ? <LockBar until={lock.until} offset={lock.offset} /> : <button type="button" className={"dkp-go" + (!typedOk(v) || (dim && !sending) ? " dkp-off" : "") + (sending ? " sending" : "")}
+        onMouseDown={keepFocus} onClick={send} disabled={!ok} aria-busy={sending || undefined}>
+        <span className="dkp-go-t">שליחה</span>
+        <span className="dkp-dots" aria-hidden="true"><i /><i /><i /></span>
+      </button>}
     </div>
   );
 }

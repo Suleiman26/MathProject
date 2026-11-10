@@ -263,9 +263,10 @@ export function PlayView({ id, ready, account, api, subscribeFn, navigate, refre
     setFb({ idx, given, correct: !!r.correct, right: r.right, points: r.points });
     setSt((p) => applyAnswer(p, idx, r));
     sfx(r.correct ? "ok" : "bad");
-    const target = el || (rootRef.current && rootRef.current.querySelector(".dkp-in"));
-    if (r.correct) floatPoints(target, "+" + r.points);
-    else shake(target);
+    // "+142" rises out of the tapped button; a typed answer shows it in the card's status line
+    // instead (a float out of the slot would cross the formula above it). A wrong one shakes by
+    // itself (CSS .dar-a.bad / .dar-slot.bad — one 300 ms shake, none under reduced motion)
+    if (r.correct && el) floatPoints(el, "+" + r.points);
     refetch({ force: true });                        // brings the next question
     clearTimeout(fbTimer.current);
     fbTimer.current = setTimeout(() => { setFb(null); setBusy(false); }, feedbackMs(r, n));

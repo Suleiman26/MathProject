@@ -14,7 +14,7 @@ export const HOT_MS = 30000;         // timer turns red and pulses
 export const COUNT_MS = 3000;        // 3-2-1 starts 3 s before start_at
 export const GO_MS = 700;            // "יאללה!" stays this long after start_at
 export const LOCK_MS = 2000;
-export const FEEDBACK_MS = 450;      // a correct answer glows this long before the next question
+export const FEEDBACK_MS = 650;      // a correct answer glows this long before the next question (450 was too short to see; question UI 2026-11-10)
 export const PING_MS = 1100;         // "נועה ענתה ✓" stays this long
 export const TUG_MAX = 42, TUG_DIV = 14;
 

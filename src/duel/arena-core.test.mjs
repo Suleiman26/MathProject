@@ -46,7 +46,7 @@ test("lock overlay time comes from lock_until", () => {
   assert.equal(lockLeft("2026-11-08T10:00:02.000Z", T0 + 1500), 500);
   assert.equal(lockLeft("2026-11-08T10:00:02.000Z", T0 + 3000), 0);
   assert.equal(lockLeft(null, T0), 0);
-  assert.equal(feedbackMs({ correct: true }, T0), 450);
+  assert.equal(feedbackMs({ correct: true }, T0), 650);   // question UI (2026-11-10): long enough to see the green
   assert.equal(feedbackMs({ correct: false, lock_until: "2026-11-08T10:00:02.000Z" }, T0), 2000);
   assert.equal(feedbackMs({ correct: false, lock_until: null }, T0), 2000);
   assert.equal(feedbackMs({ error: "order" }, T0), 0);

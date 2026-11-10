@@ -63,14 +63,16 @@ Use these class names and the page looks right with no extra CSS.
 | Page header + title | `.hdr` with `<h1>` (or `.hdr-title`) |
 | Chapter tabs in the header | `.ch-nav` or `.ch-btns` holding `.ch-btn` (`.active` = current) |
 | Sub-tabs inside a chapter | `.sub-tabs` holding `.sub-tab` |
-| White card | `.card`, title `.card-t` |
-| One step of an exercise | `.step-card` (`.done` when solved), label `.step-label` |
-| Explanation panel | `.info-box` or `.info` |
-| Formula / equation display | `.formula-box` or `.eq-box` |
+| White card | `.card`, title `.card-t` (1.15rem/700 ink) |
+| One step of an exercise | `.step-card` (white, accent spine on the right; `.done` = green), label `.step-label` (pill chip) |
+| Explanation panel | `.info-box`, `.info`, `.def-box`, `.example-box`, `.explanation` (quiet wash; folds on phones when long) |
+| Formula / equation display | `.formula-box` or `.eq-box` (the hero: big, bold, Rubik) |
 | "Given" data chip | `.given-box` |
-| Small grey hint | `.hint` |
+| The question line | `.hint` or `.step-label` placed **right before** the answer row (see "Question anatomy"), or `.q-text` |
+| Small grey hint | `.hint` anywhere else |
 | Answer row (inputs) | `.ans-row` |
-| Main button | `.btn.bp` |
+| Check button | any button saying בדוק / אישור / ✓ next to the answer (gets `.mp-check` automatically) |
+| Main button | `.btn.bp` (outline when it is not the check: "תרגיל חדש") |
 | Next / continue | `.btn.bg` |
 | Secondary button | `.btn` |
 | Multiple-choice answers | `.choice-row` holding `.choice-btn` (`.active`, `.correct`, `.wrong`) |
@@ -140,3 +142,57 @@ in `src/topics/solids3d/Topic.jsx` hands over in one line (`if(has3D())…`);
 no WebGL, or `?flat=1`, keeps the flat drawing. Sideways drag turns the shape
 (a finger's up/down swipe still scrolls the page); labels are page elements
 pinned to the middle of the line they measure (that line drawn in their colour); overlapping numbers slide along their own line.
+
+## Question anatomy (2026-11-10)
+
+Spec: `docs/superpowers/specs/2026-11-10-question-ui-design.md` §5. CSS: `src/styles/mp.css`
+§12 (and §4, §8). Runtime: `src/lib/mp-runtime.js`. Per-topic exceptions: `topic-fixes.css`.
+
+**One hero per screen: the math.** Each level steps back one notch:
+
+| Role | Element | Look |
+|---|---|---|
+| card title | `.card-t` | 1.15rem / 700, ink |
+| lesson | `.info-box .info .def-box .example-box .explanation .pw-info .py-intro .rules-grid` | .95rem, ink-2, soft accent wash, no border |
+| given data | `.given-box` | grey chip, 1rem / 600, tabular |
+| **formula** | `.formula-box .eq-box .big-formula .p2-eq .be-eq .ex-math` | `--q-math-p` (1.45–1.9rem) / 700, white, hairline, Rubik |
+| step | `.step-card` + `.step-label` chip | white card, 3px accent spine on the inline start |
+| **question line** | see the rule below | `--q-ask` (1.05–1.25rem) / 600, **ink** |
+| answer box | inputs in `.card .step-card .ans-row .input-row .py-ans` | 56px tall (52 on short phones and desktop), min 96px wide, 1.4rem / 700, centred |
+| check button | `.mp-check` | 56px, filled accent; full row on phones when the answer row wraps |
+| other actions | `.center > .bp`, `.btn-new`, `.bp[class*=new]`, `.mp-new` | outline (white, accent border) |
+| feedback | `.fb.ok/.err`, `.feedback.ok/.err`, `.feedback-ok/-err`, `.msg-success/-error` | pill row, 1rem / 700, SVG icon at the start |
+| real hint | any other `.hint` | .9rem, ink-3 |
+
+Tokens (`:root` in mp.css): `--q-ask`, `--q-math-p`, `--q-meta`, `--q-hint`, `--ctl-h`, `--pop`, `--shake-ease`.
+
+**The question-line rule.** A `.hint` that sits directly before the answer controls is the
+question, not a hint: inside `.card`/`.step-card`, followed by `.ans-row`, `.choice-row`,
+`.input-row`, `.op-box`, `.nl-wrap`, `.iq-op-row`, `.eq-row`, `.solve-grid`, `.ieq-solver`,
+`.iq-pair`, `.step-card`, `.formula-box`, or a plain `div` holding an input. A `.step-label`
+followed directly by `.ans-row`/`.choice-row`/`.input-row`/`.eq-row` is the question too (it is
+shown as a line, not a chip). `.q-text .area-q .task-desc .ex-text .py-ex-t .sm-ex-q` always are.
+Anything this rule can't reach goes in `topic-fixes.css` for that topic.
+
+**Colour rules.** Accent fills only the check button (plus the focus ring and the box being
+typed in). Green and red appear only on what the student touched: the box, the chosen chip,
+the feedback pill. No emoji: a feedback line whose own text starts with ✓ / ✗ / ✅ gets
+`data-mp-lead` and that glyph is hidden (CSS `::first-letter`), the SVG icon takes its place.
+The text itself is never changed.
+
+**What the runtime adds** (display only, never the exercise's text or state):
+
+| Class / event | When | Notes |
+|---|---|---|
+| `.mp-check` | on a button saying בדוק / בדיקה / אישור / ✓ whose card holds an answer box or choices (not "הבנתי", not in a lesson panel or banner) | re-checked every frame the page changes |
+| `.mp-new` | on a filled button (`.bp`, `.btn-primary`, `.btn-new`, orange) whose text says חדש / חדשה ("תרגיל חדש", "משוואה חדשה"), outside the solved banner | shown as an outline button |
+| `.mp-wrong` | the page showed a wrong-answer line: every filled box of that step | removed as soon as the student types; shake 300ms |
+| `.mp-right` | right answer / step done / solved: every filled box of that step | removed when the value changes (new exercise); pop 320ms |
+| `mp:fb` event | `window`, after the boxes are coloured: `detail: { kind: "ok" \| "bad" \| "win", el }` | the keypad listens (`src/components/Keypad.jsx`); `mp:win` still fires too |
+| scroll | on ok / bad while `html.kp-open`: the feedback line is scrolled to ≥ 12px above the keypad (`--kp-h` on `<html>`) | instant scroll (iPhone sends taps to the old place after a smooth one) |
+| `.mp-fold` + `button.mp-more` ("עוד" / "פחות") | phones (≤ 640px): a lesson panel taller than 220px with no button / input inside | folded to 180px with a fade; tap = `.mp-open`. Desktop never folds. If the panel paints its own background, set `--mp-fold-bg` on it in topic-fixes.css |
+| `.mp-need` | "check" with an empty box | amber glow, not counted as wrong (unchanged) |
+
+Motion: new feedback rises in (200ms); right = pop to 1.04 (320ms, `--pop`); wrong = shake ±4px
+(300ms). transform / opacity only; reduced motion = no motion, same colours.
+
