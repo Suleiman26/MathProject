@@ -17,6 +17,14 @@
 import { randInt, pick } from '../rng.js';
 import { fmt, numberQuestion, choiceQuestion } from '../choices.js';
 
+// Prompt shape (docs/superpowers/specs/2026-11-10-duel-questions-style.md): line 1 says
+// what to find, line 2 is the formula on its own. Sulaiman's sub-chapter names
+// ("כפל חזקות", "ביטוי מעורב"…) are not printed: they name the law, not the task.
+const CALC = 'חשבו:'; // the value ("2^{3} = ?")
+const EXP = 'השלימו את המעריך:'; // one exponent ("5^{2} · 5^{3} = 5^{?}")
+const COEF = 'השלימו את המקדם:'; // one coefficient ("(2t^{2})^{3} = ?t^{6}", "√20 + √5 = ?√5")
+const line = (words, math) => `${words}\n$${math}$`;
+
 // a value or a root is positive: no "0" or negative choice there
 const POS = { accept: (t) => Number(t.replace('−', '-')) >= 1 };
 // a typed-only question (see the list above)
@@ -57,7 +65,7 @@ export function powers(r, want) {
     // typed only: the exponent ("2 · 2 · 2 = 2^{?}") is the number of factors
     const { base, exp } = genBaseExpProduct(r);
     const chain = Array.from({ length: exp }, () => base).join(' · ');
-    return typed(`כתבו את הכפל כחזקה: $${chain} = ${base}^{?}$`, exp, { v: 'prod', base, count: exp });
+    return typed(line(EXP, `${chain} = ${base}^{?}`), exp, { v: 'prod', base, count: exp });
   }
   const ex = genCh1(r);
   if (ex.mode === 0) {
@@ -65,17 +73,19 @@ export function powers(r, want) {
     // typed only (final wave): as 4 choices (base × exponent, one factor too few/many)
     // "the perfect square" found the answer ~48% of the time — the right power and its
     // ±1-exponent neighbours never share squareness. Typing the value is just as quick.
-    return typed(`הבנת חזקות: $${pw(base, exp)} = ?$`, ans, { v: 'calc', base, exp });
+    return typed(line(CALC, `${pw(base, exp)} = ?`), ans, { v: 'calc', base, exp });
   }
   // typed only: the exponent of a printed power ("81 = 3^{?}")
   const { base, exp, ans } = ex;
-  return typed(`מצאו את המעריך: $${ans} = ${base}^{?}$`, exp, { v: 'rev', base, value: ans });
+  return typed(line(EXP, `${ans} = ${base}^{?}`), exp, { v: 'rev', base, value: ans });
 }
 
 /* ── Chapter 2: power laws (numbers) ─────────────────────────────── */
 
-// port of lawNames — src/topics/powers-roots/Topic.jsx L237
-const lawNames = ['כפל חזקות', 'חילוק חזקות', 'חזקה של חזקה', 'חזקה של מכפלה', 'חזקה אפס', 'חזקה שלילית'];
+// (his lawNames — Topic.jsx L237 — are not printed; see the top of this file)
+// law 3, "power of a product": the student raises each factor, so the task says so
+// and the right side is one "?", answered by a product like "8 · 125"
+const PRODUCT = 'העלו כל גורם בחזקה:';
 
 // port of genLaw(lawIdx) — src/topics/powers-roots/Topic.jsx L205
 function genLaw(r, lawIdx) {
@@ -93,7 +103,7 @@ function genLaw(r, lawIdx) {
   }
   if (lawIdx === 3) {
     const a = pick(r, [2, 3]); const b = pick(r, [2, 3, 5]); const n = randInt(r, 2, 3);
-    return { law: 3, a, b, n, ansA: Math.pow(a, n), ansB: Math.pow(b, n), q: `(${a} · ${b})^{${n}} = ? · ?` };
+    return { law: 3, a, b, n, ansA: Math.pow(a, n), ansB: Math.pow(b, n), q: `(${a} · ${b})^{${n}} = ?` };
   }
   if (lawIdx === 4) {
     const base = pick(r, [2, 3, 5, 7, 10, 13, 42, 100]);
@@ -109,7 +119,7 @@ export function laws(r, want) {
   let ex = genLaw(r, law);
   // duel limit: a^{−1} has too few real "1 over …" mistakes, so a^{−n} uses n = 2–3
   while (law === 5 && ex.n < 2) ex = genLaw(r, law);
-  const prompt = `${lawNames[law]}: $${ex.q}$`;
+  const prompt = line(law <= 2 ? EXP : law === 3 ? PRODUCT : CALC, ex.q);
   if (law <= 2) {
     const { n, m, expAns } = ex;
     // mistakes: exponents multiplied / added / divided instead
@@ -145,8 +155,7 @@ export function laws(r, want) {
 
 /* ── Chapter 3: power laws with letters ──────────────────────────── */
 
-// port of paramNames — src/topics/powers-roots/Topic.jsx L388
-const paramNames = ['כפל פשוט', 'חזקה של חזקה + כפל', 'חזקה עם מקדם', 'חילוק', 'ביטוי מעורב'];
+// (his paramNames — Topic.jsx L388 — are not printed; see the top of this file)
 
 // port of genParam(subIdx) — src/topics/powers-roots/Topic.jsx L366
 function genParam(r, subIdx) {
@@ -177,15 +186,15 @@ export function param(r, want) {
   if (sub === 0) {
     // typed only: v^{a} · v^{b} = v^{?}
     const { a, b, ans } = ex;
-    return typed(`${paramNames[sub]}: $${ex.q}$`, ans, { sub, a, b });
+    return typed(line(EXP, ex.q), ans, { sub, a, b });
   }
   if (sub === 1) {
     const { a, b, c, ans } = ex;
-    return numberQuestion(r, want, `${paramNames[sub]}: $${ex.q}$`, ans, [a + b + c, a * b * c, Math.pow(a, b) + c],{ sub, a, b, c });
+    return numberQuestion(r, want, line(EXP, ex.q), ans, [a + b + c, a * b * c, Math.pow(a, b) + c],{ sub, a, b, c });
   }
   if (sub === 3) {
     const { a, b, ans } = ex;
-    return numberQuestion(r, want, `${paramNames[sub]}: $${ex.q}$`, ans, [a + b, a / b, a * b].filter(Number.isInteger), { sub, a, b });
+    return numberQuestion(r, want, line(EXP, ex.q), ans, [a + b, a / b, a * b].filter(Number.isInteger), { sub, a, b });
   }
   // subs 2 and 4 answer a whole monomial (k^n · v^{an} [· w^{bn}]) on the topic
   // page; here ONE slot of it is asked, typed only — the coefficient ('coef')
@@ -199,13 +208,13 @@ export function param(r, want) {
     : ask === 'A' ? [`${coef}${v}^{?}${tail}`, eA]
       : [`${coef}${pw(v, eA)}${w}^{?}`, eB];
   const meta = sub === 2 ? { sub, k: ex.k, a: ex.a, b: ex.b, v, w, ask } : { sub, k: ex.k, a: ex.a, b: ex.b, c: ex.c, v, w, ask };
-  return typed(`${paramNames[sub]}: $${ex.q.replace(/\?$/, rhs)}$`, ans, meta);
+  return typed(line(ask === 'coef' ? COEF : EXP, ex.q.replace(/\?$/, rhs)), ans, meta);
 }
 
 /* ── Chapter 4: square roots ─────────────────────────────────────── */
 
-// port of rootNames — src/topics/powers-roots/Topic.jsx L520
-const rootNames = ['שורשים מדויקים', 'פישוט שורשים', 'פעולות עם שורשים'];
+// (his rootNames — Topic.jsx L520 — are not printed; see the top of this file)
+const SIMPLIFY = 'פשטו את השורש:'; // √45 = 3√5
 
 // port of genRoot(subIdx) — src/topics/powers-roots/Topic.jsx L479
 function genRoot(r, subIdx, opType) {
@@ -242,33 +251,32 @@ export function roots(r, want) {
   const kinds = want === 'number' ? [[0], [2, 0], [2, 1], [2, 2], [2, 3]] : [[0], [1], [2, 0], [2, 1], [2, 2], [2, 3]];
   const [sub, op] = pick(r, kinds);
   const ex = genRoot(r, sub, op);
-  const name = rootNames[sub];
   if (sub === 0) {
     const { val, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${val}} = ?$`, ans, [val / 2, ans * 2, val].filter(Number.isInteger), { sub, val }, POS);
+    return numberQuestion(r, want, line(CALC, `\\sqrt{${val}} = ?`), ans, [val / 2, ans * 2, val].filter(Number.isInteger), { sub, val }, POS);
   }
   if (sub === 1) {
     const { a, b, val } = ex;
     // mistakes: a and b swapped, a² left outside, the number outside forgotten
     const wrongs = [rt(b, a), rt(a * a, b), rt(1, b)];
-    return choiceQuestion(r, `${name}: $\\sqrt{${val}} = ?$`, rt(a, b), wrongs, { sub, val });
+    return choiceQuestion(r, line(SIMPLIFY, `\\sqrt{${val}} = ?`), rt(a, b), wrongs, { sub, val });
   }
   if (ex.opType === 0) {
     const { a, b, prod, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} · \\sqrt{${b}} = ?$`, ans, [prod, a + b, b - a],{ sub, op: 0, a, b }, POS);
+    return numberQuestion(r, want, line(CALC, `\\sqrt{${a}} · \\sqrt{${b}} = ?`), ans, [prod, a + b, b - a],{ sub, op: 0, a, b }, POS);
   }
   if (ex.opType === 1) {
     const { a, b, div, ans } = ex;
-    return numberQuestion(r, want, `${name}: $\\sqrt{${a}} ÷ \\sqrt{${b}} = ?$`, ans, [div, a - b, div / 2].filter(Number.isInteger),{ sub, op: 1, a, b }, POS);
+    return numberQuestion(r, want, line(CALC, `\\sqrt{${a}} ÷ \\sqrt{${b}} = ?`), ans, [div, a - b, div / 2].filter(Number.isInteger),{ sub, op: 1, a, b }, POS);
   }
   // op 2 and 3 answer k√b on the topic page; here the root is printed and ONE
   // slot — the coefficient — is asked, typed only ("√8 + √2 = ?√2")
   if (ex.opType === 2) {
     const { base, k, m, ans } = ex;
-    return typed(`${name}: $${rt(k, base)} + ${rt(m, base)} = ?\\sqrt{${base}}$`, ans, { sub, op: 2, base, k, m, ask: 'coef' });
+    return typed(line(COEF, `${rt(k, base)} + ${rt(m, base)} = ?\\sqrt{${base}}`), ans, { sub, op: 2, base, k, m, ask: 'coef' });
   }
   const { a, b, coef, base } = ex;
-  return typed(`${name}: $\\sqrt{${a}} + \\sqrt{${b}} = ?\\sqrt{${base}}$`, coef, { sub, op: 3, a, b, base, ask: 'coef' });
+  return typed(line(COEF, `\\sqrt{${a}} + \\sqrt{${b}} = ?\\sqrt{${base}}`), coef, { sub, op: 3, a, b, base, ask: 'coef' });
 }
 
 /* ── Chapter 5: everything together ──────────────────────────────── */
@@ -317,9 +325,9 @@ export function mixed(r) {
   const ex = tpl.make(r, v, w);
   const meta = { t: tpl.t, type: tpl.type, v, w, a: ex.a, b: ex.b, c: ex.c, d: ex.d, k: ex.k };
   // the answer is one missing number of an equation that is half printed
-  if (tpl.type === 'exp') return typed(`השלימו את המספר החסר: $${ex.q}$`, ex.ans, meta);
+  if (tpl.type === 'exp') return typed(line(EXP, ex.q), ex.ans, meta);
   // a whole monomial on the topic page (k·v^e, v^A·w^B): ONE slot is asked here
   const ask = pick(r, slotsOf(tpl, ex));
   const slot = slotOf(tpl, ex, ask, v, w);
-  return typed(`השלימו את המספר החסר: $${ex.q.replace(/\?$/, slot.rhs)}$`, slot.ans, { ...meta, ask });
+  return typed(line(ask === 'coef' ? COEF : EXP, ex.q.replace(/\?$/, slot.rhs)), slot.ans, { ...meta, ask });
 }

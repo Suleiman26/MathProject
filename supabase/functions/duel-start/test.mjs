@@ -265,9 +265,11 @@ test("invitee starts the duel: live, questions in the DB, no answer/meta/tol on 
 
   // the questions come from the claim seed MIXED with DUEL_SECRET, never from the bare seed
   const seed = Number(sql(`select seed from public.duels where id = '${id}'`));
-  const prompts = sql(`select payload->>'prompt' from public.duel_questions where duel_id = '${id}' order by idx`).split("\n");
-  const bare = buildDuel(seed, { grade: 7, subject: "random" }).map((q) => q.prompt);
-  const mixed = buildDuel(await mixSeed(SECRET, seed, id), { grade: 7, subject: "random" }).map((q) => q.prompt);
+  // prompts can have lines ("\n"): read each one flattened, one per output line
+  const flat = (p) => p.replace(/\n/g, " ⏎ ");
+  const prompts = sql(`select replace(payload->>'prompt', E'\\n', ' ⏎ ') from public.duel_questions where duel_id = '${id}' order by idx`).split("\n");
+  const bare = buildDuel(seed, { grade: 7, subject: "random" }).map((q) => flat(q.prompt));
+  const mixed = buildDuel(await mixSeed(SECRET, seed, id), { grade: 7, subject: "random" }).map((q) => flat(q.prompt));
   assert.deepEqual(prompts, mixed, "built from HMAC(secret, seed:id)");
   assert.notDeepEqual(prompts, bare, "not from the bare claim seed");
 

@@ -63,7 +63,7 @@ A question must be understood in about three seconds.
 ### 3. Answers
 - **Choices stay pure numbers or math** (the guard and the checks read them). To show a unit, set
   `display: { unit: '°' }` on the question (both kinds). The phone adds the unit to every choice, to
-  the typing box and to the results. Units: `'°'`, `'%'`, `'₪'`, `'π'`.
+  the typing box and to the results. Units: `'°'`, `'%'`, `'₪'`, `'π'`, `'√3'`.
   - With `unit: 'π'`, the choice "12" shows as "12π". So a choice question asks "$S = ?$", never
     "$S = ?π$". A typed question may keep "$S = ?π$" with the unit too: the box then shows "? π",
     which tells the student to type only the number before π.

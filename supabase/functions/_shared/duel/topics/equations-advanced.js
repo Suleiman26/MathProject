@@ -65,7 +65,7 @@ function makeLinearEq(r, level) {
 export function linearFrac(r, want) {
   const level = pick(r, [1, 2, 3]);
   const e = makeLinearEq(r, level);
-  return numberQuestion(r, want, `פתרו את המשוואה: $${e.text}$ — $x = ?$`, e.x, e.wrongs.filter(isInt),
+  return numberQuestion(r, want, `פתרו את המשוואה:\n$${e.text}$`, e.x, e.wrongs.filter(isInt),
     { level, a: e.a, b: e.b, c: e.c, d: e.d, p: e.p }, SIGNED);
 }
 
@@ -86,7 +86,7 @@ export function shortMult(r, want) {
   // mistakes: (x + a)² read as x² + a² (no 2ax: the x vanishes → use the constants only), forgot the 2,
   // sign of the constant
   const wrongs = [(c - m) / (a - b), (c + m) / k, c / k, (c - (a - b) * (a - b)) / k].filter(isInt);
-  return numberQuestion(r, want, `פתרו את המשוואה: $${sq(a)} − ${sq(b)} = ${fmt(c)}$ — $x = ?$`, x, wrongs, { a, b, c }, SIGNED);
+  return numberQuestion(r, want, `פתרו את המשוואה:\n$${sq(a)} − ${sq(b)} = ${fmt(c)}$`, x, wrongs, { a, b, c }, SIGNED);
 }
 
 // port of makeCombinedEq(1) — src/topics/equations-advanced/Topic.jsx L2249 (template A):
@@ -104,6 +104,6 @@ export function combined(r, want) {
   // after × d: 2ax = cd − 2a². Mistakes: forgot × d on c, a² not doubled, sign of a²
   const wrongs = [(c - 2 * a * a) / (2 * a), (c * d - a * a) / (2 * a), (c * d + 2 * a * a) / (2 * a), (c * d - 2 * a * a) / a].filter(isInt);
   return numberQuestion(r, want,
-    `פתרו את המשוואה: $\\frac{(x${plus(a)})^{2}}{${d}}${plus(-c)} = \\frac{x^{2} − ${a * a}}{${d}}$ — $x = ?$`,
+    `פתרו את המשוואה:\n$\\frac{(x${plus(a)})^{2}}{${d}}${plus(-c)} = \\frac{x^{2} − ${a * a}}{${d}}$`,
     x, wrongs, { a, d, c }, SIGNED);
 }

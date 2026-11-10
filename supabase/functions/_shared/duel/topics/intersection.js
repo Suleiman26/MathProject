@@ -26,14 +26,16 @@ export function lineLine(r, want) {
   // duel limit (choices): a 0 is not asked (it would always be the choice closest to zero)
   let ask = pick(r, ['xval', 'yval']);
   if (want !== 'number' && (ask === 'xval' ? x : y) === 0) ask = ask === 'xval' ? 'yval' : 'xval';
-  const head = `מצאו את נקודת החיתוך של הישרים $${lineText(m1, b1)}$ ו-$${lineText(m2, b2)}$ (בנקודת החיתוך ערכי $y$ שווים).`;
+  // style guide (2026-11-10): the question in words on line 1, each line's equation on its own
+  // formula row — never "ו-$y = …$" (the hyphen read as a minus on a phone)
+  const lines = `\n$${lineText(m1, b1)}$\n$${lineText(m2, b2)}$`;
   const isInt = Number.isInteger;
   if (ask === 'xval') {
     // mistakes: a term moved without changing its sign, the y of the point, −x
     const wrongs = [(b2 + b1) / (m1 - m2), (b1 - b2) / (m1 - m2), (b2 - b1) / (m1 + m2), y, -x].filter((w) => isInt(w) && w !== x);
-    return numberQuestion(r, want, `${head} מה ערך ה-$x$ שלה?`, x, wrongs, { m1, b1, m2, b2, ask }, { signed: true });
+    return numberQuestion(r, want, `מהו ערך $x$ בנקודת החיתוך של שני הישרים?${lines}`, x, wrongs, { m1, b1, m2, b2, ask }, { signed: true });
   }
   // y: mistakes — the x of the point, the sign, put x into the wrong place
   const wrongs = [x, -y, b1, b2, m1 * x - b1, m2 * x - b2, b1 + b2].filter((w) => isInt(w) && w !== y);
-  return numberQuestion(r, want, `${head} מה ערך ה-$y$ שלה?`, y, wrongs, { m1, b1, m2, b2, ask }, { signed: true });
+  return numberQuestion(r, want, `מהו ערך $y$ בנקודת החיתוך של שני הישרים?${lines}`, y, wrongs, { m1, b1, m2, b2, ask }, { signed: true });
 }

@@ -1,8 +1,14 @@
 // 3D solids (grade 7, geo) — ported from Sulaiman's
 // src/topics/solids3d/Topic.jsx (never edited). His answers are computed
 // inside the Ch*Q* components; the formulas are copied from there.
-// π answers are asked as the coefficient of π ("V = ?π"), so they stay
-// whole numbers; √3 answers likewise ("V = ?√3").
+// π answers are asked as the coefficient of π, so they stay whole numbers:
+// the question carries display.unit 'π', so every choice shows as "196π" and the
+// typing box as "? π" (a typed prompt also ends with a "$V = ?π$" line); √3 answers
+// likewise ("V = ?√3", no unit exists for √3).
+// Wording (2026-11-10, docs/superpowers/specs/2026-11-10-duel-questions-style.md):
+// everything named in words ("גליל עם רדיוס $7$ וגובה $4$"), no bare symbols,
+// formulas on their own lines. The independent checks (expect-solids.mjs) read
+// these words back — change a phrase here and there together.
 // Duel limits (kid speed / text only):
 //   • cube edge 2–10 (his 2–12: 12³ = 1728 is not a 15-second sum);
 //   • cube "d = a√3 → a" is not asked (the answer is printed in d);
@@ -33,13 +39,18 @@ const q = (r, want, prompt, ans, wrongs, meta, opts) => numberQuestion(r, want, 
 // (Pythagoras: the hypotenuse is just above the longer leg)
 const nearPrinted = (...ns) => ns.flatMap((n) => [n - 2, n - 1, n + 1, n + 2]).filter(int).map(String);
 
+// π answers: the phone adds "π" to every choice and to the typing box (display.unit).
+// A choice question ends with the words; a typed one adds a formula line "$V = ?π$".
+const PI = (qq) => ({ ...qq, display: { unit: 'π' } });
+const askPi = (want, sym) => (want === 'number' ? `\n$${sym} = ?π$` : '');
+
 
 /* ── 1. cube ─ genCube() L182; Ch1Q1 L203 (V = a³), Ch1Q2 L214 (S = 6a²) */
 export function cube(r, want) {
   const v = pick(r, ['vol', 'surf']);
   const a = randInt(r, 2, 10); // duel limit (his 2–12)
-  if (v === 'vol') return q(r, want, `צלע הקובייה: $a = ${a}$. חשבו את נפח הקובייה: $V = ?$`, a ** 3, [3 * a, a * a, 6 * a * a], { v, a });
-  return q(r, want, `צלע הקובייה: $a = ${a}$. חשבו את שטח הפנים הכולל של הקובייה: $S = ?$`, 6 * a * a, [a * a, 4 * a * a, a ** 3, 6 * a], { v, a });
+  if (v === 'vol') return q(r, want, `מה הנפח של קובייה שצלעה $${a}$?`, a ** 3, [3 * a, a * a, 6 * a * a], { v, a });
+  return q(r, want, `מה שטח הפנים הכולל של קובייה שצלעה $${a}$?`, 6 * a * a, [a * a, 4 * a * a, a ** 3, 6 * a], { v, a });
 }
 
 /* ── 2. box ─ genBox() L322; Ch2Q1 L342, Ch2Q2 L354, Ch2Q3 L366; genBoxRatio() L383 / Ch2Q4 L391 */
@@ -58,64 +69,72 @@ export function box(r, want) {
   if (v === 'ratio') {
     const { p, s, t, k, V } = boxRatio(r);
     // mistakes: forgot the cube root (k³), k², V ÷ (p + q + r)
-    const prompt = `נפח התיבה $V = ${V}$, ויחס המידות $l : w : h = ${p} : ${s} : ${t}$. מצאו את גורם הקנה-מידה $k$ (כך ש-$l = ${kt(p)}$, $w = ${kt(s)}$, $h = ${kt(t)}$). $k = ?$`;
+    // (his "l : w : h = 2 : 2 : 3, find the scale factor k" — said as the three edges in k)
+    const prompt = `נפח התיבה הוא $${V}$. האורך, הרוחב והגובה שלה הם:\n$${kt(p)}, ${kt(s)}, ${kt(t)}$\n$k = ?$`;
     // typed only: k is a small number worked out from small printed numbers (as 4
     // choices "near / equal to a printed number" finds it, like powers' exponents)
     return q(r, 'number', prompt, k, [], { v, ratio: [p, s, t], V });
   }
   const { l, w, h, d } = pickQuad(r);
-  const given = `$l = ${l}$, $w = ${w}$, $h = ${h}$`;
-  if (v === 'vol') return q(r, want, `${given}. חשבו את נפח התיבה: $V = ?$`, l * w * h, [2 * (l * w + l * h + w * h), l + w + h, l * w + h], { v, l, w, h });
-  if (v === 'surf') return q(r, want, `${given}. חשבו את שטח הפנים הכולל של התיבה: $S = ?$`,
+  const given = `תיבה באורך $${l}$, ברוחב $${w}$ ובגובה $${h}$`;
+  if (v === 'vol') return q(r, want, `מה הנפח של ${given}?`, l * w * h, [2 * (l * w + l * h + w * h), l + w + h, l * w + h], { v, l, w, h });
+  if (v === 'surf') return q(r, want, `מה שטח הפנים הכולל של ${given}?`,
     2 * (l * w + l * h + w * h), [l * w + l * h + w * h, l * w * h, 2 * (l * w + l * h)], { v, l, w, h });
   // space diagonal: mistakes — added the edges, forgot the root
   // typed only (Pythagoras: the diagonal is next to the longest edge)
-  return q(r, 'number', `${given}. מצאו את האלכסון המרחבי של התיבה: $d = ?$`, d, [l + w + h, d * d], { v, l, w, h }, { extra: nearPrinted(l, w, h) });
+  return q(r, 'number', `מה אורך האלכסון המרחבי של ${given}?`, d, [l + w + h, d * d], { v, l, w, h }, { extra: nearPrinted(l, w, h) });
 }
 
 /* ── 3. cylinder ─ genCylinder() L492; Ch3Q1 L511 (V = πr²h), Ch3Q2 L524 (S = 2πr² + 2πrh), Ch3Q3 L537 (h from V) */
 export function cylinder(r, want) {
   const v = pick(r, ['vol', 'surf', 'height']);
   const rr = randInt(r, 2, 8), h = randInt(r, 2, 12);
-  if (v === 'vol') return q(r, want, `$r = ${rr}$, $h = ${h}$. חשבו את נפח הגליל: $V = ?π$`, rr * rr * h, [2 * rr * h, rr * h, rr * h * h], { v, r: rr, h });
-  if (v === 'surf') return q(r, want, `$r = ${rr}$, $h = ${h}$. חשבו את שטח הפנים הכולל של הגליל: $S = ?π$`,
-    2 * rr * rr + 2 * rr * h, [rr * rr + rr * h, 2 * rr * h, rr * rr + 2 * rr * h, 2 * rr * rr * h], { v, r: rr, h });
+  const given = `גליל עם רדיוס $${rr}$ וגובה $${h}$`;
+  if (v === 'vol') return PI(q(r, want, `מה הנפח של ${given}?${askPi(want, 'V')}`, rr * rr * h, [2 * rr * h, rr * h, rr * h * h], { v, r: rr, h }));
+  if (v === 'surf') return PI(q(r, want, `מה שטח הפנים הכולל של ${given}?${askPi(want, 'S')}`,
+    2 * rr * rr + 2 * rr * h, [rr * rr + rr * h, 2 * rr * h, rr * rr + 2 * rr * h, 2 * rr * rr * h], { v, r: rr, h }));
   const V = rr * rr * h;
   // mistakes: forgot to square r, V − r²
-  return q(r, want, `נפח הגליל $V = ${V}π$, ורדיוס הבסיס $r = ${rr}$. מצאו את גובה הגליל: $h = ?$`, h, [V / rr, V / (2 * rr), V - rr * rr], { v, V, r: rr });
+  return q(r, want, `מה הגובה של גליל שנפחו $${V}π$ ורדיוס הבסיס שלו $${rr}$?`, h, [V / rr, V / (2 * rr), V - rr * rr], { v, V, r: rr });
 }
 
 /* ── 4. cone ─ genCone() L639; Ch4Q1 L659 (V = ⅓πr²h), Ch4Q2 L672 (S = πr² + πrl), Ch4Q3 L685 (l) */
+// (his name for the slant height l: "גובה אלכסוני", Topic.jsx L610)
 export function cone(r, want) {
   // (typed-only variants are drawn on typed slots only, so a duel stays mostly 4 choices)
   const v = pick(r, want === 'number' ? ['vol', 'surf', 'slant'] : ['vol', 'surf']);
   const [rr, h, l] = pickTriple(r);
-  if (v === 'vol') return q(r, want, `$r = ${rr}$, $h = ${h}$. חשבו את נפח החרוט: $V = ?π$`, (rr * rr * h) / 3, [rr * rr * h, rr * h, (rr * rr * h) / 2], { v, r: rr, h });
-  if (v === 'surf') return q(r, want, `$r = ${rr}$, $l = ${l}$. חשבו את שטח הפנים הכולל של החרוט: $S = ?π$`,
-    rr * rr + rr * l, [rr * l, rr * rr + 2 * rr * l, 2 * rr * rr + rr * l, rr * rr * l], { v, r: rr, l });
+  if (v === 'vol') return PI(q(r, want, `מה הנפח של חרוט עם רדיוס $${rr}$ וגובה $${h}$?${askPi(want, 'V')}`, (rr * rr * h) / 3, [rr * rr * h, rr * h, (rr * rr * h) / 2], { v, r: rr, h }));
+  if (v === 'surf') return PI(q(r, want, `מה שטח הפנים הכולל של חרוט עם רדיוס $${rr}$ וגובה אלכסוני $${l}$?${askPi(want, 'S')}`,
+    rr * rr + rr * l, [rr * l, rr * rr + 2 * rr * l, 2 * rr * rr + rr * l, rr * rr * l], { v, r: rr, l }));
   // typed only (Pythagoras)
-  return q(r, 'number', `$r = ${rr}$, $h = ${h}$. מצאו את הגובה האלכסוני של החרוט בעזרת פיתגורס: $l = ?$`, l, [rr + h, rr * rr + h * h], { v, r: rr, h }, { extra: nearPrinted(rr, h) });
+  return q(r, 'number', `מה הגובה האלכסוני של חרוט עם רדיוס $${rr}$ וגובה $${h}$?`, l, [rr + h, rr * rr + h * h], { v, r: rr, h }, { extra: nearPrinted(rr, h) });
 }
 
 /* ── 5. pyramid ─ PYR_TRIPLES L753 / pickPyr() L754; Ch5Q1Sq L841, Ch5Q1Tri L854, Ch5Q2Sq L868, Ch5Q3 L895, Ch5Q4Sq L911 */
+// (his "אפותם m" is said as "גובה הפאה הצדדית", the words he explains it with, L759)
 const PYR_TRIPLES = [{ half: 3, h: 4, m: 5, b: 6 }, { half: 6, h: 8, m: 10, b: 12 }, { half: 5, h: 12, m: 13, b: 10 }];
 export function pyramid(r, want) {
   // (typed-only variants are drawn on typed slots only, so a duel stays mostly 4 choices)
   const v = pick(r, want === 'number' ? ['volSq', 'volTri', 'surfSq', 'apothem', 'height'] : ['volSq', 'volTri', 'surfSq']);
   const { half, h, m, b } = pick(r, PYR_TRIPLES);
-  if (v === 'volSq') return q(r, want, `בסיס מרובע: $b = ${b}$, גובה $h = ${h}$. חשבו את נפח הפירמידה: $V = ?$`,
+  if (v === 'volSq') return q(r, want, `מה הנפח של פירמידה עם בסיס ריבועי שצלעו $${b}$ וגובה $${h}$?`,
     (b * b * h) / 3, [b * b * h, b * h, (b * b * h) / 2], { v, b, h });
   if (v === 'volTri') {
+    // his question prints the side b too; the duel gives only what the sum needs:
+    // the base area k√3 (k = b²/4) and the height — the answer is the number before √3
     const k = (b * b) / 4;
-    return q(r, want, `בסיס משולש שווה-צלעות: $b = ${b}$, גובה הפירמידה $h = ${h}$, שטח הבסיס $= ${k}\\sqrt{3}$. חשבו את נפח הפירמידה: $V = ?\\sqrt{3}$`,
-      (k * h) / 3, [k * h, (k * h) / 2, k + h], { v, b, h, k });
+    // √3 is shown like π: choices read "100√3"; a typed one keeps the "$V = ?√3$" line
+    const ask = want === 'number' ? '\n$V = ?\\sqrt{3}$' : '';
+    return { ...q(r, want, `מה הנפח של פירמידה עם גובה $${h}$ ושטח בסיס $${k}\\sqrt{3}$?${ask}`,
+      (k * h) / 3, [k * h, (k * h) / 2, k + h], { v, b, h, k }), display: { unit: '√3' } };
   }
-  if (v === 'surfSq') return q(r, want, `בסיס מרובע: $b = ${b}$, אפותם $m = ${m}$. חשבו את שטח הפנים הכולל: $S = ?$`,
+  if (v === 'surfSq') return q(r, want, `פירמידה עם בסיס ריבועי שצלעו $${b}$ וגובה הפאה הצדדית $${m}$.\nמה שטח הפנים הכולל שלה?`,
     b * b + 2 * b * m, [b * b + 4 * b * m, 2 * b * m, b * b + b * m], { v, b, m });
   // apothem and height: typed only (Pythagoras: next to a printed length, 3 triangles only)
-  if (v === 'apothem') return q(r, 'number', `חצי-צלע הבסיס $= ${half}$, גובה הפירמידה $h = ${h}$. מצאו את האפותם (גובה הפאה הצדדית): $m = ?$`,
+  if (v === 'apothem') return q(r, 'number', `פירמידה עם בסיס ריבועי: חצי צלע הבסיס $${half}$, גובה הפירמידה $${h}$.\nמה גובה הפאה הצדדית?`,
     m, [half + h, half * half + h * h], { v, half, h }, { extra: nearPrinted(half, h) });
-  return q(r, 'number', `בסיס מרובע: $b = ${b}$, אפותם $m = ${m}$. מצאו את גובה הפירמידה: $h = ?$`,
+  return q(r, 'number', `פירמידה עם בסיס ריבועי שצלעו $${b}$ וגובה הפאה הצדדית $${m}$.\nמה גובה הפירמידה?`,
     h, [m - half, m * m - half * half, m - b], { v, b, m }, { extra: nearPrinted(b, m) });
 }
 
@@ -127,8 +146,8 @@ export function sphere(r, want) {
   // (r = 3 gives V = S = 36π, the answer would be printed)
   const rr = v === 'surf' || v === 'radius' ? randInt(r, 2, 6) : v === 'sToV' && want !== 'number' ? 6 : pick(r, [3, 6]);
   const S = 4 * rr * rr, V = (4 / 3) * rr ** 3;
-  if (v === 'vol') return q(r, want, `$r = ${rr}$. חשבו את נפח הכדור: $V = ?π$`, V, [4 * rr ** 3, S, rr ** 3, (4 / 3) * rr * rr], { v, r: rr });
-  if (v === 'surf') return q(r, want, `$r = ${rr}$. חשבו את שטח הפנים של הכדור: $S = ?π$`, S, [4 * rr, rr * rr, 2 * rr * rr, V], { v, r: rr });
-  if (v === 'radius') return q(r, want, `שטח הפנים של הכדור: $S = ${S}π$. מצאו את הרדיוס: $r = ?$`, rr, [rr * rr, S / 2, 2 * rr], { v, S });
-  return q(r, want, `שטח הפנים של הכדור: $S = ${S}π$. מצאו את נפח הכדור: $V = ?π$`, V, [S, rr ** 3, 4 * rr ** 3], { v, S });
+  if (v === 'vol') return PI(q(r, want, `מה הנפח של כדור עם רדיוס $${rr}$?${askPi(want, 'V')}`, V, [4 * rr ** 3, S, rr ** 3, (4 / 3) * rr * rr], { v, r: rr }));
+  if (v === 'surf') return PI(q(r, want, `מה שטח הפנים של כדור עם רדיוס $${rr}$?${askPi(want, 'S')}`, S, [4 * rr, rr * rr, 2 * rr * rr, V], { v, r: rr }));
+  if (v === 'radius') return q(r, want, `מה הרדיוס של כדור ששטח הפנים שלו $${S}π$?`, rr, [rr * rr, S / 2, 2 * rr], { v, S });
+  return PI(q(r, want, `מה הנפח של כדור ששטח הפנים שלו $${S}π$?${askPi(want, 'V')}`, V, [S, rr ** 3, 4 * rr ** 3], { v, S }));
 }

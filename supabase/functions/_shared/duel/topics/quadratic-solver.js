@@ -49,7 +49,9 @@ export function coefficients(r, want) {
   const li = ask === 'bcoef' ? 1 : 2;
   // mistakes: read it off the left side, moved the right-side term without changing its sign, the sign
   const wrongs = [L[li], L[li] + R[li], -ans, ask === 'bcoef' ? C : B];
+  // style guide (2026-11-10): the task in words, the equation on its own formula row, then the
+  // one letter to find ("$b = ?$") — never two formulas in one sentence
   return numberQuestion(r, want,
-    `סדרו את המשוואה לצורה $x^{2} + bx + c = 0$: $${sideText(...L)} = ${sideText(...R)}$. מה $${ask === 'bcoef' ? 'b' : 'c'}$?`,
+    `סדרו את המשוואה לצורה $x^{2} + bx + c = 0$:\n$${sideText(...L)} = ${sideText(...R)}$\n$${ask === 'bcoef' ? 'b' : 'c'} = ?$`,
     ans, wrongs, { L, R, ask }, { signed: true });
 }

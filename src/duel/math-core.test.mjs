@@ -104,6 +104,7 @@ test("units: added on screen after a pure-number answer", async () => {
   assert.equal(withUnit("1", "π"), "π");
   assert.equal(withUnit("−1", "π"), "−π");
   assert.equal(withUnit("\\frac{3}{2}", "π"), "\\frac{3}{2}π");
+  assert.equal(withUnit("100", "√3"), "100\\sqrt{3}");
   assert.equal(withUnit("7", ""), "7");
   assert.equal(withUnit("7", "kg"), "7");
   assert.equal(withUnit("", "°"), "");

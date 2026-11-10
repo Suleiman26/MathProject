@@ -19,11 +19,11 @@ function randNonZero(r, a, b) {
   return v;
 }
 
-// card titles are Sulaiman's (stored as \u escapes in Topic.jsx L232, L389, L480)
-const T_ADD = 'חיבור מספרים מכוונים';
-const T_SUB = 'חיסור מספרים מכוונים';
-const T_MUL = 'כפל מספרים מכוונים';
-const T_DIV = 'חילוק מספרים מכוונים';
+// Prompt shape (docs/superpowers/specs/2026-11-10-duel-questions-style.md): a short
+// instruction, then the expression on its own formula line. Sulaiman's card titles
+// ("חיבור מספרים מכוונים", Topic.jsx L232…) name the chapter, not a task, so they
+// are not printed.
+const ask = (expr) => `חשבו:\n$${expr} = ?$`;
 const SIGNED = { signed: true }; // decoys may be negative here
 
 // port of genAdd() — src/topics/directed-numbers/Topic.jsx L83
@@ -34,7 +34,7 @@ export function add(r, want) {
   const ans = a + b;
   // mistakes: subtracted instead (a − b or b − a), wrong sign
   const wrongs = [a - b, -ans, b - a];
-  return numberQuestion(r, want, `${T_ADD}: $${fmtS(a)} + ${fmtS(b)} = ?$`, ans, wrongs, { a, b }, SIGNED);
+  return numberQuestion(r, want, ask(`${fmtS(a)} + ${fmtS(b)}`), ans, wrongs, { a, b }, SIGNED);
 }
 
 // port of genSub() — src/topics/directed-numbers/Topic.jsx L90
@@ -45,7 +45,7 @@ export function sub(r, want) {
   const ans = a - b;
   // mistakes: added instead (forgot the opposite), b − a, wrong sign
   const wrongs = [a + b, b - a, -(a + b)];
-  return numberQuestion(r, want, `${T_SUB}: $${fmtS(a)} − ${fmtS(b)} = ?$`, ans, wrongs, { a, b }, SIGNED);
+  return numberQuestion(r, want, ask(`${fmtS(a)} − ${fmtS(b)}`), ans, wrongs, { a, b }, SIGNED);
 }
 
 // port of genMul() — src/topics/directed-numbers/Topic.jsx L97
@@ -59,7 +59,7 @@ export function mul(r, want) {
   // them, so the sign rule (the skill) must decide, not "the number from the question"
   const wrongs = [-ans, a + b, -(a + b), a, -a, b, -b];
   const one = Math.abs(a) === 1 || Math.abs(b) === 1;
-  return numberQuestion(r, want, `${T_MUL}: $${fmtS(a)} × ${fmtS(b)} = ?$`, ans, wrongs, { a, b, one }, withOpposite(one, ans));
+  return numberQuestion(r, want, ask(`${fmtS(a)} × ${fmtS(b)}`), ans, wrongs, { a, b, one }, withOpposite(one, ans));
 }
 
 // with a ±1 factor the answer's magnitude is printed in the question, so the
@@ -81,7 +81,7 @@ export function div(r, want) {
   // mistakes: sign rule, multiplied instead, subtracted instead
   const wrongs = [-q, dv * ds, dv - ds, dv, -dv, ds, -ds]; // + the given numbers, both signs
   const one = Math.abs(ds) === 1; // ÷ (±1): the answer's magnitude is printed
-  return numberQuestion(r, want, `${T_DIV}: $${fmtS(dv)} ÷ ${fmtS(ds)} = ?$`, q, wrongs, { a: dv, b: ds, one }, withOpposite(one, q));
+  return numberQuestion(r, want, ask(`${fmtS(dv)} ÷ ${fmtS(ds)}`), q, wrongs, { a: dv, b: ds, one }, withOpposite(one, q));
 }
 
 // port of genCombo() — src/topics/directed-numbers/Topic.jsx L636
@@ -168,6 +168,6 @@ export function combo(r, want) {
   const ltr = leftToRight(ex.tokens);
   // mistakes: left to right (precedence ignored), wrong sign
   const wrongs = [Number.isInteger(ltr) ? ltr : NaN, -ans];
-  return numberQuestion(r, want, `תרגול מקיף — סדר פעולות חשבון: $${showTokens(ex.tokens)} = ?$`, ans,
+  return numberQuestion(r, want, `חשבו לפי סדר פעולות החשבון:\n$${showTokens(ex.tokens)} = ?$`, ans,
     wrongs, { tokens: ex.tokens }, SIGNED);
 }

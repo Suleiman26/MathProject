@@ -103,11 +103,12 @@ export function promptLines(text) {
 /** A question's unit (payload.display.unit) shown after every answer — the choices stay pure
     numbers (the anti-guessing guard and the answer check read them), the screen adds the unit:
     "60" + "°" → "60°", "40%", "84 ₪", "12π" ("1" → "π", "−1" → "−π"). Unknown unit → unchanged. */
-export const UNITS = ["°", "%", "₪", "π"];
+export const UNITS = ["°", "%", "₪", "π", "√3"];
 export function withUnit(src, unit) {
   const s = String(src == null ? "" : src);
   if (!unit || !UNITS.includes(unit) || s === "") return s;
   if (unit === "π") return s === "1" ? "π" : s === "−1" || s === "-1" ? "−π" : s + "π";
+  if (unit === "√3") return (s === "1" ? "" : s) + "\\sqrt{3}";   // "100√3"
   if (unit === "₪") return s + " ₪";
   return s + unit;
 }

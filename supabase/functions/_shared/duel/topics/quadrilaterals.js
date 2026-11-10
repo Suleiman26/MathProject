@@ -16,6 +16,10 @@
 // Angle choices: only multiples of 15° below 180° (real mistakes + other such angles),
 // at most one wrong choice printed in the question or not ×30°/×45° (see oneOdd).
 // Length / area choices stay within ×/÷ 6 of the answer.
+// Wording (2026-11-10, docs/superpowers/specs/2026-11-10-duel-questions-style.md): natural
+// Hebrew questions, every quantity named in words, no letters / subscripts, nothing that needs
+// a drawing. Angle answers carry display.unit '°' (the phone adds ° to every choice and to the
+// typed box). The numbers, answers and random calls are unchanged.
 import { randInt, pick } from '../rng.js';
 import { numberQuestion, within, niceAngleOpts } from '../choices.js';
 
@@ -44,10 +48,12 @@ const oneOdd = (prompt) => {
 };
 // lengths and areas: no 0 and nothing far from the answer's size; angles (° in the
 // prompt, always a multiple of 15° here): only multiples of 15° below 180° (convex),
-// with the rule above
+// with the rule above. Every ° question in this file asks an angle → display.unit '°'.
 const q = (r, want, prompt, ans, wrongs, meta, opts) => {
-  const base = prompt.includes('°') ? { ...niceAngleOpts(ans, 180), must: oneOdd(prompt) } : { accept: within(ans) };
-  return numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { ...base, ...opts });
+  const angle = prompt.includes('°');
+  const base = angle ? { ...niceAngleOpts(ans, 180), must: oneOdd(prompt) } : { accept: within(ans) };
+  const out = numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { ...base, ...opts });
+  return angle ? { ...out, display: { unit: '°' } } : out;
 };
 // numbers next to the ones printed in the question: with them among the
 // decoys, "the choice closest to a printed number" can't find the answer
@@ -60,11 +66,11 @@ const nearPrinted = (...ns) => ns.flatMap((n) => [n - 2, n - 1, n + 1, n + 2]).f
 export function square(r, want) {
   const v = pick(r, ['area', 'perim', 'side']);
   const a = randInt(r, 2, 20);
-  if (v === 'area') return q(r, want, `ריבוע — שטח: צלע $a = ${a}$. $S = ?$`, a * a, [4 * a, 2 * a], { v, a });
-  if (v === 'perim') return q(r, want, `ריבוע — היקף: צלע $a = ${a}$. $P = ?$`, 4 * a, [a * a, 2 * a, a + 4], { v, a });
+  if (v === 'area') return q(r, want, `מה השטח של ריבוע שצלעו $${a}$?`, a * a, [4 * a, 2 * a], { v, a });
+  if (v === 'perim') return q(r, want, `מה ההיקף של ריבוע שצלעו $${a}$?`, 4 * a, [a * a, 2 * a, a + 4], { v, a });
   const S = a * a;
   // mistakes: S ÷ 2, S ÷ 4 (perimeter thinking)
-  return q(r, want, `ריבוע — צלע: שטח $S = ${S}$. $a = ?$`, a, [S / 2, S / 4], { v, S });
+  return q(r, want, `השטח של ריבוע הוא $${S}$. מה אורך הצלע שלו?`, a, [S / 2, S / 4], { v, S });
 }
 
 /* ── 2. rectangle ──────────────────────────────────────────────────── */
@@ -80,12 +86,12 @@ function rectPair(r) {
 export function rectangle(r, want) {
   const v = pick(r, ['area', 'perim', 'side']);
   const [l, w] = rectPair(r);
-  const given = `אורך $l = ${l}$, רוחב $w = ${w}$`;
-  if (v === 'area') return q(r, want, `מלבן — שטח: ${given}. $S = ?$`, l * w, [2 * (l + w), l + w], { v, l, w });
-  if (v === 'perim') return q(r, want, `מלבן — היקף: ${given}. $P = ?$`, 2 * (l + w), [l * w, l + w, 2 * l + w], { v, l, w });
+  const given = `מלבן שאורכו $${l}$ ורוחבו $${w}$`;
+  if (v === 'area') return q(r, want, `מה השטח של ${given}?`, l * w, [2 * (l + w), l + w], { v, l, w });
+  if (v === 'perim') return q(r, want, `מה ההיקף של ${given}?`, 2 * (l + w), [l * w, l + w, 2 * l + w], { v, l, w });
   const S = l * w;
   // mistakes: S − l, S ÷ 2, twice the width
-  return q(r, want, `מלבן — רוחב: שטח $S = ${S}$, אורך $l = ${l}$. $w = ?$`, w, [S - l, S / 2, 2 * w], { v, S, l });
+  return q(r, want, `השטח של מלבן הוא $${S}$ ואורכו $${l}$. מה הרוחב שלו?`, w, [S - l, S / 2, 2 * w], { v, S, l });
 }
 
 /* ── 3. rhombus ────────────────────────────────────────────────────── */
@@ -97,22 +103,22 @@ export function rhombus(r, want) {
     let d1 = randInt(r, 2, 20); if (d1 % 2 !== 0) d1++;
     const d2 = randInt(r, 2, 20);
     // mistakes: forgot ÷ 2, added the diagonals, ÷ 4
-    return q(r, want, `מעוין — שטח: אלכסון $d₁ = ${d1}$, אלכסון $d₂ = ${d2}$. $S = ?$`, (d1 * d2) / 2, [d1 * d2, d1 + d2, (d1 * d2) / 4], { v, d1, d2 });
+    return q(r, want, `מה השטח של מעוין שהאלכסונים שלו ${d1} ו-${d2}?`, (d1 * d2) / 2, [d1 * d2, d1 + d2, (d1 * d2) / 4], { v, d1, d2 });
   }
   if (v === 'perim') {
     const a = randInt(r, 2, 20);
-    return q(r, want, `מעוין — היקף: צלע $a = ${a}$. $P = ?$`, 4 * a, [a * a, 2 * a, a + 4], { v, a });
+    return q(r, want, `מה ההיקף של מעוין שצלעו $${a}$?`, 4 * a, [a * a, 2 * a, a + 4], { v, a });
   }
   if (v === 'side') {
     const [p, s, side] = pickTriple(r, 20);
     // mistakes: added the half diagonals, forgot the root, doubled (whole diagonals)
     // typed only: the side is next to the longer half diagonal ("near a printed number")
-    return q(r, 'number', `מעוין — צלע: חצי אלכסון אחד $= ${p}$, חצי אלכסון שני $= ${s}$ (משולש ישר-זווית עם האלכסונים). $a = ?$`,
+    return q(r, 'number', `חצאי האלכסונים של מעוין הם ${p} ו-${s}. מה אורך הצלע? (רמז: פיתגורס)`,
       side, [p + s, p * p + s * s, 2 * side], { v, p, q: s }, { extra: nearPrinted(p, s) });
   }
   const A = pick(r, ANGLES_NO90);
   // the adjacent angle (180 − A); mistakes: the opposite one (= A), 360 − A, 90 − A
-  return q(r, want, `מעוין — זווית: זווית $A = ${A}°$. זווית $B$ (סמוכה ל-$A$) $= ?$`, 180 - A, [A, 360 - A, 90 - A], { v, A });
+  return q(r, want, `במעוין יש זווית של $${A}°$. מה גודל הזווית הסמוכה לה?`, 180 - A, [A, 360 - A, 90 - A], { v, A });
 }
 
 /* ── 4. parallelogram ──────────────────────────────────────────────── */
@@ -121,20 +127,20 @@ export function parallelogram(r, want) {
   const v = pick(r, ['area', 'perim', 'side', 'angle']);
   if (v === 'area') {
     const b = randInt(r, 2, 20), h = randInt(r, 2, 20);
-    return q(r, want, `מקבילית — שטח: בסיס $b = ${b}$, גובה $h = ${h}$. $S = ?$`, b * h, [2 * (b + h), (b * h) / 2, b + h], { v, b, h });
+    return q(r, want, `מה השטח של מקבילית שבסיסה $${b}$ וגובהה $${h}$?`, b * h, [2 * (b + h), (b * h) / 2, b + h], { v, b, h });
   }
   if (v === 'perim') {
     let a = randInt(r, 2, 20), b = randInt(r, 2, 20);
     if (a === b) b = b < 20 ? b + 1 : b - 1;
-    return q(r, want, `מקבילית — היקף: צלע $a = ${a}$, צלע $b = ${b}$. $P = ?$`, 2 * (a + b), [a * b, a + b, 2 * a + b], { v, a, b });
+    return q(r, want, `מה ההיקף של מקבילית שצלעותיה ${a} ו-${b}?`, 2 * (a + b), [a * b, a + b, 2 * a + b], { v, a, b });
   }
   if (v === 'side') {
     const b = randInt(r, 2, 20), h = randInt(r, 2, 20);
     const S = b * h;
-    return q(r, want, `מקבילית — בסיס: שטח $S = ${S}$, גובה $h = ${h}$. $b = ?$`, b, [S - h, S / 2, 2 * b], { v, S, h });
+    return q(r, want, `השטח של מקבילית הוא $${S}$ וגובהה $${h}$. מה אורך הבסיס שלה?`, b, [S - h, S / 2, 2 * b], { v, S, h });
   }
   const A = pick(r, ANGLES_NO90);
-  return q(r, want, `מקבילית — זווית: זווית $A = ${A}°$. זווית $B$ (סמוכה ל-$A$) $= ?$`, 180 - A, [A, 360 - A, 90 - A], { v, A });
+  return q(r, want, `במקבילית יש זווית של $${A}°$. מה גודל הזווית הסמוכה לה?`, 180 - A, [A, 360 - A, 90 - A], { v, A });
 }
 
 /* ── 5. trapezoid (general, isosceles, right) ─────────────────────── */
@@ -167,7 +173,6 @@ function trapRightBase(r) {
   return { k, h, s, b1, b2: b1 + k };
 }
 
-const T = 'טרפז';
 export function trapezoid(r, want) {
   // (typed-only variants are drawn on typed slots only, so a duel stays mostly 4 choices)
   const v = pick(r, ['area', 'perim', 'side', 'angle', ...(want === 'number' ? ['isoH'] : []), 'isoP', 'rightP', 'rightSide', 'rightAngle']);
@@ -175,14 +180,14 @@ export function trapezoid(r, want) {
     const [b1, b2] = trapBasesEven(r);
     const h = randInt(r, 2, 20);
     // mistakes: forgot ÷ 2, only the long base, half the difference
-    return q(r, want, `${T} — שטח: בסיס עליון $b₁ = ${b1}$, בסיס תחתון $b₂ = ${b2}$, גובה $h = ${h}$. $S = ?$`,
+    return q(r, want, `בטרפז הבסיסים הם ${b1} ו-${b2} והגובה ${h}. מה השטח שלו?`,
       ((b1 + b2) / 2) * h, [(b1 + b2) * h, b2 * h, ((b2 - b1) / 2) * h], { v, b1, b2, h });
   }
   if (v === 'perim') { // genTrapGenPerimeter() L776
     const [b1, b2] = trapPair(r);
     const l1 = randInt(r, 2, 20), l2 = randInt(r, 2, 20);
     const P = b1 + b2 + l1 + l2;
-    return q(r, want, `${T} — היקף: $b₁ = ${b1}$, $b₂ = ${b2}$, השוק הראשונה $= ${l1}$, השוק השנייה $= ${l2}$. $P = ?$`,
+    return q(r, want, `בטרפז הבסיסים הם ${b1} ו-${b2} והשוקיים ${l1} ו-${l2}. מה ההיקף שלו?`,
       P, [P - l1, P - l2, 2 * (b1 + b2)], { v, b1, b2, l1, l2 });
   }
   if (v === 'side') { // genTrapGenSide() L782
@@ -190,46 +195,47 @@ export function trapezoid(r, want) {
     const h = randInt(r, 2, 20);
     const S = ((b1 + b2) / 2) * h;
     // mistakes: forgot × 2, forgot − b₁, the sum of the bases
-    return q(r, want, `${T} — בסיס שני: שטח $S = ${S}$, גובה $h = ${h}$, בסיס עליון $b₁ = ${b1}$. $b₂ = ?$`,
+    return q(r, want, `השטח של טרפז הוא $${S}$, גובהו $${h}$ ובסיס אחד שלו $${b1}$. מה אורך הבסיס השני?`,
       b2, [S / h - b1, (2 * S) / h, b1 + b2], { v, S, h, b1 });
   }
   if (v === 'angle') { // genTrapGenAngle() L789 — a real trapezoid: A + B = 180° (AB is a leg), D = 180° − C
+    // his question: "סכום זוויות מרובע = 360°" — three angles, find the fourth (printed in the order A, B, C)
     let A, C;
     // duel limit (choices): D is not one of the printed angles
     do { A = pick(r, ANGLES); C = pick(r, ANGLES); } while ((A === 90 && C === 90) || (want !== 'number' && [A, 180 - A, C].includes(180 - C)));
     const B = 180 - A, D = 180 - C;
-    return q(r, want, `${T} — זווית (הרביעית): זווית $A = ${A}°$, זווית $B = ${B}°$, זווית $C = ${C}°$. זווית $D = ?$`,
+    return q(r, want, `בטרפז שלוש זוויות הן $${A}°$, $${B}°$, $${C}°$. מה גודל הזווית הרביעית?`,
       D, [C, A, 360 - A - C], { v, A, B, C });
   }
   if (v === 'isoH') { // genTrapIsoSide() L837
     const { k, h, s, b1, b2 } = trapIsoBase(r);
     // mistakes: the whole difference of the bases, half of it, leg − half
     // typed only (Pythagoras: the height is next to a printed length)
-    return q(r, 'number', `${T} שווה שוקיים — גובה: $b₁ = ${b1}$, $b₂ = ${b2}$, שוק $= ${s}$ (השתמשו בפיתגורס). $h = ?$`,
+    return q(r, 'number', `בטרפז שווה-שוקיים הבסיסים הם ${b1} ו-${b2} והשוק ${s}. מה הגובה? (רמז: פיתגורס)`,
       h, [b2 - b1, k, s - k, s + k], { v, b1, b2, s }, { extra: nearPrinted(s, b1, b2) });
   }
   if (v === 'isoP') { // genTrapIsoPerimeter() L831
     const { s, b1, b2 } = trapIsoBase(r);
     const P = b1 + b2 + 2 * s;
-    return q(r, want, `${T} שווה שוקיים — היקף: $b₁ = ${b1}$, $b₂ = ${b2}$, שוק $= ${s}$. $P = ?$`,
+    return q(r, want, `בטרפז שווה-שוקיים הבסיסים הם ${b1} ו-${b2} וכל שוק ${s}. מה ההיקף שלו?`,
       P, [b1 + b2 + s, 2 * (b1 + b2) + s, P + s], { v, b1, b2, s });
   }
   if (v === 'rightP') { // genTrapRightPerimeter() L884
     const { k, h, s, b1, b2 } = trapRightBase(r);
     const P = b1 + b2 + h + s;
     // mistakes: forgot the slanted leg, used h twice, used the difference instead of the leg
-    return q(r, want, `${T} ישר זווית — היקף: $b₁ = ${b1}$, $b₂ = ${b2}$, שוק ניצבה $h = ${h}$ (מצאו את השוק האלכסונית בעזרת פיתגורס). $P = ?$`,
+    return q(r, want, `בטרפז ישר-זווית הבסיסים הם ${b1} ו-${b2} והשוק הניצבת ${h}.\nמה ההיקף שלו? (רמז: פיתגורס)`,
       P, [b1 + b2 + h, b1 + b2 + 2 * h, b1 + b2 + h + k], { v, b1, b2, h });
   }
   if (v === 'rightSide') { // genTrapRightSide() L890
     const { h, b1, b2 } = trapRightBase(r);
     const S = ((b1 + b2) / 2) * h;
-    return q(r, want, `${T} ישר זווית — בסיס שני: שטח $S = ${S}$, שוק ניצבה $h = ${h}$, בסיס עליון $b₁ = ${b1}$. $b₂ = ?$`,
+    return q(r, want, `השטח של טרפז ישר-זווית הוא $${S}$, גובהו $${h}$ ובסיס אחד שלו $${b1}$. מה אורך הבסיס השני?`,
       b2, [S / h - b1, (2 * S) / h, b1 + b2], { v, S, h, b1 });
   }
-  // rightAngle — genTrapRightAngle() L897
+  // rightAngle — genTrapRightAngle() L897 (two right angles + one more → the fourth)
   const g = pick(r, [60, 120, 150, 30, 45]);
-  return q(r, want, `${T} ישר זווית — הזווית השלישית: שתי הזוויות הישרות ידועות; הזווית הנוספת $= ${g}°$. הזווית השלישית $= ?$`,
+  return q(r, want, `בטרפז ישר-זווית יש שתי זוויות ישרות וזווית של $${g}°$. מה גודל הזווית הרביעית?`,
     180 - g, [g, 270 - g, 90 - g], { v, g }); // mistakes: equal to it, forgot one right angle
 }
 
@@ -240,26 +246,28 @@ export function kite(r, want) {
   if (v === 'area') {
     let d1 = randInt(r, 2, 20); if (d1 % 2 !== 0 && d1 < 20) d1++;
     const d2 = randInt(r, 2, 20);
-    return q(r, want, `דלתון — שטח: אלכסון ראשי $d₁ = ${d1}$, אלכסון משני $d₂ = ${d2}$. $S = ?$`, (d1 * d2) / 2, [d1 * d2, d1 + d2, (d1 * d2) / 4], { v, d1, d2 });
+    return q(r, want, `מה השטח של דלתון שהאלכסונים שלו ${d1} ו-${d2}?`, (d1 * d2) / 2, [d1 * d2, d1 + d2, (d1 * d2) / 4], { v, d1, d2 });
   }
   if (v === 'perim') {
     let a = randInt(r, 2, 20), b = randInt(r, 2, 20);
     if (a === b) b = b < 20 ? b + 1 : b - 1;
     if (a > b) [a, b] = [b, a];
-    return q(r, want, `דלתון — היקף: צלע קצרה $a = ${a}$, צלע ארוכה $b = ${b}$. $P = ?$`, 2 * (a + b), [a * b, a + b, 2 * a + b], { v, a, b });
+    return q(r, want, `בדלתון כל צלע קצרה היא ${a} וכל צלע ארוכה היא ${b}. מה ההיקף שלו?`, 2 * (a + b), [a * b, a + b, 2 * a + b], { v, a, b });
   }
   if (v === 'side') {
     let d1 = randInt(r, 2, 20); if (d1 % 2 !== 0 && d1 < 20) d1++;
     const d2 = randInt(r, 2, 20);
     const S = (d1 * d2) / 2;
     // mistakes: forgot × 2, S − d₁
-    return q(r, want, `דלתון — אלכסון שני: שטח $S = ${S}$, אלכסון $d₁ = ${d1}$. $d₂ = ?$`, d2, [S / d1, S - d1, 2 * d2], { v, S, d1 });
+    return q(r, want, `השטח של דלתון הוא $${S}$ ואלכסון אחד שלו $${d1}$. מה אורך האלכסון השני?`, d2, [S / d1, S - d1, 2 * d2], { v, S, d1 });
   }
   // angle: a real kite — R = L (the angles between the unequal sides);
   // T and R are given, B = 360° − T − 2R (duel version of his "fourth angle")
   let Ta, R, B;
   do { Ta = pick(r, ANGLES); R = pick(r, ANGLES); B = 360 - Ta - 2 * R; } while (B <= 10 || B >= 170 || B === Ta);
   // mistakes: forgot that L = R (360 − T − R), B = T, B = R, 180 − T
-  return q(r, want, `דלתון TRBL — זווית: זווית $T = ${Ta}°$, זווית $R = ${R}°$ (הזוויות $R$ ו-$L$ שוות). זווית $B = ?$`,
+  // in words: "the two equal angles" (R = L) and "one more angle" (T) → the fourth (B); with these
+  // filters B never equals R or T, so the two equal angles are always exactly those two
+  return q(r, want, `בדלתון שתי הזוויות השוות הן $${R}°$ כל אחת, וזווית נוספת היא $${Ta}°$.\nמה גודל הזווית הרביעית?`,
     B, [360 - Ta - R, Ta, R, 180 - Ta], { v, T: Ta, R });
 }

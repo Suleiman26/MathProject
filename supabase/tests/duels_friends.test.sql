@@ -194,6 +194,9 @@ select is((select (x->>'level')::int from json_array_elements(public.friends_me(
 -- ── reports ─────────────────────────────────────────────────────────────────
 select is(public.friend_report(pg_temp.tok('duel_alice'), pg_temp.uid('duel_carol'), 'spam')->>'ok', 'true', 'report with reason spam');
 select is(public.friend_report(pg_temp.tok('duel_alice'), pg_temp.uid('duel_carol'), 'xyz')::jsonb, '{"error":"reason"}'::jsonb, 'unknown reason → reason');
+-- only this test's own (fresh) admin session: a local DB may hold expired ones from real
+-- admin logins, and "limit 1" would pick one of those (rolled back at the end anyway)
+delete from public.admin_sessions;
 insert into public.admin_sessions default values;
 select is((select count(*)::int from json_array_elements(
              public.admin_reports((select token from public.admin_sessions limit 1))) r

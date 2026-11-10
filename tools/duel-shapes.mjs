@@ -12,5 +12,5 @@ for (const g of GENERATORS) {
     if (!shapes.has(key)) shapes.set(key, q);
   }
   console.log(`\n## ${g.id} (${shapes.size} shapes)`);
-  for (const q of shapes.values()) console.log((q.kind === 'choice' ? 'C ' : 'T ') + q.prompt + (q.choices ? '  ⟶ [' + q.choices.join(' ‖ ') + '] ✓' + q.answer : '  ⟶ ' + q.answer + (q.tol ? ' ±' + q.tol : '')) + (q.display && q.display.unit ? '  unit=' + q.display.unit : ''));
+  for (const q of shapes.values()) console.log((q.kind === 'choice' ? 'C ' : 'T ') + q.prompt.replace(/\n/g, ' ⏎ ') + (q.choices ? '  ⟶ [' + q.choices.join(' ‖ ') + '] ✓' + q.answer : '  ⟶ ' + q.answer + (q.tol ? ' ±' + q.tol : '')) + (q.display && q.display.unit ? '  unit=' + q.display.unit : ''));
 }

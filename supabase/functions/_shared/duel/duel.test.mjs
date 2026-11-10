@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { mulberry32, randInt, pick, shuffle } from './rng.js';
 import { makeChoices } from './choices.js';
 import { checkAnswer, parseNum } from './answer.js';
-import { GENERATORS } from './registry.js';
+import { GENERATORS, keysFor } from './registry.js';
 import { buildDuel, poolFor, GEN_CAP } from './build.js';
 import {
   close, powLoop, evalTokens, mathOf, tokenize, linSide, TYPED_ONLY, typedOnly, valueOf,
@@ -113,31 +113,55 @@ const EXPECT = {
     if (m.type !== 'exp') assert.ok(['coef', 'A', 'B'].includes(m.ask), q.prompt);
     return { value: slotValue((x, y) => f(m, x, y), m.ask) };
   },
+  // ratio and percent: the story's numbers are read off the PROMPT (printed(q)) and must be
+  // exactly the meta the answer is checked against — so a rewording can't print one thing
+  // and grade another
   'rp.ratio': (m, q) => {
-    if (m.v === 'simp') return { value: m.a / m.b, ratio: true };
+    if (m.v === 'simp') { assert.deepEqual(printed(q), [m.a, m.b]); return { value: m.a / m.b, ratio: true }; }
+    assert.deepEqual(printed(q), [m.a, m.b, m.total]);
     const v = valueOf(q);
     const share = (m.ask === 'A' ? m.a : m.b) / (m.a + m.b);
     assert.ok(close(v / m.total, share) && Number.isInteger(v));
     return { value: v };
   },
-  'rp.proportion': (m, q) => { const v = valueOf(q); assert.equal(v * m.a, m.b * m.c); return { value: v }; },
-  'rp.convert': (m) => (m.v === 'd2f' ? { value: Number(m.dec), reduced: true } : { value: m.n / m.d }),
+  'rp.proportion': (m, q) => { assert.deepEqual(printed(q), [m.a, m.b, m.c]); const v = valueOf(q); assert.equal(v * m.a, m.b * m.c); return { value: v }; },
+  'rp.convert': (m, q) => {
+    if (m.v === 'd2f') { assert.deepEqual(printed(q), [Number(m.dec)]); return { value: Number(m.dec), reduced: true }; }
+    assert.deepEqual(printed(q), [m.n, m.d]);
+    return { value: m.n / m.d };
+  },
   'rp.pct': (m, q) => {
     const v = valueOf(q);
-    if (m.type === 0) assert.equal(v * 100, m.pct * m.whole);
-    else if (m.type === 1) assert.equal(v * m.whole, m.part * 100);
-    else assert.equal(m.pct * v, m.part * 100);
+    const P = printed(q).sort((x, y) => x - y);
+    if (m.type === 0) { assert.deepEqual(P, [m.pct, m.whole].sort((x, y) => x - y)); assert.equal(v * 100, m.pct * m.whole); }
+    else if (m.type === 1) { assert.deepEqual(P, [m.part, m.whole].sort((x, y) => x - y)); assert.equal(v * m.whole, m.part * 100); }
+    else { assert.deepEqual(P, [m.pct, m.part].sort((x, y) => x - y)); assert.equal(m.pct * v, m.part * 100); }
     return { value: v };
   },
   'rp.change': (m, q) => {
     const v = valueOf(q);
-    if (m.type === 0) assert.equal(v * 100, m.original * (100 + m.pct));
-    else if (m.type === 1) assert.equal(v * 100, m.original * (100 - m.pct));
-    else if (m.type === 2) assert.equal(v * m.original, Math.abs(m.final - m.original) * 100);
-    else assert.equal(v * (100 + (m.isUp ? m.pct : -m.pct)), m.final * 100);
+    const P = printed(q).sort((x, y) => x - y);
+    if (m.type === 0) { assert.deepEqual(P, [m.original, m.pct].sort((x, y) => x - y)); assert.equal(v * 100, m.original * (100 + m.pct)); }
+    else if (m.type === 1) { assert.deepEqual(P, [m.original, m.pct].sort((x, y) => x - y)); assert.equal(v * 100, m.original * (100 - m.pct)); }
+    else if (m.type === 2) { assert.deepEqual(P, [m.original, m.final].sort((x, y) => x - y)); assert.equal(v * m.original, Math.abs(m.final - m.original) * 100); }
+    else { assert.deepEqual(P, [m.pct, m.final].sort((x, y) => x - y)); assert.equal(v * (100 + (m.isUp ? m.pct : -m.pct)), m.final * 100); }
     return { value: v };
   },
 };
+
+// every number printed in a prompt, in reading order ("6 חטיפים שוקלים 180 גרם. … 10 חטיפים?" → [6, 180, 10])
+const printed = (q) => (q.prompt.match(/\d+(\.\d+)?/g) || []).map(Number);
+
+/* The unit a question must show after its answers (display.unit, added by the phone to
+   every choice and to the typing box): a percent answer '%', a money answer '₪', else
+   none. Decided here from the meta and the words of the prompt, not from the port. */
+function unitWanted(q) {
+  const m = q.meta || {};
+  if (q.gen === 'rp.pct') return m.type === 1 ? '%' : /₪/.test(q.prompt) ? '₪' : undefined;
+  if (q.gen === 'rp.change') return m.type === 2 ? '%' : '₪';
+  if (q.gen === 'rp.proportion') return /₪/.test(q.prompt) ? '₪' : undefined;
+  return undefined;
+}
 
 // the prompt's own expression ("… = ?") evaluated with the test's evaluator
 function fromPrompt(q, v) {
@@ -227,6 +251,45 @@ test('registry: every generator has its metadata and an independent check', () =
 // duel-geo / duel-solids / duel-fnalg .test.mjs (the files run in parallel)
 const MINE = GENERATORS.filter((g) => EXPECT[g.id]);
 contractTests(MINE, EXPECT);
+
+// the wording rules of docs/superpowers/specs/2026-11-10-duel-questions-style.md
+test('style: every prompt of these generators is a task line + formula line, no glued Hebrew', () => {
+  for (const g of MINE) for (const want of ['choice', 'number']) {
+    const r = mulberry32(2026 + g.id.length * 17 + (want === 'number' ? 1 : 0));
+    for (let run = 0; run < 400; run++) {
+      const q = g.make(r, want);
+      const p = q.prompt;
+      const lines = p.split('\n');
+      assert.ok(!/— \$/.test(p), 'dash before a formula ("x = ? —" on a phone): ' + p);
+      assert.ok(!/[א-ת]-\$/.test(p), 'Hebrew prefix glued to a $…$ island: ' + p);
+      assert.ok(lines.length >= 1 && lines.length <= 4, 'lines: ' + p);
+      assert.ok(/^[א-ת]/.test(lines[0]) || /^\d/.test(lines[0]), 'line 1 starts with words or a story number: ' + p);
+      assert.ok(!/^[א-ת ]+:$/.test(p), 'a title with no formula: ' + p);
+      assert.ok(lines[0].length <= 70, 'line 1 too long: ' + p);
+      // a line that ends an instruction with ":" is followed by a formula line, nothing else
+      lines.forEach((l, i) => { if (/:$/.test(l)) assert.ok(/^\$[^$]+\$$/.test(lines[i + 1] || ''), 'instruction without its formula line: ' + p); });
+      // no English words outside the math (letters inside $…$ are variables)
+      assert.ok(!/[A-Za-z]/.test(p.replace(/\$[^$]*\$/g, '')), 'latin outside $…$: ' + p);
+      // chapter titles are not tasks
+      assert.ok(!/^(חיבור|חיסור|כפל|חילוק) מספרים מכוונים|^תרגול מקיף|^הבנת חזקות|^כפל פשוט|^חזקה עם מקדם|^ביטוי מעורב|^פישוט שורשים|^המרת/.test(p), 'chapter title as the task: ' + p);
+      // "₪" written like the answers show it: a space before, never glued to the digits
+      assert.ok(!/\d₪/.test(p), '₪ glued to a number: ' + p);
+    }
+  }
+});
+
+test('units: a percent / money answer carries display.unit, choices stay plain numbers', () => {
+  for (const g of MINE) for (const want of ['choice', 'number']) {
+    const r = mulberry32(777 + g.id.length);
+    for (let run = 0; run < 400; run++) {
+      const q = g.make(r, want);
+      const u = q.display && q.display.unit;
+      assert.equal(u, unitWanted(q), `${g.id}: unit ${u} for ${q.prompt}`);
+      if (q.kind === 'choice') for (const c of q.choices) assert.ok(!/[%₪°]/.test(c), 'unit inside a choice: ' + q.prompt);
+      if (q.kind === 'number') assert.deepEqual(q.display.keys, keysFor(g.id)); // the unit never replaces the keys
+    }
+  }
+});
 
 
 test('buildDuel spreads over topics first, then generators', () => {

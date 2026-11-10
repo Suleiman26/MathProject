@@ -12,6 +12,10 @@
 // Every angle in a question is > 0° and < 180° (the audit's filter), and so
 // is every angle choice. Typed only (drawn on typed slots only): Pythagoras
 // (hypotenuse / missing leg — next to a printed side).
+// Wording (2026-11-10, docs/superpowers/specs/2026-11-10-duel-questions-style.md): natural
+// Hebrew questions, no point letters (AM, AB), no "ו-$…$" glued to a formula. Answers that are
+// angles carry display.unit '°' (deg below); the x of an equation stays a plain number.
+// The numbers, answers and random calls are unchanged.
 import { randInt, pick } from '../rng.js';
 import { numberQuestion, within } from '../choices.js';
 
@@ -23,6 +27,8 @@ const q = (r, want, prompt, ans, wrongs, meta, opts) => {
   const accept = angle ? (t) => t !== '0' && Number(t) < 180 : within(ans);
   return numberQuestion(r, want, prompt, ans, wrongs.filter(int), meta, { accept, ...opts });
 };
+// an angle answer: the phone shows ° after every choice and in the typed box
+const deg = (question) => ({ ...question, display: { unit: '°' } });
 // numbers next to the ones printed in the question: with them among the
 // decoys, "the choice closest to a printed number" can't find the answer
 // (Pythagoras: the hypotenuse is just above the longer leg)
@@ -69,17 +75,18 @@ export function fmtExpr(e) {
 export function angles(r, want) {
   const ex = genCh1(r);
   if (ex.type === 'numeric') {
+    // the two known angles (ex.hidden says which one is asked; the order of the two is kept)
     const known = ex.angles.filter((_, i) => i !== ex.hidden);
     const [a, b] = known;
-    const shown = ex.angles.map((v, i) => (i === ex.hidden ? 'x' : `${v}°`));
     // mistakes: 360 (quadrilateral sum), added them, 180 minus one angle only, 90 − …
-    return q(r, want, `זוויות המשולש: $${shown[0]}$, $${shown[1]}$, $${shown[2]}$. כתבו משוואה ומצאו את $x$ (במעלות).`,
-      ex.angles[ex.hidden], [360 - a - b, a + b, 180 - a, 180 - b], { v: 'numeric', known });
+    return deg(q(r, want, `במשולש יש זווית של $${a}°$ וזווית של $${b}°$. מה גודל הזווית השלישית?`,
+      ex.angles[ex.hidden], [360 - a - b, a + b, 180 - a, 180 - b], { v: 'numeric', known }));
   }
   const A = ex.exprs.reduce((s, e) => s + e.a, 0), B = ex.exprs.reduce((s, e) => s + e.b, 0);
   // mistakes: constants moved without changing sign, constants forgotten, divided only by the first coefficient
   const wrongs = [(180 + B) / A, 180 / A, (180 - B) / ex.exprs[0].a, (180 - B) / (A - 1)];
-  return q(r, want, `זוויות המשולש הן $(${fmtExpr(ex.exprs[0])})°$, $(${fmtExpr(ex.exprs[1])})°$ ו-$(${fmtExpr(ex.exprs[2])})°$. מצאו את $x$.`,
+  // the three expressions as three islands separated by commas (never "ו-$…$")
+  return q(r, want, `זוויות המשולש הן $(${fmtExpr(ex.exprs[0])})°$, $(${fmtExpr(ex.exprs[1])})°$, $(${fmtExpr(ex.exprs[2])})°$. מצאו את $x$.`,
     ex.x, wrongs, { v: 'algebra', exprs: ex.exprs });
 }
 
@@ -100,7 +107,7 @@ export function special(r, want) {
       // mistakes: forgot ÷ 2, used the hypotenuse, added
       // the other triangles' areas as decoys (whole and "round" like the answer), and
       // round answers (30, 60, 120, 150) among other multiples of 15
-      const args = [r, want, `משולש ישר-זווית, הניצבים: $${legA}$ ו-$${legB}$. שטח המשולש $= ?$`, area,
+      const args = [r, want, `מה השטח של משולש ישר-זווית שהניצבים שלו ${legA} ו-${legB}?`, area,
         [legA * legB, (legA * hyp) / 2, legA + legB], { v, legA, legB }];
       const extra = [...pyTriples.map((t) => (t[0] * t[1]) / 2), area - 15, area + 15, area + 30].filter((x) => x > 0 && x !== area).map(String);
       const m15 = (ts) => ts.filter((t) => Number(t) % 15 === 0).length >= 1;
@@ -108,48 +115,49 @@ export function special(r, want) {
     }
     if (v === 'rightLeg') {
       // "ניצב אחד = …, שטח המשולש = …. מצאו את הניצב השני" (L204); mistakes: forgot × 2, area − leg
-      return q(r, want, `משולש ישר-זווית: ניצב אחד $= ${legB}$, שטח המשולש $= ${area}$. מצאו את הניצב השני: $x = ?$`, legA,
+      return q(r, want, `במשולש ישר-זווית ניצב אחד הוא $${legB}$ והשטח $${area}$. מה אורך הניצב השני?`, legA,
         [area / legB, area - legB, 2 * area, 4 * legA], { v, legB, area });
     }
     if (v === 'pyHyp') {
       // mistakes: added the legs, forgot the root
       // typed only (the hypotenuse is next to the longer leg)
-      return q(r, 'number', `משולש ישר-זווית, הניצבים: $${legA}$ ו-$${legB}$. מצאו את היתר (פיתגורס): $c = ?$`, hyp,
+      return q(r, 'number', `במשולש ישר-זווית הניצבים הם ${legA} ו-${legB}. מה אורך היתר?`, hyp,
         [legA + legB, legA * legA + legB * legB], { v, legA, legB }, { extra: nearPrinted(legA, legB) });
     }
     // a missing leg; mistakes: hyp − leg, added the squares, forgot the root
     // typed only (a missing leg: Pythagoras, like the hypotenuse)
-    return q(r, 'number', `משולש ישר-זווית: ניצב אחד $= ${legB}$, היתר $= ${hyp}$. מצאו את הניצב השני (פיתגורס): $x = ?$`, legA,
+    return q(r, 'number', `במשולש ישר-זווית ניצב אחד הוא $${legB}$ והיתר $${hyp}$. מה אורך הניצב השני?`, legA,
       [hyp - legB, hyp * hyp - legB * legB, hyp + legB], { v, legB, hyp }, { extra: nearPrinted(legB, hyp) });
   }
   if (v === 'isoBase') { // missingAngle fromVertex: "זווית הראש = …°. … מצאו את זווית הבסיס"
     const va = randInt(r, 10, 65) * 2, b = (180 - va) / 2;
     // mistakes: forgot ÷ 2, the apex itself, 90 − apex
-    return q(r, want, `משולש שווה שוקיים: זווית הראש $= ${va}°$. סמנו את זווית הבסיס כ-$x$ ופתרו: $x = ?$`, b,
-      [180 - va, va, 90 - va, 180 - 2 * va, va / 2], { v, apex: va });
+    return deg(q(r, want, `במשולש שווה-שוקיים זווית הראש היא $${va}°$. מה גודל זווית הבסיס?`, b,
+      [180 - va, va, 90 - va, 180 - 2 * va, va / 2], { v, apex: va }));
   }
   if (v === 'isoApex') { // missingAngle fromBase: "זווית בסיס = …°. … מצאו את זווית הראש"
     const b = randInt(r, 25, 80), va = 180 - 2 * b;
     // mistakes: subtracted only one base angle, the base angle itself, half
-    return q(r, want, `משולש שווה שוקיים: זווית בסיס $= ${b}°$. סמנו את זווית הראש כ-$x$ ופתרו: $x = ?$`, va,
-      [180 - b, b, (180 - b) / 2, 90 - b], { v, base: b });
+    return deg(q(r, want, `במשולש שווה-שוקיים זווית הבסיס היא $${b}°$. מה גודל זווית הראש?`, va,
+      [180 - b, b, (180 - b) / 2, 90 - b], { v, base: b }));
   }
-  if (v === 'heightLeg') { // legAngle (L1394): the angle between the height and the leg = 90 − base angle
+  if (v === 'heightLeg') { // legAngle (L1394): the angle between the height (to the base) and the leg = 90 − base angle
     const b = randInt(r, 25, 65);
-    return q(r, want, `משולש שווה שוקיים: זווית הבסיס $= ${b}°$. $AM$ הוא הגובה לבסיס. מצאו את הזווית בין הגובה $AM$ לשוק $AB$.`, 90 - b,
-      [180 - 2 * b, 180 - b, b, 2 * (90 - b)], { v, base: b }, { extra: nearPrinted(b) });
+    return deg(q(r, want, `במשולש שווה-שוקיים זווית הבסיס היא $${b}°$. מעבירים גובה מזווית הראש לבסיס. מה גודל הזווית בין הגובה לשוק?`, 90 - b,
+      [180 - 2 * b, 180 - b, b, 2 * (90 - b)], { v, base: b }, { extra: nearPrinted(b) }));
   }
   if (v === 'heightBase') { // baseAngleHalf (L1421): base angle = 90 − half of the apex
+    // (the height to the base halves the apex angle: half of it = the angle between the height and a leg)
     const half = randInt(r, 15, 55);
-    return q(r, want, `משולש שווה שוקיים: $AM$ הוא הגובה לבסיס, וחוצה את זווית הראש. מחצית זווית הראש $= ${half}°$. מצאו את זווית הבסיס.`, 90 - half,
-      [180 - 2 * half, 2 * half, 180 - half, (180 - half) / 2], { v, half });
+    return deg(q(r, want, `במשולש שווה-שוקיים הגובה לבסיס יוצר עם השוק זווית של $${half}°$. מה גודל זווית הבסיס?`, 90 - half,
+      [180 - 2 * half, 2 * half, 180 - half, (180 - half) / 2], { v, half }));
   }
   // equilateral (genChEquilateral L1577): every angle is 60°, every side equal
   if (v === 'equiAngle') {
     const x = randInt(r, 4, 15), a = pick(r, [1, 2, 3]), b = 60 - a * x;
     const e = { a, b };
     // mistakes: used 180 (the sum) for one angle, constant not moved, ignored the coefficient
-    return q(r, want, `המשולש הוא שווה צלעות, ואחת מזוויותיו היא $(${fmtExpr(e)})°$. מצאו את $x$.`, x,
+    return q(r, want, `במשולש שווה-צלעות זווית אחת היא $(${fmtExpr(e)})°$. מצאו את $x$.`, x,
       [(180 - b) / a, (60 + b) / a, 60 - b, 60 / a], { v, a, b });
   }
   let x, a, b, k;
@@ -159,6 +167,6 @@ export function special(r, want) {
   }
   if (!(k >= 3 && k <= 60)) { x = 6; a = 2; b = 3; k = 15; }
   const e = { a, b };
-  return q(r, want, `המשולש הוא שווה צלעות: $AB = ${k}$, $AC = ${fmtExpr(e)}$. מצאו את $x$.`, x,
+  return q(r, want, `במשולש שווה-צלעות צלע אחת היא $${k}$ וצלע אחרת היא $${fmtExpr(e)}$. מצאו את $x$.`, x,
     [(k + b) / a, k / a, k - b, (3 * k - b) / a], { v, a, b, k });
 }

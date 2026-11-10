@@ -1,22 +1,34 @@
 // Ratio, proportion and percent (grade 7) — ported from Sulaiman's
-// src/topics/ratio-percent/Topic.jsx (never edited). The ready Hebrew
-// questions (q) of chapters 4–5 are used word for word.
+// src/topics/ratio-percent/Topic.jsx (never edited). Same numbers, ranges and
+// random calls as his; the WORDING follows the duel style guide
+// (docs/superpowers/specs/2026-11-10-duel-questions-style.md, 2026-11-10): a story
+// a student believes for the numbers drawn (his "6 cakes need 180 eggs" became
+// "6 packs hold 180 cookies"), two short lines, and the unit of a percent / money
+// answer in display.unit — the phone adds "%" / "₪" to every choice and to the
+// typing box; the choices themselves stay plain numbers.
 import { randInt, pick } from '../rng.js';
 import { numberQuestion, choiceQuestion } from '../choices.js';
+
+const withUnit = (q, unit) => (unit ? { ...q, display: { unit } } : q);
+// a count, a price or a percent is never 0: no "0" choice ("0 כדורים סגולים", "0%")
+const POSITIVE = { accept: (t) => Number(t.replace('−', '-')) > 0 };
+const NIS = (n) => `${n} ₪`; // a price in a sentence, written like the answers ("90 ₪")
 
 // port of gcd() — src/topics/ratio-percent/Topic.jsx L15
 function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
 
 /* ── Chapter 1: ratio ────────────────────────────────────────────── */
 
-// port of genRatio() — src/topics/ratio-percent/Topic.jsx L201 (contexts without colours)
+// port of genRatio() — src/topics/ratio-percent/Topic.jsx L201 (contexts without colours).
+// Each context has a one-line story with nouns ("8 cookies chocolate and 10 vanilla",
+// not "8 chocolate and 10 vanilla") and the two words the question compares.
 function genRatio(r) {
   const contexts = [
-    { label1: 'שוקולד', label2: 'וניל' },
-    { label1: 'תות', label2: 'מנגו' },
-    { label1: 'אדום', label2: 'כחול' },
-    { label1: 'בנים', label2: 'בנות' },
-    { label1: 'תפוחים', label2: 'תפוזים' },
+    { label1: 'שוקולד', label2: 'וניל', story: (a, b) => `בקופסה יש ${a} עוגיות שוקולד ו-${b} עוגיות וניל.` },
+    { label1: 'תות', label2: 'מנגו', story: (a, b) => `בשקית יש ${a} סוכריות תות ו-${b} סוכריות מנגו.` },
+    { label1: 'אדומים', label2: 'כחולים', story: (a, b) => `בקופסה יש ${a} כדורים אדומים ו-${b} כדורים כחולים.` },
+    { label1: 'בנים', label2: 'בנות', story: (a, b) => `בחוג יש ${a} בנים ו-${b} בנות.` }, // 6–40 children: a club, not a class
+    { label1: 'תפוחים', label2: 'תפוזים', story: (a, b) => `בסלסלה יש ${a} תפוחים ו-${b} תפוזים.` },
   ];
   const ctx = pick(r, contexts);
   const simpleRatios = [[2, 3], [3, 4], [1, 2], [1, 3], [2, 5], [3, 5], [1, 4], [3, 7], [2, 7], [4, 5]];
@@ -46,7 +58,7 @@ const ratioText = (p, q) => `${p} : ${q}`;
 export function ratio(r, want) {
   if (want !== 'number' && randInt(r, 0, 1) === 0) {
     const ex = genRatio(r);
-    const { ctx, a, b, total, simA, simB } = ex;
+    const { ctx, a, b, simA, simB } = ex;
     // mistakes: swapped, part : whole (either part)
     const cand = [[simB, simA], [simA, simA + simB], [simB, simA + simB]];
     const wrongs = cand
@@ -54,7 +66,7 @@ export function ratio(r, want) {
       .filter(([p, q]) => p * simB !== q * simA)
       .map(([p, q]) => ratioText(p, q));
     return choiceQuestion(r,
-      `מתוך ${total}: ${a} ${ctx.label1} ו-${b} ${ctx.label2}. מה היחס בין ${ctx.label1} ל${ctx.label2}, במספרים הקטנים ביותר?`,
+      `${ctx.story(a, b)}\nמה היחס המצומצם בין ${ctx.label1} ל${ctx.label2}?`,
       ratioText(simA, simB), wrongs, { v: 'simp', a, b },
       { accept: (t) => { const m = t.match(/^(\d+) : (\d+)$/); return !!m && gcd(+m[1], +m[2]) === 1; } }); // reduced only
   }
@@ -67,20 +79,25 @@ export function ratio(r, want) {
   const wrongs = [other, k, total / (askA ? a : b)]
     .filter((w) => Number.isInteger(w) && w > 0);
   return numberQuestion(r, want,
-    `היחס בין ${ctx.l1} ל${ctx.l2} הוא $${ratioText(a, b)}$, ובסך הכל יש ${total} ${ctx.unit}. כמה ${askA ? ctx.l1 : ctx.l2}?`,
-    ans, wrongs, { v: 'amount', a, b, total, ask: askA ? 'A' : 'B' });
+    `היחס בין ${ctx.l1} ל${ctx.l2} הוא $${ratioText(a, b)}$.\nבסך הכל יש ${total} ${ctx.unit}. כמה ${askA ? ctx.l1 : ctx.l2}?`,
+    ans, wrongs, { v: 'amount', a, b, total, ask: askA ? 'A' : 'B' }, POSITIVE);
 }
 
 /* ── Chapter 2: proportion ───────────────────────────────────────── */
 
 // port of genProportion() — src/topics/ratio-percent/Topic.jsx L456
+// Same numbers as his (a of something → b of something else, b/a = 5…50 per one).
+// The five stories were chosen so that 5–50 PER ONE is believable: a snack bar weighs
+// 5–50 g, an episode runs 5–50 minutes, a pack holds 5–50 cookies, a notebook costs
+// 5–50 ₪, a container holds 5–50 litres. (His cups of water weighing 10 g each, cakes
+// needing 30 eggs, bottles of 50 litres and 50-minute kilometres were not.)
 function genProportion(r) {
   const contexts = [
-    { q: 'מים שוקלות', unit1: 'כוסות', unit2: 'גרם', tail: (c) => `כמה גרם ישקלו ${c} כוסות?` },
-    { q: 'נסיעה לוקחת', unit1: 'ק"מ', unit2: 'דקות', tail: (c) => `כמה דקות ייקחו ${c} ק"מ?` },
-    { q: 'דורשות', unit1: 'עוגות', unit2: 'ביצים', tail: (c) => `כמה ביצים יידרשו ל-${c} עוגות?` },
-    { q: 'עולות', unit1: 'חולצות', unit2: '₪', tail: (c) => `כמה יעלו ${c} חולצות?` },
-    { q: 'מכילים', unit1: 'בקבוקים', unit2: 'ליטר', tail: (c) => `כמה ליטר יכילו ${c} בקבוקים?` },
+    { unit1: 'חטיפים', verb: 'שוקלים', unit2: 'גרם', tail: (c) => `כמה גרם ישקלו ${c} חטיפים?` },
+    { unit1: 'פרקים', verb: 'נמשכים', unit2: 'דקות', tail: (c) => `כמה דקות יימשכו ${c} פרקים?` },
+    { unit1: 'חבילות', verb: 'מכילות', unit2: 'עוגיות', tail: (c) => `כמה עוגיות יש ב-${c} חבילות?` },
+    { unit1: 'מחברות', verb: 'עולות', unit2: '₪', tail: (c) => `כמה יעלו ${c} מחברות?`, unit: '₪' },
+    { unit1: 'מיכלים', verb: 'מכילים', unit2: 'ליטר', tail: (c) => `כמה ליטר יכילו ${c} מיכלים?` },
   ];
   const ctx = pick(r, contexts);
   const a = randInt(r, 2, 6);
@@ -95,8 +112,9 @@ export function proportion(r, want) {
   const unit = b / a;
   // mistakes: forgot to divide, added the difference, multiplied the givens, one unit too many
   const wrongs = [b * c, b + (c - a), b * a, d + unit];
-  // Sulaiman's text (L551): "אם {a} {unit1} {q} {b} {unit2}, {tail}"
-  return numberQuestion(r, want, `אם ${a} ${ctx.unit1} ${ctx.q} ${b} ${ctx.unit2}, ${ctx.tail(c)}`, d, wrongs, { a, b, c });
+  // his text (L551) was one sentence: "אם {a} {unit1} {q} {b} {unit2}, {tail}"; here a
+  // fact line and a question line
+  return withUnit(numberQuestion(r, want, `${a} ${ctx.unit1} ${ctx.verb} ${b} ${ctx.unit2}.\n${ctx.tail(c)}`, d, wrongs, { a, b, c }, POSITIVE), ctx.unit);
 }
 
 /* ── Chapter 3: fraction ↔ decimal ───────────────────────────────── */
@@ -155,7 +173,7 @@ export function convert(r, want) {
     // right fraction has neither the smallest denominator nor the smallest numerator
     const NICE = [2, 4, 5, 8, 10, 16, 20, 25, 32, 40, 50, 64, 80, 100];
     const dens = [...new Set([...NICE.filter((q) => q >= d / 4 && q <= 4 * d), p10])].filter((q) => q <= 100);
-    return choiceQuestion(r, `המרת עשרוני לשבר: כתבו את $${decText(dec)}$ כשבר מצומצם`, f(n, d), wrongs, { v: 'd2f', dec: decText(dec) },
+    return choiceQuestion(r, `כתבו כשבר מצומצם:\n$${decText(dec)}$`, f(n, d), wrongs, { v: 'd2f', dec: decText(dec) },
       {
         accept: (t) => { const m = t.match(/^\\frac\{(\d+)\}\{(\d+)\}$/); return !!m && +m[1] < +m[2] && gcd(+m[1], +m[2]) === 1; },
         extra: dens
@@ -169,7 +187,7 @@ export function convert(r, want) {
   // mistakes: numerator and denominator glued ("3/4" → 0.34), flipped, ×10
   const wrongs = [Number(`0.${n}${d}`), Number((d / n).toFixed(3)), Number((ans * 10).toFixed(6)), Number((ans / 10).toFixed(7))]
     .filter((w) => Number.isFinite(w) && w !== ans);
-  return numberQuestion(r, want, `המרת שבר לעשרוני: $\\frac{${n}}{${d}} = ?$`, ans, wrongs, { v: 'f2d', n, d });
+  return numberQuestion(r, want, `כתבו כמספר עשרוני:\n$\\frac{${n}}{${d}} = ?$`, ans, wrongs, { v: 'f2d', n, d });
 }
 
 /* ── Chapter 4: percent calculations ─────────────────────────────── */
@@ -185,33 +203,35 @@ function genPctCalc(r) {
     if (Number.isInteger(part)) break;
   }
   if (!Number.isInteger(part)) { pct = 20; whole = 50; part = 10; }
+  // whole = 40…500 people: a school trip or a year-wide exam, not one class (≤ 40);
+  // money with ₪. q = the text, unit = what the answer is (shown by the phone)
   if (type === 0) {
     const contexts = [
-      `כמה זה ${pct}% מ-${whole}?`,
-      `${pct}% מתוך ${whole} תלמידים — כמה תלמידים?`,
-      `${pct}% הנחה על פריט ב-${whole}₪ — כמה ההנחה?`,
+      { q: `כמה זה ${pct}% מ-${whole}?` },
+      { q: `לטיול יצאו ${whole} תלמידים, ${pct}% מהם משכבה ז'.\nכמה תלמידים משכבה ז'?` },
+      { q: `מוצר עולה ${NIS(whole)} ויש עליו הנחה של ${pct}%.\nכמה שקלים ההנחה?`, unit: '₪' },
     ];
-    return { type, pct, whole, part, ans: part, q: pick(r, contexts) };
+    return { type, pct, whole, part, ans: part, ...pick(r, contexts) };
   } else if (type === 1) {
     const contexts = [
-      `${part} הם כמה אחוז מ-${whole}?`,
-      `מתוך ${whole} תלמידים, ${part} קיבלו ציון מעולה. כמה אחוז?`,
+      { q: `כמה אחוז הם ${part} מתוך ${whole}?` },
+      { q: `מתוך ${whole} תלמידים במבחן, ${part} קיבלו ציון מעולה.\nכמה אחוז קיבלו ציון מעולה?` },
     ];
-    return { type, pct, whole, part, ans: pct, q: pick(r, contexts) };
+    return { type, pct, whole, part, ans: pct, unit: '%', ...pick(r, contexts) };
   }
-  const q = `${pct}% מהכיתה הם ${part} תלמידים. כמה תלמידים בכיתה?`;
+  const q = `${pct}% מהתלמידים בטיול הם ${part} תלמידים.\nכמה תלמידים יצאו לטיול?`;
   return { type, pct, whole, part, ans: whole, q };
 }
 
 export function pct(r, want) {
   const ex = genPctCalc(r);
-  const { type, pct: p, whole, part, ans, q } = ex;
+  const { type, pct: p, whole, part, ans, q, unit } = ex;
   let wrongs, meta;
   // mistakes: the other part, a slipped decimal point, the percent itself / the part itself
   if (type === 0) { wrongs = [whole - part, part * 10, p]; meta = { type, pct: p, whole }; }
   else if (type === 1) { wrongs = [100 - p, part, whole / part]; meta = { type, part, whole }; }
   else { wrongs = [whole + part, whole - part, part * p / 100]; meta = { type, pct: p, part }; }
-  return numberQuestion(r, want, q, ans, wrongs.filter((w) => w > 0 && Number.isInteger(w)), meta);
+  return withUnit(numberQuestion(r, want, q, ans, wrongs.filter((w) => w > 0 && Number.isInteger(w)), meta, POSITIVE), unit);
 }
 
 /* ── Chapter 5: percent increase / decrease ──────────────────────── */
@@ -231,33 +251,41 @@ function genExactPctPair(r) {
 }
 
 // port of genPctChange() — src/topics/ratio-percent/Topic.jsx L1065
+// Prices of 40–500 ₪ (a product, a pair of shoes); his "a salary of 60 ₪" is gone.
+// A money answer carries unit '₪', a percent answer '%'.
 function genPctChange(r) {
   const type = randInt(r, 0, 3);
   if (type === 0) {
     const { pct, original, diff } = genExactPctPair(r);
-    const q = pick(r, [`מחיר של ${original}₪ עלה ב-${pct}%. כמה הוא עכשיו?`, `שכר של ${original}₪ עלה ב-${pct}%. כמה הוא עכשיו?`]);
-    return { type, pct, original, diff, final: original + diff, q };
+    const q = pick(r, [
+      `מחיר של ${NIS(original)} עלה ב-${pct}%.\nמה המחיר עכשיו?`,
+      `נעליים עלו ${NIS(original)}, והמחיר התייקר ב-${pct}%.\nמה המחיר עכשיו?`,
+    ]);
+    return { type, pct, original, diff, final: original + diff, q, unit: '₪' };
   } else if (type === 1) {
     const { pct, original, diff } = genExactPctPair(r);
-    const q = pick(r, [`הנחה של ${pct}% על פריט ב-${original}₪ — כמה משלמים?`, `מחיר של ${original}₪ ירד ב-${pct}%. כמה הוא עכשיו?`]);
-    return { type, pct, original, diff, final: original - diff, q };
+    const q = pick(r, [
+      `על מוצר ב-${NIS(original)} יש הנחה של ${pct}%.\nכמה משלמים?`,
+      `מחיר של ${NIS(original)} ירד ב-${pct}%.\nמה המחיר עכשיו?`,
+    ]);
+    return { type, pct, original, diff, final: original - diff, q, unit: '₪' };
   } else if (type === 2) {
     const { pct, original, diff } = genExactPctPair(r);
     const isUp = randInt(r, 0, 1);
     const final_ = isUp ? original + diff : original - diff;
     const dir = isUp ? 'עלה' : 'ירד';
-    return { type, pct, original, final: final_, diff, q: `מחיר ${dir} מ-${original}₪ ל-${final_}₪ — בכמה אחוז?` };
+    return { type, pct, original, final: final_, diff, q: `מחיר ${dir} מ-${NIS(original)} ל-${NIS(final_)}.\nבכמה אחוז ${dir} המחיר?`, unit: '%' };
   }
   const { pct, original, diff } = genExactPctPair(r);
   const isUp = randInt(r, 0, 1);
   const final_ = isUp ? original + diff : original - diff;
   const dir = isUp ? 'עלייה' : 'הנחה';
-  return { type, pct, original, final: final_, diff, isUp: !!isUp, q: `אחרי ${dir} של ${pct}% המחיר הוא ${final_}₪ — מה היה המחיר המקורי?` };
+  return { type, pct, original, final: final_, diff, isUp: !!isUp, q: `אחרי ${dir} של ${pct}% המחיר הוא ${NIS(final_)}.\nמה היה המחיר המקורי?`, unit: '₪' };
 }
 
 export function change(r, want) {
   const ex = genPctChange(r);
-  const { type, pct: p, original, diff, final, q } = ex;
+  const { type, pct: p, original, diff, final, q, unit } = ex;
   let ans, wrongs, meta;
   // mistakes: wrong direction, only the change, percent added as shekels, percent of the wrong price
   // (type 0 also: the decimal point slipped, the rise counted ten times)
@@ -275,5 +303,5 @@ export function change(r, want) {
     wrongs = [ex.isUp ? final - d2 : final + d2, final, ex.isUp ? final + diff : final - diff];
     meta = { type, pct: p, final, isUp: ex.isUp };
   }
-  return numberQuestion(r, want, q, ans, wrongs.filter((w) => w !== undefined && w > 0 && Number.isInteger(w)), meta);
+  return withUnit(numberQuestion(r, want, q, ans, wrongs.filter((w) => w !== undefined && w > 0 && Number.isInteger(w)), meta, POSITIVE), unit);
 }

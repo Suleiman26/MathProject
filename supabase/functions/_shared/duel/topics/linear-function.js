@@ -21,6 +21,13 @@ const GRID_MIN = -8, GRID_MAX = 8; // L13
 
 const isInt = (w) => Number.isInteger(w);
 const pt = (x, y) => `(${fmt(x)}, ${fmt(y)})`;
+// Prompt wording (style guide docs/superpowers/specs/2026-11-10-duel-questions-style.md):
+// words on line 1, formulas on their own lines, never "ו-$…$". Two points share ONE
+// formula island "$A(−4, 3)   B(0, −3)$" (one left-to-right island, so A reads first;
+// two islands on an RTL line would show B before A).
+const twoPts = (x1, y1, x2, y2) => `$A${pt(x1, y1)}   B${pt(x2, y2)}$`;
+const ASK_SLOPE = 'מהו השיפוע של הישר?';
+const ASK_ICPT = 'מהי נקודת החיתוך של הישר עם ציר $y$?';
 
 // y = mx + b as text (his eqStr L904, with the real minus): y = 3x − 2, y = −x + 4, y = 2x
 export function lineText(m, b) {
@@ -52,7 +59,7 @@ export function slope(r, want) {
   const wrongs = [dx / dy, -m, dy, dx, (y2 + y1) / (x2 + x1)].filter(half);
   // halves near the answer instead of ×10 / ÷10 decoys
   const extra = [m + 0.5, m - 0.5, m + 1, m - 1, m + 1.5, m - 1.5, m + 2, m - 2, -m - 1, -m + 1, y1, y2, x2].filter((w) => w !== 0).map(fmt);
-  const prompt = `נתונות הנקודות $${pt(x1, y1)}$ ו-$${pt(x2, y2)}$. חשבו את שיפוע הישר שעובר דרכן: $m = ?$`;
+  const prompt = `מהו השיפוע של הישר שעובר דרך שתי הנקודות?\n${twoPts(x1, y1, x2, y2)}\n$m = ?$`;
   // the slope is small, like the coordinates: some wrong choice is at least as close to a
   // printed number as the answer ("the choice nearest a number in the question" can't find it)
   const opts = { ...SIGNED, decoys: false, extra: [...extra, ...[x1, dx].filter((w) => w !== 0).map(fmt)] };
@@ -70,11 +77,11 @@ export function readLine(r, want) {
   do { m = rndNonZero(r, -5, 5); b = rnd(r, -6, 6); } while (want !== 'number' && (Math.abs(m) === 1 || b === 0 || Math.abs(m) === Math.abs(b)));
   const ask = b === 0 ? 'slope' : pick(r, ['slope', 'icpt']);
   const ans = ask === 'slope' ? m : b, other = ask === 'slope' ? b : m;
-  const what = ask === 'slope' ? 'מהו השיפוע $m$?' : 'מהי נקודת החיתוך עם ציר ה-$y$ (הערך של $b$)?';
+  const prompt = ask === 'slope' ? `${ASK_SLOPE}\n$${lineText(m, b)}$` : `${ASK_ICPT}\n$${lineText(m, b)}$\n$b = ?$`;
   // mistakes: the sign, the other number (m ↔ b), both
   // all four are numbers printed in the equation (with either sign): no decoys,
   // so "a number from the question" can't single out the answer
-  return numberQuestion(r, want, `נתונה משוואת ישר: $${lineText(m, b)}$. ${what}`, ans, [-ans, other, -other], { m, b, ask }, { ...SIGNED, decoys: false });
+  return numberQuestion(r, want, prompt, ans, [-ans, other, -other], { m, b, ask }, { ...SIGNED, decoys: false });
 }
 
 /* ── 7. rearrange, then m and b ─ port of ChapterRearrangeIdEq.genQ() L952 ── */
@@ -102,10 +109,11 @@ export function rearrange(r, want) {
   const [L, R] = FORMS[form](m, b);
   const ask = b === 0 ? 'slope' : pick(r, ['slope', 'icpt']);
   const ans = ask === 'slope' ? m : b, other = ask === 'slope' ? b : m;
-  const what = ask === 'slope' ? 'מהו השיפוע $m$?' : 'מהו $b$ (נקודת החיתוך עם ציר ה-$y$)?';
+  const eq = `$${sideText(L)} = ${sideText(R)}$`;
+  const prompt = ask === 'slope' ? `${ASK_SLOPE}\n${eq}` : `${ASK_ICPT}\n${eq}\n$b = ?$`;
   // mistakes: sign not changed when moving a term, the other number (and its sign), forgot ÷ 2
   const wrongs = [-ans, other, -other, form === 4 ? 2 * ans : NaN];
-  return numberQuestion(r, want, `המשוואה אינה בצורה $y = mx + b$: $${sideText(L)} = ${sideText(R)}$. סדרו אותה. ${what}`,
+  return numberQuestion(r, want, prompt,
     ans, wrongs, { m, b, ask, form }, { ...SIGNED, decoys: false }); // as in ch6: the printed numbers with both signs
 }
 
@@ -119,7 +127,7 @@ export function slopePoint(r, want) {
     break;
   }
   // mistakes: sign of m·x, forgot x (y − m), m·x − y, y − x
-  return numberQuestion(r, want, `שיפוע $m = ${fmt(m)}$, והישר עובר דרך $${pt(px, py)}$. מצאו את $b$ במשוואה $y = mx + b$: $b = ?$`,
+  return numberQuestion(r, want, `ישר עם שיפוע $m = ${fmt(m)}$ עובר דרך הנקודה $${pt(px, py)}$.\nמהי נקודת החיתוך שלו עם ציר $y$?\n$b = ?$`,
     b, [py + m * px, py - m, m * px - py, py - px], { m, px, py }, SIGNED);
 }
 
@@ -136,13 +144,13 @@ export function twoPoints(r, want) {
   let ask = pick(r, ['slope', 'icpt']);
   if (want !== 'number') { if (ask === 'icpt' && b === 0) ask = 'slope'; if (ask === 'slope' && Math.abs(m) === 1) ask = 'icpt'; }
   if (want !== 'number' && ask === 'icpt' && b === 0) return twoPoints(r, want);
-  const head = `נתונות: $A${pt(x1, y1)}$ ו-$B${pt(x2, y2)}$.`;
+  const pts = twoPts(x1, y1, x2, y2);
   if (ask === 'slope') {
     // mistakes: Δx ÷ Δy, the sign, forgot to divide
-    return numberQuestion(r, want, `${head} מהו שיפוע הישר $AB$? $m = ?$`, m,
+    return numberQuestion(r, want, `מהו השיפוע של הישר שעובר דרך שתי הנקודות?\n${pts}\n$m = ?$`, m,
       [(x2 - x1) / (y2 - y1), -m, y2 - y1].filter(isInt), { x1, y1, x2, y2, ask }, { ...SIGNED, extra: ['0', '1', '−1', '2', '−2'] });
   }
   // b: mistakes — sign of m·x, y₁ − m, the slope itself, −b
-  return numberQuestion(r, want, `${head} מצאו את $b$ במשוואת הישר $AB$ ($y = mx + b$): $b = ?$`, b,
+  return numberQuestion(r, want, `ישר עובר דרך שתי הנקודות. מהי נקודת החיתוך שלו עם ציר $y$?\n${pts}\n$b = ?$`, b,
     [y1 + m * x1, y1 - m, m, -b, y2 + m * x2], { x1, y1, x2, y2, ask }, SIGNED);
 }
