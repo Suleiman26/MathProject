@@ -15,6 +15,7 @@ import { Card, Seg, useToast, fmt, GRADE } from "../ui";
 import { DuelTabs } from "./Duels";
 import { GENERATORS, SUBJECTS, SUBJECT_LABEL } from "@/duel/samples";
 import { MathText, MathSpan } from "@/duel/MathText";
+import { withUnit } from "@/duel/math-core";
 import { TOPICS } from "@/home/catalog";
 
 const PER = 3;
@@ -151,7 +152,7 @@ function Sample({ q, n }) {
             const ok = String(i) === String(q.answer);
             return (
               <li key={i} className={ok ? "ok" : ""}>
-                <MathSpan src={c} />
+                <MathSpan src={withUnit(c, q.display && q.display.unit)} />
                 {ok && <span className="dq-ok"><CheckCircle size={15} weight="fill" />נכונה</span>}
               </li>
             );
@@ -160,7 +161,7 @@ function Sample({ q, n }) {
       ) : (
         <p className="dq-typed">
           <span>תשובה נכונה</span>
-          <b className="ltr">{typed(q.answer)}</b>
+          <b className="ltr">{withUnit(typed(q.answer), q.display && q.display.unit)}</b>
           {q.tol ? <small>(מתקבל עד ±{q.tol})</small> : null}
         </p>
       )}

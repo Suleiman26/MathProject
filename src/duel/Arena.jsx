@@ -15,10 +15,12 @@ import { lockLeft, streakLabel, keypadFor, QUESTIONS, toName, andName } from "./
 import { Hud } from "./Hud";
 import { MathText, MathSpan } from "./MathText";
 import { Keypad } from "./Keypad";
-import { mathLength, promptSize, fitPrompt } from "./math-core";
+import { mathLength, promptSize, fitPrompt, withUnit } from "./math-core";
 import { Sheet } from "./Sheet";
 
-function LockOverlay({ until, offset, right, kind }) {
+const unitOf = (q) => (q && q.payload && q.payload.display && q.payload.display.unit) || "";
+
+function LockOverlay({ until, offset, right, kind, unit }) {
   const [left, setLeft] = useState(() => lockLeft(until, serverNow(offset)));
   useEffect(() => {
     const tick = () => setLeft(lockLeft(until, serverNow(offset)));
@@ -32,7 +34,7 @@ function LockOverlay({ until, offset, right, kind }) {
       <div>
         <b key={n}>{n}</b>
         <span>טעות — נעילה קצרה</span>
-        {right != null && kind === "number" && <small>התשובה: <MathSpan src={String(right).replace(/^-/, "−")} /></small>}
+        {right != null && kind === "number" && <small>התשובה: <MathSpan src={withUnit(String(right).replace(/^-/, "−"), unit)} /></small>}
       </div>
     </div>
   );
@@ -74,7 +76,8 @@ function useFitPrompt(boxRef, key) {
 }
 
 function Choices({ q, fb, busy, onAnswer }) {
-  const choices = (q.payload && q.payload.choices) || [];
+  const unit = unitOf(q);
+  const choices = ((q.payload && q.payload.choices) || []).map((c) => withUnit(c, unit));
   const long = choices.some((c) => mathLength(c) > 6);
   const tall = choices.some((c) => /\\frac|\\sqrt/.test(c));
   return (
@@ -154,7 +157,7 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
             <div className="dar-bottom">
               {q && q.kind === "number" ? (
                 <Keypad onSend={(given) => onAnswer(given, null)} disabled={busy || !!fb || !!locked} dim={!!locked} sending={busy && !fb}
-                  keys={keypadFor(q)} resetKey={q.idx} />
+                  keys={keypadFor(q)} unit={unitOf(q)} resetKey={q.idx} />
               ) : q ? (
                 <Choices q={q} fb={fb} busy={busy || !!locked} onAnswer={onAnswer} />
               ) : (
@@ -164,7 +167,7 @@ export function Arena({ state, offset, question, fb, busy, onAnswer, banner, pin
                 <p className={"dar-typed " + (fb.correct ? "good" : "bad")} role="status">{fb.correct ? "נכון!" : "לא נכון"}</p>
               )}
             </div>
-            {locked && <LockOverlay until={lockUntil} offset={offset} right={fb && !fb.correct ? fb.right : null} kind={q && q.kind} />}
+            {locked && <LockOverlay until={lockUntil} offset={offset} right={fb && !fb.correct ? fb.right : null} kind={q && q.kind} unit={unitOf(q)} />}
           </>
         )}
       </main>

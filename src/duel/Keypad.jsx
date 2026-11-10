@@ -11,15 +11,18 @@
 import { useEffect, useRef, useState } from "react";
 import { typeKey, typedOk, typedParts, keypadKeyTarget } from "./arena-core";
 
-export function Typed({ value, placeholder }) {
+export function Typed({ value, placeholder, unit }) {
   const { neg, num, den } = typedParts(value);
-  if (!value) return <span className="dkp-ph">{placeholder}</span>;
+  // the question's unit (°, %, ₪, π) sits after the typed number: "? °" → "60 °"
+  const u = unit ? <span className="dkp-unit">{unit}</span> : null;
+  if (!value) return <><span className="dkp-ph">{placeholder}</span>{u}</>;
   return (
     <>
       {neg && <span className="dkp-neg">−</span>}
       {den == null ? <span>{num}</span> : (
         <span className="dmx-frac dkp-frac"><span className="dmx-num">{num || " "}</span><span className="dmx-den">{den || " "}</span></span>
       )}
+      {u}
     </>
   );
 }
@@ -27,7 +30,7 @@ export function Typed({ value, placeholder }) {
 // a tap must not move focus onto the key: Enter on a hardware keyboard then still sends
 const keepFocus = (e) => e.preventDefault();
 
-export function Keypad({ onSend, disabled, dim, sending, keys = { fraction: false, decimal: false }, resetKey }) {
+export function Keypad({ onSend, disabled, dim, sending, keys = { fraction: false, decimal: false }, unit = "", resetKey }) {
   const [v, setV] = useState("");
   const root = useRef(null);
   useEffect(() => { setV(""); }, [resetKey]);
@@ -69,7 +72,7 @@ export function Keypad({ onSend, disabled, dim, sending, keys = { fraction: fals
   return (
     <div className={"dkp" + (dim ? " dkp-dim" : "")} dir="ltr" ref={root}>
       <div className="dkp-in" aria-live="polite" aria-label={v ? "התשובה שהוקלדה: " + v : "עוד לא הוקלדה תשובה"}>
-        <Typed value={v} placeholder="?" />
+        <Typed value={v} placeholder="?" unit={unit} />
       </div>
       <div className="dkp-grid">
         {["1", "2", "3", "⌫", "4", "5", "6", "−", ...row3].map(K)}

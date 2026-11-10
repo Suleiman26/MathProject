@@ -15,6 +15,8 @@ import { useEffect, useMemo, useState } from "react";
 import { PlayView } from "@/duel/Play";
 import { InviteDrop } from "@/duel/InviteDrop";
 import { buildDuel } from "../../supabase/functions/_shared/duel/build.js";
+import { GENERATORS } from "../../supabase/functions/_shared/duel/registry.js";
+import { mulberry32 } from "../../supabase/functions/_shared/duel/rng.js";
 import { checkAnswer } from "../../supabase/functions/_shared/duel/answer.js";
 
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -66,12 +68,22 @@ function labStr(k) {
   return new URLSearchParams(window.location.search).get(k);
 }
 
+/* &gen=<generator id>[&seed=<n>] → 15 samples of ONE generator (even idx 4 choices, odd idx typed),
+   to look at every question type as a student sees it; otherwise a normal grade-8 random duel */
+function labQuestions() {
+  const gen = labStr("gen");
+  const g = gen && GENERATORS.find((x) => x.id === gen);
+  if (!g) return buildDuel(4242, { grade: 8, subject: "random" });
+  const s0 = Number(labParam("seed")) || 1;
+  return Array.from({ length: 15 }, (_, i) => g.make(mulberry32(s0 * 1000 + i), i % 2 ? "number" : "choice"));
+}
+
 function makeDuel(kind, meColor) {
   const now = Date.now();
   const d = {
     id: DUEL, status: "live", subject: "random", i_invited: true, channel: "lab-" + kind,
     created_at: iso(now - 20000), expires_at: iso(now + 40000), accepted_at: iso(now - 6000),
-    start_at: iso(now + 6500), ends_at: iso(now + 6500 + 300000), questions: buildDuel(4242, { grade: 8, subject: "random" }),
+    start_at: iso(now + 6500), ends_at: iso(now + 6500 + 300000), questions: labQuestions(),
     me: { id: "lab", username: "עבד", avatar: meColor, level: 5, answers: [] },
     opp: { id: ID(1), username: "נועה", avatar: meColor === "pink" ? "violet" : "pink", level: 6, answers: [] },
     result: null, emotes: [],
@@ -125,7 +137,7 @@ function finish(d, k = {}) {
     const my = d.me.answers[idx];
     if (my && my.correct) return null;
     const given = !my ? null : q.kind === "choice" ? String((Number(q.answer) + 1) % 4) : String(Number(q.answer) + 3);
-    return { idx, payload: { prompt: q.prompt, choices: q.choices, topic: q.topic, chapter: q.chapter }, right: q.answer, given };
+    return { idx, payload: { prompt: q.prompt, choices: q.choices, topic: q.topic, chapter: q.chapter, display: q.display }, right: q.answer, given };
   }).filter(Boolean);
   const ms = d.me.answers.map((x) => x.ms || 6000);
   d.result = {
@@ -164,7 +176,7 @@ function makeServer(kind, meColor) {
       created_at: d.created_at, expires_at: d.expires_at, accepted_at: d.accepted_at, start_at: d.start_at, ends_at: d.ends_at, channel: d.channel,
       me: player(d.me, true, now), opp: player(d.opp, false, now), my_lanes: lanes(d.me),
       questions: d.status === "live" || d.status === "done"
-        ? d.questions.map((q, idx) => ({ idx, kind: q.kind, payload: { prompt: q.prompt, choices: q.choices, topic: q.topic, chapter: q.chapter } })).filter((q) => d.status === "done" || q.idx <= myIdx)
+        ? d.questions.map((q, idx) => ({ idx, kind: q.kind, payload: { prompt: q.prompt, choices: q.choices, topic: q.topic, chapter: q.chapter, display: q.display } })).filter((q) => d.status === "done" || q.idx <= myIdx)
         : [],
       emotes: d.emotes.map((e) => ({ ...e })), _sent: now, _recv: now,
     };

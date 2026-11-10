@@ -79,3 +79,32 @@ test("fit: fits → same size; too wide → scaled down to the floor; beyond the
   assert.deepEqual(fitPrompt({ widest: 700, avail: 284, fontPx: 20 }), { fontPx: 20, wrap: true });
   assert.deepEqual(fitPrompt({ widest: 0, avail: 284, fontPx: 20 }), { fontPx: 20, wrap: false });
 });
+
+test("prompt lines: words, then each formula on its own line", async () => {
+  const { promptLines } = await import("./math-core.js");
+  const p = "מה ערך ה-$x$ בנקודת החיתוך?\n$y = x + 1$\n$y = 3x − 5$";
+  assert.deepEqual(promptLines(p), ["מה ערך ה-$x$ בנקודת החיתוך?", "$y = x + 1$", "$y = 3x − 5$"]);
+  assert.deepEqual(promptLines("שורה אחת $2 + 2$"), ["שורה אחת $2 + 2$"]);
+  assert.deepEqual(promptLines("א\n\n  \n$1$"), ["א", "$1$"]);
+  assert.equal(isMathOnly(p), false);
+  assert.equal(isMathOnly("$x + 1 = 3$\n$x = ?$"), true);
+  assert.equal(proseToText(p), "מה ערך ה-x בנקודת החיתוך? y = x + 1 y = 3x − 5");
+  // sized by the words; two formula rows take one step down
+  assert.equal(promptSize("פתרו את המשוואה:\n$2x − 3 = x − 10$"), "s");
+  assert.equal(promptSize(p), "m");
+  assert.equal(promptSize("פתרו את המשוואה:\n$\\frac{(x − 4)^{2}}{4} − 16 = \\frac{x^{2} − 16}{4}$"), "l");   // long island: fit shrinks it anyway
+});
+
+test("units: added on screen after a pure-number answer", async () => {
+  const { withUnit } = await import("./math-core.js");
+  assert.equal(withUnit("60", "°"), "60°");
+  assert.equal(withUnit("40", "%"), "40%");
+  assert.equal(withUnit("84", "₪"), "84 ₪");
+  assert.equal(withUnit("12", "π"), "12π");
+  assert.equal(withUnit("1", "π"), "π");
+  assert.equal(withUnit("−1", "π"), "−π");
+  assert.equal(withUnit("\\frac{3}{2}", "π"), "\\frac{3}{2}π");
+  assert.equal(withUnit("7", ""), "7");
+  assert.equal(withUnit("7", "kg"), "7");
+  assert.equal(withUnit("", "°"), "");
+});

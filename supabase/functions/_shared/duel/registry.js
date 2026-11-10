@@ -103,6 +103,19 @@ const LIST = [
   ['qs.coef', 'quadratic-solver', 'שלב 2: מקדמים', BOTH, qs.coefficients],
 ];
 
+// The keypad of a typed question: digits, "−" and "⌫" always; "/" (fraction) and "." (decimal)
+// only for generators whose answers can need them. Fixed PER GENERATOR (never per answer), so
+// the keys never hint whether this answer is whole. duel-keys.test.mjs checks every typed
+// answer can be typed with these keys. Sent to the phone as display.keys (arena-core keypadFor).
+const KEYS = {
+  'pr.powers': ['/'], 'pr.laws': ['/'], 'pr.param': ['/'], 'pr.roots': ['/'], 'pr.mixed': ['/'],
+  'rp.ratio': ['/', '.'], 'rp.proportion': ['/', '.'], 'rp.convert': ['/', '.'], 'rp.pct': ['/', '.'], 'rp.change': ['/', '.'],
+  'ci.rad': ['/', '.'], 'ci.circ': ['.'],
+  'lf.slope': ['/', '.'],
+  'ea.linfrac': ['/'], 'ea.combo': ['/'],
+};
+export const keysFor = (id) => KEYS[id] || [];
+
 export const GENERATORS = LIST.map(([id, topic, chapter, kinds, fn]) => ({
   id,
   topic,
@@ -112,6 +125,8 @@ export const GENERATORS = LIST.map(([id, topic, chapter, kinds, fn]) => ({
   kinds,
   make: (r, want) => {
     const q = fn(r, kinds.includes(want) ? want : kinds[0]);
-    return { gen: id, topic, chapter, ...q };
+    const out = { gen: id, topic, chapter, ...q };
+    if (out.kind === 'number') out.display = { ...(out.display || {}), keys: keysFor(id) };
+    return out;
   },
 }));

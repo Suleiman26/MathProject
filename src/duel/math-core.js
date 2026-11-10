@@ -91,7 +91,25 @@ export function mathToText(s) {
 
 /** the whole prompt as plain text */
 export function proseToText(s) {
-  return splitProse(s).map((p) => (p.math ? mathToText(p.v) : p.v)).join("");
+  return promptLines(s).map((l) => splitProse(l).map((p) => (p.math ? mathToText(p.v) : p.v)).join("")).join(" ");
+}
+
+/** A prompt can have lines ("\n"): words first, then each formula on its own line, like a
+    textbook ("מה ערך ה-$x$ בנקודת החיתוך?\n$y = x + 1$\n$y = 3x − 5$"). Empty lines are dropped. */
+export function promptLines(text) {
+  return String(text == null ? "" : text).split("\n").map((l) => l.trim()).filter(Boolean);
+}
+
+/** A question's unit (payload.display.unit) shown after every answer — the choices stay pure
+    numbers (the anti-guessing guard and the answer check read them), the screen adds the unit:
+    "60" + "°" → "60°", "40%", "84 ₪", "12π" ("1" → "π", "−1" → "−π"). Unknown unit → unchanged. */
+export const UNITS = ["°", "%", "₪", "π"];
+export function withUnit(src, unit) {
+  const s = String(src == null ? "" : src);
+  if (!unit || !UNITS.includes(unit) || s === "") return s;
+  if (unit === "π") return s === "1" ? "π" : s === "−1" || s === "-1" ? "−π" : s + "π";
+  if (unit === "₪") return s + " ₪";
+  return s + unit;
 }
 
 /** is this math "short" (a bare number / expression) — used to size choice buttons */
@@ -110,11 +128,20 @@ export function isMathOnly(text) {
     the biggest (the mockup's 44 px) */
 export function promptSize(text) {
   const t = String(text == null ? "" : text);
-  const n = t.replace(/\\(frac|sqrt)|[$\{\}]/g, "").replace(/\s+/g, " ").trim().length;
+  const len = (s) => s.replace(/\\(frac|sqrt)|[$\{\}]/g, "").replace(/\s+/g, " ").trim().length;
   // the longest island never wraps on its own (.dmx is nowrap): a long expression takes a smaller step
-  const island = Math.max(0, ...splitProse(t).filter((p) => p.math).map((p) => mathLength(p.v)));
-  const step = isMathOnly(t) ? (n <= 12 ? 0 : n <= 20 ? 1 : 2) : (n <= 34 ? 1 : n <= 62 ? 2 : 3);
+  const island = Math.max(0, ...splitProse(t.replace(/\n/g, " ")).filter((p) => p.math).map((p) => mathLength(p.v)));
   const need = island > 20 ? 3 : island > 14 ? 2 : 0;
+  const lines = promptLines(t);
+  if (lines.length > 1) {
+    // words + formula lines: size by the words; two or more formula lines take one step down
+    const words = lines.filter((l) => !isMathOnly(l)).map(len).reduce((a, b) => a + b, 0);
+    const shown = lines.filter((l) => isMathOnly(l)).length;
+    const step = (words <= 34 ? 1 : words <= 62 ? 2 : 3) + (shown >= 2 ? 1 : 0);
+    return ["xl", "s", "m", "l"][Math.min(3, Math.max(step, need))];
+  }
+  const n = len(t);
+  const step = isMathOnly(t) ? (n <= 12 ? 0 : n <= 20 ? 1 : 2) : (n <= 34 ? 1 : n <= 62 ? 2 : 3);
   return ["xl", "s", "m", "l"][Math.max(step, need)];
 }
 

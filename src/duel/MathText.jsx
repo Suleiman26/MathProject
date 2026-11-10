@@ -6,7 +6,7 @@
 
    <MathText text="חזקה שלילית: $4^{−3} = ?$" />     prose with islands
    <MathSpan src="\frac{1}{64}" />                      one plain-math string (a choice) */
-import { splitProse, parseMath, mathToText, proseToText, isMathOnly, mathBreaks } from "./math-core";
+import { splitProse, parseMath, mathToText, proseToText, isMathOnly, mathBreaks, promptLines } from "./math-core";
 
 /* brk: spaces become no-break except right before an operator (math-core mathBreaks) — only matters
    when the prompt has to wrap ([data-fit="wrap"]); nowrap islands look the same */
@@ -29,12 +29,21 @@ export function MathSpan({ src, className = "", block, breaks }) {
   );
 }
 
+function Line({ text }) {
+  return splitProse(text).map((p, i) => (p.math ? <MathSpan key={i} src={p.v} breaks /> : <span key={i} aria-hidden="true">{p.v}</span>));
+}
+
+/* A prompt with lines ("\n"): each line is its own row; a line that is only math is a
+   formula row (centred, a little bigger) — no Hebrew glued to a formula, so no bidi mix-ups. */
 export function MathText({ text, className = "", as: Tag = "span" }) {
-  const parts = splitProse(text);
+  const lines = promptLines(text);
   const only = isMathOnly(text);
+  const cls = "dmx-p" + (only ? " only" : "") + (lines.length > 1 ? " lines" : "") + (className ? " " + className : "");
   return (
-    <Tag className={"dmx-p" + (only ? " only" : "") + (className ? " " + className : "")} aria-label={proseToText(text)}>
-      {parts.map((p, i) => (p.math ? <MathSpan key={i} src={p.v} breaks /> : <span key={i} aria-hidden="true">{p.v}</span>))}
+    <Tag className={cls} aria-label={proseToText(text)}>
+      {lines.length > 1
+        ? lines.map((l, i) => <span key={i} className={"dmx-line" + (isMathOnly(l) ? " eq" : "")}><Line text={l} /></span>)
+        : <Line text={text} />}
     </Tag>
   );
 }

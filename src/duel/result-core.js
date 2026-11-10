@@ -9,6 +9,7 @@
    Focus 5). XP rules (spec §5): win 30 / draw 20 / loss 10, only with ≥ 3
    answers, a quitter gets 0, only the first 5 duels per Israeli day. */
 import { TOPICS } from "../home/catalog.js";
+import { withUnit } from "./math-core.js";
 
 export const QUESTIONS = 15;
 export const REVEAL_MS = 1400;     // the columns rise and the numbers count up together
@@ -141,8 +142,10 @@ export function reviewItems(state, max = REVIEW_MAX) {
       const c = choices[Number(v)];
       return c == null ? null : String(c);
     };
-    const right = kind === "choice" ? fromChoice(x.right) : x.right == null ? null : showNum(x.right);
-    const given = x.given == null ? null : kind === "choice" ? fromChoice(x.given) : String(x.given).trim() === "" ? null : showNum(x.given);
+    const unit = (p.display && p.display.unit) || "";
+    const u = (v) => (v == null ? null : withUnit(v, unit));
+    const right = u(kind === "choice" ? fromChoice(x.right) : x.right == null ? null : showNum(x.right));
+    const given = u(x.given == null ? null : kind === "choice" ? fromChoice(x.given) : String(x.given).trim() === "" ? null : showNum(x.given));
     const chapter = String(p.chapter || "").trim();
     return {
       idx: x.idx, prompt: String(p.prompt), kind, right, given, wrong: x.given != null,
