@@ -1,11 +1,18 @@
 # MathProject: rules for Claude
 
 Hebrew (RTL) math practice site for middle school, grades 7–9. Next.js 16 app
-(React 19). Live at https://mathproject-gamma.vercel.app. Vercel deploys every
-push to `main` (Sulaiman's Vercel team), so students see it at once.
+(React 19). **The site is https://mathix-sooty.vercel.app** (Vercel project "mathix"
+on Abed's account, team `abed-shalgams-projects`). Since 2026-11-11 (Abed: "we only
+work on mathix now, forget gamma") the old https://mathproject-gamma.vercel.app is
+retired: never link it, test on it or check its deploys. Pushing `main` to GitHub
+still triggers a gamma build; ignore it.
+Deploy mathix (not automatic): `git archive HEAD | tar -x -C <empty scratch dir>`, then
+in that dir `npx vercel link --yes --project mathix --scope abed-shalgams-projects`
+and `npx vercel deploy --prod --yes`. Commit first; uncommitted files are not deployed.
 
 Partners: Sulaiman (math content) and Abed (design system, admin, infrastructure).
-Vercel and GitHub are on Sulaiman's accounts (Vercel team `math-project`).
+GitHub is on Sulaiman's account (github.com/Suleiman26/MathProject). The site's
+Vercel project is mathix on Abed's account (Sulaiman's `math-project` team = old gamma, retired).
 Supabase is the project's own account, managed by Abed (project "mathix",
 ref uucqyjskkyrfhvbsmorx, since 2026-10-30). Don't create other services
 for this project on Abed's personal accounts.
@@ -13,8 +20,8 @@ for this project on Abed's personal accounts.
 ## Never without an explicit request
 - Don't change the math, the exercises or any Hebrew text a student sees.
   They live in `src/topics/<topic>/Topic.jsx` between `BEGIN ORIGINAL` and `END ORIGINAL`.
-- `main` goes live for students immediately. While the site is being built,
-  Abed allows pushing each finished, checked batch (verify-logic + build first).
+- While the site is being built, Abed allows pushing `main` and deploying mathix
+  for each finished, checked batch (verify-logic + build first).
 
 ## Where things are
 | What | Where |
@@ -135,8 +142,7 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
 - Client: `src/duel/*` (hub, sheet, arena, result), styles `src/styles/duel.css` + `duel-arena.css`
   (private class prefixes `dl-`, `dar-`, `dkp-`, `dmx-`… — this CSS can load site-wide), mounted lazily by
   `src/duel/DuelLayerMount.jsx` (loads nothing heavy while duels are off). Dev preview: `/dev/duel?s=…`.
-- Abed's test copy: https://mathix-sooty.vercel.app (Vercel project "mathix" on Abed's account, same live
-  DB; deploy with `npx vercel deploy --prod` from a clean checkout linked to it).
+- Site: https://mathix-sooty.vercel.app (the only site; deploy steps at the top of this file).
 
 ## Display fixes vs logic
 Prefer CSS in `src/styles/topic-fixes.css` for anything visual. Only touch

@@ -7,7 +7,7 @@ import DuelLayerMount from "@/duel/DuelLayerMount";
 
 const rubik = Rubik({ subsets: ["hebrew", "latin"], weight: ["400", "500", "600", "700", "800", "900"], variable: "--font-rubik", display: "swap" });
 
-const SITE = "https://mathproject-gamma.vercel.app";
+const SITE = "https://mathix-sooty.vercel.app";
 const TITLE = "מתמטיקה חט״ב – תרגול";
 const DESC = "תרגול מתמטיקה לחטיבת הביניים, שלב אחר שלב.";
 

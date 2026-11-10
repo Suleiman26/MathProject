@@ -153,7 +153,7 @@ async function handle(req: Request): Promise<Record<string, unknown>> {
   const now = fake ? new Date(fake) : new Date();
   if (isQuiet(now)) return { skipped: "quiet" };
 
-  const contact = Deno.env.get("VAPID_SUBJECT") || "https://mathproject-gamma.vercel.app";
+  const contact = Deno.env.get("VAPID_SUBJECT") || "https://mathix-sooty.vercel.app";
   const keys = await vapidKeys();
 
   const info = await rpc("push_info", { secret, duel_id, to_uid }, deadline);

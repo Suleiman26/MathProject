@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { QRSheet, fmtCode } from "./QR";
 
 export const addLink = (code) => {
-  const origin = typeof window !== "undefined" && /^https?:/.test(window.location.origin) ? window.location.origin : "https://mathproject-gamma.vercel.app";
+  const origin = typeof window !== "undefined" && /^https?:/.test(window.location.origin) ? window.location.origin : "https://mathix-sooty.vercel.app";
   return `${origin}/duel/add/${String(code || "").toUpperCase()}`;
 };
 
