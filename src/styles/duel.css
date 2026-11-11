@@ -56,8 +56,8 @@ body:has(> .duel) { margin: 0; background: #f6f6f9; }
 .dl-lead { margin: 10px 0 0; color: var(--ink-2); line-height: 1.55; font-size: 1rem; max-width: 44ch; }
 /* my record: a two-tone bar — wins in my colour (right) | a thin neutral "תיקו" segment | losses (left) — and the duel-XP chip inline */
 .dl-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-top: 16px; }
-.dl-rec-bar { display: grid; grid-template-columns: var(--p, 50%) 1fr; flex: 1 1 260px; min-width: min(100%, 260px); max-width: 360px; height: 46px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .8), 0 10px 22px -16px var(--me-700); }
-.dl-rec-bar.has-d { grid-template-columns: var(--p, 50%) auto 1fr; }
+.dl-rec-bar { display: grid; grid-template-columns: var(--dl-p, 50%) 1fr; flex: 1 1 260px; min-width: min(100%, 260px); max-width: 360px; height: 46px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .8), 0 10px 22px -16px var(--me-700); }
+.dl-rec-bar.has-d { grid-template-columns: var(--dl-p, 50%) auto 1fr; }
 .dl-rec-bar > span { display: grid; place-items: center; min-width: 0; }                      /* the segment fills the bar… */
 .dl-rec-bar > span > i { display: inline-flex; align-items: baseline; gap: 5px; padding: 0 12px; font-style: normal; white-space: nowrap; }   /* …its text sits in the vertical middle */
 .dl-rec-bar b { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
@@ -94,9 +94,19 @@ body:has(> .duel) { margin: 0; background: #f6f6f9; }
 @media (hover: hover) { .dl-now-f:hover .acct-av { box-shadow: inset 0 0 0 2px rgb(255 255 255 / .35), 0 0 0 3px #fff, 0 0 0 6px var(--me-500), 0 8px 18px -10px rgb(20 20 40 / .4); } }
 .dl-now-f:focus-visible { outline: none; }
 .dl-now-f .dl-dot { width: 15px; height: 15px; }
-.dl-now-empty { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px; border-radius: 20px; background: rgb(255 255 255 / .6); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .9); }
-.dl-now-empty p { margin: 0; flex: 1 1 200px; font-size: .9rem; color: var(--ink-2); line-height: 1.5; }
-.dl-live-top { margin: -8px 0 10px; text-align: start; padding-inline-start: 6px; }
+/* nobody online: one quiet line under the heading, no box */
+.dl-now-empty { margin: -2px 4px 0; padding-inline-start: 15px; font-size: .86rem; color: var(--ink-3); line-height: 1.5; max-width: 46ch; }
+
+/* phones: the page opens with its headline, not an empty band */
+@media (max-width: 767.98px) {
+  .dl-hero { padding: 8px 4px 16px; }
+  .dl-tug-w.score .dl-tug { width: 92px; height: 28px; }
+  .dl-card { padding: 16px; }
+  /* friend rows: a little tighter so a long username fits next to the buttons */
+  .dl-fr-main { gap: 10px; }
+  .dl-fr-go.off { width: 40px; }
+  .dl-fr .dl-more { width: 40px; }
+}
 
 /* ── layout: one column; two from 900px ─────────────────────────────────── */
 .dl-cols { display: grid; gap: 14px; }
@@ -135,6 +145,9 @@ body:has(> .duel) { margin: 0; background: #f6f6f9; }
   background: linear-gradient(135deg, var(--me-500), var(--me-700)); box-shadow: 0 8px 16px -10px var(--me-700); transition: transform 160ms var(--pop); }
 .dl-fr-go svg { width: 16px; height: 16px; }
 .dl-fr-main:active .dl-fr-go { transform: scale(.95); }
+/* offline friends: the same button, quieter (the invite still waits a minute for them) */
+.dl-fr-go.off { width: 44px; padding: 0; justify-content: center; color: var(--me-700); background: var(--me-50); box-shadow: inset 0 0 0 1px var(--me-100); }
+.dl-fr-go.off span { display: none; }   /* a round sword button: the name keeps its full width */
 @media (max-width: 359px) { .dl-fr-go span { display: none; } .dl-fr-go { padding: 0 13px; } }
 .dl-more { all: unset; box-sizing: border-box; width: 44px; height: 44px; margin-inline-start: -6px; flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--ink-3); cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .dl-more svg { width: 20px; height: 20px; }
@@ -151,7 +164,7 @@ body:has(> .duel) { margin: 0; background: #f6f6f9; }
 /* the tug pill: [ mine | theirs ] — mine on the right (RTL) in my colour, theirs in their colour */
 .dl-tug-w { display: grid; justify-items: center; gap: 2px; flex: none; }
 .dl-tug-w small { font-size: .66rem; font-weight: 700; color: var(--ink-3); }
-.dl-tug { display: grid; grid-template-columns: var(--p, 50%) 1fr; width: 72px; height: 28px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .6); }
+.dl-tug { display: grid; grid-template-columns: var(--dl-p, 50%) 1fr; width: 72px; height: 28px; border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .6); }
 .dl-tug b { display: grid; place-items: center; min-width: 0; font-size: .92rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #fff; line-height: 1; }
 .dl-tug-me { background: var(--me-500); }
 .dl-tug-op { background: var(--a-500); }   /* --a-* here = the opponent's colour (data-topic on .dl-tug) */
@@ -178,8 +191,10 @@ body:has(> .duel) { margin: 0; background: #f6f6f9; }
 .dl-empty b { font-size: 1.05rem; font-weight: 700; }
 .dl-empty p { margin: 0; color: var(--ink-2); line-height: 1.55; font-size: .94rem; max-width: 34ch; }
 
-/* recent duels */
-.dl-rc { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 6px 0; }
+/* recent duels: the result word sits on top of the score, so the name keeps its room */
+.dl-rc { display: flex; align-items: center; gap: 12px; min-height: 62px; padding: 6px 0; }
+.dl-rc-end { display: grid; justify-items: center; gap: 4px; flex: none; }
+.dl-rc-end .dl-chip { padding: 2px 9px; font-size: .7rem; }
 .dl-score { display: inline-flex; align-items: baseline; gap: 3px; font-weight: 700; font-variant-numeric: tabular-nums; font-size: .98rem; flex: none; }
 .dl-score em { font-style: normal; color: var(--ink-3); font-weight: 500; }
 .dl-chip { flex: none; padding: 4px 9px; border-radius: 999px; font-size: .72rem; font-weight: 700; background: var(--surface-3); color: var(--ink-2); min-width: 44px; text-align: center; }

@@ -31,7 +31,7 @@ export function seenAgo(f) {
 export const SEP = " ·\u00a0";
 /** "פעיל/ה עכשיו · ח׳ · רמה 6" — only the parts we know */
 export function metaLine(f) {
-  return [seenAgo(f), GRADE_SHORT[f.grade], f.level ? `רמה ${f.level}` : null].filter(Boolean).join(SEP);
+  return [seenAgo(f), GRADE_SHORT[f.grade], f.level ? `רמה\u00a0${f.level}` : null].filter(Boolean).join(SEP);
 }
 /** the head-to-head in words (for labels) */
 export function h2hWords(f) {
@@ -56,7 +56,7 @@ export function Tug({ mine, theirs, me, other, label, size, caption }) {
   const p = a + b ? Math.max(32, Math.min(68, Math.round((a / (a + b)) * 100))) : 50;
   return (
     <span className={"dl-tug-w" + (size ? " " + size : "")}>
-      <span className="dl-tug" role="img" aria-label={label} data-topic={oppColor(me, other)} style={{ "--p": p + "%" }}>
+      <span className="dl-tug" role="img" aria-label={label} data-topic={oppColor(me, other)} style={{ "--dl-p": p + "%" }}>
         <b className="dl-tug-me" aria-hidden="true">{a}</b><b className="dl-tug-op" aria-hidden="true">{b}</b>
       </span>
       {caption && <small aria-hidden="true">{caption}</small>}
@@ -89,7 +89,8 @@ export function FriendRow({ friend, me, onChallenge, onRemove, onBlock, onReport
           <small>{metaLine(friend)}</small>
           <H2H friend={friend} me={me} compact />
         </span>
-        {friend.online && <span className="dl-fr-go" aria-hidden="true">{MI.swords}<span>אתגר</span></span>}
+        {/* offline friends can be challenged too (the invite waits a minute): a quieter button */}
+        <span className={"dl-fr-go" + (friend.online ? "" : " off")} aria-hidden="true">{MI.swords}<span>אתגר</span></span>
       </button>
       <button type="button" className="dl-more" aria-label={`עוד פעולות עבור ${friend.username}`} aria-haspopup="dialog" onClick={() => setMenu(true)}>{MI.more}</button>
       <FriendMenu open={menu} onClose={() => setMenu(false)} friend={friend} onRemove={onRemove} onBlock={onBlock} onReport={onReport} />

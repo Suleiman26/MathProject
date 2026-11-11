@@ -318,7 +318,7 @@ export function Railway({ topics, progress, account, gradeName }) {
               ? <><b>{fmt(chDoneAll)}</b> מתוך {fmt(chAll)} פרקים נפתרו</>
               : <>{fmt(stations.length)} נושאים ו־{fmt(chAll)} פרקים מחכים לך</>}</p>
           </div>
-          <span className="jr-pct" style={{ "--p": pct / 100 }} aria-label={`${pct}% מהמסלול`}><b>{pct}%</b></span>
+          <span className="jr-pct" style={{ "--jr-p": pct / 100 }} aria-label={`${pct}% מהמסלול`}><b>{pct}%</b></span>
         </div>
         <Ticket st={next ? stations[next.i] : null} next={next} />
       </header>

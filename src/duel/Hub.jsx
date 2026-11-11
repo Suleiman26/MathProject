@@ -14,7 +14,7 @@ import { duelApi, duelError } from "./api";
 import { usePresence } from "./presence";
 import { subscribe } from "./live";
 import { SUBJECT_LABEL } from "./subjects";
-import { MyCode, AddFriendForm, cleanCode, useShareCode } from "./AddFriend";
+import { MyCode, AddFriendForm, cleanCode } from "./AddFriend";
 import { FriendRow, FriendMenu, FriendAvatar, Tug, toName, SEP } from "./FriendRow";
 import { ChallengeSheet, WaitRing, preloadEngine } from "./ChallengeSheet";
 import { serverNow } from "./clock";
@@ -62,7 +62,6 @@ const MI = {
   swords: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.5 17.5L3 6V3h3l11.5 11.5" /><path d="M13 19l6-6" /><path d="M16 16l4 4" /><path d="M19 21l2-2" /><path d="M9.5 6.5L21 3v3l-8.5 8.5" /><path d="M5 14l-2 2 4 4 2-2" /></svg>,
   x: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>,
   more: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1" /><circle cx="12" cy="12" r="2.1" /><circle cx="19" cy="12" r="2.1" /></svg>,
-  share: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v13" /><path d="M7.5 7.5L12 3l4.5 4.5" /><path d="M5 12v6a3 3 0 003 3h8a3 3 0 003-3v-6" /></svg>,
 };
 
 /* ── guests / switch off / loading ─────────────────────────────────────────── */
@@ -122,11 +121,11 @@ function Skeleton() {
 function Record({ stats }) {
   const w = Number(stats.wins) || 0, l = Number(stats.losses) || 0, d = Number(stats.draws) || 0;
   if (!(w + l + d)) return <div className="dl-rec"><p className="dl-rec-empty">עוד לא שיחקת — אתגרו חבר/ה</p></div>;
-  const p = w + l ? Math.max(16, Math.min(84, Math.round((w / (w + l)) * 100))) : 50;
+  const p = w + l ? Math.max(26, Math.min(74, Math.round((w / (w + l)) * 100))) : 50;   // the smaller side keeps room for "0 הפסדים"
   const label = `המאזן שלי: ${w} ניצחונות, ${l} הפסדים${d ? `, ${d} תיקו` : ""}`;
   return (
     <div className="dl-rec">
-      <div className={"dl-rec-bar" + (d ? " has-d" : "")} role="img" aria-label={label} style={{ "--p": p + "%" }}>
+      <div className={"dl-rec-bar" + (d ? " has-d" : "")} role="img" aria-label={label} style={{ "--dl-p": p + "%" }}>
         <span className="dl-rec-w" aria-hidden="true"><i><b>{w}</b><small>ניצחונות</small></i></span>
         {d ? <span className="dl-rec-d" aria-hidden="true"><i><b>{d}</b><small>תיקו</small></i></span> : null}
         <span className="dl-rec-l" aria-hidden="true"><i><b>{l}</b><small>הפסדים</small></i></span>
@@ -140,8 +139,9 @@ function XpChip({ xp }) {
   return <span className="dl-rec-xp" role="img" aria-label={`${xp} נקודות דו-קרב`}><img src="/home/hero/star.webp" alt="" width={22} height={22} /><b aria-hidden="true">{xp}</b><small aria-hidden="true">נק׳ דו-קרב</small></span>;
 }
 
-/** "מחוברים עכשיו": the online friends as big avatars, tap → challenge; none → a line + share CTA */
-function OnlineNow({ friends, me, onPick, onShare, canShare, hasFriends }) {
+/** "מחוברים עכשיו": the online friends as big avatars, tap → challenge; none → one quiet line
+    (sharing the code lives in the "my code" card, so no second share button here) */
+function OnlineNow({ friends, onPick }) {
   const online = friends.filter((f) => f.online);
   return (
     <section className="dl-now" aria-labelledby="dl-now-h">
@@ -161,10 +161,7 @@ function OnlineNow({ friends, me, onPick, onShare, canShare, hasFriends }) {
           ))}
         </ul>
       ) : (
-        <div className="dl-now-empty">
-          <p>{hasFriends ? "אף אחד מהחברים לא מחובר כרגע. אפשר לשלוח אתגר בכל זאת — ההזמנה מחכה דקה." : "עוד אין חברים מחוברים. שלחו את הקוד שלכם — וכשיאשרו, הם יופיעו כאן."}</p>
-          <button type="button" className="dl-pill" onClick={onShare}>{MI.share}<span>{canShare ? "שיתוף הקוד" : "העתקת הקישור"}</span></button>
-        </div>
+        <p className="dl-now-empty">אף אחד מהחברים לא מחובר כרגע. אפשר לשלוח אתגר בכל זאת — ההזמנה מחכה דקה.</p>
       )}
     </section>
   );
@@ -202,7 +199,6 @@ export function HubView({ account, data, history, presence, actions, state, erro
   const [reqErr, setReqErr] = useState("");
   const [, setTick] = useState(0);
   const [announce, setAnnounce] = useState("");   // one hidden live region: phase changes only, never the seconds
-  const { share, canShare, copied } = useShareCode(data && data.code);
   const waitPhase = wait ? wait.phase + ":" + wait.friend.id : "";
   // the question engine (which worlds a pair has questions for) loads at idle, in its own chunk,
   // once there is a friend to challenge — so the sheet opens with the right worlds at once
@@ -276,8 +272,7 @@ export function HubView({ account, data, history, presence, actions, state, erro
           )}
 
           {/* no friends yet: the friends card already says what to do (and the code is right below) — no second empty box */}
-          {friends.length > 0 && <OnlineNow friends={friends} me={account} onPick={openSheet} onShare={share} canShare={canShare} hasFriends />}
-          <p className="dl-live dl-live-top" role="status" aria-live="polite">{copied === "link" ? "הקישור הועתק" : copied === "code" ? "הקוד הועתק" : " "}</p>
+          {friends.length > 0 && <OnlineNow friends={friends} onPick={openSheet} />}
 
           <div className="dl-cols">
             <div className="dl-main">
@@ -344,9 +339,11 @@ export function HubView({ account, data, history, presence, actions, state, erro
                       <li key={d.id} className={"dl-rc " + d.result}>
                         <Avatar account={d.opp} size={38} />
                         <div className="dl-fr-t"><b dir="auto">{d.opp.username}</b><small>{SUBJECT_LABEL[d.subject] || d.subject}{SEP}{ago(d.at)}</small></div>
-                        <Tug mine={d.my} theirs={d.their} me={account} other={d.opp} size="score"
-                          label={`התוצאה: ${d.my} לך, ${d.their} ${toName(d.opp.username)} — ${d.result === "win" ? "ניצחון" : d.result === "loss" ? "הפסד" : "תיקו"}`} />
-                        <span className="dl-chip" aria-hidden="true">{d.result === "win" ? "ניצחון" : d.result === "loss" ? "הפסד" : "תיקו"}</span>
+                        <span className="dl-rc-end">
+                          <span className="dl-chip" aria-hidden="true">{d.result === "win" ? "ניצחון" : d.result === "loss" ? "הפסד" : "תיקו"}</span>
+                          <Tug mine={d.my} theirs={d.their} me={account} other={d.opp} size="score"
+                            label={`התוצאה: ${d.my} לך, ${d.their} ${toName(d.opp.username)} — ${d.result === "win" ? "ניצחון" : d.result === "loss" ? "הפסד" : "תיקו"}`} />
+                        </span>
                       </li>
                     ))}
                   </ul>

@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HubView } from "@/duel/Hub";
 import ArenaLab, { ARENA_STATES } from "./ArenaLab";
+import { Bar as BottomBar } from "@/components/BottomNav";
 
 const ago = (s) => new Date(Date.now() - s * 1000).toISOString();
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -20,6 +21,8 @@ function sampleFriends() {
 }
 function sampleData(kind) {
   const empty = kind === "empty";
+  if (kind === "one") return { status: "on", code: "NZG4JB", inbox: "inbox-sample", incoming: [], outgoing: [], blocked: [],
+    friends: [{ id: ID(6), username: "sliman.abutaleb13", avatar: "teal", grade: 7, level: 1, online: false, seen: "week", wins: 1, losses: 0 }] };
   return {
     status: "on", code: "K7M2PQ", inbox: "inbox-sample",
     friends: empty ? [] : sampleFriends(),
@@ -30,6 +33,8 @@ function sampleData(kind) {
 }
 function sampleHistory(kind) {
   if (kind === "empty") return { stats: { played: 0, wins: 0, losses: 0, draws: 0, duel_xp: 0 }, recent: [] };
+  if (kind === "one") return { stats: { played: 1, wins: 1, losses: 0, draws: 0, duel_xp: 0 },
+    recent: [{ id: ID(24), opp: { username: "sliman.abutaleb13", avatar: "teal" }, subject: "random", my: 232, their: 200, result: "win", at: ago(86400) }] };
   return {
     stats: { played: 9, wins: 5, losses: 3, draws: 1, perfect: 1, comebacks: 1, duel_xp: 230 },
     recent: [
@@ -76,8 +81,9 @@ export default function DuelLab() {
     <>
       <HubView key={q.s} account={account} data={data} history={history} presence={{ liveId, status: "ok", offset: 0 }} actions={actions} state={state}
         cooldownUntil={cooldownUntil} onCooldown={setCooldownUntil} onLive={(id) => setLiveId(id)} sheetRef={sheetRef} initialSheet={initialSheet} />
+      {account && <BottomBar account={account} path="/duel" duelsOn />}
       <nav className="dl-labnav" aria-label="מצבי תצוגה">
-        {["hub", "sheet", "sent", "empty", "guest", "soon", ...ARENA_STATES].map((s) => <a key={s} href={`?s=${s}&c=${q.c}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
+        {["hub", "one", "sheet", "sent", "empty", "guest", "soon", ...ARENA_STATES].map((s) => <a key={s} href={`?s=${s}&c=${q.c}&g=${q.g}`} style={{ fontWeight: q.s === s ? 700 : 400 }}>{s}</a>)}
       </nav>
     </>
   );
