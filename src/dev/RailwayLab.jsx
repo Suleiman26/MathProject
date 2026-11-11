@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { Railway, Insights } from "@/home/Journey";
 import { HomeHero } from "@/home/HomeHero";
+import { Bar as BottomBar } from "@/components/BottomNav";
 import { AccountMenu } from "@/account/ui";
 import { HERO } from "@/home/catalog";
 import { TOPICS, CATEGORIES, GRADES } from "@/home/catalog";
@@ -68,6 +69,7 @@ export default function RailwayLab() {
         <Railway topics={mine} progress={p} account={account} gradeName={GRADES.find((g) => g.id === q.g).name} />
         <Insights progress={p} topics={all} />
       </main>
+      <BottomBar account={account} path="/" duelsOn={q.d != null} />
     </div>
   );
 }

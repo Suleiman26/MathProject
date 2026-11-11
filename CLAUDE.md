@@ -36,6 +36,7 @@ for this project on Abed's personal accounts.
 | Database (Supabase) | `supabase/migrations`; how to connect: `supabase/README.md`; settings: `src/lib/config.js` |
 | Old plain-HTML site | `public/classic/` (served at `/classic`), git tag `html-v1` |
 | 3D shapes view (solids topic) | `src/components/solid3d/` (three.js, lazy); `?flat=1` shows the old drawings |
+| Phone bottom bar (2026-11-11, replaces the top header on phones <768px; signed-in home, /profile*, /duel hub only, never topic pages) | `src/components/BottomNav.jsx`, `src/styles/bottomnav.css`; middle Loop button = the railway's next step via `src/lib/next-step.js`; preview `/dev/railway` |
 | Shared page frame, chapter ✓, empty-check nudge | `src/styles/mp.css` §11, `src/components/TopicView.jsx`, `src/lib/mp-runtime.js` |
 
 URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/<topic>.html` links redirect (next.config.ts).

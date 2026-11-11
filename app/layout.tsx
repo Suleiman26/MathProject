@@ -4,6 +4,8 @@ import "@/styles/mp.css";
 import "@/styles/globals.css";
 import "@/styles/account.css";
 import DuelLayerMount from "@/duel/DuelLayerMount";
+import BottomNav from "@/components/BottomNav";
+import "@/styles/bottomnav.css";
 
 const rubik = Rubik({ subsets: ["hebrew", "latin"], weight: ["400", "500", "600", "700", "800", "900"], variable: "--font-rubik", display: "swap" });
 
@@ -28,7 +30,7 @@ export const viewport: Viewport = { themeColor: "#f5f5f2", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl" className={rubik.variable} suppressHydrationWarning>
-      <body>{children}<DuelLayerMount /></body>
+      <body>{children}<BottomNav /><DuelLayerMount /></body>
     </html>
   );
 }

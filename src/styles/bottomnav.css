@@ -1,0 +1,195 @@
+/* Phones: the bottom bar (src/components/BottomNav.jsx), 2026-11-11.
+   A floating glass capsule with the Loop lifted out of its middle (design: Fable, spec kept in
+   the commit message). <html>.bnav is set only while the bar is on the page (signed in: home,
+   profile, duel hub); .bn-kb while the student types (the bar steps aside for the keyboard). */
+@layer page {
+
+:root { --bn-h: 64px; --bn-gap: 10px; }
+
+/* ── the pages, while the bar shows (phones only) ─────────────────────────── */
+@media (max-width: 767.98px) {
+  html.bnav { --bn-room: calc(var(--bn-h) + var(--bn-gap) + env(safe-area-inset-bottom) + 22px); }
+  /* the top header goes: the home capsule (logo + menu), the slim bar that took its place on
+     scroll, the duel hub's and profile's top rows. The page starts with its own content. */
+  html.bnav .hh-row,
+  html.bnav .hh-bar,
+  html.bnav .hh-scrim,
+  html.bnav .duel .dl-top,
+  html.bnav .acct .acct-top { display: none; }
+  html.bnav .hh-in { padding-top: calc(18px + env(safe-area-inset-top)); }
+  html.bnav .acct.wide .acct-main { padding-top: calc(14px + env(safe-area-inset-top)); }
+  html.bnav .dl-in { padding-top: calc(16px + env(safe-area-inset-top)); }
+  /* a jump to a section (הישגים, הגדרות) stops clear of the status bar */
+  html.bnav [id] { scroll-margin-top: calc(16px + env(safe-area-inset-top)); }
+  /* room at the bottom so the last line (the footer) is never under the bar */
+  html.bnav .home.in,
+  html.bnav .acct,
+  html.bnav .duel { padding-bottom: var(--bn-room); }
+  /* things that float at the bottom sit above the bar */
+  html.bnav .jr-toast,
+  html.bnav .dl-waitpill,
+  html.bnav .dar-pill { bottom: calc(var(--bn-room) - 8px); }
+}
+
+/* ── the bar ─────────────────────────────────────────────────────────────── */
+.bn {
+  position: fixed; z-index: 60; left: 0; right: 0; margin: 0 auto;
+  bottom: calc(var(--bn-gap) + env(safe-area-inset-bottom));
+  width: calc(100% - 24px); max-width: 440px; height: var(--bn-h); box-sizing: border-box;
+  display: grid; grid-template-columns: 1fr 1fr 78px 1fr 1fr; align-items: stretch;
+  border-radius: 32px; overflow: visible; direction: rtl;
+  /* a step more solid than the header glass: colourful banners pass under it and the labels must stay clear */
+  background: rgb(255 255 255 / .94);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .9), 0 0 0 1px rgb(20 20 40 / .05), 0 18px 40px -22px rgb(20 20 40 / .45);
+  font-family: var(--font); user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  transition: transform 260ms var(--ease-out), opacity 200ms ease;
+}
+.bn.boot { animation: bn-rise 480ms var(--ease-out) backwards; }
+@keyframes bn-rise { from { opacity: 0; transform: translateY(28px); } }
+html.bn-kb .bn { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
+
+/* ── tabs ────────────────────────────────────────────────────────────────── */
+.bn-tab {
+  all: unset; box-sizing: border-box; position: relative; display: grid; justify-items: center; align-content: center; gap: 5px;
+  min-width: 44px; height: var(--bn-h); cursor: pointer; color: var(--ink-3); text-decoration: none;
+  font-family: var(--font); font-size: .7rem; font-weight: 600; line-height: 1; white-space: nowrap;
+  transition: color var(--t) var(--ease-out), transform var(--t-fast) var(--ease-out);
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.bn.boot .bn-tab { animation: mp-fade 240ms calc(120ms + var(--k, 0) * 40ms) var(--ease-out) backwards; }
+.bn-tab > svg, .bn-duel { position: relative; z-index: 1; width: 24px; height: 24px; display: block; }
+.bn-duel svg { width: 100%; height: 100%; display: block; transform: scale(1.12); }
+.bn-tab > span { position: relative; z-index: 1; }
+/* the active pill behind the icon, in the student's colour */
+.bn-tab::before {
+  content: ""; position: absolute; left: 50%; top: 7px; width: 48px; height: 32px; margin-left: -24px; border-radius: 16px;
+  background: color-mix(in srgb, var(--a-100) 80%, #fff);
+  opacity: 0; transform: scale(.6); transition: opacity 120ms ease, transform 120ms ease;
+}
+.bn-tab[aria-current="page"], .bn-me[data-state="open"] { color: var(--a-700); font-weight: 700; }
+.bn-tab[aria-current="page"]::before { opacity: 1; transform: none; transition: opacity 180ms ease, transform 220ms var(--ease-out); }
+.bn-tab:active { transform: scale(.9); }
+.bn-tab:focus-visible::before { opacity: 1; transform: none; box-shadow: var(--ring); }
+.bn-me::before { display: none; }
+
+/* אני: the student's avatar as the icon */
+.bn-av {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; position: relative; z-index: 1;
+  background: linear-gradient(140deg, var(--a-500), var(--a-700)); color: #fff; font-size: 12px; font-weight: 800; line-height: 1;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px color-mix(in srgb, var(--a-300) 70%, transparent);
+  transition: box-shadow var(--t) var(--ease-out);
+}
+.bn-me[data-state="open"] .bn-av { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--a-500); }
+
+/* ── the Loop: lifted out of the bar, the one thing that glows ───────────── */
+.bn-go {
+  position: relative; display: grid; justify-items: center; align-content: start; height: var(--bn-h);
+  color: var(--ink-2); text-decoration: none; cursor: pointer; touch-action: manipulation; isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+}
+.bn-go-l { position: absolute; bottom: 7px; font-size: .68rem; font-weight: 700; line-height: 1; white-space: nowrap; }
+.bn-go-tile {
+  position: relative; z-index: 2; width: 54px; height: 54px; border-radius: 50%; overflow: hidden; margin-top: -18px;
+  background: #f1efff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .9), 0 0 0 3px #fff, 0 1px 2px rgb(76 29 149 / .18), 0 14px 26px -10px rgb(76 29 149 / .6);
+  transform: translateZ(0); transition: transform 260ms var(--pop);
+}
+.bn-go-tile img { display: block; width: 116%; height: 116%; margin: -8%; object-fit: cover; }
+.bn.boot .bn-go-tile { animation: bn-pop 420ms 140ms var(--pop) backwards; }
+@keyframes bn-pop { from { opacity: 0; transform: scale(.6); } }
+
+/* halo: a blurred brand glow that breathes */
+.bn-go-halo {
+  position: absolute; z-index: 0; top: calc(-18px + 27px - 50px); left: calc(50% - 50px); width: 100px; height: 100px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(139 92 246 / .45), rgb(59 130 246 / .2) 55%, transparent);
+  filter: blur(14px); pointer-events: none; opacity: .55;
+  animation: bn-breathe 4.8s 600ms ease-in-out infinite; transition: opacity var(--t-fast) ease;
+}
+@keyframes bn-breathe { 50% { opacity: .9; transform: scale(1.05); } }
+
+/* ring: the logo's own colours, turning slowly */
+.bn-go-ring {
+  position: absolute; z-index: 1; top: calc(-18px + 27px - 34px); left: calc(50% - 34px); width: 68px; height: 68px; border-radius: 50%;
+  background: conic-gradient(from 0deg, #3b82f6, #8b5cf6, #ec4899, #fb923c, #3b82f6);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 2.5px));
+  opacity: .9; pointer-events: none; will-change: transform;
+  animation: bn-turn 14s 600ms linear infinite; transition: opacity var(--t-fast) ease, scale 260ms var(--pop);
+}
+@keyframes bn-turn { to { transform: rotate(360deg); } }
+
+/* shine: one glint across the logo every ~9s */
+.bn-go-shine {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgb(255 255 255 / .75) 50%, transparent 62%);
+  transform: translateX(-120%); animation: bn-shine 9s 1.4s linear infinite;
+}
+@keyframes bn-shine { 0% { transform: translateX(-120%); } 10%, 100% { transform: translateX(120%); } }
+
+/* press: the logo dips, ring and halo flare, then spring back */
+.bn-go:active .bn-go-tile { transform: scale(.92); transition-duration: var(--t-fast); transition-timing-function: var(--ease-out); }
+.bn-go:active .bn-go-ring { opacity: 1; scale: 1.08; }
+.bn-go:active .bn-go-halo { opacity: 1; }
+.bn-go:focus-visible { outline: none; }
+.bn-go:focus-visible .bn-go-tile { box-shadow: var(--ring), 0 0 0 3px #fff, 0 14px 26px -10px rgb(76 29 149 / .6); }
+
+/* ── the אני sheet: a card parked above the bar ───────────────────────────── */
+.bn-sheet-wrap { position: fixed; inset: 0; z-index: 90; pointer-events: none; direction: rtl; }
+.bn-sheet-wrap.on { pointer-events: auto; }
+.bn-scrim {
+  position: absolute; inset: 0; background: rgb(20 20 40 / .32);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  opacity: 0; transition: opacity 200ms ease;
+}
+.bn-sheet-wrap.on .bn-scrim { opacity: 1; }
+.bn-sheet {
+  position: absolute; left: 0; right: 0; margin: 0 auto;
+  bottom: calc(var(--bn-gap) * 2 + var(--bn-h) + 20px + env(safe-area-inset-bottom));   /* clear of the raised Loop */
+  width: calc(100% - 24px); max-width: 440px; box-sizing: border-box; padding: 8px;
+  display: grid; gap: 2px;
+  border-radius: 28px; background: var(--surface); color: var(--ink); font-family: var(--font);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 80%, transparent), 0 24px 60px -18px rgb(28 27 25 / .38);
+  transform-origin: 50% 100%; opacity: 0; transform: translateY(14px) scale(.96);
+  transition: opacity 160ms ease, transform 160ms var(--ease-out);
+}
+.bn-sheet-wrap.on .bn-sheet { opacity: 1; transform: none; transition: opacity 200ms ease, transform 280ms var(--ease-out); }
+.bn-grab { display: none; }
+.bn-sheet-h, .bn-row {
+  all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 12px; cursor: pointer;
+  min-height: 52px; padding: 8px 10px; border-radius: 18px; font-family: var(--font); color: var(--ink);
+  -webkit-tap-highlight-color: transparent; transition: background var(--t-fast) ease;
+}
+.bn-sheet-h { padding: 10px; margin-bottom: 4px; box-shadow: 0 1px 0 var(--line); border-radius: 20px 20px 6px 6px; }
+.bn-sheet-h:active, .bn-row:active { background: var(--surface-3); }
+.bn-sheet-h:focus-visible, .bn-row:focus-visible { box-shadow: var(--ring); }
+.bn-av.big { width: 46px; height: 46px; font-size: 19px; flex: none; box-shadow: 0 0 0 3px #fff, 0 0 0 4px color-mix(in srgb, var(--a-300) 70%, transparent); }
+.bn-sheet-id { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.bn-sheet-id b { font-size: 1.04rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bn-sheet-id small { font-size: .82rem; font-weight: 500; color: var(--ink-3); }
+.bn-chev { width: 18px; height: 18px; color: var(--ink-3); flex: none; }
+.bn-row { font-size: .96rem; font-weight: 600; }
+.bn-row i { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2); }
+.bn-row i svg { width: 19px; height: 19px; }
+.bn-row.out { color: var(--bad-700); }
+.bn-row.out i { background: var(--bad-50); box-shadow: none; color: var(--bad-700); }
+.bn-row:disabled { opacity: .6; cursor: default; }
+
+/* ── reduced motion: still, not dead ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .bn.boot, .bn.boot .bn-tab, .bn.boot .bn-go-tile { animation: mp-fade 200ms ease backwards; }
+  .bn-go-halo, .bn-go-ring, .bn-go-shine { animation: none; }
+  .bn-go-halo { opacity: .7; }
+  .bn-go-shine { display: none; }
+  .bn-tab::before, .bn-go-tile, .bn-go-ring, .bn-sheet, .bn, .bn-av { transition-duration: 1ms; }
+  .bn-go:active .bn-go-tile { transform: none; opacity: .8; }
+  .bn-go:active .bn-go-ring { scale: 1; }
+  .bn-tab:active { transform: none; opacity: .7; }
+  .bn-sheet { transform: none; }
+}
+
+/* tablets and computers keep the top header; no bar (last, so it wins over .bn above) */
+@media (min-width: 768px) { .bn, .bn-sheet-wrap { display: none; } }
+
+}

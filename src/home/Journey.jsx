@@ -19,6 +19,7 @@ import { topicInfo, chapterInfo } from "./chapterInfo";
 import { levelOf, fmt, slugOf, ago, confettiAt } from "@/lib/progress";
 import { zoneKey, worldArt, useReveal, useArtParallax } from "./worlds";
 import { Trophy, Confetti, Medal, Target, Compass, Check as CheckBold } from "@phosphor-icons/react";
+import { saveNext } from "@/lib/next-step";
 
 export { levelOf };
 const Icon = ({ k }) => <span className="jr-ic" dangerouslySetInnerHTML={{ __html: iconSvg(k) }} />;
@@ -258,7 +259,15 @@ export function Railway({ topics, progress, account, gradeName }) {
   const chDoneAll = stations.reduce((a, s) => a + s.chDone, 0);
   const allDone = stations.length > 0 && stations.every((s) => s.comp >= 1);
   const next = useMemo(() => planNext(stations, here), [stations, here]);
-  const pct = chAll ? Math.round((chDoneAll / chAll) * 100) : 0;
+  // the bottom bar's middle button goes to this same next step (src/components/BottomNav.jsx)
+  useEffect(() => {
+    if (!account || !stations.length) return;
+    const st = next ? stations[next.i] : null;
+    saveNext(account.id, st
+      ? { href: chHref(st.slug, next.ch && next.ch.name), verb: VERB[next.kind], name: next.ch ? next.ch.title : st.name }
+      : { href: "/profile", verb: "הישגים", name: "כל המסלול הושלם" });
+  }, [account, stations, next]);
+  const pct =chAll ? Math.round((chDoneAll / chAll) * 100) : 0;
 
   /* what is open: by default the topic of the next step, with its chapter open */
   const focus = next ? next.i : here;
