@@ -227,14 +227,15 @@ html[data-page="parabola-practice"] .pp-calc b { color: var(--ok-800, #166534); 
 html[data-page="parabola-practice"] .pp-calc-he { text-align: right; }
 html[data-page="parabola-practice"] .pp-calc .btn { justify-self: center; }
 html[data-page="parabola-practice"] .pp-mon-hint { font-size: 14px; color: var(--ink-2, #44403c); margin: 6px 0 10px; line-height: 1.6; }
-html[data-page="parabola-practice"] .pp-range { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, #f7f7f5); }
-html[data-page="parabola-practice"] .pp-range-l { font-weight: 700; color: var(--a-900, #1a237e); flex: 0 0 88px; }
-html[data-page="parabola-practice"] .pp-range-m { display: inline-flex; align-items: center; gap: 8px; }
+html[data-page="parabola-practice"] .pp-range { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, #f7f7f5); border: 1.5px solid transparent; }
+html[data-page="parabola-practice"] .pp-range.bad { border-color: var(--bad-500, #ef4444); background: var(--bad-50, #fef2f2); }
+html[data-page="parabola-practice"] .pp-range-l { font-weight: 700; color: var(--a-900, #1a237e); flex: 0 0 84px; }
+html[data-page="parabola-practice"] .pp-range-m { display: inline-flex; align-items: center; gap: 8px; direction: ltr; unicode-bidi: isolate; }
 html[data-page="parabola-practice"] .pp-var { font-size: 20px; font-weight: 800; font-style: italic; }
-html[data-page="parabola-practice"] .pp-seg { display: inline-flex; padding: 3px; border-radius: 11px; background: var(--surface-3, #ecebe6); }
-html[data-page="parabola-practice"] .pp-seg button { width: 42px; height: 36px; border: 0; border-radius: 8px; background: transparent; font-size: 20px; font-weight: 800; color: var(--ink-2, #44403c); padding: 0; cursor: pointer; box-shadow: none; }
-html[data-page="parabola-practice"] .pp-seg button.on { background: var(--surface, #fff); color: var(--a-700, #303f9f); box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
-html[data-page="parabola-practice"] .pp-rv { width: 64px; height: 40px; text-align: center; font-size: 18px; font-weight: 700; border-radius: 10px; }
+/* rising / falling ranges: [ ] > [ ], the sign is fixed (fixes board #39) */
+html[data-page="parabola-practice"] .pp-ltr { display: inline-block; direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+html[data-page="parabola-practice"] .pp-gt { font-size: 26px; font-weight: 800; line-height: 1; color: var(--a-700, #303f9f); direction: ltr; unicode-bidi: isolate; user-select: none; }
+html[data-page="parabola-practice"] #root .card .pp-range .pp-rv { width: 72px !important; min-width: 0 !important; padding: 0 4px; text-align: center; direction: ltr; }
 @media (max-width: 560px) {
   html[data-page="parabola-practice"] .pp-template { font-size: 13px; gap: 3px; justify-content: flex-start; margin-inline: -4px; }
   html[data-page="parabola-practice"] .pp-slot { width: 30px; height: 32px; font-size: 14px; margin: 0 1px; border-radius: 7px; }
