@@ -1,13 +1,18 @@
 'use client';
 /* Opens one topic: its own CSS, the top bar, and Sulaiman's code inside #root.
    The topic code runs only in the browser, exactly like in the HTML version. */
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { TOPICS, LOADERS, STYLES } from "@/topics/registry";
 import { initRuntime } from "@/lib/mp-runtime";
 import TopBar from "./TopBar";
 import Keypad from "./Keypad";
 import { accountApi, useAccount } from "@/lib/account";
 import { chapterStats } from "@/home/chapters";
+import { calcAllowed } from "@/lib/calc-topics";
+
+// the side calculator: its code is fetched only when a student opens it
+const Calculator = lazy(() => import("./Calculator"));
+const activeChapter = () => { const b = document.querySelector("#root :is(.ch-btn, .nav-btn, .ph).active"); return b ? b.textContent : ""; };
 
 export default function TopicView({ slug }) {
   const meta = TOPICS[slug];
@@ -74,13 +79,34 @@ export default function TopicView({ slug }) {
     return () => clearInterval(iv);
   }, [loaded]);
 
+  // Side calculator (board #55): only on the topics / chapters listed in src/lib/calc-topics.js.
+  // The chapter is read from the active chapter button, the same way the answer tracker does.
+  const [calcOk, setCalcOk] = useState(() => calcAllowed(slug, ""));
+  const [calcOpen, setCalcOpen] = useState(false);
+  useEffect(() => {
+    if (!loaded) return;
+    let t = 0;
+    const check = () => {
+      const ok = calcAllowed(slug, activeChapter());
+      setCalcOk(ok);
+      if (!ok) setCalcOpen(false);
+    };
+    const later = () => { clearTimeout(t); t = setTimeout(check, 60); }; // after the topic drew the new chapter
+    later();
+    document.addEventListener("click", later, true);
+    const open = () => { if (calcAllowed(slug, activeChapter())) setCalcOpen(true); };
+    window.addEventListener("mp:calc", open); // the calculator chip in the answer keypad's bar
+    return () => { clearTimeout(t); document.removeEventListener("click", later, true); window.removeEventListener("mp:calc", open); };
+  }, [loaded, slug]);
+
   const Topic = loaded && loaded.Topic;
   return (
     <>
       {loaded && <style dangerouslySetInnerHTML={{ __html: loaded.css }} />}
-      <TopBar title={meta.title.split(/\s[—–-]\s/)[0]} />
+      <TopBar title={meta.title.split(/\s[—–-]\s/)[0]} calc={calcOk} calcOpen={calcOpen} onCalc={() => setCalcOpen((o) => !o)} />
       <div id="root">{Topic ? <Topic /> : <div className="mp-boot" aria-hidden="true"><span /></div>}</div>
-      <Keypad page={slug} />
+      <Keypad page={slug} calc={calcOk} />
+      {calcOk && calcOpen && <Suspense fallback={null}><Calculator onClose={() => setCalcOpen(false)} /></Suspense>}
     </>
   );
 }

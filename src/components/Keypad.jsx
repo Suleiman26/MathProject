@@ -156,7 +156,7 @@ function keepVisible(box, kpH, extra) {
   else if (r.top < topLimit) window.scrollTo(0, scrollY + r.top - topLimit);
 }
 
-export default function Keypad({ page }) {
+export default function Keypad({ page, calc }) {
   const [on, setOn] = useState(false);       // feature switched on
   const [target, setTarget] = useState(null); // the focused answer box
   const [mode, setMode] = useState("num");
@@ -569,10 +569,13 @@ export default function Keypad({ page }) {
         <button type="button" className="kp-chip kp-close" aria-label="סגירת המקלדת" onPointerDown={() => closeRef.current()}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
         </button>
-        <button type="button" className={"kp-chip kp-native" + (extras.length + (next ? 1 : 0) >= 3 ? " kp-compact" : "")} onTouchEnd={native} onClick={native} aria-label="מקלדת הטלפון הרגילה">
+        <button type="button" className={"kp-chip kp-native" + (extras.length + (next ? 1 : 0) + (calc ? 1 : 0) >= 3 ? " kp-compact" : "")} onTouchEnd={native} onClick={native} aria-label="מקלדת הטלפון הרגילה">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8" /></svg>
           <span>מקלדת רגילה</span>
         </button>
+        {calc && <button type="button" className="kp-chip kp-calc" aria-label="מחשבון" onPointerUp={() => { closeRef.current(); window.dispatchEvent(new Event("mp:calc")); }}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3" /><path d="M8.5 7.5h7" /><path d="M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01" strokeWidth="2.4" /></svg>
+        </button>}
         <span className="kp-grow" />
         {extras.map((x) => <button key={x} type="button" className="kp-chip kp-sym" onPointerDown={() => press(x)}>{x}</button>)}
         {next && <button type="button" className="kp-chip kp-next" onPointerDown={() => next.focus()}>הבא<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg></button>}

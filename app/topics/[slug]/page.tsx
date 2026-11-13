@@ -1,5 +1,6 @@
 import "@/styles/topic-fixes.css";
 import "@/styles/keypad.css";
+import "@/styles/calculator.css";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TOPICS } from "@/topics/registry";

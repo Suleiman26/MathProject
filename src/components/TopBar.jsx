@@ -1,10 +1,11 @@
 'use client';
-/* Top bar on every topic: back to all topics · topic title (after scrolling) · sound on/off */
+/* Top bar on every topic: back to all topics · topic title (after scrolling) · calculator (only on the
+   topics in src/lib/calc-topics.js) · sound on/off */
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AccountButton } from "@/account/ui";
 
-export default function TopBar({ title }) {
+export default function TopBar({ title, calc, calcOpen, onCalc }) {
   const [scrolled, setScrolled] = useState(false);
   const [sound, setSound] = useState(true);
   useEffect(() => {
@@ -27,6 +28,10 @@ export default function TopBar({ title }) {
       </Link>
       <div className="mp-topbar-title">{title}</div>
       <div className="mp-topbar-end"><AccountButton compact />
+      {calc && <button type="button" className="mp-calc-btn" aria-label="מחשבון" aria-pressed={!!calcOpen} title={calcOpen ? "סגירת המחשבון" : "פתיחת מחשבון"} onClick={onCalc}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3" fill="currentColor" fillOpacity=".1" /><path d="M8.5 7.5h7" /><path d="M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01" strokeWidth="2.4" /></svg>
+        <span>מחשבון</span>
+      </button>}
       <button type="button" className="mp-sound" aria-label="צלילים" aria-pressed={sound} title={sound ? "השתקה" : "הפעלת צלילים"} onClick={toggle}>
         <svg className="mp-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor" fillOpacity=".12" /><path d="M15.5 9a4 4 0 010 6" /><path d="M18 6.5a7.5 7.5 0 010 11" /></svg>
         <svg className="mp-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" fill="currentColor" fillOpacity=".12" /><path d="M16 9.5l5 5M21 9.5l-5 5" /></svg>
