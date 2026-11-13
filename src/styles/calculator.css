@@ -1,0 +1,183 @@
+/* Side calculator on topic pages (src/components/Calculator.jsx, fixes board #55).
+   Private prefix: calc- (plus .mp-calc-btn in the top bar and .kp-calc in the keypad bar).
+   Phone (< 600 px): a low sheet at the bottom, 8 + 52 + 6 + 34 + 8 + 4×44 + 3×6 + 8 = 310 px (+ safe area).
+   600–1179 px: a card in the bottom-left corner. ≥ 1180 px: docked at the left, the page moves over. */
+@layer page {
+  /* ── the button in the top bar ── */
+  .mp-calc-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-width: 40px; height: 40px; flex: none; margin: 0; padding: 0;
+    border-radius: var(--r-pill, 999px);
+    border: 1px solid transparent; box-shadow: none;
+    background: var(--a-50, #f0fdfa); color: var(--a-700, #0f766e); /* a soft tint, so students notice it */
+    font: 500 .9rem/1 var(--font, system-ui);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: background-color var(--t, 180ms) ease, color var(--t, 180ms) ease, transform var(--t-fast, 120ms) var(--ease-out, ease-out);
+  }
+  .mp-calc-btn::after { content: ""; position: absolute; inset: -2px; } /* 44 px hit area */
+  .mp-calc-btn { position: relative; }
+  .mp-calc-btn svg { width: 20px; height: 20px; flex: none; }
+  .mp-calc-btn span { display: none; }
+  .mp-calc-btn:active { transform: scale(.96); }
+  .mp-calc-btn:focus-visible { outline: none; box-shadow: var(--ring); }
+  .mp-calc-btn[aria-pressed="true"] { background: var(--a-600, #0d9488); color: #fff; }
+  @media (hover: hover) and (pointer: fine) {
+    .mp-calc-btn:hover { background: var(--a-100, #ccfbf1); color: var(--a-800, #115e59); }
+    .mp-calc-btn[aria-pressed="true"]:hover { background: var(--a-700, #0f766e); color: #fff; }
+  }
+  @media (min-width: 600px) {
+    .mp-calc-btn { padding: 0 14px 0 12px; }
+    .mp-calc-btn span { display: inline; }
+  }
+
+  /* ── the calculator chip in the answer keypad's bar (phones) ── */
+  .kp-chip.kp-calc { padding: 0; width: 44px; }
+
+  /* ── the panel ── */
+  .calc {
+    position: fixed; z-index: 58; /* over the top bar (50), under the answer keypad (60) */
+    inset-inline: 0; bottom: 0;
+    box-sizing: border-box;
+    padding: 8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    background: var(--surface, #fff);
+    border-top: 1px solid var(--line, #e7e5e0);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -16px 36px -24px rgb(28 27 25 / .34);
+    font-family: var(--font, system-ui);
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    touch-action: manipulation;
+    animation: calc-up 220ms var(--ease-out, cubic-bezier(.23, 1, .32, 1));
+  }
+  .calc:focus { outline: none; }
+  .calc:focus-visible { outline: none; box-shadow: 0 -16px 36px -24px rgb(28 27 25 / .34), 0 0 0 2px var(--a-300, #5eead4); }
+  @keyframes calc-up { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes calc-side { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+
+  /* room under the page, so the question can always be scrolled above the sheet */
+  @media (max-width: 1179.98px) { html.calc-open body { padding-bottom: calc(var(--calc-h, 0px) + 24px); } }
+
+  /* screen + C + close */
+  .calc-top { display: flex; align-items: stretch; gap: 6px; }
+  .calc-screen {
+    flex: 1; min-width: 0; height: 52px; box-sizing: border-box;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 12px; border-radius: 14px;
+    background: var(--surface-3, #f2f1ee);
+    text-align: right; /* numbers sit at the right, like on every calculator */
+    font-variant-numeric: tabular-nums;
+  }
+  .calc-sub {
+    height: 16px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font: 500 .78rem/16px var(--font, system-ui); color: var(--ink-3, #8a877f);
+    unicode-bidi: isolate;
+  }
+  .calc-sub.is-live { color: var(--a-700, #0f766e); font-weight: 600; }
+  .calc-sub.is-err { color: var(--bad-700, #b91c1c); font-weight: 600; }
+  .calc-main {
+    height: 30px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none;
+    font: 600 1.5rem/30px var(--font, system-ui); color: var(--ink, #1c1b19);
+  }
+  .calc-main::-webkit-scrollbar { display: none; }
+  .calc-main.is-long { font-size: 1.15rem; }
+  .calc-main.is-empty { color: var(--ink-3, #8a877f); }
+  .calc-c, .calc-x {
+    flex: none; width: 46px; height: 52px; margin: 0; padding: 0;
+    display: inline-grid; place-items: center;
+    border: 0; border-radius: 14px; box-shadow: none; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 100ms ease-out, background-color 100ms ease-out;
+  }
+  .calc-c { background: var(--bad-50, #fef2f2); color: var(--bad-700, #b91c1c); font: 700 1.1rem/1 var(--font, system-ui); }
+  .calc-x { background: transparent; color: var(--ink-2, #4f4d48); box-shadow: inset 0 0 0 1px var(--line, #e7e5e0); }
+  .calc-c:active { transform: scale(.96); background: var(--bad-100, #fee2e2); }
+  .calc-x:active { transform: scale(.96); background: var(--surface-3, #f2f1ee); }
+
+  /* the last results: tap one to use it again */
+  .calc-hist {
+    display: flex; align-items: center; gap: 6px;
+    height: 34px; margin: 6px 0 8px; padding: 0 2px;
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+  }
+  .calc-hist::-webkit-scrollbar { display: none; }
+  .calc-hint { margin-inline: auto; font: 400 .8rem/1 var(--font, system-ui); color: var(--ink-3, #8a877f); }
+  .calc-chip {
+    position: relative; flex: none; max-width: 190px; height: 32px; margin: 0; padding: 0 12px;
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 0; border-radius: 999px;
+    background: var(--a-50, #f0fdfa); color: var(--a-800, #115e59);
+    box-shadow: inset 0 0 0 1px var(--a-200, #99f6e4);
+    font: 600 .86rem/1 var(--font, system-ui); font-variant-numeric: tabular-nums;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform 100ms ease-out, background-color 100ms ease-out;
+  }
+  .calc-chip::after { content: ""; position: absolute; inset: -6px 0; } /* 44 px hit area */
+  .calc-chip-e { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; color: var(--ink-3, #8a877f); }
+  .calc-chip-e::after { content: " ="; }
+  .calc-chip-r { flex: none; }
+  .calc-chip:active { transform: scale(.96); background: var(--a-100, #ccfbf1); }
+
+  /* keys: 6 × 4 */
+  .calc-keys { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .calc-key {
+    height: 44px; min-width: 0; margin: 0; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 12px;
+    background: var(--surface-3, #f2f1ee); color: var(--ink-2, #4f4d48);
+    font: 600 1.2rem/1 var(--font, system-ui); font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 0 rgb(28 27 25 / .08);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform 100ms ease-out, background-color 100ms ease-out;
+  }
+  .calc-key.calc-d {
+    background: var(--surface, #fff); color: var(--ink, #1c1b19); font-size: 1.35rem;
+    box-shadow: 0 0 0 1px var(--line, #e7e5e0), 0 1px 2px rgb(28 27 25 / .06);
+  }
+  .calc-key.calc-op { background: var(--a-50, #f0fdfa); color: var(--a-700, #0f766e); font-size: 1.4rem; box-shadow: 0 1px 0 color-mix(in srgb, var(--a-600, #0d9488) 18%, transparent); }
+  .calc-key.calc-eq {
+    background: var(--a-600, #0d9488); color: #fff; font-size: 1.5rem;
+    box-shadow: var(--sh-accent, 0 6px 16px -8px rgb(13 148 136 / .7));
+  }
+  .calc-sq i { font-style: italic; opacity: .6; margin-inline-end: 1px; }
+  .calc-key[data-k="√"] { font-size: 1.4rem; }
+  .calc-key:active { transform: scale(.96); background: var(--a-100, #ccfbf1); }
+  .calc-key.calc-d:active { background: var(--a-50, #f0fdfa); box-shadow: 0 0 0 1px var(--a-200, #99f6e4); }
+  .calc-key.calc-eq:active { background: var(--a-700, #0f766e); }
+  .calc :is(.calc-key, .calc-chip, .calc-c, .calc-x):focus-visible { outline: 2px solid var(--a-600, #0d9488); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) {
+    .calc-key:hover { background: var(--a-50, #f0fdfa); }
+    .calc-key.calc-op:hover { background: var(--a-100, #ccfbf1); }
+    .calc-key.calc-eq:hover { background: var(--a-700, #0f766e); }
+    .calc-chip:hover { background: var(--a-100, #ccfbf1); }
+    .calc-x:hover { background: var(--surface-3, #f2f1ee); }
+    .calc-c:hover { background: var(--bad-100, #fee2e2); }
+  }
+
+  /* landscape phones: lower keys, so the question stays in view */
+  @media (max-height: 480px) and (orientation: landscape) {
+    .calc-key { height: 36px; }
+    .calc-hist { display: none; }
+    .calc-top { margin-bottom: 6px; }
+  }
+
+  /* tablets / small laptops: a card in the corner */
+  @media (min-width: 600px) {
+    .calc {
+      inset-inline: auto; left: 16px; bottom: 16px; width: 348px;
+      padding: 12px;
+      border: 1px solid var(--line, #e7e5e0); border-radius: 22px;
+      box-shadow: var(--sh-3, 0 18px 40px -18px rgb(28 27 25 / .22));
+      animation-name: calc-side;
+    }
+    .calc:focus-visible { box-shadow: var(--sh-3, 0 18px 40px -18px rgb(28 27 25 / .22)), 0 0 0 2px var(--a-300, #5eead4); }
+    .calc-key { height: 46px; }
+  }
+
+  /* desktop: docked beside the work. The page (not the top bar) moves over, so nothing is covered. */
+  @media (min-width: 1180px) {
+    .calc { top: 72px; bottom: auto; }
+    html.calc-open body { padding-left: 380px; }
+    html.calc-open .mp-topbar { margin-left: -380px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { .calc { animation: none; } }
+}
