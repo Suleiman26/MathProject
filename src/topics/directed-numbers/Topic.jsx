@@ -802,6 +802,321 @@ function Ch6() {
   );
 }
 
+/* ═══════ Chapter 7: Fractions with signs (fixes board #58) ═══════ */
+function fGcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a || 1; }
+function fRed(n, d) { if (d < 0) { n = -n; d = -d; } const g = fGcd(n, d); return [n / g, d / g]; }
+function fNum(d) { let n; do { n = randInt(1, d - 1); } while (fGcd(n, d) !== 1); return n; }
+function fProper(maxD) { const d = randInt(2, maxD); return [fNum(d), d]; }
+/* part 0: add / subtract, 1: fraction · whole number, 2: fraction · fraction, 3: fraction ÷ fraction.
+   a, b = [numerator (it carries the sign), denominator]; a whole number has denominator 1.
+   raw = the answer before reducing, ans = the reduced answer, L = the common denominator (part 0).
+   Every exercise has a negative number in it or a negative answer, never an answer that is 0 or whole. */
+function genFrEx(part) {
+  for (;;) {
+    const [sa, sb] = pickSigns();
+    let a, b, op, raw, L = 0;
+    if (part === 0) {
+      op = pick(['+', '−']);
+      const mode = randInt(0, 2);
+      let d1, d2;
+      if (mode === 0) { d1 = d2 = randInt(3, 12); }
+      else if (mode === 1) { d1 = randInt(2, 6); d2 = d1 * randInt(2, 3); if (randInt(0, 1)) { const t = d1; d1 = d2; d2 = t; } }
+      else { d1 = randInt(2, 6); d2 = randInt(2, 7); }
+      L = d1 * d2 / fGcd(d1, d2);
+      if (d1 > 12 || d2 > 12 || L > 30) continue;
+      a = [sa * fNum(d1), d1]; b = [sb * fNum(d2), d2];
+      const x = a[0] * (L / d1), y = b[0] * (L / d2);
+      raw = [op === '+' ? x + y : x - y, L];
+      if (sa > 0 && sb > 0 && raw[0] > 0) continue;
+    } else if (part === 1) {
+      const f = fProper(9), w = randInt(2, 6);
+      op = '·';
+      a = [sa * f[0], f[1]]; b = [sb * w, 1];
+      raw = [a[0] * b[0], f[1]];
+      if (randInt(0, 1)) { const t = a; a = b; b = t; }
+      if (sa > 0 && sb > 0) continue;
+    } else if (part === 2) {
+      const f = fProper(8), g = fProper(8);
+      op = '·';
+      a = [sa * f[0], f[1]]; b = [sb * g[0], g[1]];
+      raw = [a[0] * b[0], f[1] * g[1]];
+      if ((sa > 0 && sb > 0) || raw[1] > 48) continue;
+    } else {
+      const f = fProper(9), g = fProper(9);
+      op = '÷';
+      a = [sa * f[0], f[1]]; b = [sb * g[0], g[1]];
+      raw = [a[0] * sb * g[1], f[1] * g[0]];
+      if ((sa > 0 && sb > 0) || g[0] === 1 || Math.abs(raw[0]) > 40 || raw[1] > 40) continue;
+    }
+    const ans = fRed(raw[0], raw[1]);
+    if (ans[0] === 0 || ans[1] === 1 || Math.abs(ans[0]) > 40) continue;
+    return { part, op, a, b, L, raw, ans };
+  }
+}
+function fParse(s) { s = String(s).trim().replace(/−/g, '-'); return /^-?\d+$/.test(s) ? parseInt(s, 10) : NaN; }
+/* The student's fraction (two boxes) against the answer:
+   'ok' | 'more' (right value, can still be reduced) | 'sign' (right numbers, wrong sign) | 'nan' | 'zero'
+   | 'dens' (added the denominators) | 'both' (multiplied the denominator too) | 'noflip' (divided without flipping) | 'err' */
+function checkFr(ex, sn, sd) {
+  const n = fParse(sn), d = fParse(sd);
+  if (isNaN(n) || isNaN(d)) return 'nan';
+  if (d === 0) return 'zero';
+  const A = ex.ans[0], B = ex.ans[1];
+  if (n * B === A * d) return fGcd(n, d) === 1 ? 'ok' : 'more';
+  if (n * B === -A * d) return 'sign';
+  if (ex.part === 0 && Math.abs(d) === ex.a[1] + ex.b[1] && Math.abs(d) % ex.L !== 0) return 'dens';
+  if (ex.part === 1) {
+    const f = ex.a[1] === 1 ? ex.b : ex.a;
+    if (Math.abs(n * f[1]) === Math.abs(f[0] * d)) return 'both';
+  }
+  if (ex.part === 3 && Math.abs(n * ex.a[1] * ex.b[1]) === Math.abs(ex.a[0] * ex.b[0] * d)) return 'noflip';
+  return 'err';
+}
+/* division, step 1: the student writes the flipped second fraction (same sign, numerator and denominator swapped) */
+function checkFrFlip(ex, sn, sd) {
+  const n = fParse(sn), d = fParse(sd);
+  if (isNaN(n) || isNaN(d)) return 'nan';
+  if (d === 0) return 'zero';
+  return n * ex.b[0] === ex.b[1] * d ? 'ok' : 'err';
+}
+function frFlip(v) { return [v[0] < 0 ? -v[1] : v[1], Math.abs(v[0])]; }
+
+/* a fraction is always drawn numerator over denominator */
+function Frac({ n, d }) {
+  return <span className="frac"><span className="frac-num">{n}</span><span className="frac-den">{d}</span></span>;
+}
+/* a signed number [n, d]. mode 'p': always in brackets with its sign, 'm': brackets only when negative, 'r': no brackets */
+function FrNum({ v, mode }) {
+  const neg = v[0] < 0, abs = Math.abs(v[0]);
+  const sign = neg ? '−' : mode === 'p' ? '+' : '';
+  const par = mode === 'p' || (mode === 'm' && neg);
+  return (
+    <span className="fr-num">
+      {par && <span className="fr-par">(</span>}
+      {sign && <span>{sign}</span>}
+      {v[1] === 1 ? <span>{abs}</span> : <Frac n={abs} d={v[1]} />}
+      {par && <span className="fr-par">)</span>}
+    </span>
+  );
+}
+function FrExpr({ ex }) {
+  const m = ex.part === 0 ? 'p' : 'm';
+  return <><FrNum v={ex.a} mode={m} /><span>{ex.op}</span><FrNum v={ex.b} mode={m} /></>;
+}
+function frT(x, first) { return x < 0 ? (first ? '−' + (-x) : '(−' + (-x) + ')') : String(x); }
+/* the way to the answer, shown after the exercise is solved */
+function FrSol({ ex }) {
+  const { a, b, raw, ans } = ex;
+  const neg = raw[0] < 0 ? '−' : '';
+  const steps = [];
+  if (ex.part === 0) {
+    const x = a[0] * (ex.L / a[1]), y = b[0] * (ex.L / b[1]);
+    steps.push(<Frac n={frT(x, true) + ' ' + ex.op + ' ' + frT(y, false)} d={ex.L} />);
+  } else if (ex.part === 3) {
+    steps.push(<><FrNum v={a} mode="m" /><span>·</span><FrNum v={frFlip(b)} mode="m" /></>);
+    steps.push(<span className="fr-num">{neg && <span>{neg}</span>}<Frac n={Math.abs(a[0]) + ' · ' + b[1]} d={a[1] + ' · ' + Math.abs(b[0])} /></span>);
+  } else {
+    steps.push(<span className="fr-num">{neg && <span>{neg}</span>}<Frac n={Math.abs(a[0]) + ' · ' + Math.abs(b[0])} d={ex.part === 1 ? a[1] * b[1] : a[1] + ' · ' + b[1]} /></span>);
+  }
+  steps.push(<FrNum v={raw} mode="r" />);
+  if (raw[0] !== ans[0] || raw[1] !== ans[1]) steps.push(<FrNum v={ans} mode="r" />);
+  return <>{steps.map((s, i) => <span key={i} className="fr-step"><span>=</span>{s}</span>)}</>;
+}
+
+const FR_PARTS = ['חיבור וחיסור', 'כפל בשלם', 'כפל שברים', 'חילוק שברים'];
+const FR_TITLES = ['חיבור וחיסור שברים מכוונים', 'כפל שבר במספר שלם', 'כפל שבר בשבר', 'חילוק שבר בשבר'];
+const FR_HINTS = [
+  'רמז: מביאים את שני השברים למכנה משותף, ומחברים או מחסרים רק את המונים.',
+  'רמז: כופלים את המספר השלם במונה. המכנה נשאר.',
+  'רמז: מונה כפול מונה, מכנה כפול מכנה.',
+  'רמז: הופכים את השבר השני, ואז כופלים מונה במונה ומכנה במכנה.',
+];
+function frMsg(kind, ex) {
+  if (kind === 'nan') return 'כתבו מספר שלם במונה ומספר שלם במכנה.';
+  if (kind === 'zero') return 'המכנה לא יכול להיות 0.';
+  if (kind === 'sign') return 'המספרים נכונים, אבל הסימן לא. בדקו שוב את הסימן של התוצאה.';
+  if (kind === 'dens') return 'לא מחברים את המכנים. מביאים למכנה משותף (כאן ' + ex.L + '), ומחברים או מחסרים רק את המונים.';
+  if (kind === 'both') return 'כופלים רק את המונה במספר השלם. המכנה נשאר כמו שהוא.';
+  if (kind === 'noflip') return 'נראה שכפלתם בלי להפוך. בחילוק הופכים את השבר השני, ורק אז כופלים.';
+  return 'לא נכון, נסו שוב. ' + FR_HINTS[ex.part];
+}
+function FrLesson({ part }) {
+  if (part === 0) return (<>
+    <div className="info">
+      <b>חיבור וחיסור שברים מכוונים:</b><br/>
+      מביאים את שני השברים למכנה משותף, ואז מחברים או מחסרים רק את המונים, לפי חוקי המספרים המכוונים. המכנה נשאר.
+    </div>
+    <div className="example-box">
+      <div className="ex-title">דוגמה פתורה:</div>
+      <div className="ex-eq"><span className="fr-row"><FrNum v={[-2,3]} mode="p"/><span>+</span><FrNum v={[1,4]} mode="p"/></span></div>
+      <div>המכנה המשותף הוא 12. מרחיבים את שני השברים:</div>
+      <div className="ex-eq"><span className="fr-row"><FrNum v={[-8,12]} mode="p"/><span>+</span><FrNum v={[3,12]} mode="p"/></span></div>
+      <div>מחברים רק את המונים. המכנה נשאר 12:</div>
+      <div className="ex-eq"><span className="fr-row"><span>=</span><Frac n="−8 + 3" d={12}/><span>=</span><FrNum v={[-5,12]} mode="r"/></span></div>
+    </div>
+  </>);
+  if (part === 1) return (<>
+    <div className="info">
+      <b>כפל שבר במספר שלם:</b><br/>
+      כופלים את המספר השלם במונה, והמכנה נשאר. את הסימן קובעים לפי חוקי הסימנים.
+    </div>
+    <div className="example-box">
+      <div className="ex-title">דוגמה פתורה:</div>
+      <div className="ex-eq"><span className="fr-row"><FrNum v={[-3,1]} mode="m"/><span>·</span><FrNum v={[2,5]} mode="m"/></span></div>
+      <div>מינוס כפול פלוס שווה מינוס. כופלים 3 במונה 2, והמכנה 5 נשאר:</div>
+      <div className="ex-eq"><span className="fr-row"><span>=</span><span className="fr-num"><span>−</span><Frac n="3 · 2" d={5}/></span><span>=</span><FrNum v={[-6,5]} mode="r"/></span></div>
+    </div>
+  </>);
+  if (part === 2) return (<>
+    <div className="info">
+      <b>כפל שבר בשבר:</b><br/>
+      כופלים מונה במונה ומכנה במכנה. את הסימן קובעים לפי חוקי הסימנים, ובסוף מצמצמים.
+    </div>
+    <div className="example-box">
+      <div className="ex-title">דוגמה פתורה:</div>
+      <div className="ex-eq"><span className="fr-row"><FrNum v={[-3,4]} mode="m"/><span>·</span><FrNum v={[2,5]} mode="m"/></span></div>
+      <div>מינוס כפול פלוס שווה מינוס. מונה כפול מונה, מכנה כפול מכנה:</div>
+      <div className="ex-eq"><span className="fr-row"><span>=</span><span className="fr-num"><span>−</span><Frac n="3 · 2" d="4 · 5"/></span><span>=</span><FrNum v={[-6,20]} mode="r"/></span></div>
+      <div>מצמצמים ב־2:</div>
+      <div className="ex-eq"><span className="fr-row"><span>=</span><FrNum v={[-3,10]} mode="r"/></span></div>
+    </div>
+  </>);
+  return (<>
+    <div className="info">
+      <b>חילוק שבר בשבר:</b><br/>
+      הופכים את השבר השני (המונה והמכנה מתחלפים, הסימן נשאר), ובמקום לחלק כופלים. את הסימן קובעים לפי חוקי הסימנים.
+    </div>
+    <div className="example-box">
+      <div className="ex-title">דוגמה פתורה:</div>
+      <div className="ex-eq"><span className="fr-row"><FrNum v={[-2,3]} mode="m"/><span>÷</span><FrNum v={[4,5]} mode="m"/></span></div>
+      <div>הופכים את השבר השני, והחילוק נהיה כפל:</div>
+      <div className="ex-eq"><span className="fr-row"><span>=</span><FrNum v={[-2,3]} mode="m"/><span>·</span><FrNum v={[5,4]} mode="m"/></span></div>
+      <div>מינוס כפול פלוס שווה מינוס. מונה כפול מונה, מכנה כפול מכנה:</div>
+      <div className="ex-eq"><span className="fr-row"><span>=</span><span className="fr-num"><span>−</span><Frac n="2 · 5" d="3 · 4"/></span><span>=</span><FrNum v={[-10,12]} mode="r"/></span></div>
+      <div>מצמצמים ב־2:</div>
+      <div className="ex-eq"><span className="fr-row"><span>=</span><FrNum v={[-5,6]} mode="r"/></span></div>
+    </div>
+  </>);
+}
+/* the answer: two boxes, numerator over denominator */
+function FrInput({ n, setN, d, setD, onCheck, disabled, clear }) {
+  const ready = n.trim() && d.trim();
+  const key = e => { if (e.key === 'Enter' && ready) onCheck(); };
+  return (
+    <Frac
+      n={<input aria-label="מונה" value={n} disabled={disabled} onKeyDown={key}
+        onChange={e => { setN(e.target.value); clear(); }} />}
+      d={<input aria-label="מכנה" value={d} disabled={disabled} onKeyDown={key}
+        onChange={e => { setD(e.target.value); clear(); }} />} />
+  );
+}
+function Ch7() {
+  const [part, setPart] = useState(0);
+  const [ex, setEx] = useState(() => genFrEx(0));
+  const [phase, setPhase] = useState(1); // 0 = division: turn it into a multiplication, 1 = solve, 2 = done
+  const [f1, setF1] = useState('');
+  const [f2, setF2] = useState('');
+  const [ffb, setFfb] = useState(null);
+  const [n, setN] = useState('');
+  const [d, setD] = useState('');
+  const [fb, setFb] = useState(null);
+
+  const load = (p) => {
+    setEx(genFrEx(p)); setPhase(p === 3 ? 0 : 1);
+    setF1(''); setF2(''); setFfb(null); setN(''); setD(''); setFb(null);
+  };
+  const switchPart = (p) => { setPart(p); load(p); };
+  const reset = () => load(part);
+  const checkFlip = () => {
+    const r = checkFrFlip(ex, f1, f2);
+    if (r === 'ok') { setFfb(null); setPhase(1); } else setFfb(r);
+  };
+  const check = () => {
+    const r = checkFr(ex, n, d);
+    if (r === 'ok') { setFb(null); setPhase(2); } else setFb(r);
+  };
+  const done = phase === 2;
+  const isDiv = ex.part === 3;
+  const ruleIdx = (ex.a[0] >= 0 ? 0 : 2) + (ex.b[0] >= 0 ? 0 : 1);
+  const sym = isDiv ? '÷' : '·';
+
+  return (
+    <div className="content">
+      <div className="sub-tabs">
+        {FR_PARTS.map((l, i) => (
+          <button key={i} className={`sub-tab-btn ${part===i?'active':''}`} onClick={() => switchPart(i)}>{l}</button>
+        ))}
+      </div>
+
+      <FrLesson part={part} />
+
+      {ex.part > 0 && (
+        <div className="card">
+          <p style={{textAlign:'center',fontSize:14,color:'#0d9488',fontWeight:600,marginBottom:6}}>חוקי הסימנים:</p>
+          <div className="rules-grid">
+            {[['(+)'+sym+'(+) = (+)',0],['(+)'+sym+'(−) = (−)',1],
+              ['(−)'+sym+'(+) = (−)',2],['(−)'+sym+'(−) = (+)',3]].map(([txt,idx]) => (
+              <div key={idx} className={`rule-item ${ruleIdx===idx?'on':''}`}>{txt}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isDiv && (
+        <div className="card">
+          <div className="card-t">שלב א׳ — הופכים את החילוק לכפל</div>
+          <div className="eq-box"><span className="fr-row"><FrExpr ex={ex} /><span>= ?</span></span></div>
+          {phase === 0 ? (<>
+            <p style={{textAlign:'center',fontSize:14,marginBottom:10}}>כתבו את השבר השני כשהוא הפוך:</p>
+            <div className="ans-row fr-ans">
+              <span className="fr-row"><FrNum v={ex.a} mode="m" /><span>·</span></span>
+              <FrInput n={f1} setN={setF1} d={f2} setD={setF2} onCheck={checkFlip} disabled={false} clear={() => setFfb(null)} />
+              <button className="btn bg" onClick={checkFlip} disabled={!f1.trim() || !f2.trim()}>{'✓'} בדוק</button>
+            </div>
+            {ffb && <div className="fb err">{'✗'} {ffb === 'err' ? 'לא נכון. הופכים רק את השבר השני: המונה והמכנה מתחלפים, והסימן נשאר.' : frMsg(ffb, ex)}</div>}
+          </>) : (
+            <div className="fb ok">{'✓'} <span className="fr-row"><FrNum v={ex.a} mode="m" /><span>·</span><FrNum v={frFlip(ex.b)} mode="m" /></span></div>
+          )}
+        </div>
+      )}
+
+      {phase >= 1 && (
+        <div className="card">
+          <div className="card-t">{isDiv ? 'שלב ב׳ — פותרים את הכפל' : FR_TITLES[ex.part]}</div>
+          <div className="eq-box">
+            <span className="fr-row">
+              {isDiv ? <><FrNum v={ex.a} mode="m" /><span>·</span><FrNum v={frFlip(ex.b)} mode="m" /></> : <FrExpr ex={ex} />}
+              <span>= ?</span>
+            </span>
+          </div>
+          <p style={{textAlign:'center',fontSize:14,color:'#6b7280',marginBottom:4}}>
+            כתבו את התשובה כשבר מצומצם. אם התשובה שלילית, כתבו את המינוס במונה.</p>
+          <div className="ans-row fr-ans">
+            <span style={{ fontSize: 18, fontWeight: 600 }}>=</span>
+            <FrInput n={n} setN={setN} d={d} setD={setD} onCheck={check} disabled={done} clear={() => setFb(null)} />
+            <button className="btn bg" onClick={check} disabled={done || !n.trim() || !d.trim()}>{'✓'} בדוק</button>
+          </div>
+          {fb === 'more' && <div className="fb fr-more">הערך נכון! אבל אפשר לצמצם עוד. צמצמו את השבר וכתבו אותו שוב.</div>}
+          {fb && fb !== 'more' && <div className="fb err">{'✗'} {frMsg(fb, ex)}</div>}
+        </div>
+      )}
+
+      {done && (
+        <div className="banner">
+          {'✅'} כל הכבוד!
+          <div className="fr-sol"><span className="fr-row"><FrExpr ex={ex} /><FrSol ex={ex} /></span></div>
+          <div style={{marginTop:12}}>
+            <button className="btn bg" style={{fontSize:17}} onClick={reset}>תרגיל חדש {'↺'}</button>
+          </div>
+        </div>
+      )}
+      {!done && <div className="center" style={{marginTop:8}}>
+        <button className="btn bp" onClick={reset}>תרגיל חדש {'↺'}</button>
+      </div>}
+    </div>
+  );
+}
+
 /* ═══════ Main App ═══════ */
 function App() {
   const [ch, setCh] = useState(1);
@@ -811,7 +1126,8 @@ function App() {
     '\u05DB\u05E4\u05DC',
     '\u05D7\u05D9\u05DC\u05D5\u05E7',
     '\u05E1\u05D3\u05E8 \u05E4\u05E2\u05D5\u05DC\u05D5\u05EA',
-    '\u05EA\u05E8\u05D2\u05D5\u05DC \u05DE\u05E7\u05D9\u05E3'
+    '\u05EA\u05E8\u05D2\u05D5\u05DC \u05DE\u05E7\u05D9\u05E3',
+    'שברים'
   ];
   return (
     <div>
@@ -824,7 +1140,7 @@ function App() {
           ))}
         </div>
       </div>
-      {ch===1 ? <Ch1 key="c1"/> : ch===2 ? <Ch2 key="c2"/> : ch===3 ? <Ch3 key="c3"/> : ch===4 ? <Ch4 key="c4"/> : ch===5 ? <Ch5 key="c5"/> : <Ch6 key="c6"/>}
+      {ch===1 ? <Ch1 key="c1"/> : ch===2 ? <Ch2 key="c2"/> : ch===3 ? <Ch3 key="c3"/> : ch===4 ? <Ch4 key="c4"/> : ch===5 ? <Ch5 key="c5"/> : ch===6 ? <Ch6 key="c6"/> : <Ch7 key="c7"/>}
     </div>
   );
 }
