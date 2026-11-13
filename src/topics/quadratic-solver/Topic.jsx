@@ -524,122 +524,247 @@ function PickCase({a,b,c,onPick}){
   );
 }
 
-function Done({text}){return <div className="qs-done">✅ {text}</div>}
+/* ── Step 4 (fixes board #61): shared small parts ─────────────────────────── */
+// typed text → number ("−3", "-3", "+3", "3"); anything else is NaN
+const num=s=>{const t=String(s).trim().replace(/−/g,'-').replace(/^\+/,'');return /^-?\d+(\.\d+)?$/.test(t)?Number(t):NaN};
+const same=(x,y)=>Math.abs(x-y)<1e-9;
+const par=v=>v<0?`(${fmtN(v)})`:fmtN(v);
+function polyStr(a,b,c){
+  const p=[];
+  const add=(v,s)=>{if(!v)return;const abs=Math.abs(v);p.push((p.length?(v<0?' − ':' + '):(v<0?'−':''))+((abs===1&&s)?'':abs)+s)};
+  add(a,'x²');add(b,'x');add(c,'');
+  return p.join('')||'0';
+}
+function Frac({n,d}){return <span className="qs-fr"><span className="qs-fr-n">{n}</span><span className="qs-fr-d">{d}</span></span>}
+function Root({children}){return <span className="qs-rad"><svg className="qs-rad-s" viewBox="0 0 14 30" preserveAspectRatio="none" aria-hidden="true"><path d="M1 17 L3.5 16 L7 27 L13 1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"/></svg><span className="qs-rad-b">{children}</span></span>}
+// a value n/d as a whole number, or as a stacked fraction
+function Val({n,d}){
+  const[sn,sd]=simplify(n,d);
+  if(sd===1)return <>{fmtN(sn)}</>;
+  return <>{sn<0?'−':''}<Frac n={Math.abs(sn)} d={sd}/></>;
+}
+function Done({children}){return <div className="qs-done success-banner">✅ <span dir="ltr" className="qs-ltr">{children}</span></div>}
+// one answer box; `marks[id]` is 'ok' | 'bad' after a check (only that box is coloured)
+function Slot({id,st,ph,label,lock,onEnter}){
+  const{v,setV,marks,setMarks,setErr}=st;
+  return <input className={'qs-slot'+(marks[id]?' '+marks[id]:'')} value={v[id]} placeholder={ph||'?'} aria-label={label} disabled={lock}
+    onChange={e=>{setV({...v,[id]:e.target.value});if(marks[id]){const m={...marks};delete m[id];setMarks(m)}setErr('')}}
+    onKeyDown={e=>e.key==='Enter'&&onEnter()}/>;
+}
+function useSlots(init){
+  const[v,setV]=useState(init);
+  const[marks,setMarks]=useState({});
+  const[err,setErr]=useState('');
+  return{v,setV,marks,setMarks,err,setErr};
+}
+
+// The root formula: what it is, what it finds, a worked example, and the calculator note.
+let _infoSeen=false;
+function FormulaInfo({openFirst}){
+  const[open]=useState(()=>{if(openFirst&&!_infoSeen){_infoSeen=true;return true}return false});
+  return(
+    <details className="qs-example qs-info" open={open||undefined}>
+      <summary>הסבר ודוגמה: נוסחת השורשים</summary>
+      <div className="qs-info-body">
+        <p>כל משוואה ריבועית אפשר לסדר בצורה <span dir="ltr" className="qs-ltr">ax² + bx + c = 0</span>. נוסחת השורשים מקבלת את שלושת המקדמים a, b ו-c, ונותנת את הפתרונות של המשוואה:</p>
+        <div className="qs-formula" dir="ltr">
+          <span>x<sub>1,2</sub> =</span>
+          <Frac n={<>−b ± <Root>b² − 4ac</Root></>} d="2a"/>
+        </div>
+        <p>הפתרונות נקראים גם <b>האפסים</b> (או השורשים) של המשוואה: אלה ערכי x שכאשר מציבים אותם בביטוי <span dir="ltr" className="qs-ltr">ax² + bx + c</span> מקבלים 0. בגרף, אלה הנקודות שבהן הפרבולה חותכת את ציר x.</p>
+        <p>הסימן ± אומר שמחשבים פעמיים: פעם עם + ופעם עם −. לכן יש בדרך כלל שני פתרונות.</p>
+        <div className="qs-ex-title">דוגמה פתורה: <span dir="ltr" className="qs-ltr">x² − 5x + 6 = 0</span></div>
+        <ol className="qs-ex">
+          <li><span>מזהים את המקדמים:</span><div className="qs-exm" dir="ltr">a = 1 ,  b = −5 ,  c = 6</div></li>
+          <li><span>מציבים אותם בנוסחה:</span><div className="qs-exm" dir="ltr"><span>x<sub>1,2</sub> =</span><Frac n={<>−(−5) ± <Root>(−5)² − 4·1·6</Root></>} d="2·1"/></div></li>
+          <li><span>מחשבים את מה שמתחת לשורש:</span><div className="qs-exm" dir="ltr"><span>25 − 24 = 1</span><span className="qs-gap">,</span><Root>1</Root><span>= 1</span></div></li>
+          <li><span>פעם עם + ופעם עם −:</span>
+            <div className="qs-exm" dir="ltr"><span>x<sub>1</sub> =</span><Frac n="5 + 1" d="2"/><span>=</span><Frac n="6" d="2"/><span>= 3</span></div>
+            <div className="qs-exm" dir="ltr"><span>x<sub>2</sub> =</span><Frac n="5 − 1" d="2"/><span>=</span><Frac n="4" d="2"/><span>= 2</span></div>
+          </li>
+          <li><span>בודקים: מציבים 3 במשוואה ומקבלים 0, ולכן 3 הוא אפס של המשוואה. כך גם 2.</span><div className="qs-exm" dir="ltr">3² − 5·3 + 6 = 9 − 15 + 6 = 0</div></li>
+        </ol>
+        <p className="qs-calc"><b>טוב לדעת:</b> מחשבון מדעי יודע לחשב את זה בעצמו. מקלידים בו את a, b ו-c, והוא מציג את הפתרונות. כדאי להיעזר בו כדי לבדוק את התשובה.</p>
+      </div>
+    </details>
+  );
+}
 
 // c = 0: x(ax + b) = 0
 function SolveCommonFactor({a,b}){
-  const[v,setV]=useState({p:'',q:'',r:''});
+  const st=useSlots({p:'',q:'',r:''});
+  const{v,marks,setMarks,err,setErr}=st;
   const[step,setStep]=useState(1);
-  const[err,setErr]=useState('');
   const root=-b/a;
-  function check1(){if(Number(v.p)===a&&Number(v.q)===b){setStep(2);setErr('')}else setErr('בדקו שוב: מה נשאר בסוגריים אחרי שמוציאים x?')}
-  function check2(){if(Number(v.r)===root){setStep(3);setErr('')}else setErr('בדקו שוב: מתי הגורם בסוגריים שווה 0?')}
+  function check1(){
+    if(v.p.trim()===''||v.q.trim()===''){setErr('מלאו את שני המקומות שבסוגריים.');return}
+    const m={p:num(v.p)===a?'ok':'bad',q:num(v.q)===b?'ok':'bad'};
+    setMarks({...marks,...m});
+    if(m.p==='ok'&&m.q==='ok'){setStep(2);setErr('')}
+    else if(m.p==='ok'&&num(v.q)===-b)setErr('שימו לב לסימן של המספר. מספר שלילי כותבים עם מינוס.');
+    else setErr('בדקו שוב: מה נשאר בסוגריים אחרי שמוציאים x?');
+  }
+  function check2(){
+    if(v.r.trim()===''){setErr('כתבו את הפתרון השני.');return}
+    if(same(num(v.r),root)){setMarks({...marks,r:'ok'});setStep(3);setErr('')}
+    else{setMarks({...marks,r:'bad'});setErr(same(num(v.r),-root)?'כמעט: בדקו את הסימן. מתי הסוגריים שווים 0?':'בדקו שוב: מתי הגורם בסוגריים שווה 0?')}
+  }
+  const inner=polyStr(0,a,b);
   return(
-    <div className="card">
+    <div className="card qs4">
       <div className="card-title">שלב 4 — פתרון בגורם משותף</div>
-      <div className="p2-eq" dir="ltr">{fmtN(a)===('1')?'':fmtN(a)===('−1')?'−':fmtN(a)}x² {b<0?'−':'+'} {Math.abs(b)}x = 0</div>
-      <div className="p2-hint">1. מוציאים x כגורם משותף:</div>
-      <div className="coef-row" dir="ltr">
-        <span className="coef-label">x(</span>
-        <input className="coef-inp" value={v.p} placeholder="?" disabled={step>1} onChange={e=>{setV({...v,p:e.target.value});setErr('')}}/>
-        <span className="coef-label">x +</span>
-        <input className="coef-inp" value={v.q} placeholder="?" disabled={step>1} onChange={e=>{setV({...v,q:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check1()}/>
-        <span className="coef-label">) = 0</span>
-        {step===1&&<button className="btn-next" onClick={check1}>בדוק</button>}
+      <div className="p2-eq" dir="ltr">{polyStr(a,b,0)} = 0</div>
+      <div className="qs-sub"><span className="qs-n">1</span><span>מוציאים x כגורם משותף. מה נשאר בסוגריים?</span></div>
+      <div className="qs-line" dir="ltr">
+        <span>x · (</span>
+        <Slot id="p" st={st} label="המקדם של x בסוגריים" lock={step>1} onEnter={check1}/>
+        <span>x +</span>
+        <Slot id="q" st={st} label="המספר בסוגריים" lock={step>1} onEnter={check1}/>
+        <span>) = 0</span>
       </div>
+      {step===1&&<>
+        <div className="qs-tip">מספר שלילי כותבים עם מינוס, למשל <span dir="ltr" className="qs-ltr">−3</span>. אם לפני x אין מספר, המקדם הוא 1.</div>
+        <div className="qs-act"><button className="btn-next" onClick={check1}>בדוק ✓</button></div>
+      </>}
       {step>=2&&<>
-        <div className="p2-hint">2. מכפלה שווה 0 רק כשאחד הגורמים 0: <span dir="ltr" className="qs-ltr">x = 0</span> או שהסוגריים שווים 0.</div>
-        <div className="coef-row" dir="ltr">
-          <span className="coef-label">x₁ = 0 ,  x₂ =</span>
-          <input className="coef-inp" value={v.r} placeholder="?" disabled={step>2} onChange={e=>{setV({...v,r:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check2()}/>
-          {step===2&&<button className="btn-next" onClick={check2}>בדוק</button>}
+        <div className="qs-res" dir="ltr">x · ({inner}) = 0</div>
+        <div className="qs-sub"><span className="qs-n">2</span><span>מכפלה שווה 0 רק כשאחד הגורמים שווה 0. לכן <span dir="ltr" className="qs-ltr">x = 0</span>, או <span dir="ltr" className="qs-ltr">{inner} = 0</span>.</span></div>
+        <div className="qs-line" dir="ltr">
+          <span>x<sub>1</sub> = 0</span><span className="qs-gap">,</span><span>x<sub>2</sub> =</span>
+          <Slot id="r" st={st} label="הפתרון השני" lock={step>2} onEnter={check2}/>
         </div>
+        {step===2&&<div className="qs-act"><button className="btn-next" onClick={check2}>בדוק ✓</button></div>}
       </>}
       {err&&<div className="err-msg">{err}</div>}
-      {step===3&&<Done text={`x = 0  או  x = ${root}`}/>}
+      {step===3&&<Done>x = 0 &nbsp;או&nbsp; x = <Val n={-b} d={a}/></Done>}
     </div>
   );
 }
 
 // b = 0: ax² + c = 0 → x² = −c/a → x = ±√
 function SolveNoB({a,c}){
-  const[v,setV]=useState({s:'',r:''});
+  const st=useSlots({s:'',r:''});
+  const{v,marks,setMarks,err,setErr}=st;
   const[step,setStep]=useState(1);
-  const[err,setErr]=useState('');
-  const sq=-c/a, r=Math.sqrt(sq);
-  function check1(){if(Number(v.s)===sq){setStep(2);setErr('')}else setErr('בדקו שוב: מעבירים את c לצד השני ומחלקים ב-a.')}
-  function check2(){if(Number(v.r)===r){setStep(3);setErr('')}else setErr('בדקו שוב: איזה מספר בריבוע נותן '+sq+'?')}
+  const sq=-c/a, r=sq>=0?Math.sqrt(sq):NaN;
+  function check1(){
+    if(v.s.trim()===''){setErr('כתבו למה שווה x².');return}
+    if(same(num(v.s),sq)){setMarks({...marks,s:'ok'});setStep(sq<0?3:2);setErr('')}
+    else{setMarks({...marks,s:'bad'});setErr(same(num(v.s),-sq)?'כמעט: כשמעבירים מספר לצד השני, הסימן שלו מתהפך.':'בדקו שוב: מעבירים את המספר לצד השני ומחלקים במקדם של x².')}
+  }
+  function check2(){
+    if(v.r.trim()===''){setErr('כתבו את השורש.');return}
+    if(same(Math.abs(num(v.r)),r)){setMarks({...marks,r:'ok'});setStep(3);setErr('')}
+    else{setMarks({...marks,r:'bad'});setErr('בדקו שוב: איזה מספר בריבוע נותן '+fmtN(sq)+'?')}
+  }
   return(
-    <div className="card">
+    <div className="card qs4">
       <div className="card-title">שלב 4 — בידוד x²</div>
-      <div className="p2-eq" dir="ltr">{a===1?'':a===-1?'−':fmtN(a)}x² {c<0?'−':'+'} {Math.abs(c)} = 0</div>
-      <div className="p2-hint">1. מבודדים את x²:</div>
-      <div className="coef-row" dir="ltr">
-        <span className="coef-label">x² =</span>
-        <input className="coef-inp" value={v.s} placeholder="?" disabled={step>1} onChange={e=>{setV({...v,s:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check1()}/>
-        {step===1&&<button className="btn-next" onClick={check1}>בדוק</button>}
+      <div className="p2-eq" dir="ltr">{polyStr(a,0,c)} = 0</div>
+      <div className="qs-sub"><span className="qs-n">1</span><span>מבודדים את x²: מעבירים את המספר לצד השני.</span></div>
+      <div className="qs-line" dir="ltr">
+        <span>x² =</span>
+        <Slot id="s" st={st} label="x בריבוע שווה" lock={step>1} onEnter={check1}/>
       </div>
-      {step>=2&&<>
-        <div className="p2-hint">2. מוציאים שורש. יש שני פתרונות: חיובי ושלילי.</div>
-        <div className="coef-row" dir="ltr">
-          <span className="coef-label">x = ±</span>
-          <input className="coef-inp" value={v.r} placeholder="?" disabled={step>2} onChange={e=>{setV({...v,r:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check2()}/>
-          {step===2&&<button className="btn-next" onClick={check2}>בדוק</button>}
+      {step===1&&<div className="qs-act"><button className="btn-next" onClick={check1}>בדוק ✓</button></div>}
+      {step>=2&&sq>=0&&<>
+        <div className="qs-sub"><span className="qs-n">2</span><span>מוציאים שורש. יש שני פתרונות: חיובי ושלילי.</span></div>
+        <div className="qs-line" dir="ltr">
+          <span>x = ±</span>
+          <Slot id="r" st={st} label="השורש" lock={step>2} onEnter={check2}/>
         </div>
+        {step===2&&<div className="qs-act"><button className="btn-next" onClick={check2}>בדוק ✓</button></div>}
       </>}
       {err&&<div className="err-msg">{err}</div>}
-      {step===3&&<Done text={`x = ${r}  או  x = −${r}`}/>}
+      {step===3&&sq>=0&&<Done>x = {fmtN(r)} &nbsp;או&nbsp; x = {fmtN(-r)}</Done>}
+      {step===3&&sq<0&&<div className="qs-none">ריבוע של מספר אף פעם לא שלילי, ולכן למשוואה אין פתרון.</div>}
     </div>
   );
 }
 
 // No zero coefficient: the root formula as a template. The student places a, b, c; the computer calculates.
-function FormulaExample(){
-  return(
-    <details className="qs-example">
-      <summary>דוגמה פתורה: x² − 5x + 6 = 0</summary>
-      <ol>
-        <li>מקדמים: <span dir="ltr" className="qs-ltr">a = 1 , b = −5 , c = 6</span></li>
-        <li>הצבה בתבנית: <span dir="ltr" className="qs-ltr">x = ( −(−5) ± √( (−5)² − 4·(1)·(6) ) ) / ( 2·(1) )</span></li>
-        <li>הדיסקרימיננטה: <span dir="ltr" className="qs-ltr">Δ = 25 − 24 = 1 , √Δ = 1</span></li>
-        <li>שני הפתרונות: <span dir="ltr" className="qs-ltr">x₁ = (5 + 1) / 2 = 3 , x₂ = (5 − 1) / 2 = 2</span></li>
-      </ol>
-    </details>
-  );
-}
 function FormulaTemplate({a,b,c}){
-  const[v,setV]=useState({b1:'',b2:'',a1:'',c1:'',a2:''});
+  const st=useSlots({b1:'',b2:'',a1:'',c1:'',a2:''});
+  const{v,setMarks,err,setErr}=st;
   const[ok,setOk]=useState(false);
-  const[err,setErr]=useState('');
   const[rev,setRev]=useState(0);
-  const steps=useMemo(()=>buildSteps(a,b,c).slice(1),[a,b,c]);
   const want={b1:b,b2:b,a1:a,c1:c,a2:a};
+  const name={b1:'b',b2:'b',a1:'a',c1:'c',a2:'a'};
   function check(){
-    const bad=Object.keys(want).filter(k=>v[k]===''||Number(v[k])!==want[k]);
-    if(!bad.length){setOk(true);setErr('')}
-    else setErr((bad.length===1?'מקום אחד לא נכון':bad.length+' מקומות לא נכונים')+' (מסומן באדום). b נכנס במקומות של b, a במקומות של a, ו-c במקום של c.');
+    const keys=Object.keys(want);
+    if(keys.some(k=>v[k].trim()==='')){
+      const m={};keys.forEach(k=>{if(v[k].trim()!=='')m[k]=num(v[k])===want[k]?'ok':'bad'});
+      setMarks(m);setErr('יש עוד מקומות ריקים. מלאו את כל חמשת המקומות.');return;
+    }
+    const m={};keys.forEach(k=>{m[k]=num(v[k])===want[k]?'ok':'bad'});
+    setMarks(m);
+    const bad=keys.filter(k=>m[k]==='bad');
+    if(!bad.length){setOk(true);setErr('');return}
+    const sign=bad.find(k=>num(v[k])===-want[k]);
+    setErr((bad.length===1?'מקום אחד לא נכון (מסומן באדום).':bad.length+' מקומות לא נכונים (מסומנים באדום).')+' '
+      +(sign?'שימו לב לסימן: '+name[sign]+' = '+fmtN(want[sign])+(want[sign]<0?', וכותבים אותו יחד עם המינוס.':', בלי מינוס.'):'בכל מקום כותבים את המקדם שהאות שלו מופיעה שם: a, b או c.'));
   }
-  const box=k=><input key={k} className={'qs-slot'+(err&&v[k]!==''&&Number(v[k])!==want[k]?' bad':'')} value={v[k]} placeholder={k[0]} disabled={ok}
-    onChange={e=>{setV({...v,[k]:e.target.value});setErr('')}} onKeyDown={e=>e.key==='Enter'&&check()}/>;
+  const slot=k=><Slot key={k} id={k} st={st} ph={name[k]} label={'המקום של '+name[k]} lock={ok} onEnter={check}/>;
+
+  // the computer's part: Δ, its root, and the two solutions
+  const D=b*b-4*a*c, den=2*a, sq=D>=0?Math.sqrt(D):NaN, whole=Number.isInteger(sq);
+  const fac=4*a*c;
+  const steps=[
+    <div className="qs-step" key="d">
+      <div className="qs-step-t">מחשבים את מה שמתחת לשורש. קוראים לו דיסקרימיננטה, ומסמנים Δ:</div>
+      <div className="qs-step-m" dir="ltr"><span>Δ = {par(b)}² − 4·{par(a)}·{par(c)}</span><span>= {b*b} {fac<0?'+':'−'} {Math.abs(fac)}</span><span>= <b className="qs-hl">{fmtN(D)}</b></span></div>
+    </div>
+  ];
+  let done=null;
+  if(D<0){
+    steps.push(<div className="qs-step none" key="n"><div className="qs-step-t">Δ שלילי, ואי אפשר להוציא שורש ממספר שלילי. לכן למשוואה אין פתרון.</div></div>);
+  }else if(D===0){
+    steps.push(<div className="qs-step sol" key="o">
+      <div className="qs-step-t">Δ = 0, ולכן ± לא משנה דבר ויש פתרון אחד:</div>
+      <div className="qs-step-m" dir="ltr"><span>x =</span><Frac n={fmtN(-b)} d={fmtN(den)}/><span>= <b className="qs-sol"><Val n={-b} d={den}/></b></span></div>
+    </div>);
+    done=<Done>x = <Val n={-b} d={den}/></Done>;
+  }else{
+    steps.push(<div className="qs-step" key="s">
+      <div className="qs-step-t">מוציאים שורש:</div>
+      <div className="qs-step-m" dir="ltr"><Root>{D}</Root><span>{whole?'=':'≈'} <b className="qs-hl">{whole?sq:sq.toFixed(2)}</b></span></div>
+    </div>);
+    const line=(i,sg)=>{
+      const n=sg>0?-b+sq:-b-sq;
+      return <div className="qs-step-m" dir="ltr" key={i}><span>x<sub>{i}</sub> =</span><Frac n={`${fmtN(-b)} ${sg>0?'+':'−'} ${whole?sq:sq.toFixed(2)}`} d={fmtN(den)}/>
+        {whole?<><span>=</span><Frac n={fmtN(n)} d={fmtN(den)}/><span>= <b className="qs-sol"><Val n={n} d={den}/></b></span></>
+              :<span>≈ <b className="qs-sol">{fmtN(Math.round(n/den*100)/100)}</b></span>}</div>;
+    };
+    steps.push(<div className="qs-step sol" key="x">
+      <div className="qs-step-t">מציבים בנוסחה פעמיים: פעם עם + ופעם עם −.</div>
+      {line(1,1)}{line(2,-1)}
+    </div>);
+    done=whole?<Done>x = <Val n={-b+sq} d={den}/> &nbsp;או&nbsp; x = <Val n={-b-sq} d={den}/></Done>
+              :<Done>x ≈ {fmtN(Math.round((-b+sq)/den*100)/100)} &nbsp;או&nbsp; x ≈ {fmtN(Math.round((-b-sq)/den*100)/100)}</Done>;
+  }
+  const last=rev>=steps.length-1;
   return(
-    <div className="card">
+    <div className="card qs4">
       <div className="card-title">שלב 4 — נוסחת השורשים</div>
-      <FormulaExample/>
-      <div className="p2-hint">הציבו את המקדמים <span dir="ltr" className="qs-ltr">a = {a} , b = {b} , c = {c}</span> במקומות המתאימים. את החישוב המחשב יעשה.</div>
+      <FormulaInfo openFirst/>
+      <div className="p2-eq" dir="ltr">{polyStr(a,b,c)} = 0</div>
+      <div className="qs-sub"><span className="qs-n">1</span><span>הציבו את המקדמים בנוסחה. בכל מקום כתובה האות שצריכה להיכנס אליו.</span></div>
+      <div className="qs-chips" dir="ltr"><span>a = {fmtN(a)}</span><span>b = {fmtN(b)}</span><span>c = {fmtN(c)}</span></div>
       <div className="qs-template" dir="ltr">
-        <span className="qs-x">x =</span>
-        <span className="qs-frac">
-          <span className="qs-num">−({box('b1')}) ± √( ({box('b2')})² − 4·({box('a1')})·({box('c1')}) )</span>
-          <span className="qs-den">2·({box('a2')})</span>
-        </span>
+        <span className="qs-x">x<sub>1,2</sub> =</span>
+        <Frac n={<>−{slot('b1')} ± <Root>{slot('b2')}<sup>2</sup> − 4·{slot('a1')}·{slot('c1')}</Root></>} d={<>2·{slot('a2')}</>}/>
       </div>
-      {!ok&&<div style={{textAlign:'center',marginTop:12}}><button className="btn-next" onClick={check}>בדוק הצבה ✓</button></div>}
+      {!ok&&<>
+        <div className="qs-tip">מספר שלילי כותבים עם מינוס, למשל <span dir="ltr" className="qs-ltr">−3</span>.</div>
+        <div className="qs-act"><button className="btn-next" onClick={check}>בדוק הצבה ✓</button></div>
+      </>}
       {err&&<div className="err-msg">{err}</div>}
       {ok&&<>
-        <div className="steps-list" style={{marginTop:14}}>
-          {steps.slice(0,rev+1).map((st,i)=><StepItem key={i} step={st} last={i===rev}/>)}
-        </div>
-        {rev<steps.length-1&&<div style={{textAlign:'center'}}><button className="btn-rev" onClick={()=>setRev(r=>r+1)}>הצג שלב הבא →</button></div>}
+        <div className="qs-sub"><span className="qs-n">2</span><span>ההצבה נכונה. מכאן המחשב מחשב, שלב אחרי שלב:</span></div>
+        <div className="qs-steps">{steps.slice(0,rev+1)}</div>
+        {!last&&<div className="qs-act"><button className="btn-rev" onClick={()=>setRev(r=>r+1)}>הצג שלב הבא →</button></div>}
+        {last&&done}
+        {last&&D<0&&<div className="qs-none">למשוואה אין פתרון.</div>}
       </>}
     </div>
   );
@@ -665,6 +790,7 @@ function App(){
       <h1>משוואות ריבועיות</h1>
       <p className="sub">כיתה ט׳</p>
       <SpecialCasesInfo/>
+      {!(phase===4&&route==='none')&&<FormulaInfo/>}
       <div className="phases">
         {phaseLabels.map((l,i)=>(
           <div key={i} className={`ph${phase===i+1?' active':phase>i+1?' done':''}`}>{l}</div>
