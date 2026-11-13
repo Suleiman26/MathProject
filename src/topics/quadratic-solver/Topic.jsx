@@ -91,15 +91,17 @@ function nearStandard(eq){
 }
 
 /* ── Generation ───────────────────────────────────────────────────────────── */
-function genEq(){
+// kind (fixes board #61, one chapter per case): 'c0' = c=0, 'b0' = b=0, 'none' = no zero coefficient; else mixed
+function genEq(kind){
   const opts=[-5,-4,-3,-2,-1,1,2,3,4,5];
   const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
-  const mode=Math.random(); // <0.2: c=0 (common factor), <0.4: b=0 (x² = number), else general
+  const mode=kind==='c0'?0.1:kind==='b0'?0.3:kind==='none'?0.7:Math.random(); // <0.2: c=0 (common factor), <0.4: b=0 (x² = number), else general
   for(let i=0;i<300;i++){
     let r1=pick(opts),r2=pick(opts.filter(x=>x!==r1));
     if(mode<0.2) r1=0;
     else if(mode<0.4) r2=-Math.abs(r1), r1=Math.abs(r1);
     const B=-(r1+r2),C=r1*r2;
+    if(kind==='none'&&B===0)continue;
     const k=Math.floor(Math.random()*3);    // extra x² on both sides (0-2)
     const m=Math.floor(Math.random()*7)-3;  // extra x on both (-3..3)
     const n=Math.floor(Math.random()*11)-5; // extra const on both (-5..5)
@@ -122,211 +124,113 @@ function genEq(){
          roots:[1,-6],key:Math.random()};
 }
 
-/* ── TermPill ─────────────────────────────────────────────────────────────── */
-function TermPill({term,index,onPointerDown,grabbed,pressing,selected,isStatic}){
-  const{type,num,den}=term;
-  const isNeg=num<0;const abs=Math.abs(num);
-  const isOne=abs===1&&den===1;
-  const CoefEl=()=>{
-    if(isOne)return null;
-    if(den===1)return<span className="tc">{abs}</span>;
-    return<span className="tf"><span className="fn">{abs}</span><span className="fd">{den}</span></span>;
-  };
-  const Body=()=>{
-    if(type==='const'){
-      if(den===1)return<span className="tc">{abs}</span>;
-      return<span className="tf"><span className="fn">{abs}</span><span className="fd">{den}</span></span>;
-    }
-    if(type==='x')return<><CoefEl/><span className="xv">x</span></>;
-    return<><CoefEl/><span className="xv">x<sup>2</sup></span></>;
-  };
-  const cls=['tp',isStatic?'':'draggable',grabbed?'grabbed':'',pressing?'pressing':'',selected?'selected':''].filter(Boolean).join(' ');
-  return(
-    <span className={cls} onPointerDown={onPointerDown||undefined} style={{touchAction:'none',opacity:grabbed?.2:1}}>
-      {index>0&&<span className="ts">{isNeg?'−':'+'}</span>}
-      {index===0&&isNeg&&<span className="ts">−</span>}
-      <Body/>
-    </span>
-  );
-}
-
-/* ── Ghost ────────────────────────────────────────────────────────────────── */
-function Ghost({term,x,y,over}){
-  if(!term)return null;
-  return(
-    <div className={`ghost${over?' over':''}`} style={{position:'fixed',left:x,top:y,pointerEvents:'none',zIndex:9999,transform:'translate(-50%,-50%) scale(1.15)'}}>
-      <TermPill term={term} index={0} isStatic/>
-    </div>
-  );
-}
-
-/* ── Phase 1 ──────────────────────────────────────────────────────────────── */
-const LP=400;
+/* ── Phase 1 (fixes board #64): arrange by doing the SAME operation on both sides ── */
+// Like the one-unknown equations chapter: pick an operation and a number (or x, x²); it is written on
+// both sides. Like terms on one side are joined by tapping them and then "פשט" (the simplify step is unchanged).
+const QS_OPS=['+','−','×','÷'];
+const QS_OP_NAME={'+':'חיבור','−':'חיסור','×':'כפל','÷':'חילוק'};
+const QS_FAM=[['const','מספר'],['x','x'],['x2','x²']];
+function M({children}){return <span dir="ltr" className="qs-ltr">{children}</span>}
+function termLabel(t,first){const s=sideStr([t]);if(first)return s;return t.num<0?'− '+s.slice(1):'+ '+s}
+const isZeroSide=side=>side.length===1&&side[0].type==='const'&&side[0].num===0;
 function Phase1({eqData,onNext}){
-  const[curEq,setCurEq]=useState({left:eqData.left,right:eqData.right});
-  const[hist,setHist]=useState([]);
-  const[drag,setDrag]=useState(null);
-  const[pressingId,setPressingId]=useState(null);
-  const[sel,setSel]=useState(new Set()); // selected term IDs
-  const[selErr,setSelErr]=useState('');
+  const[cur,setCur]=useState({left:eqData.left,right:eqData.right});
+  const[hist,setHist]=useState([]); // [{eq: the line before this step, desc: what was done}]
+  const[sel,setSel]=useState(()=>new Set());
+  const[op,setOp]=useState('−');
+  const[val,setVal]=useState('');
+  const[fam,setFam]=useState('const');
+  const[err,setErr]=useState('');
 
-  const sf=useMemo(()=>checkStandard(curEq),[curEq]);
-  const near=useMemo(()=>!sf&&nearStandard(curEq),[sf,curEq]);
-  const initEq={left:eqData.left,right:eqData.right};
+  const sf=useMemo(()=>checkStandard(cur),[cur]);
+  const near=useMemo(()=>!sf&&nearStandard(cur),[sf,cur]);
+  const like=canSimp(cur.left)||canSimp(cur.right);
+  const addSub=op==='+'||op==='−';
 
-  const R=useRef({drag:null,curEq:null,lz:null,rz:null,timer:null,pending:null});
-  R.current.curEq=curEq;R.current.drag=drag;
-
-  // stable ref for toggle (called from event handler closure)
-  const toggleSelRef=useRef(null);
-  toggleSelRef.current=(tid)=>{
-    setSel(prev=>{const n=new Set(prev);n.has(tid)?n.delete(tid):n.add(tid);return n});
-    setSelErr('');
-  };
-
-  function handleSimplify(){
-    // Collect selected terms with side info
-    const selTerms=[];
-    for(const[side,terms]of[['left',curEq.left],['right',curEq.right]]){
-      for(const t of terms)if(sel.has(t.id))selTerms.push({...t,side});
+  function push(next,desc){setHist(h=>[...h,{eq:cur,desc}]);setCur(next);setSel(new Set());setErr('')}
+  function applyOp(){
+    const k=num(val);
+    if(val.trim()===''){setErr('כתבו מספר בתיבה.');return}
+    if(!Number.isInteger(k)){setErr('כתבו מספר שלם, למשל 3 או −2.');return}
+    if(k===0){setErr(op==='÷'?'אי אפשר לחלק ב-0.':op==='×'?'כפל ב-0 מוחק את כל המשוואה. בחרו מספר אחר.':'הוספה או חיסור של 0 לא משנים כלום.');return}
+    let next,desc;
+    if(addSub){
+      const v=op==='+'?k:-k; // the term that is added to both sides
+      const add=side=>[...side.filter(t=>!(t.type==='const'&&t.num===0)),mkTerm(fam,v)];
+      next={left:add(cur.left),right:add(cur.right)};
+      const q=sideStr([mkTerm(fam,Math.abs(v))]);
+      desc=v>0?<>מוסיפים <M>{q}</M> לשני האגפים</>:<>מחסרים <M>{q}</M> משני האגפים</>;
+    }else{
+      if(op==='÷'&&[...cur.left,...cur.right].some(t=>t.den!==1||t.num%k!==0)){setErr('לא כל האיברים מתחלקים ב-'+fmtN(k)+'. נסו פעולה אחרת.');return}
+      next=op==='×'?doMultiply(cur,k):doDivide(cur,k);
+      desc=<>{op==='×'?'כופלים':'מחלקים'} את שני האגפים ב-<M>{par(k)}</M></>;
     }
-    if(selTerms.length<2)return;
-    const types=new Set(selTerms.map(t=>t.type));
-    if(types.size>1){setSelErr('לא ניתן לפשט איברים שאינם מאותה משפחה (x², x, מספרים)');return}
-    const sides=new Set(selTerms.map(t=>t.side));
-    if(sides.size>1){setSelErr('ניתן לפשט רק איברים שנמצאים באותו צד');return}
-    const side=[...sides][0],type=[...types][0];
-    const sideTerms=curEq[side];
-    const inSel=sideTerms.filter(t=>sel.has(t.id));
-    const notSel=sideTerms.filter(t=>!sel.has(t.id));
+    push(next,desc);setVal('');
+  }
+  function simp(){
+    const picked=[];
+    for(const side of['left','right'])for(const t of cur[side])if(sel.has(t.id))picked.push({...t,side});
+    if(picked.length<2)return;
+    if(new Set(picked.map(t=>t.type)).size>1){setErr('לא ניתן לפשט איברים שאינם מאותה משפחה (x², x, מספרים)');return}
+    if(new Set(picked.map(t=>t.side)).size>1){setErr('ניתן לפשט רק איברים שנמצאים באותו צד');return}
+    const side=picked[0].side,type=picked[0].type;
     let rn=0,rd=1;
-    for(const t of inSel)[rn,rd]=addFracs(rn,rd,t.num,t.den);
-    const newTerms=[...notSel];
-    if(rn!==0)newTerms.push(mkTerm(type,rn,rd));
-    newTerms.sort((a,b)=>({x2:0,x:1,const:2}[a.type]-{x2:0,x:1,const:2}[b.type]));
-    const ft=newTerms.length?newTerms:[mkTerm('const',0)];
-    const lbl=inSel.map(t=>sideStr([t])).join(' ו-');
-    const newEq={...curEq,[side]:ft};
-    setHist(h=>[...h,{eq:curEq,desc:`פישוט: ${lbl}`}]);
-    setCurEq(newEq);setSel(new Set());setSelErr('');
+    for(const t of picked)[rn,rd]=addFracs(rn,rd,t.num,t.den);
+    const out=cur[side].filter(t=>!sel.has(t.id));
+    if(rn!==0)out.push(mkTerm(type,rn,rd));
+    out.sort((a,b)=>({x2:0,x:1,const:2}[a.type]-{x2:0,x:1,const:2}[b.type]));
+    push({...cur,[side]:out.length?out:[mkTerm('const',0)]},<>מפשטים: <M>{picked.map(t=>sideStr([t])).join(' , ')}</M></>);
   }
+  function undo(){const h=hist[hist.length-1];if(!h)return;setHist(hist.slice(0,-1));setCur(h.eq);setSel(new Set());setErr('')}
+  function toggle(id){setSel(p=>{const s=new Set(p);s.has(id)?s.delete(id):s.add(id);return s});setErr('')}
 
-  useEffect(()=>{
-    function onMove(e){
-      const d=R.current.drag;if(!d)return;
-      const x=e.clientX,y=e.clientY;
-      const tel=d.fs==='left'?R.current.rz:R.current.lz;
-      let over=false;
-      if(tel){const r=tel.getBoundingClientRect();over=x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom}
-      const nd={...d,x,y,over};R.current.drag=nd;setDrag(nd);
-    }
-    function onUp(){
-      clearTimeout(R.current.timer);setPressingId(null);
-      const pend=R.current.pending;R.current.pending=null;
-      const d=R.current.drag;
-      if(pend&&!d){
-        // short press → toggle selection
-        toggleSelRef.current&&toggleSelRef.current(pend.tid);
-        return;
-      }
-      if(d){
-        if(d.over){
-          const eq=R.current.curEq;
-          const term=eq[d.fs].find(t=>t.id===d.tid);
-          const lbl=term?sideStr([term]):'';
-          const toLbl=d.fs==='left'?'ימין':'שמאל';
-          const newEq=doMove(eq,d.fs,d.tid);
-          setHist(h=>[...h,{eq,desc:`הזזת ${lbl} לצד ${toLbl}`}]);
-          setCurEq(newEq);setSel(new Set());setSelErr('');
-        }
-        R.current.drag=null;setDrag(null);
-      }
-    }
-    window.addEventListener('pointermove',onMove);
-    window.addEventListener('pointerup',onUp);
-    return()=>{window.removeEventListener('pointermove',onMove);window.removeEventListener('pointerup',onUp)};
-  },[]);
-
-  function onTermDown(tid,side,e){
-    if(sf)return;
-    e.preventDefault();e.stopPropagation();
-    clearTimeout(R.current.timer);
-    const sx=e.clientX,sy=e.clientY;
-    R.current.pending={tid,side};setPressingId(tid);
-    R.current.timer=setTimeout(()=>{
-      R.current.pending=null;setPressingId(null);
-      setSel(new Set());// clear selection when dragging starts
-      const nd={tid,fs:side,x:sx,y:sy,over:false};R.current.drag=nd;setDrag(nd);
-    },LP);
-  }
-
-  const ghostTerm=drag?curEq[drag.fs].find(t=>t.id===drag.tid):null;
-  const selCount=sel.size;
-
-  const hint=drag
-    ?(drag.over?'✓ שחרר להעברה':'גרור לצד השני ↔')
-    :selCount>0
-      ?`${selCount} איבר${selCount>1?'ים':''} נבחר${selCount>1?'ו':''} — לחץ פשט לאיחוד`
-      :'לחיצה קצרה = בחר • לחיצה ממושכת = גרור לצד השני';
-
+  const tap=terms=>terms.map((t,i)=>(
+    <button key={t.id} type="button" className={'qs-term'+(sel.has(t.id)?' sel':'')} aria-pressed={sel.has(t.id)}
+      disabled={!!sf} onClick={()=>toggle(t.id)}>{termLabel(t,i===0)}</button>
+  ));
+  const order=t=>({x2:0,x:1,const:2}[t.type]);
   return(
-    <div>
-      <Ghost term={ghostTerm} x={drag?.x} y={drag?.y} over={drag?.over}/>
+    <div className="card qs-arr">
+      <div className="card-title">שלב 1 — סדר את המשוואה</div>
+      <div className="qs-goal">המטרה: להגיע לצורה <M>ax² + bx + c = 0</M>. כלומר, אחרי ה-= יישאר רק 0.</div>
+      <div className="qs-lines">
+        {hist.map((h,i)=><React.Fragment key={i}>
+          <div className="qs-lrow old" dir="ltr">{eqStr(h.eq)}</div>
+          <div className="qs-did"><span aria-hidden="true">↓</span> {h.desc}</div>
+        </React.Fragment>)}
+        <div className={'qs-lrow cur'+(sf?' std':'')} dir="ltr">{tap(cur.left)}<span className="qs-eqs">=</span>{tap(cur.right)}</div>
+      </div>
+      {hist.length>0&&!sf&&<div className="qs-tools">
+        <button type="button" className="act-btn" onClick={undo}>↶ צעד אחורה</button>
+        {isZeroSide(cur.left)&&!isZeroSide(cur.right)&&<button type="button" className="act-btn" onClick={()=>push({left:cur.right,right:cur.left},'מחליפים בין האגפים')}>⇄ החלפת אגפים</button>}
+      </div>}
       {sf&&(
         <div className="std-banner">
-          <span className="std-text">✓ המשוואה בצורה הסטנדרטית ax²+bx+c=0</span>
-          <button className="btn-next" onClick={()=>onNext(sf)}>המשך לשלב 2 →</button>
+          <span className="std-text">✓ המשוואה בצורה <M>ax² + bx + c = 0</M></span>
+          <button className="btn-next" onClick={()=>onNext([...sf].sort((a,b)=>order(a)-order(b)))}>המשך לשלב 2 →</button>
         </div>
       )}
-      <div className="card">
-        <div className="card-title">שלב 1 — סדר את המשוואה</div>
-        <div className="eq-row">
-          <div ref={el=>R.current.lz=el}
-            className={`side-zone${drag&&drag.fs==='right'&&drag.over?' drop-zone':''}`}>
-            {curEq.left.map((t,i)=>(
-              <TermPill key={t.id} term={t} index={i}
-                grabbed={drag&&drag.tid===t.id} pressing={pressingId===t.id}
-                selected={sel.has(t.id)}
-                onPointerDown={!sf?e=>onTermDown(t.id,'left',e):null}/>
-            ))}
+      {!sf&&<>
+        {sel.size===0&&near&&<div className="near-hint">⚠ פשטו את האיברים הדומים כדי להמשיך לשלב 2</div>}
+        {sel.size===0&&like&&!near&&<div className="qs-like">לחצו על איברים מאותה משפחה באותו צד, ואז על ״פשט״</div>}
+        {sel.size>0&&<div className="qs-like">{sel.size===1?'איבר אחד נבחר. בחרו עוד איבר מאותה משפחה':sel.size+' איברים נבחרו. לחצו ״פשט״ לאיחוד'}</div>}
+        {sel.size>=2&&<div className="qs-act"><button type="button" className="btn-next" onClick={simp}>פשט ({sel.size})</button></div>}
+        {!like&&sel.size===0&&<div className="qs-op">
+          <div className="qs-op-t">איזו פעולה עושים על שני האגפים?</div>
+          <div className="qs-op-row" dir="ltr">
+            {QS_OPS.map(s=><button key={s} type="button" className={'qs-sym'+(op===s?' on':'')} aria-pressed={op===s} aria-label={QS_OP_NAME[s]}
+              onClick={()=>{setOp(s);setErr('');if(s==='×'||s==='÷')setFam('const')}}>{s==='×'?'·':s}</button>)}
+            <input className="qs-opnum" value={val} placeholder="מספר" inputMode="numeric" aria-label="המספר"
+              onChange={e=>{setVal(e.target.value);setErr('')}} onKeyDown={e=>e.key==='Enter'&&applyOp()}/>
+            {addSub&&<span className="qs-fam" role="group" aria-label="איזה איבר">
+              {QS_FAM.map(([k,l])=><button key={k} type="button" className={'qs-famb'+(fam===k?' on':'')} aria-pressed={fam===k} onClick={()=>{setFam(k);setErr('')}}>{l}</button>)}
+            </span>}
           </div>
-          <span className="eq-sign">=</span>
-          <div ref={el=>R.current.rz=el}
-            className={`side-zone${drag&&drag.fs==='left'&&drag.over?' drop-zone':''}`}>
-            {curEq.right.map((t,i)=>(
-              <TermPill key={t.id} term={t} index={i}
-                grabbed={drag&&drag.tid===t.id} pressing={pressingId===t.id}
-                selected={sel.has(t.id)}
-                onPointerDown={!sf?e=>onTermDown(t.id,'right',e):null}/>
-            ))}
-          </div>
-        </div>
-        <div className="hint">{hint}</div>
-      </div>
-
-      {!sf&&(
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,marginBottom:14}}>
-          {near&&<div className="near-hint">⚠ פשט את האיברים הדומים כדי להמשיך לשלב 2</div>}
-          <button className="act-btn" disabled={selCount<2} onClick={handleSimplify}
-            style={{fontSize:'1rem',padding:'11px 36px'}}>
-            פשט{selCount>=2?` (${selCount})`:' ≡'}
-          </button>
-          {selErr&&<div className="sel-err">{selErr}</div>}
-        </div>
-      )}
-
-      {hist.length>0&&(
-        <div className="history">
-          <div className="hlabel">שלבי הפתרון</div>
-          {[{eq:initEq,desc:'משוואה מקורית'},...hist].map((s,i)=>(
-            <div className="hrow" key={i}>
-              <span className="hnum">{i+1}</span>
-              <span className="heq">{eqStr(s.eq)}</span>
-              <span className="hdesc">{s.desc}</span>
-            </div>
-          ))}
-        </div>
-      )}
+          <div className="qs-act"><button type="button" className="btn-next" onClick={applyOp}>החל על שני האגפים</button></div>
+        </div>}
+        {err&&<div className="sel-err">{err}</div>}
+        <div className="hint">כמו בפרק פתרון משוואות: בוחרים פעולה ומספר (אפשר גם x או x²), והיא נעשית על שני האגפים. אחר כך מאחדים איברים דומים באותו צד.</div>
+      </>}
     </div>
   );
 }
@@ -492,21 +396,6 @@ function Phase3({a,b,c}){
 
 /* ── Special cases (Sulaiman's fix list) ─────────────────────────────────── */
 const fmtN=v=>(v<0?'−'+Math.abs(v):String(v));
-function SpecialCasesInfo(){
-  return(
-    <details className="qs-special">
-      <summary>מקרים מיוחדים: מתי לא צריך את נוסחת השורשים?</summary>
-      <div className="qs-cases">
-        <div className="qs-case"><b>c = 0 (אין מספר חופשי)</b><span>מוציאים x כגורם משותף, ומכפלה שווה 0 רק כשאחד הגורמים 0.</span><div className="qs-m" dir="ltr">x² − 5x = 0 → x(x − 5) = 0 → x = 0 , x = 5</div></div>
-        <div className="qs-case"><b>b = 0 (אין איבר עם x)</b><span>מבודדים את x² ומוציאים שורש. לא לשכוח: יש פתרון חיובי ושלילי. אם יוצא x² שלילי, אין פתרון.</span><div className="qs-m" dir="ltr">x² − 9 = 0 → x² = 9 → x = ±3</div></div>
-        <div className="qs-case"><b>b = 0 וגם c = 0</b><span>נשאר ax² = 0, ולכן הפתרון היחיד הוא x = 0.</span></div>
-        <div className="qs-case"><b>a = 0</b><span>זו בכלל לא משוואה ריבועית, אלא משוואה קווית.</span></div>
-        <div className="qs-case main"><b>אף מקדם לא 0</b><span>רק אז משתמשים בנוסחת השורשים.</span></div>
-      </div>
-    </details>
-  );
-}
-
 function PickCase({a,b,c,onPick}){
   const[err,setErr]=useState('');
   const right=c===0?'c0':b===0?'b0':'none';
@@ -559,13 +448,17 @@ function useSlots(init){
 }
 
 // The root formula: what it is, what it finds, a worked example, and the calculator note.
-let _infoSeen=false;
-function FormulaInfo({openFirst}){
-  const[open]=useState(()=>{if(openFirst&&!_infoSeen){_infoSeen=true;return true}return false});
+function FormulaInfo(){
   return(
-    <details className="qs-example qs-info" open={open||undefined}>
+    <details className="qs-example qs-info">
       <summary>הסבר ודוגמה: נוסחת השורשים</summary>
-      <div className="qs-info-body">
+      <div className="qs-info-body"><FormulaBody/></div>
+    </details>
+  );
+}
+function FormulaBody(){
+  return(
+      <>
         <p>כל משוואה ריבועית אפשר לסדר בצורה <span dir="ltr" className="qs-ltr">ax² + bx + c = 0</span>. נוסחת השורשים מקבלת את שלושת המקדמים a, b ו-c, ונותנת את הפתרונות של המשוואה:</p>
         <div className="qs-formula" dir="ltr">
           <span>x<sub>1,2</sub> =</span>
@@ -585,13 +478,12 @@ function FormulaInfo({openFirst}){
           <li><span>בודקים: מציבים 3 במשוואה ומקבלים 0, ולכן 3 הוא אפס של המשוואה. כך גם 2.</span><div className="qs-exm" dir="ltr">3² − 5·3 + 6 = 9 − 15 + 6 = 0</div></li>
         </ol>
         <p className="qs-calc"><b>טוב לדעת:</b> מחשבון מדעי יודע לחשב את זה בעצמו. מקלידים בו את a, b ו-c, והוא מציג את הפתרונות. כדאי להיעזר בו כדי לבדוק את התשובה.</p>
-      </div>
-    </details>
+      </>
   );
 }
 
 // c = 0: x(ax + b) = 0
-function SolveCommonFactor({a,b}){
+function SolveCommonFactor({a,b,n=4}){
   const st=useSlots({p:'',q:'',r:''});
   const{v,marks,setMarks,err,setErr}=st;
   const[step,setStep]=useState(1);
@@ -612,7 +504,7 @@ function SolveCommonFactor({a,b}){
   const inner=polyStr(0,a,b);
   return(
     <div className="card qs4">
-      <div className="card-title">שלב 4 — פתרון בגורם משותף</div>
+      <div className="card-title">שלב {n} — פתרון בגורם משותף</div>
       <div className="p2-eq" dir="ltr">{polyStr(a,b,0)} = 0</div>
       <div className="qs-sub"><span className="qs-n">1</span><span>מוציאים x כגורם משותף. מה נשאר בסוגריים?</span></div>
       <div className="qs-line" dir="ltr">
@@ -642,7 +534,7 @@ function SolveCommonFactor({a,b}){
 }
 
 // b = 0: ax² + c = 0 → x² = −c/a → x = ±√
-function SolveNoB({a,c}){
+function SolveNoB({a,c,n=4}){
   const st=useSlots({s:'',r:''});
   const{v,marks,setMarks,err,setErr}=st;
   const[step,setStep]=useState(1);
@@ -650,7 +542,7 @@ function SolveNoB({a,c}){
   function check1(){
     if(v.s.trim()===''){setErr('כתבו למה שווה x².');return}
     if(same(num(v.s),sq)){setMarks({...marks,s:'ok'});setStep(sq<0?3:2);setErr('')}
-    else{setMarks({...marks,s:'bad'});setErr(same(num(v.s),-sq)?'כמעט: כשמעבירים מספר לצד השני, הסימן שלו מתהפך.':'בדקו שוב: מעבירים את המספר לצד השני ומחלקים במקדם של x².')}
+    else{setMarks({...marks,s:'bad'});setErr(same(num(v.s),-sq)?'כמעט: בדקו את הסימן. איזו פעולה הפוכה מבטלת את המספר?':'בדקו שוב: מוסיפים או מחסרים את המספר משני האגפים, ואז מחלקים את שני האגפים במקדם של x².')}
   }
   function check2(){
     if(v.r.trim()===''){setErr('כתבו את השורש.');return}
@@ -659,9 +551,9 @@ function SolveNoB({a,c}){
   }
   return(
     <div className="card qs4">
-      <div className="card-title">שלב 4 — בידוד x²</div>
+      <div className="card-title">שלב {n} — בידוד x²</div>
       <div className="p2-eq" dir="ltr">{polyStr(a,0,c)} = 0</div>
-      <div className="qs-sub"><span className="qs-n">1</span><span>מבודדים את x²: מעבירים את המספר לצד השני.</span></div>
+      <div className="qs-sub"><span className="qs-n">1</span><span>מבודדים את x² בפעולות הפוכות: מבטלים את המספר בשני האגפים, ואז מחלקים במקדם של x². למה שווה x²?</span></div>
       <div className="qs-line" dir="ltr">
         <span>x² =</span>
         <Slot id="s" st={st} label="x בריבוע שווה" lock={step>1} onEnter={check1}/>
@@ -683,7 +575,7 @@ function SolveNoB({a,c}){
 }
 
 // No zero coefficient: the root formula as a template. The student places a, b, c; the computer calculates.
-function FormulaTemplate({a,b,c}){
+function FormulaTemplate({a,b,c,n=4}){
   const st=useSlots({b1:'',b2:'',a1:'',c1:'',a2:''});
   const{v,setMarks,err,setErr}=st;
   const[ok,setOk]=useState(false);
@@ -745,8 +637,8 @@ function FormulaTemplate({a,b,c}){
   const last=rev>=steps.length-1;
   return(
     <div className="card qs4">
-      <div className="card-title">שלב 4 — נוסחת השורשים</div>
-      <FormulaInfo openFirst/>
+      <div className="card-title">שלב {n} — נוסחת השורשים</div>
+      <FormulaInfo/>
       <div className="p2-eq" dir="ltr">{polyStr(a,b,c)} = 0</div>
       <div className="qs-sub"><span className="qs-n">1</span><span>הציבו את המקדמים בנוסחה. בכל מקום כתובה האות שצריכה להיכנס אליו.</span></div>
       <div className="qs-chips" dir="ltr"><span>a = {fmtN(a)}</span><span>b = {fmtN(b)}</span><span>c = {fmtN(c)}</span></div>
@@ -770,27 +662,154 @@ function FormulaTemplate({a,b,c}){
   );
 }
 
-/* ── App ──────────────────────────────────────────────────────────────────── */
-function App(){
-  const[eqData,setEqData]=useState(()=>genEq());
+/* ── Chapters (fixes board #61): one case at a time, explanation → "הבנתי" → practice ─── */
+const QS_CH=['1. משוואה פשוטה','2. גורם משותף','3. בידוד x²','4. נוסחת השורשים','5. סיכום ותרגול'];
+const QS_KIND={2:'c0',3:'b0',4:'none',5:'mix'};
+const QS_KEY='qs-learned';
+function loadLearned(){try{return JSON.parse(localStorage.getItem(QS_KEY))||{}}catch(e){return{}}}
+function saveLearned(o){try{localStorage.setItem(QS_KEY,JSON.stringify(o))}catch(e){}}
+
+// one worked-example step: the words, then the maths line(s)
+function ExStep({t,children}){return <li><span>{t}</span>{children}</li>}
+function ExM({children}){return <div className="qs-exm" dir="ltr">{children}</div>}
+function Form({children}){return <div className="qs-form" dir="ltr">{children}</div>}
+
+// a = 0: no x² is left, so it is a simple (linear) equation
+function SimpleBody(){
+  return(<>
+    <p>במשוואה ריבועית יש <M>x²</M>. אבל לפעמים, אחרי שמסדרים את המשוואה, ה-<M>x²</M> נעלם <M>(a = 0)</M>. אז זו <b>משוואה פשוטה</b>, ופותרים אותה כמו בפרק פתרון משוואות: בפעולות הפוכות על שני האגפים.</p>
+    <Form>bx + c = 0</Form>
+    <div className="qs-ex-title">דוגמה פתורה: <M>x² + 2x − 6 = x² + 4</M></div>
+    <ol className="qs-ex">
+      <ExStep t="מחסרים x² משני האגפים:"><ExM>x² + 2x − 6 − x² = x² + 4 − x²</ExM></ExStep>
+      <ExStep t="מפשטים. אין יותר x², ולכן זו משוואה פשוטה:"><ExM>2x − 6 = 4</ExM></ExStep>
+      <ExStep t="מוסיפים 6 לשני האגפים:"><ExM>2x = 10</ExM></ExStep>
+      <ExStep t="מחלקים את שני האגפים ב-2:"><ExM>x = 5</ExM></ExStep>
+      <ExStep t="בודקים: מציבים 5 בשני האגפים ומקבלים אותו מספר."><ExM>5² + 2·5 − 6 = 29 ,  5² + 4 = 29</ExM></ExStep>
+    </ol>
+  </>);
+}
+// c = 0: common factor
+function CommonBody(){
+  return(<>
+    <p>כשאין מספר חופשי <M>(c = 0)</M>, אחרי הסידור המשוואה נראית כך:</p>
+    <Form>ax² + bx = 0</Form>
+    <p>בכל איבר יש x, ולכן <b>מוציאים x כגורם משותף</b>. מכפלה שווה 0 רק כשאחד הגורמים שווה 0, ולכן מקבלים שתי משוואות פשוטות.</p>
+    <div className="qs-ex-title">דוגמה פתורה: <M>x² + 3x = 5x</M></div>
+    <ol className="qs-ex">
+      <ExStep t="מסדרים: מחסרים 5x משני האגפים ומפשטים."><ExM>x² − 2x = 0</ExM></ExStep>
+      <ExStep t={<>אין מספר חופשי <M>(c = 0)</M>. מוציאים x כגורם משותף:</>}><ExM>x(x − 2) = 0</ExM></ExStep>
+      <ExStep t="מכפלה שווה 0, ולכן אחד הגורמים שווה 0:"><ExM>x = 0 <span className="qs-or">או</span> x − 2 = 0</ExM></ExStep>
+      <ExStep t="פותרים את המשוואה הפשוטה (מוסיפים 2 לשני האגפים):"><ExM>x = 0 ,  x = 2</ExM></ExStep>
+      <ExStep t="בודקים את 2:"><ExM>2² + 3·2 = 10 ,  5·2 = 10</ExM></ExStep>
+    </ol>
+    <div className="qs-ex-title">עוד דוגמה: <M>3x² + 12x = 0</M></div>
+    <ol className="qs-ex">
+      <ExStep t="מוציאים x כגורם משותף:"><ExM>x(3x + 12) = 0</ExM></ExStep>
+      <ExStep t={<><M>x = 0</M>, או שהסוגריים שווים 0:</>}><ExM>3x + 12 = 0  →  3x = −12  →  x = −4</ExM></ExStep>
+    </ol>
+    <p className="qs-calc"><b>שימו לב:</b> כש-<M>c = 0</M>, אחד הפתרונות הוא תמיד <M>x = 0</M>. לא מחלקים את המשוואה ב-x, כי כך הפתרון <M>x = 0</M> הולך לאיבוד.</p>
+  </>);
+}
+// b = 0: isolate x², then the square root (two answers)
+function NoBBody(){
+  return(<>
+    <p>כשאין איבר עם x <M>(b = 0)</M>, אחרי הסידור המשוואה נראית כך:</p>
+    <Form>ax² + c = 0</Form>
+    <p><b>מבודדים את x²</b> בפעולות הפוכות, ואז מוציאים שורש. לשני מספרים יש אותו ריבוע, חיובי ושלילי, ולכן יש שני פתרונות.</p>
+    <div className="qs-ex-title">דוגמה פתורה: <M>2x² − 18 = 0</M></div>
+    <ol className="qs-ex">
+      <ExStep t="מוסיפים 18 לשני האגפים:"><ExM>2x² = 18</ExM></ExStep>
+      <ExStep t="מחלקים את שני האגפים ב-2:"><ExM>x² = 9</ExM></ExStep>
+      <ExStep t={<>מוציאים שורש. יש שני פתרונות, כי <M>3² = 9</M> וגם <M>(−3)² = 9</M></>}><ExM>x = 3 ,  x = −3</ExM></ExStep>
+    </ol>
+    <div className="qs-ex-title">מקרים מיוחדים</div>
+    <ol className="qs-ex">
+      <ExStep t="יוצא x² שווה למספר שלילי: אין פתרון, כי ריבוע של מספר אף פעם לא שלילי."><ExM>x² + 4 = 0  →  x² = −4</ExM></ExStep>
+      <ExStep t={<>גם <M>c = 0</M>: הפתרון היחיד הוא 0.</>}><ExM>5x² = 0  →  x = 0</ExM></ExStep>
+    </ol>
+  </>);
+}
+// no zero coefficient: the root formula
+function FormulaLessonBody(){
+  return(<>
+    <p>כשיש גם <M>x²</M>, גם x וגם מספר חופשי (<M>a</M>, <M>b</M> ו-<M>c</M> שונים מ-0), משתמשים ב<b>נוסחת השורשים</b>.</p>
+    <FormulaBody/>
+    <p>המספר שמתחת לשורש, <M>b² − 4ac</M>, אומר כמה פתרונות יש: אם הוא חיובי יש שני פתרונות, אם הוא 0 יש פתרון אחד, ואם הוא שלילי אין פתרון.</p>
+  </>);
+}
+// the summary: all four cases on one screen, 2 × 2
+function SummaryBody({onGo}){
+  const Q=({i,t,form,how,children})=>(
+    <div className={'qs-q q'+i}>
+      <div className="qs-q-h"><span className="qs-q-n">{i}</span><b>{t}</b></div>
+      <div className="qs-q-f" dir="ltr">{form}</div>
+      <div className="qs-q-how">{how}</div>
+      <div className="qs-q-ex" dir="ltr">{children}</div>
+      {onGo&&<button type="button" className="qs-q-go" onClick={()=>onGo(i)}>לפרק {i} ←</button>}
+    </div>
+  );
+  return(<>
+    <p className="qs-sum-intro">תמיד מתחילים בסידור: <M>ax² + bx + c = 0</M>. אחר כך בודקים איזה מקדם שווה 0, ובוחרים דרך:</p>
+    <div className="qs-sum">
+      <Q i={1} t={<>משוואה פשוטה <M>a = 0</M></>} form="bx + c = 0" how="אין x². פותרים בפעולות הפוכות, כמו בפרק פתרון משוואות.">
+        <div>2x − 6 = 0</div><div>2x = 6</div><div className="qs-q-r">x = 3</div>
+      </Q>
+      <Q i={2} t={<>גורם משותף <M>c = 0</M></>} form="ax² + bx = 0" how="מוציאים x כגורם משותף. פתרון אחד הוא תמיד 0.">
+        <div>x² − 5x = 0</div><div>x(x − 5) = 0</div><div className="qs-q-r">x = 0 , x = 5</div>
+      </Q>
+      <Q i={3} t={<>בידוד x² <M>b = 0</M></>} form="ax² + c = 0" how="מבודדים את x² ומוציאים שורש: פתרון חיובי ופתרון שלילי.">
+        <div>x² − 9 = 0</div><div>x² = 9</div><div className="qs-q-r">x = 3 , x = −3</div>
+      </Q>
+      <Q i={4} t="נוסחת השורשים" form="ax² + bx + c = 0" how="אף מקדם לא 0. מציבים את a, b ו-c בנוסחה:">
+        <div className="qs-q-fx"><span>x<sub>1,2</sub> =</span><Frac n={<>−b ± <Root>b² − 4ac</Root></>} d="2a"/></div>
+        <div>x² − 5x + 6 = 0</div><div className="qs-q-r">x = 3 , x = 2</div>
+      </Q>
+    </div>
+  </>);
+}
+
+const QS_LESSON={
+  1:{t:'משוואה פשוטה: כשאין x²',B:SimpleBody},
+  2:{t:<>גורם משותף: כשאין מספר חופשי <M>(c = 0)</M></>,B:CommonBody},
+  3:{t:<>בידוד x²: כשאין איבר עם x <M>(b = 0)</M></>,B:NoBBody},
+  4:{t:'נוסחת השורשים: כשאף מקדם לא 0',B:FormulaLessonBody},
+  5:{t:'סיכום: ארבעת המקרים',B:SummaryBody},
+};
+
+function Lesson({ch,learned,onOk,onGo}){
+  const{t,B}=QS_LESSON[ch];
+  return(
+    <div className="card qs-lesson">
+      <div className="card-title">{t}</div>
+      <div className="qs-info-body qs-lesson-body"><B onGo={onGo}/></div>
+      {ch===1&&<a className="qs-link" href="/topics/equation-solver">לתרגול משוואות פשוטות: פרק ״פתרון משוואות״ ←</a>}
+      {ch===1&&learned&&<div className="success-banner qs-ch1-done">✅ מעולה! עכשיו למשוואות ריבועיות.<button type="button" className="btn-next" onClick={()=>onGo(2)}>לפרק 2: גורם משותף</button></div>}
+      {!(ch===1&&learned)&&<div className="qs-act qs-ok">
+        <button type="button" className="btn-next" onClick={onOk}>{ch===1?'הבנתי ✓':ch===5?'הבנתי, לתרגול משולב':'הבנתי, לתרגול'}</button>
+      </div>}
+    </div>
+  );
+}
+
+function Practice({kind}){
+  const mix=kind==='mix';
+  const[eqData,setEqData]=useState(()=>genEq(kind));
   const[phase,setPhase]=useState(1);
   const[stdTerms,setStdTerms]=useState(null);
   const[coeffs,setCoeffs]=useState(null);
-  const[route,setRoute]=useState(null);
+  const[route,setRoute]=useState(mix?null:kind);
 
   function newEq(){
-    setEqData(genEq());setPhase(1);setStdTerms(null);setCoeffs(null);setRoute(null);
+    setEqData(genEq(kind));setPhase(1);setStdTerms(null);setCoeffs(null);setRoute(mix?null:kind);
   }
   function handleNext(terms){setStdTerms(terms);setPhase(2)}
   function handleCoeffs(a,b,c){setCoeffs({a,b,c});setPhase(3)}
 
-  const phaseLabels=['שלב 1: סידור','שלב 2: מקדמים','שלב 3: איזה מקרה?','שלב 4: פתרון'];
+  const solveAt=mix?4:3;
+  const phaseLabels=mix?['שלב 1: סידור','שלב 2: מקדמים','שלב 3: איזה מקרה?','שלב 4: פתרון']:['שלב 1: סידור','שלב 2: מקדמים','שלב 3: פתרון'];
   return(
-    <div className="app">
-      <h1>משוואות ריבועיות</h1>
-      <p className="sub">כיתה ט׳</p>
-      <SpecialCasesInfo/>
-      {!(phase===4&&route==='none')&&<FormulaInfo/>}
+    <div>
       <div className="phases">
         {phaseLabels.map((l,i)=>(
           <div key={i} className={`ph${phase===i+1?' active':phase>i+1?' done':''}`}>{l}</div>
@@ -798,13 +817,52 @@ function App(){
       </div>
       {phase===1&&<Phase1 key={eqData.key} eqData={eqData} onNext={handleNext}/>}
       {phase===2&&<Phase2 stdTerms={stdTerms} onConfirm={handleCoeffs}/>}
-      {phase===3&&<PickCase a={coeffs.a} b={coeffs.b} c={coeffs.c} onPick={r=>{setRoute(r);setPhase(4)}}/>}
-      {phase===4&&route==='c0'&&<SolveCommonFactor a={coeffs.a} b={coeffs.b}/>}
-      {phase===4&&route==='b0'&&<SolveNoB a={coeffs.a} c={coeffs.c}/>}
-      {phase===4&&route==='none'&&<FormulaTemplate a={coeffs.a} b={coeffs.b} c={coeffs.c}/>}
+      {mix&&phase===3&&<PickCase a={coeffs.a} b={coeffs.b} c={coeffs.c} onPick={r=>{setRoute(r);setPhase(4)}}/>}
+      {phase===solveAt&&route==='c0'&&<SolveCommonFactor n={solveAt} a={coeffs.a} b={coeffs.b}/>}
+      {phase===solveAt&&route==='b0'&&<SolveNoB n={solveAt} a={coeffs.a} c={coeffs.c}/>}
+      {phase===solveAt&&route==='none'&&<FormulaTemplate n={solveAt} a={coeffs.a} b={coeffs.b} c={coeffs.c}/>}
       <div className="bottom" style={{marginTop:8}}>
         <button className="btn-new" onClick={newEq}>משוואה חדשה 🎲</button>
       </div>
+    </div>
+  );
+}
+
+/* ── App ──────────────────────────────────────────────────────────────────── */
+function App(){
+  const[ch,setCh]=useState(1);
+  const[learned,setLearned]=useState(loadLearned);
+  const[tab,setTab]=useState('learn');
+  const top=useRef(null);
+  const toTop=()=>requestAnimationFrame(()=>{const el=top.current;if(el&&el.getBoundingClientRect().top<0)el.scrollIntoView({behavior:'smooth',block:'start'})});
+
+  function go(i){setCh(i);setTab(i>1&&learned[i]?'practice':'learn');toTop()}
+  function ok(i){
+    const L={...learned,[i]:true};setLearned(L);saveLearned(L);
+    if(i>1){setTab('practice');toTop()}
+  }
+  const kind=QS_KIND[ch];
+  const{t,B}=QS_LESSON[ch];
+  return(
+    <div className="app">
+      <h1>משוואות ריבועיות</h1>
+      <p className="sub">כיתה ט׳</p>
+      <div className="ch-nav qs-chnav" ref={top}>
+        {QS_CH.map((l,i)=><button key={i} type="button" className={`ch-btn ${ch===i+1?'active':''}`} onClick={()=>go(i+1)}>{l}</button>)}
+      </div>
+      {ch>1&&<div className="sub-tabs">
+        <button type="button" className={`sub-tab ${tab==='learn'?'active':''}`} onClick={()=>{setTab('learn')}}>{ch===5?'סיכום':'הסבר ודוגמה'}</button>
+        <button type="button" className={`sub-tab ${tab==='practice'?'active':''}`} disabled={!learned[ch]} onClick={()=>setTab('practice')}>{learned[ch]?'':'🔒 '}{ch===5?'תרגול משולב':'תרגול'}</button>
+      </div>}
+      {ch>1&&!learned[ch]&&<div className="qs-lock">התרגול נפתח אחרי שקוראים את ההסבר ולוחצים ״הבנתי״.</div>}
+      {(ch===1||tab==='learn')&&<Lesson ch={ch} learned={!!learned[ch]} onOk={()=>ok(ch)} onGo={go}/>}
+      {ch>1&&tab==='practice'&&learned[ch]&&<>
+        {kind!=='none'&&<details className="qs-example qs-info">
+          <summary><span>תזכורת: {t}</span></summary>
+          <div className="qs-info-body"><B/></div>
+        </details>}
+        <Practice key={ch} kind={kind}/>
+      </>}
     </div>
   );
 }
