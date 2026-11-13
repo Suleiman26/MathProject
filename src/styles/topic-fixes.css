@@ -737,6 +737,74 @@ html[data-page="quadratic-solver"] #root .act-btn { min-height: 44px; }
   html[data-page="quadratic-solver"] #root .qs-slot { width: 40px; height: 44px; font-size: 1rem; }
 }
 html[data-page="quadratic-solver"] #root .qs-template .qs-slot { min-width: 0; min-height: 0; padding: 0; border-radius: 9px; }
+/* Step 4 redesign + root-formula explanation (fixes board #61, 2026-11-13). Math rows are always LTR
+   (the old .coef-row was direction:rtl, so "x² = 4" was drawn mirrored). */
+html[data-page="quadratic-solver"] #root .qs4 .p2-eq { margin: 4px 0 16px; }
+html[data-page="quadratic-solver"] #root .qs-sub { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0 10px; font-size: 1rem; line-height: 1.55; color: var(--ink); text-align: start; }
+html[data-page="quadratic-solver"] #root .qs-n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--a-100); color: var(--a-800); font-weight: 700; font-size: .9rem; display: grid; place-items: center; margin-top: 0; }
+html[data-page="quadratic-solver"] #root :is(.qs-line, .qs-template, .qs-formula, .qs-exm, .qs-step-m, .qs-res, .qs-chips) { direction: ltr; unicode-bidi: isolate; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 8px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+html[data-page="quadratic-solver"] #root .qs-line { font-size: 1.35rem; margin: 6px 0; }
+html[data-page="quadratic-solver"] #root .qs-template { font-size: 1.3rem; margin: 14px 0 6px; flex-wrap: nowrap; gap: 8px; overflow: visible; padding: 0; }
+html[data-page="quadratic-solver"] #root :is(.qs-line, .qs-template, .qs-formula, .qs-exm, .qs-step-m) sub { font-size: .62em; vertical-align: baseline; position: relative; top: .35em; }
+html[data-page="quadratic-solver"] #root .qs-template sup { font-size: .7em; vertical-align: baseline; position: relative; top: -.9em; margin-inline-start: 1px; }
+html[data-page="quadratic-solver"] #root .qs-gap { margin-inline: 2px 8px; }
+html[data-page="quadratic-solver"] #root .qs-fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; }
+html[data-page="quadratic-solver"] #root .qs-fr-n { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 6px 5px; white-space: nowrap; }
+html[data-page="quadratic-solver"] #root .qs-fr-d { display: flex; align-items: center; justify-content: center; gap: 4px; align-self: stretch; border-top: 2px solid currentColor; padding: 5px 6px 0; white-space: nowrap; }
+html[data-page="quadratic-solver"] #root .qs-rad { display: inline-flex; align-items: stretch; }
+html[data-page="quadratic-solver"] #root .qs-rad-s { flex: none; width: .62em; height: auto; min-height: 1.25em; align-self: stretch; margin-inline-end: -2px; overflow: visible; }
+html[data-page="quadratic-solver"] #root .qs-rad-b { display: inline-flex; align-items: center; gap: 4px; border-top: 2px solid currentColor; padding: 3px 3px 0 4px; }
+html[data-page="quadratic-solver"] #root .card input.qs-slot { box-sizing: border-box; width: 52px; min-width: 0; height: 46px; min-height: 0; margin: 0; padding: 0 2px; text-align: center; direction: ltr; font-size: 1.15rem; font-weight: 700; color: var(--ink); border: 2px dashed var(--a-300); border-radius: 12px; background: var(--surface); opacity: 1; }
+html[data-page="quadratic-solver"] #root .card .qs-line input.qs-slot { width: 76px; height: 52px; font-size: 1.3rem; }
+html[data-page="quadratic-solver"] #root .card input.qs-slot:not(:placeholder-shown) { border-style: solid; border-color: var(--line-strong); }
+html[data-page="quadratic-solver"] #root .card input.qs-slot:focus { border-style: solid; border-color: var(--a-500); box-shadow: 0 0 0 3px color-mix(in srgb, var(--a-500) 22%, transparent); outline: none; }
+html[data-page="quadratic-solver"] #root .card input.qs-slot::placeholder { color: var(--a-500); font-style: italic; font-weight: 600; font-size: 1em; opacity: .75; }
+html[data-page="quadratic-solver"] #root .card input.qs-slot.ok { border-style: solid; border-color: var(--ok-500); background: var(--ok-50); color: var(--ok-800); -webkit-text-fill-color: var(--ok-800); }
+html[data-page="quadratic-solver"] #root .card input.qs-slot.bad { border-style: solid; border-color: var(--bad-500); background: var(--bad-50); color: var(--bad-800); animation: mp-shake 300ms var(--shake-ease, ease); }
+html[data-page="quadratic-solver"] #root .qs-chips { gap: 8px; margin: 2px 0 4px; }
+html[data-page="quadratic-solver"] #root .qs-chips span { padding: 6px 14px; border-radius: 999px; background: var(--a-50); border: 1px solid var(--a-200); color: var(--a-800); font-size: 1.05rem; }
+html[data-page="quadratic-solver"] #root .qs-tip { text-align: center; font-size: .9rem; color: var(--ink-2); margin: 8px 0 0; line-height: 1.5; }
+html[data-page="quadratic-solver"] #root .qs-act { display: flex; justify-content: center; margin-top: 14px; }
+html[data-page="quadratic-solver"] #root .qs-act button { min-height: 48px; min-width: 180px; }
+html[data-page="quadratic-solver"] #root .qs-res { margin: 12px auto 0; padding: 8px 14px; width: fit-content; border-radius: 12px; background: var(--ok-50); color: var(--ok-800); font-size: 1.15rem; }
+html[data-page="quadratic-solver"] #root .qs4 .err-msg { margin: 12px 0 0; font-size: .95rem; line-height: 1.5; }
+html[data-page="quadratic-solver"] #root .qs-steps { display: grid; gap: 10px; margin: 4px 0 0; }
+html[data-page="quadratic-solver"] #root .qs-step { padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border-inline-start: 4px solid var(--a-300); text-align: start; animation: fadein .35s ease; }
+html[data-page="quadratic-solver"] #root .qs-step.sol { background: var(--ok-50); border-inline-start-color: var(--ok-500); }
+html[data-page="quadratic-solver"] #root .qs-step.none { background: var(--bad-50); border-inline-start-color: var(--bad-500); }
+html[data-page="quadratic-solver"] #root .qs-step-t { font-size: .95rem; line-height: 1.55; color: var(--ink-2); }
+html[data-page="quadratic-solver"] #root .qs-step-m { justify-content: flex-start; font-size: 1.15rem; margin-top: 10px; gap: 6px; }
+html[data-page="quadratic-solver"] #root .qs-hl { color: var(--a-700); font-size: 1.15em; }
+html[data-page="quadratic-solver"] #root .qs-sol { color: var(--ok-700); font-size: 1.3em; }
+html[data-page="quadratic-solver"] #root .qs-done { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+html[data-page="quadratic-solver"] #root .qs-done .qs-ltr { display: inline-flex; align-items: center; gap: 4px; color: inherit; font-size: 1.2rem; }
+html[data-page="quadratic-solver"] #root .qs-none { margin-top: 14px; padding: 14px; border-radius: 12px; text-align: center; font-weight: 700; background: var(--bad-50); color: var(--bad-800); border: 1px solid var(--bad-200); }
+/* the explanation box */
+html[data-page="quadratic-solver"] #root .qs-info-body { padding: 0 14px 14px; display: grid; gap: 10px; font-size: .98rem; line-height: 1.7; color: var(--ink-2); text-align: start; }
+html[data-page="quadratic-solver"] #root .qs-info-body p { margin: 0; }
+html[data-page="quadratic-solver"] #root .qs-info-body b { color: var(--a-800); }
+html[data-page="quadratic-solver"] #root .qs-formula { font-size: 1.45rem; color: var(--a-900, #1e3a5f); background: var(--surface); border-radius: 14px; padding: 16px 10px; gap: 10px; flex-wrap: nowrap; }
+html[data-page="quadratic-solver"] #root .qs-ex-title { margin-top: 6px; font-weight: 700; color: var(--a-800); font-size: 1.02rem; }
+html[data-page="quadratic-solver"] #root .qs-example ol.qs-ex { list-style: none; counter-reset: qs; margin: 0; padding: 0; display: grid; gap: 8px; font-size: .98rem; line-height: 1.6; }
+html[data-page="quadratic-solver"] #root .qs-ex li { counter-increment: qs; background: var(--surface); border-radius: 12px; padding: 10px 12px; display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; row-gap: 8px; }
+html[data-page="quadratic-solver"] #root .qs-ex li::before { content: counter(qs); grid-row: 1 / span 3; width: 24px; height: 24px; border-radius: 50%; background: var(--a-100); color: var(--a-800); font-weight: 700; font-size: .85rem; display: grid; place-items: center; }
+html[data-page="quadratic-solver"] #root .qs-ex li > * { grid-column: 2; }
+html[data-page="quadratic-solver"] #root .qs-exm { font-size: 1.05rem; gap: 6px; }
+html[data-page="quadratic-solver"] #root .qs-calc { background: var(--surface); border: 1.5px solid var(--a-300); border-radius: 12px; padding: 10px 12px; }
+@media (max-width: 560px) {
+  html[data-page="quadratic-solver"] #root .qs-template { font-size: .95rem; gap: 6px 3px; margin-inline: -10px; flex-wrap: wrap; }
+  html[data-page="quadratic-solver"] #root .qs-template .qs-x { flex: 0 0 100%; text-align: left; padding-inline-start: 12px; font-size: 1.1rem; }
+  html[data-page="quadratic-solver"] #root .qs-template .qs-fr-n, html[data-page="quadratic-solver"] #root .qs-template .qs-fr-d, html[data-page="quadratic-solver"] #root .qs-template .qs-rad-b { gap: 1px; }
+  html[data-page="quadratic-solver"] #root .qs-template .qs-rad-b { padding-inline: 2px 1px; }
+  html[data-page="quadratic-solver"] #root .qs-template .qs-fr-n { padding-inline: 2px; }
+  html[data-page="quadratic-solver"] #root .card .qs-template input.qs-slot { width: 40px; height: 44px; font-size: .95rem; border-radius: 10px; padding: 0; }
+  html[data-page="quadratic-solver"] #root .qs-formula { font-size: 1.2rem; }
+  html[data-page="quadratic-solver"] #root .qs-line { flex-wrap: nowrap; gap: 6px; font-size: 1.2rem; }
+  html[data-page="quadratic-solver"] #root .card .qs-line input.qs-slot { width: 60px; height: 48px; font-size: 1.2rem; }
+  html[data-page="quadratic-solver"] #root .qs-exm { font-size: .98rem; }
+  html[data-page="quadratic-solver"] #root .qs-act button { width: 100%; }
+  html[data-page="quadratic-solver"] #root .qs-step-m { font-size: 1.05rem; }
+}
 
 /* ── quadrilaterals ─────────────────────────────────────────────────────── */
 html[data-page="quadrilaterals"] #root .prop-btn { font-size: .95rem; min-height: 44px; padding: 8px 12px; line-height: 1.25; }
