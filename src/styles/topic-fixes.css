@@ -268,6 +268,26 @@ html[data-page="equation-solver"] .pv-par { font-size: 1.7rem; font-weight: 300;
 @keyframes pv-in { from { opacity: 0; } to { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { html[data-page="equation-solver"] .pv-ghost { animation: none; } }
 
+/* ── Equation solver (fixes board #57, 2026-11-13): tap terms of the same family on the
+   same side, then "פשט" joins just those (same interaction as the quadratic solver).
+   #56: other letters for the unknown, with a note when that level starts. ── */
+html[data-page="equation-solver"] #root .tp.click { cursor: pointer; min-height: 44px; min-width: 34px; justify-content: center; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; transition: background .12s, box-shadow .12s, transform .1s; }
+@media (hover: hover) { html[data-page="equation-solver"] #root .tp.click:not(.selected):hover { background: var(--a-50, #f0fdfa); } }
+html[data-page="equation-solver"] #root .tp.click:active { transform: scale(.95); }
+html[data-page="equation-solver"] #root .tp.click:focus-visible { outline: 2px solid var(--a-600, #0d9488); outline-offset: 2px; }
+html[data-page="equation-solver"] #root .tp.selected { background: var(--a-100, #ccfbf1); box-shadow: inset 0 0 0 2px var(--a-600, #0d9488); }
+/* phones shrink long sides (mp.css zoom .88 / .7 / .6): keep each term a finger tall */
+@media (max-width: 640px) {
+  html[data-page="equation-solver"] #root .solve-grid:has(> .side-zone > :nth-child(3)) .tp.click { min-height: 50px; }
+  html[data-page="equation-solver"] #root .solve-grid:has(> .side-zone > :nth-child(4)) .tp.click { min-height: 63px; }
+  html[data-page="equation-solver"] #root .solve-grid:has(> .side-zone > :nth-child(5)) .tp.click { min-height: 74px; }
+}
+html[data-page="equation-solver"] #root .simp-hint { margin: 10px 0 0; }
+html[data-page="equation-solver"] #root .var-note { padding: 14px 16px; margin-bottom: 16px; text-align: center; box-shadow: inset 0 0 0 1px var(--a-200, #99f6e4); }
+html[data-page="equation-solver"] #root .var-note b { display: block; font-size: 1.02rem; margin-bottom: 2px; }
+html[data-page="equation-solver"] #root .var-line { text-align: center; font-size: .9rem; line-height: 1.55; color: var(--a-800, #115e59); background: color-mix(in srgb, var(--a-50, #f0fdfa) 70%, #fff); border-radius: 12px; padding: 8px 12px; margin-bottom: 10px; }
+html[data-page="equation-solver"] #root .var-letter { font-weight: 800; font-style: italic; color: var(--a-600, #0d9488); font-size: 1.1em; padding: 0 2px; }
+
 /* Parabola: its unnamed toggle buttons were 35px; finger-sized like the rest
    (44px; the check button keeps its own 56px from mp.css) */
 html[data-page="parabola-practice"] #root .card button:not(.mp-check) { min-height: 44px; }

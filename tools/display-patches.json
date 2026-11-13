@@ -49,6 +49,126 @@
       "old": "            <div className=\"g-left side-zone\">{renderTerms(cur.left)}</div>\n            <span className=\"g-mid eq-sign\">=</span>\n            <div className=\"g-right side-zone\">{renderTerms(cur.right)}</div>\n",
       "new": "            <div className=\"g-left side-zone\"><PreviewSide terms={cur.left} opType={opType} k={solved===null?pvK:null} isX={pvX}/></div>\n            <span className=\"g-mid eq-sign\">=</span>\n            <div className=\"g-right side-zone\"><PreviewSide terms={cur.right} opType={opType} k={solved===null?pvK:null} isX={pvX}/></div>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "const { useState, useMemo } = React;\n",
+      "new": "const { useState, useMemo, useEffect, useRef } = React;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "function sideStr(terms){\n",
+      "new": "function sideStr(terms,v='x'){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "    return t.type==='const'?`${sign}${frac}`:`${sign}${abs===t.den?'':frac}x`;\n  }).join('');\n}\nfunction eqStr(eq){return`${sideStr(eq.left)} = ${sideStr(eq.right)}`}\n",
+      "new": "    return t.type==='const'?`${sign}${frac}`:`${sign}${abs===t.den?'':frac}${v}`;\n  }).join('');\n}\nfunction eqStr(eq,v='x'){return`${sideStr(eq.left,v)} = ${sideStr(eq.right,v)}`}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "function opDesc(opType,k,isX){\n  const q=isX?`${k}x`:`${k}`;\n",
+      "new": "function opDesc(opType,k,isX,v='x'){\n  const q=isX?`${k}${v}`:`${k}`;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "function checkSolved(eq){\n",
+      "new": "/* Simplify only the terms the student picked: same family (unknown / numbers), same side. */\nfunction simplifyPicked(eq,sel,v='x'){\n  const picked=[];\n  for(const side of['left','right'])for(const t of eq[side])if(sel.has(t.id))picked.push({...t,side});\n  if(picked.length<2)return null;\n  const types=new Set(picked.map(t=>t.type));\n  if(types.size>1)return{err:`לא ניתן לפשט איברים שאינם מאותה משפחה (${v}, מספרים)`};\n  const sides=new Set(picked.map(t=>t.side));\n  if(sides.size>1)return{err:'ניתן לפשט רק איברים שנמצאים באותו אגף'};\n  const side=picked[0].side,type=picked[0].type;\n  const inSel=eq[side].filter(t=>sel.has(t.id));\n  const notSel=eq[side].filter(t=>!sel.has(t.id));\n  let rn=0,rd=1;\n  for(const t of inSel)[rn,rd]=addFracs(rn,rd,t.num,t.den);\n  const newTerms=[...notSel];\n  if(rn!==0)newTerms.push(mkTerm(type,rn,rd));\n  newTerms.sort((a,b)=>({x:0,const:1}[a.type]-{x:0,const:1}[b.type]));\n  return{eq:{...eq,[side]:newTerms.length?newTerms:[mkTerm('const',0)]},picked:inSel};\n}\n/* After X_ROUNDS equations solved with x, the unknown gets other letters too (it is only a name).\n   Letters that look like a digit or a sign (o, l, i, s, z, b, q, g, t) are left out. */\nconst X_ROUNDS=3;\nconst LETTERS=['y','a','m','n','k','p','x'];\nconst DONE_KEY='mp-equation-solver-solved';\nfunction loadDone(){try{return Math.max(0,parseInt(localStorage.getItem(DONE_KEY),10)||0)}catch(e){return 0}}\nfunction saveDone(n){try{localStorage.setItem(DONE_KEY,String(n))}catch(e){}}\nfunction pickLetter(done,prev){\n  if(done<X_ROUNDS)return'x';\n  const pool=LETTERS.filter(l=>l!==prev);\n  return pool[Math.floor(Math.random()*pool.length)];\n}\nfunction checkSolved(eq){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "function TermPill({term,index}){\n",
+      "new": "function TermPill({term,index,v='x',selected,onPick}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "    return<>{coef}<span className=\"tv-x\">x</span></>;\n  };\n  return(\n    <span className=\"tp\">\n",
+      "new": "    return<>{coef}<span className=\"tv-x\">{v}</span></>;\n  };\n  return(\n    <span className={`tp${onPick?' click':''}${selected?' selected':''}`} onClick={onPick||undefined}\n      role={onPick?'button':undefined} tabIndex={onPick?0:undefined} aria-pressed={onPick?!!selected:undefined}\n      onKeyDown={onPick?e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onPick()}}:undefined}>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "function PreviewSide({terms,opType,k,isX}){\n  const pills=terms.map((t,i)=><TermPill key={t.id} term={t} index={i}/>);\n",
+      "new": "function PreviewSide({terms,opType,k,isX,v,sel,onPick}){\n  const pills=terms.map((t,i)=><TermPill key={t.id} term={t} index={i} v={v} selected={!!sel&&sel.has(t.id)} onPick={onPick?()=>onPick(t.id):null}/>);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "    return<>{pills}<span className=\"pv-ghost\"><TermPill term={g} index={1}/></span></>;\n",
+      "new": "    return<>{pills}<span className=\"pv-ghost\"><TermPill term={g} index={1} v={v}/></span></>;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "function OpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX}){\n",
+      "new": "function OpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX,v='x'}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "      {allowX&&<button className={`op-x-btn ${opIsX?'active':''}`} onClick={onToggleX} title=\"הוספה/חיסור של כפולת x\">x</button>}\n",
+      "new": "      {allowX&&<button className={`op-x-btn ${opIsX?'active':''}`} onClick={onToggleX} title={`הוספה/חיסור של כפולת ${v}`}>{v}</button>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "  const[app,setApp]=useState(()=>{const eq=genEq();return{initial:eq,current:eq,history:[]}});\n",
+      "new": "  const[done,setDone]=useState(loadDone);\n  const introSeen=useRef(done>=X_ROUNDS);\n  const[app,setApp]=useState(()=>{const eq=genEq();return{initial:eq,current:eq,history:[],v:pickLetter(done,null),counted:false,intro:false}});\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "\n  const{current:cur,history:hist,initial:init}=app;\n  const solved=useMemo(()=>checkSolved(cur),[cur]);\n  const canSimpAny=canSimp(cur.left)||canSimp(cur.right);\n",
+      "new": "  const[sel,setSel]=useState(()=>new Set());\n\n  const{current:cur,history:hist,initial:init,v}=app;\n  const solved=useMemo(()=>checkSolved(cur),[cur]);\n  const canSimpAny=canSimp(cur.left)||canSimp(cur.right);\n  const selCount=sel.size;\n\n  useEffect(()=>{\n    if(solved===null||app.counted)return;\n    setApp(s=>({...s,counted:true}));\n    setDone(n=>{saveDone(n+1);return n+1});\n  },[solved,app.counted]);\n\n  // phones: while the on-screen keypad is open, keep the simplify button (and its message) in sight above it\n  function keepActionsVisible(){\n    requestAnimationFrame(()=>{\n      const row=document.querySelector('.action-row'),kp=document.querySelector('.kp:not(.kp-ghost)');\n      if(!row||!kp)return;\n      const over=row.getBoundingClientRect().bottom+12-kp.getBoundingClientRect().top;\n      if(over>0)window.scrollBy({top:over,behavior:'smooth'});\n    });\n  }\n  function togglePick(tid){\n    keepActionsVisible();\n    setSel(prev=>{const n=new Set(prev);n.has(tid)?n.delete(tid):n.add(tid);return n});\n    setOpErr('');\n  }\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "    setApp(s=>{const n=doOperate(s.current,opType,k,isX);return{...s,current:n,history:[...s.history,{eq:n,desc:opDesc(opType,k,isX)}]}});\n    setOpVal('');setOpErr('');setOpIsX(false);\n",
+      "new": "    setApp(s=>{const n=doOperate(s.current,opType,k,isX);return{...s,current:n,history:[...s.history,{eq:n,desc:opDesc(opType,k,isX,s.v)}]}});\n    setOpVal('');setOpErr('');setOpIsX(false);setSel(new Set());\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "    setApp(s=>{\n      const left=canSimp(s.current.left)?doSimplify(s.current.left):s.current.left;\n      const right=canSimp(s.current.right)?doSimplify(s.current.right):s.current.right;\n      return{...s,current:{left,right},history:[...s.history,{eq:{left,right},desc:'פישוט'}]};\n    });\n  }\n\n  function newEq(){const eq=genEq();setApp({initial:eq,current:eq,history:[]});setOpVal('');setOpErr('');setOpType('+');setOpIsX(false)}\n  function resetEq(){setApp(s=>({...s,current:s.initial,history:[]}));setOpVal('');setOpErr('');setOpType('+');setOpIsX(false)}\n",
+      "new": "    const r=simplifyPicked(cur,sel,v);\n    if(!r)return;\n    if(r.err){setOpErr(r.err);keepActionsVisible();return}\n    const desc=<>פישוט: {r.picked.map((t,i)=><React.Fragment key={t.id}>{i>0&&' ו-'}<span dir=\"ltr\">{sideStr([t],v)}</span></React.Fragment>)}</>;\n    setApp(s=>({...s,current:r.eq,history:[...s.history,{eq:r.eq,desc}]}));\n    setSel(new Set());setOpErr('');\n  }\n\n  function newEq(){\n    const eq=genEq();\n    const intro=done>=X_ROUNDS&&!introSeen.current;\n    if(intro)introSeen.current=true;\n    setApp(s=>({initial:eq,current:eq,history:[],v:pickLetter(done,s.v),counted:false,intro}));\n    setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);setSel(new Set());\n  }\n  function resetEq(){setApp(s=>({...s,current:s.initial,history:[]}));setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);setSel(new Set())}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "            <div className=\"s-val\">x = {solved}</div>\n",
+      "new": "            <div className=\"s-val\">{v} = {solved}</div>\n          </div>\n        )}\n\n        {app.intro&&(\n          <div className=\"info-box var-note\">\n            <b>שימו לב: מעכשיו הנעלם לא תמיד יהיה x</b>\n            <p>האות היא רק סימון למספר שמחפשים. במשוואה הזו הנעלם הוא <span dir=\"ltr\" className=\"var-letter\">{v}</span> — פותרים בדיוק באותה דרך.</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "          {solved===null&&<div className=\"hint\">בצעו את אותה פעולה על שני אגפי המשוואה — בחיבור/חיסור ניתן גם להוסיף כפולת x (כפתור x)</div>}\n",
+      "new": "          {!app.intro&&v!=='x'&&<div className=\"var-line\">הנעלם במשוואה הזו הוא <span dir=\"ltr\" className=\"var-letter\">{v}</span> — האות היא רק סימון, פותרים בדיוק כמו עם x</div>}\n          {solved===null&&<div className=\"hint\">בצעו את אותה פעולה על שני אגפי המשוואה — בחיבור/חיסור ניתן גם להוסיף כפולת {v} (כפתור {v})</div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "              <div className=\"g-left\"><OpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>\n              <div className=\"g-mid\"></div>\n              <div className=\"g-right\"><OpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>\n            </>}\n\n            <div className=\"g-left side-zone\"><PreviewSide terms={cur.left} opType={opType} k={solved===null?pvK:null} isX={pvX}/></div>\n            <span className=\"g-mid eq-sign\">=</span>\n            <div className=\"g-right side-zone\"><PreviewSide terms={cur.right} opType={opType} k={solved===null?pvK:null} isX={pvX}/></div>\n          </div>\n",
+      "new": "              <div className=\"g-left\"><OpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX} v={v}/></div>\n              <div className=\"g-mid\"></div>\n              <div className=\"g-right\"><OpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX} v={v}/></div>\n            </>}\n\n            <div className=\"g-left side-zone\"><PreviewSide terms={cur.left} opType={opType} k={solved===null?pvK:null} isX={pvX} v={v} sel={sel} onPick={solved===null?togglePick:null}/></div>\n            <span className=\"g-mid eq-sign\">=</span>\n            <div className=\"g-right side-zone\"><PreviewSide terms={cur.right} opType={opType} k={solved===null?pvK:null} isX={pvX} v={v} sel={sel} onPick={solved===null?togglePick:null}/></div>\n          </div>\n\n          {solved===null&&(canSimpAny||selCount>0)&&(\n            <div className=\"hint simp-hint\">{selCount===0?'לפישוט: לחצו על איברים מאותה משפחה באותו אגף, ואז על פשט'\n              :selCount===1?'איבר אחד נבחר — בחרו עוד איבר מאותה משפחה'\n              :`${selCount} איברים נבחרו — לחצו פשט לאיחוד`}</div>\n          )}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "              <button className=\"btn\" disabled={!canSimpAny} onClick={handleSimplify}>פשט ≡</button>\n",
+      "new": "              <button className=\"btn\" disabled={selCount<2} onClick={handleSimplify}>פשט{selCount>=2?` (${selCount})`:' ≡'}</button>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #56 + #57 (Sulaiman, 2026-11-13): #56 after 3 equations solved with x the unknown gets other letters (y, a, m, n, k, p) with a note that the letter is only a name; #57 simplify works only on terms the student tapped (same family, same side), like the quadratic solver",
+      "old": "                <span className=\"h-eq\">{eqStr(s.eq)}</span>\n",
+      "new": "                <span className=\"h-eq\">{eqStr(s.eq,v)}</span>\n",
+      "count": 1
     }
   ],
   "triangles": [
