@@ -7,6 +7,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 // Fraction drawn as numerator over denominator (Sulaiman, fixes board #54).
 const Fr = ({ n, d }) => <span className="pp-fr" dir="ltr"><span>{n}</span><span>{d}</span></span>;
+// Sharp graph drawing (#62) and the [ ] > [ ] range rows (#39) live in ./extras.jsx.
+import { drawGraph, graphDpr, monoCheck, MonoRows, MonoError, MonoSummary } from './extras';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useEffect, useRef, useCallback } = React;
@@ -81,177 +83,8 @@ function Graph({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, width, height);
-
-    // background
-    ctx.fillStyle = '#fafbff';
-    ctx.fillRect(0, 0, width, height);
-
-    // grid
-    ctx.strokeStyle = '#e0e4f0';
-    ctx.lineWidth = 1;
-    const gridStep = range > 12 ? 2 : 1;
-    for (let i = Math.ceil(offset.x - range); i <= Math.floor(offset.x + range); i += gridStep) {
-      const xp = toC(i);
-      ctx.beginPath(); ctx.moveTo(xp, 0); ctx.lineTo(xp, height); ctx.stroke();
-    }
-    for (let i = Math.ceil(offset.y - range); i <= Math.floor(offset.y + range); i += gridStep) {
-      const yp = toCY(i);
-      ctx.beginPath(); ctx.moveTo(0, yp); ctx.lineTo(width, yp); ctx.stroke();
-    }
-
-    // axes
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    // x axis
-    const yAxis = toCY(0);
-    ctx.beginPath(); ctx.moveTo(0, yAxis); ctx.lineTo(width, yAxis); ctx.stroke();
-    // y axis
-    const xAxis = toC(0);
-    ctx.beginPath(); ctx.moveTo(xAxis, 0); ctx.lineTo(xAxis, height); ctx.stroke();
-
-    // axis labels
-    ctx.fillStyle = '#555';
-    ctx.font = '11px Arial';
-    for (let i = Math.ceil(offset.x - range); i <= Math.floor(offset.x + range); i += gridStep) {
-      if (i === 0) continue;
-      const xp = toC(i);
-      const labelY = Math.max(14, Math.min(height - 4, yAxis + 14));
-      if (xp > 8 && xp < width - 8) ctx.fillText(i, xp - 4, labelY);
-    }
-    for (let i = Math.ceil(offset.y - range); i <= Math.floor(offset.y + range); i += gridStep) {
-      if (i === 0) continue;
-      const yp = toCY(i);
-      const labelX = Math.max(4, Math.min(width - 20, xAxis + 4));
-      if (yp > 8 && yp < height - 4) ctx.fillText(i, labelX, yp + 4);
-    }
-    ctx.fillStyle = '#1a237e';
-    ctx.font = 'bold 13px Arial';
-    ctx.fillText('x', width - 12, yAxis - 6);
-    ctx.fillText('y', xAxis + 6, 14);
-
-    // rise/fall region shading
-    riseRegions.forEach(([x1, x2]) => {
-      ctx.fillStyle = 'rgba(76,175,80,0.18)';
-      ctx.fillRect(toC(Math.min(x1,x2)), 0, Math.abs(toC(x2)-toC(x1)), height);
-    });
-    fallRegions.forEach(([x1, x2]) => {
-      ctx.fillStyle = 'rgba(244,67,54,0.18)';
-      ctx.fillRect(toC(Math.min(x1,x2)), 0, Math.abs(toC(x2)-toC(x1)), height);
-    });
-
-    // pos/neg region shading
-    posRegions.forEach(([x1, x2]) => {
-      const left = toC(Math.min(x1,x2));
-      const right = toC(Math.max(x1,x2));
-      ctx.fillStyle = 'rgba(76,175,80,0.2)';
-      ctx.fillRect(left, 0, right-left, height);
-    });
-    negRegions.forEach(([x1, x2]) => {
-      const left = toC(Math.min(x1,x2));
-      const right = toC(Math.max(x1,x2));
-      ctx.fillStyle = 'rgba(244,67,54,0.2)';
-      ctx.fillRect(left, 0, right-left, height);
-    });
-
-    // axis of symmetry
-    if (axisOfSymmetry !== null) {
-      const xp = toC(axisOfSymmetry);
-      ctx.strokeStyle = '#4caf50';
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([6, 4]);
-      ctx.beginPath(); ctx.moveTo(xp, 0); ctx.lineTo(xp, height); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#2e7d32';
-      ctx.font = 'bold 12px Arial';
-      ctx.fillText('x = ' + axisOfSymmetry.toFixed(1), xp + 4, 20);
-    }
-
-    // hover line
-    if (hoverX !== null) {
-      const xp = toC(hoverX);
-      ctx.strokeStyle = '#9e9e9e';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath(); ctx.moveTo(xp, 0); ctx.lineTo(xp, height); ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    // parabola
-    if (a !== 0) {
-      ctx.strokeStyle = '#1a237e';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      let started = false;
-      for (let px = 0; px <= width; px++) {
-        const wx = toV(px);
-        const wy = evalY(a, b, c, wx);
-        const py = toCY(wy);
-        if (py >= -20 && py <= height + 20) {
-          if (!started) { ctx.moveTo(px, py); started = true; }
-          else ctx.lineTo(px, py);
-        } else started = false;
-      }
-      ctx.stroke();
-    }
-
-    // drawPath (ghost parabola in green)
-    if (drawPath.length > 1) {
-      ctx.strokeStyle = '#4caf50';
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([]);
-      ctx.beginPath();
-      drawPath.forEach((pt, i) => {
-        const px = toC(pt.x); const py = toCY(pt.y);
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-      });
-      ctx.stroke();
-    }
-
-    // user drawn path (stored as world coords)
-    if (userPath.length > 1) {
-      ctx.strokeStyle = '#ff6f00';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      userPath.forEach((pt, i) => {
-        const px = toC(pt.wx); const py = toCY(pt.wy);
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-      });
-      ctx.stroke();
-    }
-
-    // roots
-    roots.forEach(rx => {
-      const xp = toC(rx);
-      const yp = toCY(0);
-      ctx.fillStyle = '#e91e63';
-      ctx.beginPath(); ctx.arc(xp, yp, 7, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Arial';
-      ctx.fillText('x', xp - 4, yp + 4);
-    });
-
-    // extra points
-    extraPoints.forEach(pt => {
-      const xp = toC(pt.x); const yp = toCY(pt.y);
-      ctx.fillStyle = pt.color || '#e91e63';
-      ctx.beginPath(); ctx.arc(xp, yp, 7, 0, Math.PI*2); ctx.fill();
-      if (pt.label) {
-        ctx.fillStyle = '#222'; ctx.font = 'bold 12px Arial';
-        ctx.fillText(pt.label, xp + 8, yp - 6);
-      }
-    });
-
-    // vertex highlight
-    if (highlightVertex && a !== 0) {
-      const vx = -b / (2*a);
-      const vy = evalY(a,b,c,vx);
-      const xp = toC(vx); const yp = toCY(vy);
-      ctx.fillStyle = '#ff6f00';
-      ctx.beginPath(); ctx.arc(xp, yp, 8, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Arial';
-      ctx.fillText('V', xp - 5, yp + 4);
-    }
+    drawGraph(canvas, { a, b, c, extraPoints, highlightVertex, axisOfSymmetry, hoverX, drawPath, userPath, roots,
+      riseRegions, fallRegions, posRegions, negRegions, width, height, range, offset, toC, toV, toCY });
 
   }, [a, b, c, extraPoints, highlightVertex, axisOfSymmetry, hoverX, drawPath, userPath, roots, riseRegions, fallRegions, posRegions, negRegions, width, height, toC, toCY, toV, range, offset]);
 
@@ -304,8 +137,8 @@ function Graph({
       </div>
       <canvas
         ref={canvasRef}
-        width={width}
-        height={height}
+        width={Math.round(width * graphDpr())}
+        height={Math.round(height * graphDpr())}
         style={{ width: Math.min(width, window.innerWidth - 48), height: 'auto', maxWidth: '100%',
           touchAction: 'none', cursor: panMode ? (panStartRef.current ? 'grabbing' : 'grab') : 'crosshair' }}
         onMouseMove={panMode ? (e) => handlePanMove(e) : (onMouseMove ? (e) => onMouseMove(getPos(e)) : undefined)}
@@ -891,13 +724,13 @@ function Section8() {
   const [fallRange, setFallRange] = useState(null);
   const [checked, setChecked] = useState(false);
   const [regionResult, setRegionResult] = useState(null);
-  const [answers, setAnswers] = useState({ riseOp: '>', riseVal: '', fallOp: '<', fallVal: '' });
+  const [answers, setAnswers] = useState({ rise: { l: '', r: '' }, fall: { l: '', r: '' } });
   const [ansResult, setAnsResult] = useState(null);
 
   const newFn = () => {
     setFn(makeFunction()); setMode(null); setDragging(false); setDragStart(null);
     setRiseRange(null); setFallRange(null); setChecked(false); setRegionResult(null);
-    setAnswers({ riseOp: '>', riseVal: '', fallOp: '<', fallVal: '' }); setAnsResult(null);
+    setAnswers({ rise: { l: '', r: '' }, fall: { l: '', r: '' } }); setAnsResult(null);
   };
 
   const handleDown = ({ wx }) => {
@@ -928,20 +761,7 @@ function Section8() {
     setRegionResult(riseOk && fallOk ? 'ok' : 'err');
   };
 
-  const checkAnswers = () => {
-    const vxStr = vx % 1 === 0 ? String(vx) : vx.toFixed(2);
-    const rv = parseFloat(answers.riseVal), fv = parseFloat(answers.fallVal);
-    if (isNaN(rv) || isNaN(fv)) { setAnsResult('invalid'); return; }
-    let ok;
-    if (a > 0) {
-      ok = answers.riseOp === '>' && Math.abs(rv - vx) < 0.1 &&
-           answers.fallOp === '<' && Math.abs(fv - vx) < 0.1;
-    } else {
-      ok = answers.riseOp === '<' && Math.abs(rv - vx) < 0.1 &&
-           answers.fallOp === '>' && Math.abs(fv - vx) < 0.1;
-    }
-    setAnsResult(ok ? 'ok' : 'err');
-  };
+  const checkAnswers = () => setAnsResult(monoCheck(a, vx, answers.rise, answers.fall));
 
   const riseRegions = riseRange ? [riseRange] : [];
   const fallRegions = fallRange ? [fallRange] : [];
@@ -979,24 +799,12 @@ function Section8() {
         {checked && (
           <div style={{marginTop: 16}}>
             <strong>חלק ב׳ — נסח את התחומים:</strong>
-            <div className="input-row" style={{marginTop: 10}}>
-              <label>הפונקציה עולה כאשר x</label>
-              <select value={answers.riseOp} onChange={e => setAnswers(p => ({...p, riseOp: e.target.value}))}>
-                <option>&gt;</option><option>&lt;</option>
-              </select>
-              <input value={answers.riseVal} onChange={e => setAnswers(p => ({...p, riseVal: e.target.value}))} placeholder="x קודקוד" style={{width: 70}} />
-            </div>
-            <div className="input-row">
-              <label>הפונקציה יורדת כאשר x</label>
-              <select value={answers.fallOp} onChange={e => setAnswers(p => ({...p, fallOp: e.target.value}))}>
-                <option>&lt;</option><option>&gt;</option>
-              </select>
-              <input value={answers.fallVal} onChange={e => setAnswers(p => ({...p, fallVal: e.target.value}))} placeholder="x קודקוד" style={{width: 70}} />
-            </div>
+            <MonoRows rise={answers.rise} fall={answers.fall} res={ansResult}
+              setRise={f => setAnswers(p => ({...p, rise: f(p.rise)}))} setFall={f => setAnswers(p => ({...p, fall: f(p.fall)}))}
+              onEdit={() => setAnsResult(null)} onEnter={checkAnswers} />
             <button className="btn" onClick={checkAnswers}>בדוק</button>
-            {ansResult === 'ok' && <div className="msg-success">מצוין! ניסוח נכון</div>}
-            {ansResult === 'err' && <div className="msg-error">לא נכון — שים לב לכיוון הפרבולה ול-x קודקוד</div>}
-            {ansResult === 'invalid' && <div className="msg-error">יש להזין מספר</div>}
+            {ansResult && ansResult.code === 'ok' && <div className="msg-success">מצוין! ניסוח נכון</div>}
+            <MonoError res={ansResult} />
           </div>
         )}
       </div>
@@ -1186,8 +994,8 @@ function Section10() {
   const { userPath, drawResult, showTrue, startDraw, continueDraw, endDraw, reset: resetDraw } = useDrawing(a, b, c);
 
   // step 4: sign/monotone
-  const [riseAns, setRiseAns] = useState({op:'>',val:''});
-  const [fallAns, setFallAns] = useState({op:'<',val:''});
+  const [riseAns, setRiseAns] = useState({l:'',r:''});
+  const [fallAns, setFallAns] = useState({l:'',r:''});
   const [posAns, setPosAns] = useState({op1:'<',op2:'>'});
   const [negAns, setNegAns] = useState({op1:'>',op2:'<'});
   const [monResult, setMonResult] = useState(null);
@@ -1199,7 +1007,7 @@ function Section10() {
     setFn(makeFunction()); setStep(0); setStepDone([false,false,false,false,false,false]); setSummary(null);
     setInYaxis(''); setYAxisResult(null); setRoots([]); setRootsDone(false);
     setVtxInputs({inB:'',inA:'',inY:''}); setVtxStep(1); setVtxVx(null); setVtxResult1(null); setVtxResult2(null);
-    resetDraw(); setRiseAns({op:'>',val:''}); setFallAns({op:'<',val:''});
+    resetDraw(); setRiseAns({l:'',r:''}); setFallAns({l:'',r:''});
     setPosAns({op1:'<',op2:'>'}); setNegAns({op1:'>',op2:'<'}); setMonResult(null); setSignResult(null);
   };
 
@@ -1210,7 +1018,7 @@ function Section10() {
       yInt: c,
       roots: roots,
       vertex: [vx, vy],
-      monotone: a > 0 ? `עולה: x > ${vx}, יורדת: x < ${vx}` : `עולה: x < ${vx}, יורדת: x > ${vx}`,
+      monotone: <MonoSummary a={a} vx={vx} />,
       sign: disc < 0 ? (a > 0 ? 'חיובית תמיד' : 'שלילית תמיד') :
         a > 0 ? `חיובית: x<${Math.min(r1||0,r2||0)} או x>${Math.max(r1||0,r2||0)}, שלילית: בין השורשים` :
                 `שלילית: x<${Math.min(r1||0,r2||0)} או x>${Math.max(r1||0,r2||0)}, חיובית: בין השורשים`,
@@ -1402,31 +1210,14 @@ function Section10() {
             <div className="pp-mon-hint">הגבול בין עלייה לירידה הוא ה-x של הקודקוד: <bdi dir="ltr">x = {vx%1===0?vx:vx.toFixed(2)}</bdi> (הקו המקווקו). הסתכלו לאן הפרבולה הולכת משמאל ומימין לו.</div>
             <Graph a={a} b={b} c={c} highlightVertex axisOfSymmetry={vx}
               extraPoints={[{x:vx,y:vy,color:'#ff6f00',label:'קודקוד'}]} />
-            {[['rise','עולה כאשר',riseAns,setRiseAns],['fall','יורדת כאשר',fallAns,setFallAns]].map(([k,l,v,set])=>(
-              <div className="pp-range" key={k}>
-                <span className="pp-range-l">{l}</span>
-                <span className="pp-range-m" dir="ltr">
-                  <span className="pp-var">x</span>
-                  <span className="pp-seg" role="group" aria-label="סימן">
-                    {['<','>'].map(o=><button key={o} type="button" className={v.op===o?'on':''} onClick={()=>set(p=>({...p,op:o}))}>{o}</button>)}
-                  </span>
-                  <input className="pp-rv" value={v.val} onChange={e=>set(p=>({...p,val:e.target.value}))} placeholder="?" />
-                </span>
-              </div>))}
-            <button className="btn" onClick={() => {
-              const rv=parseFloat(riseAns.val), fv=parseFloat(fallAns.val);
-              if(isNaN(rv)||isNaN(fv)){setMonResult('invalid');return;}
-              let ok = a>0
-                ? riseAns.op==='>'&&Math.abs(rv-vx)<0.1&&fallAns.op==='<'&&Math.abs(fv-vx)<0.1
-                : riseAns.op==='<'&&Math.abs(rv-vx)<0.1&&fallAns.op==='>'&&Math.abs(fv-vx)<0.1;
-              setMonResult(ok?'ok':'err');
-            }}>בדוק</button>
-            {monResult==='ok' && <>
+            <MonoRows rise={riseAns} fall={fallAns} setRise={setRiseAns} setFall={setFallAns} res={monResult}
+              onEdit={() => setMonResult(null)} onEnter={() => setMonResult(monoCheck(a, vx, riseAns, fallAns))} />
+            <button className="btn" onClick={() => setMonResult(monoCheck(a, vx, riseAns, fallAns))}>בדוק</button>
+            {monResult && monResult.code==='ok' && <>
               <div className="msg-success">מצוין! סיימת את החקירה!</div>
               <button className="btn green" onClick={() => { markDone(5); buildSummary(); }}>הצג סיכום</button>
             </>}
-            {monResult==='err' && <div className="msg-error">לא נכון — שים לב לכיוון הפרבולה ול-x קודקוד</div>}
-            {monResult==='invalid' && <div className="msg-error">יש להזין מספרים</div>}
+            <MonoError res={monResult} />
           </div>
         )}
 
