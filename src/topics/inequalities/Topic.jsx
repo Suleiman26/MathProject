@@ -31,6 +31,12 @@ function integersInRange(lo,closedLo,hi,closedHi){
   const out=[]; for(let i=start;i<=end;i++) out.push(i);
   return out;
 }
+// The final solution is always written with > or ≥ (x < 3 is shown as 3 > x).
+function isGtSign(s){return s==='>'||s==='≥';}
+function iqNum(n){return n<0?'−'+Math.abs(n):String(n);}
+function ieqFinal(sign,value){
+  return isGtSign(sign) ? `x ${sign} ${iqNum(value)}` : `${iqNum(value)} ${flipSign(sign)} x`;
+}
 function Fb({ok}){
   return <div className={`fb ${ok?'ok':'err'}`}>{ok?'✓ נכון!':'✗ לא נכון, נסו שוב'}</div>;
 }
@@ -145,12 +151,17 @@ function SolvedConfirm({sign,value,onCorrect}){
     if(!isNaN(n) && n===value){ setFb('ok'); setTimeout(onCorrect,450); }
     else setFb('err');
   }
-  return <div className="ans-row" style={{direction:'ltr'}}>
-    <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>x {sign}</span>
-    <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>
-    <button className="btn bp" onClick={check}>✓ בדוק</button>
-    {fb==='err' && <Fb ok={false}/>}
-    {fb==='ok' && <Fb ok={true}/>}
+  const gt=isGtSign(sign);
+  return <div>
+    <div className="iq-final-t">כתבו את הפתרון הסופי. את הסימן כותבים תמיד כך: <span className="iq-m">{closedOfSign(sign)?'≥':'>'}</span></div>
+    <div className="ans-row" style={{direction:'ltr'}}>
+      {gt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>x {sign}</span>}
+      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>
+      {!gt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>{flipSign(sign)} x</span>}
+      <button className="btn bp" onClick={check}>✓ בדוק</button>
+      {fb==='err' && <Fb ok={false}/>}
+      {fb==='ok' && <Fb ok={true}/>}
+    </div>
   </div>;
 }
 
@@ -173,8 +184,22 @@ function iqWithOp(terms,o,n){
   const wrap=(o==='*'||o==='/')&&terms.filter(t=>t.coef!==0).length>1?'('+side+')':side;
   return wrap+' '+IQ_OPS[o]+' '+num;
 }
+function iqClean(terms){
+  const out=terms.filter(t=>t.coef!==0);
+  return out.length?out:[ieqMkTerm('const',0)];
+}
+function iqHasLike(terms){
+  return terms.filter(t=>t.type==='x').length>1 || terms.filter(t=>t.type==='const').length>1;
+}
+function iqTermLabel(t,first){
+  const abs=Math.abs(t.coef);
+  const body=t.type==='x'?(abs===1?'x':abs+'x'):String(abs);
+  return first?((t.coef<0?'−':'')+body):((t.coef<0?'− ':'+ ')+body);
+}
 function IeqSolver({a,b,c,sign,onSolved}){
-  const [state,setState]=useState(()=>({left:[ieqMkTerm('x',a),ieqMkTerm('const',b)],right:[ieqMkTerm('const',c)],sign}));
+  const [state,setState]=useState(()=>({left:iqClean([ieqMkTerm('x',a),ieqMkTerm('const',b)]),right:[ieqMkTerm('const',c)],sign}));
+  const [sel,setSel]=useState(()=>new Set());
+  const [selErr,setSelErr]=useState('');
   const [hist,setHist]=useState([]);
   const [pending,setPending]=useState(null);
   const [opSym,setOpSym]=useState('-');
@@ -195,37 +220,71 @@ function IeqSolver({a,b,c,sign,onSolved}){
     if((opSym==='*'||opSym==='/')&&n===0){ setErr(opSym==='/'?'אי אפשר לחלק ב-0':'כפל ב-0 מוחק את כל האי-שוויון'); return; }
     if((opSym==='+'||opSym==='-')&&n===0){ setErr('הוספה או חיסור של 0 לא משנים כלום'); return; }
     if(opSym==='/'&&[...state.left,...state.right].some(t=>t.coef%n!==0)){ setErr('לא כל האיברים מתחלקים ב-'+n+'. נסו פעולה אחרת קודם.'); return; }
-    setErr(null); setNote(null); setPending({o:opSym,n});
+    setErr(null); setNote(null); setSel(new Set()); setSelErr('');
+    if(opSym==='+'||opSym==='-'){
+      // the number is written on both sides; the student joins like terms himself
+      const k=opSym==='+'?n:-n;
+      if(hist.length>0) setHist(h=>[...h,cur]);
+      setState({...state,left:iqClean([...state.left,ieqMkTerm('const',k)]),right:iqClean([...state.right,ieqMkTerm('const',k)])});
+      setOpNum('');
+      return;
+    }
+    setPending({o:opSym,n});
+  }
+  function toggleSel(id){
+    setSel(prev=>{const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n;});
+    setSelErr('');
+  }
+  function combineSel(){
+    const picked=[];
+    [['left',state.left],['right',state.right]].forEach(([side,terms])=>terms.forEach(t=>{ if(sel.has(t.id)) picked.push({...t,side}); }));
+    if(picked.length<2) return;
+    if(new Set(picked.map(t=>t.type)).size>1){ setSelErr('לא ניתן לפשט איברים שאינם מאותה משפחה (x, מספרים)'); return; }
+    if(new Set(picked.map(t=>t.side)).size>1){ setSelErr('ניתן לפשט רק איברים שנמצאים באותו צד'); return; }
+    const side=picked[0].side, type=picked[0].type;
+    const sum=picked.reduce((acc,t)=>acc+t.coef,0);
+    let placed=false; const out=[];
+    state[side].forEach(t=>{
+      if(!sel.has(t.id)) out.push(t);
+      else if(!placed){ placed=true; if(sum!==0) out.push(ieqMkTerm(type,sum)); }
+    });
+    setHist(h=>[...h,cur]);
+    setState({...state,[side]:iqClean(out)}); setSel(new Set()); setSelErr(''); setNote(null);
   }
   function simplify(){
     const {o,n}=pending;
     const line=`${iqWithOp(state.left,o,n)}  ${state.sign}  ${iqWithOp(state.right,o,n)}`;
-    let next;
-    if(o==='+'||o==='-'){
-      const k=o==='+'?n:-n;
-      next=ieqDoSimplify({...state,left:[...state.left,ieqMkTerm('const',k)],right:[...state.right,ieqMkTerm('const',k)]});
-    } else {
-      const f=t=>ieqMkTerm(t.type,o==='*'?t.coef*n:t.coef/n);
-      const flip=n<0;
-      next=ieqDoSimplify({...state,left:state.left.map(f),right:state.right.map(f),sign:flip?flipSign(state.sign):state.sign});
-      if(flip) setNote((o==='*'?'כפלנו':'חילקנו')+' במספר שלילי, ולכן סימן אי-השוויון התהפך: '+state.sign+' ← '+next.sign);
-    }
+    const f=t=>ieqMkTerm(t.type,o==='*'?t.coef*n:t.coef/n);
+    const flip=n<0;
+    const next={...state,left:iqClean(state.left.map(f)),right:iqClean(state.right.map(f)),sign:flip?flipSign(state.sign):state.sign};
+    if(flip) setNote({verb:o==='*'?'כפלנו':'חילקנו',from:state.sign,to:next.sign});
     setHist(h=>[...h,line]);
-    setState(next); setPending(null); setOpNum('');
+    setState(next); setPending(null); setOpNum(''); setSel(new Set()); setSelErr('');
   }
   function undo(){
     if(pending){ setPending(null); return; }
   }
   const cur=`${iqTerms(state.left)}  ${state.sign}  ${iqTerms(state.right)}`;
+  const hasLike=iqHasLike(state.left)||iqHasLike(state.right);
+  const canTap=!solvedInfo && !pending && !confirmed && (state.left.length>1||state.right.length>1);
+  const tapSide=terms=>terms.map((t,i)=><button key={t.id} type="button" className={`iq-term${sel.has(t.id)?' sel':''}`} aria-pressed={sel.has(t.id)} onClick={()=>toggleSel(t.id)}>{iqTermLabel(t,i===0)}</button>);
   return <div className="ieq-solver iq">
     <div className="iq-lines" dir="ltr">
       {hist.map((l,i)=><div key={i} className="iq-line old">{l}</div>)}
       {pending
         ? <div className="iq-line cur">{iqWithOp(state.left,pending.o,pending.n)}  {state.sign}  {iqWithOp(state.right,pending.o,pending.n)}</div>
-        : <div className="iq-line cur">{cur}</div>}
+        : canTap
+          ? <div className="iq-line cur iq-tap">{tapSide(state.left)}<span className="iq-tap-sign">{state.sign}</span>{tapSide(state.right)}</div>
+          : <div className="iq-line cur">{cur}</div>}
     </div>
-    {note && <div className="iq-note">{note}</div>}
-    {!solvedInfo && !pending && <div className="iq-op">
+    {note && <div className="iq-note">{note.verb} במספר שלילי, ולכן סימן אי-השוויון התהפך: במקום <span className="iq-m">{note.from}</span> כותבים <span className="iq-m">{note.to}</span></div>}
+    {canTap && hasLike && sel.size===0 && <div className="iq-like">לחצו על איברים מאותה משפחה באותו צד, ואז על ״פשט״</div>}
+    {canTap && sel.size>0 && <div className="iq-like">{sel.size===1?'איבר אחד נבחר. בחרו עוד איבר מאותה משפחה':sel.size+' איברים נבחרו. לחצו ״פשט״ לאיחוד'}</div>}
+    {canTap && sel.size>=2 && <div className="iq-act">
+      <button className="btn bp" onClick={combineSel}>פשט ({sel.size})</button>
+    </div>}
+    {canTap && selErr && <div className="ieq-div-err">{selErr}</div>}
+    {!solvedInfo && !pending && !hasLike && <div className="iq-op">
       <div className="iq-op-t">איזו פעולה עושים על שני האגפים?</div>
       <div className="iq-op-row" dir="ltr">
         {Object.keys(IQ_OPS).map(k=><button key={k} className={`iq-sym${opSym===k?' on':''}`} onClick={()=>{setOpSym(k);setErr(null);}} aria-label={{'+':'חיבור','-':'חיסור','*':'כפל','/':'חילוק'}[k]}>{IQ_OPS[k]}</button>)}
@@ -238,9 +297,9 @@ function IeqSolver({a,b,c,sign,onSolved}){
       <button className="btn" onClick={undo}>ביטול הפעולה</button>
     </div>}
     {err && <div className="ieq-div-err">{err}</div>}
-    {!solvedInfo && <div className="hint">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), היא נכתבת על שני האגפים, ולוחצים ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}
+    {!solvedInfo && <div className="hint">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), והיא נכתבת על שני האגפים. אחר כך לוחצים על איברים מאותה משפחה (מספרים עם מספרים, x עם x) באותו צד, ורק אז מופיע ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}
     {solvedInfo && !confirmed && <SolvedConfirm sign={solvedInfo.sign} value={solvedInfo.value} onCorrect={()=>{setConfirmed(true); onSolved(solvedInfo.sign,solvedInfo.value);}}/>}
-    {confirmed && solvedInfo && <div className="iq-done" dir="ltr">x {solvedInfo.sign} {solvedInfo.value} ✓</div>}
+    {confirmed && solvedInfo && <div className="iq-done" dir="ltr">{ieqFinal(solvedInfo.sign,solvedInfo.value)} ✓</div>}
   </div>;
 }
 
@@ -399,23 +458,119 @@ function BoundaryPointsMarker({expectedPoints,color,onCorrect,staticSegments}){
 
 function NotationInputRay({expectedSign,expectedValue,onCorrect}){
   const [sign,setSign]=useState(null);
+  const [xFirst,setXFirst]=useState(true);
   const [txt,setTxt]=useState('');
   const [fb,setFb]=useState(null);
   function check(){
-    const n=parseInt(txt,10);
-    if(sign && !isNaN(n) && sign===expectedSign && n===expectedValue){ setFb('ok'); setTimeout(onCorrect,450); }
+    const n=parseInt(String(txt).replace('−','-'),10);
+    // "5 > x" is the same inequality as "x < 5"
+    const meant=sign && (xFirst?sign:flipSign(sign));
+    if(sign && !isNaN(n) && meant===expectedSign && n===expectedValue){ setFb('ok'); setTimeout(onCorrect,450); }
     else setFb('err');
   }
+  const xEl=<span style={{fontSize:'1.2rem',fontWeight:700,color:'#831843'}}>x</span>;
+  const numEl=<input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>;
   return <div>
+    <div className="iq-final-t">את הסימן כותבים תמיד כך: <span className="iq-m">&gt;</span> או <span className="iq-m">≥</span>. אם x צריך להיות בצד השני, לחצו ״החלפת צדדים״.</div>
     <div className="choice-row" style={{direction:'ltr'}}>
-      <span style={{fontSize:'1.2rem',fontWeight:700,color:'#831843'}}>x</span>
-      {SIGNS.map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}
-      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>
+      {xFirst?xEl:numEl}
+      {['>','≥'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}
+      {xFirst?numEl:xEl}
     </div>
+    <div style={{textAlign:'center'}}><button type="button" className="btn iq-swap" onClick={()=>{setXFirst(v=>!v);setFb(null);}}>⇄ החלפת צדדים</button></div>
     <div style={{textAlign:'center'}}><button className="btn bp" onClick={check}>✓ בדוק</button></div>
     {fb==='err' && <Fb ok={false}/>}
     {fb==='ok' && <Fb ok={true}/>}
   </div>;
+}
+
+/* ---------- explanations shown before the practice ---------- */
+function IqMiniLine({value,closed,dir,color}){
+  const c=color||'#7c3aed';
+  const xv=v=>150+(v-value)*38;
+  const end=dir==='right'?288:12;
+  const tip=dir==='right'?`${end},30 ${end-11},23 ${end-11},37`:`${end},30 ${end+11},23 ${end+11},37`;
+  const ticks=[];
+  for(let v=value-3;v<=value+3;v++){
+    ticks.push(<g key={v}>
+      <line x1={xv(v)} y1={44} x2={xv(v)} y2={52} stroke="#64748b" strokeWidth={1.5}/>
+      <text x={xv(v)} y={70} textAnchor="middle" fontSize="14" fontWeight={v===value?800:500} fill={v===value?c:'#334155'}>{iqNum(v)}</text>
+    </g>);
+  }
+  return <svg className="iq-mini" viewBox="0 0 300 78" role="img" aria-label={closed?'עיגול מלא על ציר המספרים':'עיגול ריק על ציר המספרים'}>
+    <line x1={8} y1={48} x2={292} y2={48} stroke="#334155" strokeWidth={2}/>
+    {ticks}
+    <line x1={xv(value)} y1={30} x2={dir==='right'?end-8:end+8} y2={30} stroke={c} strokeWidth={6} strokeLinecap="round"/>
+    <polygon points={tip} fill={c}/>
+    <circle cx={xv(value)} cy={30} r={9} fill={closed?c:'#fff'} stroke={c} strokeWidth={3}/>
+  </svg>;
+}
+function IqExplainCircles(){
+  return <details className="iq-explain" open>
+    <summary>הסבר: עיגול מלא ועיגול ריק</summary>
+    <div className="iq-ex-body">
+      <p>העיגול על הציר מראה אם המספר שבקצה שייך לפתרון. הקו הצבוע מראה את כל שאר המספרים שמתאימים.</p>
+      <div className="iq-ex-grid">
+        <div className="iq-ex-card">
+          <div className="iq-ex-h"><span className="iq-dot full"></span>עיגול מלא: המספר בפנים</div>
+          <div className="iq-ex-t">מתאים לסימנים <span className="iq-m">≥</span> ו-<span className="iq-m">≤</span> (גדול או שווה, קטן או שווה).</div>
+          <div className="iq-ex-f">x ≥ 2</div>
+          <IqMiniLine value={2} closed={true} dir="right"/>
+          <div className="iq-ex-t">גם 2 עצמו וגם כל המספרים שגדולים ממנו.</div>
+        </div>
+        <div className="iq-ex-card">
+          <div className="iq-ex-h"><span className="iq-dot"></span>עיגול ריק: המספר בחוץ</div>
+          <div className="iq-ex-t">מתאים לסימנים <span className="iq-m">&gt;</span> ו-<span className="iq-m">&lt;</span> (גדול ממש, קטן ממש).</div>
+          <div className="iq-ex-f">5 &gt; x</div>
+          <IqMiniLine value={5} closed={false} dir="left"/>
+          <div className="iq-ex-t">רק המספרים שקטנים מ-5. המספר 5 עצמו לא שייך לפתרון.</div>
+        </div>
+      </div>
+    </div>
+  </details>;
+}
+function IqExplainSolve(){
+  return <details className="iq-explain" open>
+    <summary>הסבר ודוגמה: איך פותרים אי-שוויון?</summary>
+    <div className="iq-ex-body">
+      <p>פותרים אי-שוויון כמו משוואה: עושים אותה פעולה על שני האגפים, עד ש-x נשאר לבד.</p>
+      <div className="iq-ex-card">
+        <div className="iq-ex-h">דוגמה פתורה</div>
+        <div className="iq-ex-steps">
+          <div className="iq-ex-f">2x + 3 &gt; 11</div>
+          <div className="iq-ex-w">מחסרים 3 משני האגפים</div>
+          <div className="iq-ex-f">2x + 3 − 3 &gt; 11 − 3</div>
+          <div className="iq-ex-w">מפשטים</div>
+          <div className="iq-ex-f">2x &gt; 8</div>
+          <div className="iq-ex-w">מחלקים ב-2. זה מספר חיובי, ולכן הסימן נשאר</div>
+          <div className="iq-ex-f">2x ÷ 2 &gt; 8 ÷ 2</div>
+          <div className="iq-ex-f res">x &gt; 4</div>
+        </div>
+      </div>
+      <div className="iq-rule">
+        <div className="iq-rule-h">הכלל החשוב</div>
+        <div className="iq-rule-t">כשכופלים או מחלקים את שני האגפים ב<b>מספר שלילי</b>, סימן אי-השוויון <b>מתהפך</b>.</div>
+        <div className="iq-rule-flip">
+          <span><b>&gt;</b> הופך ל-<b>&lt;</b></span>
+          <span><b>&lt;</b> הופך ל-<b>&gt;</b></span>
+          <span><b>≥</b> הופך ל-<b>≤</b></span>
+          <span><b>≤</b> הופך ל-<b>≥</b></span>
+        </div>
+        <div className="iq-rule-t">למה? <span className="iq-m">2 &lt; 5</span>, אבל אחרי כפל ב-<span className="iq-m">(−1)</span> מקבלים <span className="iq-m">−2 &gt; −5</span>.</div>
+      </div>
+      <div className="iq-ex-card">
+        <div className="iq-ex-h">דוגמה פתורה עם מספר שלילי</div>
+        <div className="iq-ex-steps">
+          <div className="iq-ex-f">−3x + 2 ≤ 14</div>
+          <div className="iq-ex-w">מחסרים 2 משני האגפים ומפשטים</div>
+          <div className="iq-ex-f">−3x ≤ 12</div>
+          <div className="iq-ex-w flip">מחלקים ב-<span className="iq-m">(−3)</span>. זה מספר שלילי, ולכן הסימן מתהפך!</div>
+          <div className="iq-ex-f">−3x ÷ (−3) <b className="iq-flip">≥</b> 12 ÷ (−3)</div>
+          <div className="iq-ex-f res">x <b className="iq-flip">≥</b> −4</div>
+        </div>
+      </div>
+    </div>
+  </details>;
 }
 
 /* ================= Chapter 1 ================= */
@@ -431,14 +586,15 @@ function Ch1(){
   return <div className="content">
     <div className="card">
       <div className="card-t">אי-שוויון פשוט</div>
-      <div className="formula-box">{ineqText(data.a,data.b,data.c,data.sign)}</div>
+      <IqExplainSolve/>
+      <div className="formula-box" style={{direction:'ltr'}}>{ineqText(data.a,data.b,data.c,data.sign)}</div>
       {phase==='solve' && <div className="step-card">
         <div className="hint">שלב 1: פתרו את האי-שוויון, כמו משוואה</div>
         <IeqSolver key={data.a+'-'+data.b+'-'+data.c} a={data.a} b={data.b} c={data.c} sign={data.sign}
           onSolved={()=>setPhase('line')}/>
       </div>}
       {phase==='line' && <div className="step-card">
-        <div className="iq-sols" dir="ltr"><span className="c0">x {data.sign} {data.v}</span></div>
+        <div className="iq-sols" dir="ltr"><span className="c0">{ieqFinal(data.sign,data.v)}</span></div>
         <div className="hint">שלב 2: סמנו את הפתרון על ציר המספרים</div>
         <RayMarker expected={{value:data.v,closed:closedOfSign(data.sign),dir:dirOfSign(data.sign)}}
           color="#db2777" onCorrect={()=>setPhase('done')}/>
@@ -462,7 +618,7 @@ function Ch2A(){
   const [done,setDone]=useState(false);
   function reset(){ setData(genCh2A()); setDone(false); }
   return <div className="step-card">
-    <div className="hint">כתבו את אי-השוויון המתאים לתחום המסומן על הציר (בצורה x [סימן] [מספר])</div>
+    <div className="hint">כתבו את אי-השוויון המתאים לתחום המסומן על הציר</div>
     <NumberLineStatic segments={[{type:'ray',value:data.value,closed:data.closed,dir:data.dir,color:'#7c3aed'}]}/>
     {!done && <NotationInputRay expectedSign={data.sign} expectedValue={data.value} onCorrect={()=>setDone(true)}/>}
     {done && <div className="banner">✅ כל הכבוד!
@@ -481,7 +637,7 @@ function Ch2B(){
   function reset(){ setData(genCh2B()); setDone(false); }
   return <div className="step-card">
     <div className="hint">סמנו על הציר את התחום המתאים לאי-השוויון</div>
-    <div className="formula-box" style={{direction:'ltr'}}>x {data.sign} {data.value}</div>
+    <div className="formula-box" style={{direction:'ltr'}}>{ieqFinal(data.sign,data.value)}</div>
     {!done && <RayMarker expected={{value:data.value,closed:data.closed,dir:data.dir}} color="#7c3aed" onCorrect={()=>setDone(true)}/>}
     {done && <div className="banner">✅ כל הכבוד!
       <button className="btn bg" onClick={reset}>תרגיל חדש ↺</button>
@@ -524,6 +680,7 @@ function Ch2(){
   return <div className="content">
     <div className="card">
       <div className="card-t">הצגה על ציר המספרים וקריאתה</div>
+      <IqExplainCircles/>
       <div className="sub-tabs">
         <button className={`sub-tab ${sub==='a'?'active':''}`} onClick={()=>setSub('a')}>מציר לכתיב</button>
         <button className={`sub-tab ${sub==='b'?'active':''}`} onClick={()=>setSub('b')}>מכתיב לציר</button>
@@ -538,13 +695,18 @@ function Ch2(){
 
 /* ================= Chapter 3 ================= */
 function checkIntersectionNotation(text,result){
-  let t=(text||'').replace(/\s+/g,'').replace(/<=/g,'≤').replace(/>=/g,'≥');
+  let t=(text||'').replace(/\s+/g,'').replace(/<=/g,'≤').replace(/>=/g,'≥').replace(/−/g,'-');
   if(result.type==='empty') return /אין/.test(text) && /פתרון/.test(text);
   if(result.type==='point'){
     const m=t.match(/^x=(-?\d+)$/);
     return !!m && parseInt(m[1],10)===result.value;
   }
-  const m=t.match(/^(-?\d+)(≤|<)x(≤|<)(-?\d+)$/);
+  let m=t.match(/^(-?\d+)(≤|<)x(≤|<)(-?\d+)$/);
+  if(!m){
+    // the same range written with > : "5 ≥ x > -2"
+    const g=t.match(/^(-?\d+)(≥|>)x(≥|>)(-?\d+)$/);
+    if(g) m=[g[0],g[4],flipSign(g[3]),flipSign(g[2]),g[1]];
+  }
   if(!m) return false;
   const lo=parseInt(m[1],10), signA=m[2], signB=m[3], hi=parseInt(m[4],10);
   return lo===result.lo && hi===result.hi && signA===(result.closedLo?'≤':'<') && signB===(result.closedHi?'≤':'<');
@@ -627,9 +789,9 @@ function Ch3(){
       </div>}
 
       {phase>=2 && phase<6 && <div className="iq-sols">
-        <span className="c1">x {data.ineq1.sign} {data.ineq1.v}</span>
+        <span className="c1">{ieqFinal(data.ineq1.sign,data.ineq1.v)}</span>
         <span className="iq-and">וגם</span>
-        <span className="c2">x {data.ineq2.sign} {data.ineq2.v}</span>
+        <span className="c2">{ieqFinal(data.ineq2.sign,data.ineq2.v)}</span>
       </div>}
 
       {phase===2 && <div className="step-card">
