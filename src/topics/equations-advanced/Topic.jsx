@@ -149,6 +149,54 @@ function doCollect(terms) {
 }
 
 // Parse quadratic expression e.g. "x²+3x-5", "2x²-6x", "-7" → {x2C,xC,kC}
+// ── Simplifying by selection (fixes board #57) ──
+// The student taps terms; only terms of one family that sit on one side can be combined.
+// sel holds keys like "left:2" (side : index in that side's list).
+function combineSelected(left, right, sel, linear) {
+  const chosen = sel.map(k=>{ const [side,i]=k.split(':'); const t=(side==='left'?left:right)[+i]; return t?{...t,side,idx:+i}:null; }).filter(Boolean);
+  if(chosen.length<2) return null;
+  if(new Set(chosen.map(t=>t.power)).size>1) return {err:linear?'לא ניתן לפשט איברים שאינם מאותה משפחה (x, מספרים)':'לא ניתן לפשט איברים שאינם מאותה משפחה (x², x, מספרים)'};
+  if(new Set(chosen.map(t=>t.side)).size>1) return {err:'ניתן לפשט רק איברים שנמצאים באותו צד'};
+  const side=chosen[0].side, power=chosen[0].power;
+  const sum=chosen.reduce((s,t)=>s+t.coeff,0);
+  const idxs=chosen.map(t=>t.idx), first=Math.min(...idxs);
+  const terms=[];
+  (side==='left'?left:right).forEach((t,i)=>{
+    if(!idxs.includes(i)){ if(t.coeff!==0) terms.push(t); }
+    else if(i===first&&sum!==0) terms.push({coeff:sum,power}); // the result takes the first selected term's place
+  });
+  return {side, terms};
+}
+// two or more terms of one family still waiting on this side
+function hasLikeTerms(terms) {
+  const live=terms.filter(t=>t.coeff!==0);
+  return new Set(live.map(t=>t.power)).size<live.length;
+}
+// "ax = number" (or the mirror): x stands alone and the equation can be solved
+function isolatedX(left, right) {
+  const l=left.filter(t=>t.coeff!==0), r=right.filter(t=>t.coeff!==0);
+  const ok=(a,b)=>a.length===1&&a[0].power===1&&b.length<=1&&b.every(t=>t.power===0);
+  return ok(l,r)||ok(r,l);
+}
+// "ax²+bx+c = 0" (or the mirror): one side is 0, the other has x² and no like terms left
+function arrangedQuad(left, right) {
+  const l=left.filter(t=>t.coeff!==0), r=right.filter(t=>t.coeff!==0);
+  const ok=(a,b)=>b.length===0&&a.some(t=>t.power===2)&&!hasLikeTerms(a);
+  return ok(l,r)||ok(r,l);
+}
+function SimplifyBar({ count, err, like, idle, onSimplify }) {
+  const hint = count>=2 ? `${count} איברים נבחרו — לחץ פשט לאיחוד`
+    : count===1 ? 'איבר 1 נבחר — בחר עוד איבר מאותה משפחה באותו צד'
+    : like ? 'יש איברים דומים באותו צד — לחץ עליהם כדי לבחור, ואז לחץ פשט'
+    : (idle||'לחיצה על איבר = בחירה • גרירה = העברה לצד השני');
+  return (
+    <div className="ea-simplify">
+      <div className="ea-sel-hint">{hint}</div>
+      <button className="btn btn-hint" disabled={count<2} onClick={onSimplify}>פשט{count>=2?` (${count})`:' ≡'}</button>
+      {err&&<div className="feedback-err" style={{textAlign:'center'}}>✗ {err}</div>}
+    </div>);
+}
+
 function parseExpr2(s) {
   s=(s||'').replace(/\s/g,'').replace(/−/g,'-').replace(/x\^2/gi,'Q').replace(/x²/g,'Q');
   if(!s) return null;
@@ -201,9 +249,9 @@ function parseTerm(s) {
   return null;
 }
 
-function TermChip({ coeff, power, isFirst, onMouseDown, dimmed }) {
+function TermChip({ coeff, power, isFirst, onMouseDown, dimmed, selected }) {
   return (
-    <span onMouseDown={onMouseDown} title="גרור לצד השני"
+    <span onMouseDown={onMouseDown} title="גרור לצד השני" className={`ea-pick${selected?' ea-sel':''}`}
       style={{display:'inline-flex',alignItems:'center',padding:'8px 18px',
         fontSize:20,fontWeight:'bold',direction:'ltr',whiteSpace:'nowrap',
         background:dimmed?'#f0f0f0':'#e8eaf6',
@@ -406,6 +454,8 @@ function Section1() {
   const [left, setLeft] = useState([]);
   const [right, setRight] = useState([]);
   const [canSolve, setCanSolve] = useState(false);
+  const [sel, setSel] = useState([]);
+  const [selErr, setSelErr] = useState('');
   const [solInp, setSolInp] = useState('');
   const [fb, setFb] = useState('');
   const [ghost, setGhost] = useState(null);
@@ -444,6 +494,11 @@ function Section1() {
     function onMouseUp(e) {
       const dr = dragRef.current;
       if (!dr) return;
+      if (!dr.active) {
+        // a tap (no drag): select / unselect this term
+        const k = dr.side+':'+dr.idx;
+        setSel(p=>p.includes(k)?p.filter(x=>x!==k):[...p,k]); setSelErr('');
+      }
       if (dr.active) {
         const {side, idx} = dr;
         const lz=leftZoneRef.current, rz=rightZoneRef.current;
@@ -456,7 +511,7 @@ function Section1() {
           if (t) {
             if(side==='left'){ setLeft(l=>l.filter((_,i)=>i!==idx)); setRight(r=>[...r,{coeff:-t.coeff,power:t.power}]); }
             else { setRight(r=>r.filter((_,i)=>i!==idx)); setLeft(l=>[...l,{coeff:-t.coeff,power:t.power}]); }
-            setCanSolve(false);
+            setCanSolve(false); setSel([]); setSelErr('');
           }
         }
       }
@@ -475,6 +530,7 @@ function Section1() {
     setEq(e); setPhase(0); setLcmInp(''); setDomInp(''); setDomOk(false); setDomFb('');
     setLhsExpr(''); setRhsExpr('');
     setLeft([]); setRight([]); setCanSolve(false); setSolInp(''); setFb('');
+    setSel([]); setSelErr('');
     dragRef.current=null; setGhost(null); setOverSide(null); setDraggingInfo(null);
   }
 
@@ -507,17 +563,12 @@ function Section1() {
     setPhase(2); setFb('');
   }
 
-  function collect() {
-    const newL=doCollect(left), newR=doCollect(right);
-    const safeL=newL.length?newL:[{coeff:0,power:0}];
-    const safeR=newR.length?newR:[{coeff:0,power:0}];
-    setLeft(safeL); setRight(safeR);
-    const lx=newL.filter(t=>t.power===1), lc=newL.filter(t=>t.power===0);
-    const rx=newR.filter(t=>t.power===1), rc=newR.filter(t=>t.power===0);
-    setCanSolve(
-      (lx.length===1&&lc.length===0&&rx.length===0&&rc.length===1)||
-      (rx.length===1&&rc.length===0&&lx.length===0&&lc.length===1));
-    setFb('');
+  function simplifySel() {
+    const res=combineSelected(left, right, sel, true);
+    if(!res) return;
+    if(res.err){ setSelErr(res.err); return; }
+    if(res.side==='left') setLeft(res.terms); else setRight(res.terms);
+    setSel([]); setSelErr(''); setFb('');
   }
 
   function checkSol() {
@@ -592,6 +643,7 @@ function Section1() {
 
   const leftVis  = left.filter(t=>t.coeff!==0);
   const rightVis = right.filter(t=>t.coeff!==0);
+  const solvable = isolatedX(left, right);
 
   return (
     <div className="section-wrapper">
@@ -688,7 +740,8 @@ function Section1() {
         <div className="eq-card">
           <div className="phase-title">{lv===3?'שלב 4':'שלב 3'} — פתור בהעברת אגפים</div>
           <div className="info-box" style={{fontSize:13,marginBottom:10}}>
-            גרור כל איבר לצד השני של המשוואה — הסימן יתהפך אוטומטית
+            גרור כל איבר לצד השני של המשוואה — הסימן יתהפך אוטומטית.
+            כדי לפשט: לחץ על איברים דומים שנמצאים באותו צד, ואז על "פשט".
           </div>
           <div style={{display:'flex',alignItems:'stretch',justifyContent:'center',gap:0,direction:'ltr'}}>
             <div ref={leftZoneRef}
@@ -701,6 +754,7 @@ function Section1() {
                 : leftVis.map((t,i)=>{
                     const realIdx=left.indexOf(t);
                     return <TermChip key={i} coeff={t.coeff} power={t.power} isFirst={i===0}
+                      selected={sel.includes('left:'+realIdx)}
                       dimmed={draggingInfo?.side==='left'&&draggingInfo?.idx===realIdx}
                       onMouseDown={e=>{e.preventDefault();dragRef.current={side:'left',idx:realIdx,coeff:t.coeff,power:t.power,startX:e.clientX,startY:e.clientY,active:false};}}/>;
                   })}
@@ -716,15 +770,15 @@ function Section1() {
                 : rightVis.map((t,i)=>{
                     const realIdx=right.indexOf(t);
                     return <TermChip key={i} coeff={t.coeff} power={t.power} isFirst={i===0}
+                      selected={sel.includes('right:'+realIdx)}
                       dimmed={draggingInfo?.side==='right'&&draggingInfo?.idx===realIdx}
                       onMouseDown={e=>{e.preventDefault();dragRef.current={side:'right',idx:realIdx,coeff:t.coeff,power:t.power,startX:e.clientX,startY:e.clientY,active:false};}}/>;
                   })}
             </div>
           </div>
-          <div style={{display:'flex',justifyContent:'flex-end',marginTop:10}}>
-            <button className="btn btn-hint" onClick={collect}>⊕ כנס איברים משותפים</button>
-          </div>
-          {canSolve&&(
+          {!solvable&&<SimplifyBar count={sel.length} err={selErr} onSimplify={simplifySel}
+            like={hasLikeTerms(left)||hasLikeTerms(right)}/>}
+          {solvable&&(
             <div className="input-row" style={{marginTop:8,justifyContent:'center'}}>
               <label style={{fontWeight:'bold',fontSize:16}}>x =</label>
               <input className="math-input" value={solInp}
@@ -732,8 +786,8 @@ function Section1() {
                 onKeyDown={e=>e.key==='Enter'&&checkSol()}/>
               <button className="btn btn-success" onClick={checkSol}>✓ בדוק</button>
             </div>)}
-          {!canSolve&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>
-            גרור איברים ולחץ "כנס איברים משותפים" עד שנשאר x לבד
+          {!solvable&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>
+            גרור איברים ופשט איברים דומים עד שנשאר x לבד
           </div>}
           {fb&&phase===2&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
         </div>)}
@@ -783,6 +837,8 @@ function Section2() {
   const [left, setLeft] = useState([]);
   const [right, setRight] = useState([]);
   const [quadReady, setQuadReady] = useState(false);
+  const [sel, setSel] = useState([]);
+  const [selErr, setSelErr] = useState('');
   const [aInp, setAInp] = useState('');
   const [bInp, setBInp] = useState('');
   const [cInp, setCInp] = useState('');
@@ -816,6 +872,11 @@ function Section2() {
     }
     function onMouseUp(e) {
       const dr=dragRef.current; if(!dr) return;
+      if(!dr.active){
+        // a tap (no drag): select / unselect this term
+        const k=dr.side+':'+dr.idx;
+        setSel(p=>p.includes(k)?p.filter(x=>x!==k):[...p,k]); setSelErr('');
+      }
       if(dr.active){
         const {side,idx}=dr;
         const lz=leftZoneRef.current,rz=rightZoneRef.current;
@@ -828,7 +889,7 @@ function Section2() {
           if(t){
             if(side==='left'){setLeft(l=>l.filter((_,i)=>i!==idx));setRight(r=>[...r,{coeff:-t.coeff,power:t.power}]);}
             else{setRight(r=>r.filter((_,i)=>i!==idx));setLeft(l=>[...l,{coeff:-t.coeff,power:t.power}]);}
-            setQuadReady(false);
+            setQuadReady(false); setSel([]); setSelErr('');
           }
         }
       }
@@ -845,7 +906,7 @@ function Section2() {
     setEq(e); setPhase(0); setLcmInp('');
     setAParenInp(''); setBParenInp(''); setCParenInp('');
     setLhsExpr(''); setRhsExpr('');
-    setLeft([]); setRight([]); setQuadReady(false);
+    setLeft([]); setRight([]); setQuadReady(false); setSel([]); setSelErr('');
     setAInp(''); setBInp(''); setCInp('');
     setSol1(''); setSol2(''); setNoSolInp(false); setFb('');
     dragRef.current=null; setGhost(null); setOverSide(null); setDraggingInfo(null);
@@ -885,15 +946,12 @@ function Section2() {
     setPhase(3); setFb('');
   }
 
-  function collect() {
-    const newL=doCollect(left), newR=doCollect(right);
-    const safeL=newL.length?newL:[{coeff:0,power:0}];
-    const safeR=newR.length?newR:[{coeff:0,power:0}];
-    setLeft(safeL); setRight(safeR);
-    const rIsZero=newR.every(t=>t.coeff===0), lHasX2=newL.some(t=>t.power===2&&t.coeff!==0);
-    const lIsZero=newL.every(t=>t.coeff===0), rHasX2=newR.some(t=>t.power===2&&t.coeff!==0);
-    setQuadReady((rIsZero&&lHasX2)||(lIsZero&&rHasX2));
-    setFb('');
+  function simplifySel() {
+    const res=combineSelected(left, right, sel);
+    if(!res) return;
+    if(res.err){ setSelErr(res.err); return; }
+    if(res.side==='left') setLeft(res.terms); else setRight(res.terms);
+    setSel([]); setSelErr(''); setFb('');
   }
 
   function checkCoeffs() {
@@ -923,6 +981,7 @@ function Section2() {
   const {display,level:lv}=eq;
   const leftVis=left.filter(t=>t.coeff!==0);
   const rightVis=right.filter(t=>t.coeff!==0);
+  const arranged=arrangedQuad(left, right);
 
   function MultDisplay() {
     if(lv===1){
@@ -1076,7 +1135,7 @@ function Section2() {
         <div className="eq-card" style={{opacity:phase>3?0.5:1,pointerEvents:phase>3?'none':'auto'}}>
           <div className="phase-title">{lv===3?'שלב 4':'שלב 3'} — ארגן לצורה ax²+bx+c=0 (גרור איברים)</div>
           <div className="info-box" style={{fontSize:13,marginBottom:10}}>
-            גרור כל איבר לצד השני — הסימן יתהפך. לחץ "כנס" כדי לאסוף. כשהצד הימין הוא 0 — ממשיכים.
+            גרור כל איבר לצד השני — הסימן יתהפך. כדי לפשט: לחץ על איברים דומים שנמצאים באותו צד, ואז על "פשט". כשהצד הימין הוא 0 — ממשיכים.
           </div>
           <div style={{display:'flex',alignItems:'stretch',justifyContent:'center',gap:0,direction:'ltr'}}>
             <div ref={leftZoneRef}
@@ -1089,6 +1148,7 @@ function Section2() {
                 : leftVis.map((t,i)=>{
                     const ri=left.indexOf(t);
                     return <TermChip key={i} coeff={t.coeff} power={t.power} isFirst={i===0}
+                      selected={sel.includes('left:'+ri)}
                       dimmed={draggingInfo?.side==='left'&&draggingInfo?.idx===ri}
                       onMouseDown={e=>{e.preventDefault();dragRef.current={side:'left',idx:ri,coeff:t.coeff,power:t.power,startX:e.clientX,startY:e.clientY,active:false};}}/>;
                   })}
@@ -1104,17 +1164,19 @@ function Section2() {
                 : rightVis.map((t,i)=>{
                     const ri=right.indexOf(t);
                     return <TermChip key={i} coeff={t.coeff} power={t.power} isFirst={i===0}
+                      selected={sel.includes('right:'+ri)}
                       dimmed={draggingInfo?.side==='right'&&draggingInfo?.idx===ri}
                       onMouseDown={e=>{e.preventDefault();dragRef.current={side:'right',idx:ri,coeff:t.coeff,power:t.power,startX:e.clientX,startY:e.clientY,active:false};}}/>;
                   })}
             </div>
           </div>
-          <div style={{display:'flex',justifyContent:'space-between',marginTop:10,alignItems:'center'}}>
-            <button className="btn btn-hint" onClick={collect}>⊕ כנס איברים משותפים</button>
-            {quadReady&&phase===3&&<button className="btn btn-primary" onClick={()=>{setPhase(4);setFb('');}}>המשך ←</button>}
-          </div>
-          {!quadReady&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>
-            גרור ואסוף עד שהצד הימין = 0 ויש x² בצד שמאל
+          {!arranged&&<SimplifyBar count={sel.length} err={selErr} onSimplify={simplifySel}
+            like={hasLikeTerms(left)||hasLikeTerms(right)}/>}
+          {arranged&&phase===3&&<div style={{textAlign:'center',marginTop:12}}>
+            <button className="btn btn-primary" onClick={()=>{setPhase(4);setFb('');}}>המשך ←</button>
+          </div>}
+          {!arranged&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>
+            גרור ופשט עד שהצד הימין = 0 ויש x² בצד שמאל
           </div>}
           {fb&&phase===3&&<div className="feedback-err" style={{marginTop:6,textAlign:'center'}}>{fb}</div>}
         </div>)}
@@ -1620,6 +1682,9 @@ function SimplifyStep({ xCoeff, constant, rhs, onDone }) {
 // ── Drag Step: drag constant from left to right ──
 function DragStep({ xCoeff, constant, rhs, onDone }) {
   const [moved, setMoved] = useState(false);
+  const [sel, setSel] = useState([]);       // tapped terms: 'x' (the x term), 'c' (the number that moves), 'r' (the number on the right)
+  const [selErr, setSelErr] = useState('');
+  const [merged, setMerged] = useState(false);
   const dragRef = useRef(null);
 
   function xLabel(c) {
@@ -1636,23 +1701,34 @@ function DragStep({ xCoeff, constant, rhs, onDone }) {
     return null;
   }
 
+  // the two numbers on the right are combined only after the student selects both and presses "פשט"
+  const done = moved && (merged || rhs===0);
+  const toggle = k => { if(done) return; setSel(p=>p.includes(k)?p.filter(x=>x!==k):[...p,k]); setSelErr(''); };
+  const pick = k => ({ className:`ea-pick${sel.includes(k)?' ea-sel':''}`, onClick:()=>toggle(k) });
+  function simplifySel() {
+    if(sel.length<2) return;
+    if(sel.includes('x')) { setSelErr('לא ניתן לפשט איברים שאינם מאותה משפחה (x, מספרים)'); return; }
+    if(!moved) { setSelErr('ניתן לפשט רק איברים שנמצאים באותו צד'); return; }
+    setMerged(true); setSel([]); setSelErr('');
+  }
+
   return (
     <div>
       <div style={{fontSize:13,color:'#888',textAlign:'center',marginBottom:14,direction:'rtl'}}>
-        גרור את האיבר <strong style={{color:'#e65100'}}>{signedNum(constant)}</strong> לצד ימין — הסימן יתהפך
+        גרור את האיבר <strong dir="ltr" style={{color:'#e65100',unicodeBidi:'isolate'}}>{signedNum(constant)}</strong> לצד ימין — הסימן יתהפך
       </div>
       <div style={{display:'flex',alignItems:'center',gap:16,justifyContent:'center',direction:'ltr',flexWrap:'wrap',minHeight:64}}>
 
         {/* Left zone */}
         <div
           onDragOver={e=>e.preventDefault()}
-          onDrop={()=>{ if(dragRef.current==='right'){ setMoved(false); dragRef.current=null; }}}
+          onDrop={()=>{ if(dragRef.current==='right'){ setMoved(false); setSel([]); setSelErr(''); dragRef.current=null; }}}
           style={{display:'flex',gap:8,alignItems:'center',padding:'10px 16px',
             borderRadius:12,border:`2px dashed ${moved?'#a5d6a7':'#9fa8da'}`,
             background:moved?'#f0fff0':'#f8f9ff',minWidth:100,minHeight:56,transition:'all 0.2s'}}>
-          <span style={{...chipStyle,background:'#e8eaf6'}}>{xLabel(xCoeff)}</span>
+          <span {...pick('x')} style={{...chipStyle,background:'#e8eaf6'}}>{xLabel(xCoeff)}</span>
           {!moved && (
-            <span draggable
+            <span draggable {...pick('c')}
               onDragStart={e=>{ dragRef.current='left'; e.dataTransfer.effectAllowed='move'; }}
               style={{...chipStyle,background:'#fff3e0',border:'2px solid #ff9800',cursor:'grab',userSelect:'none'}}>
               {signedNum(constant)}
@@ -1664,13 +1740,15 @@ function DragStep({ xCoeff, constant, rhs, onDone }) {
         {/* Right zone */}
         <div
           onDragOver={e=>e.preventDefault()}
-          onDrop={()=>{ if(dragRef.current==='left'){ setMoved(true); dragRef.current=null; }}}
+          onDrop={()=>{ if(dragRef.current==='left'){ setMoved(true); setSel([]); setSelErr(''); dragRef.current=null; }}}
           style={{display:'flex',gap:8,alignItems:'center',padding:'10px 16px',
             borderRadius:12,border:`2px dashed ${moved?'#a5d6a7':'#9fa8da'}`,
             background:moved?'#f0fff0':'#f8f9ff',minWidth:80,minHeight:56,transition:'all 0.2s'}}>
-          <span style={{...chipStyle,background:'#e8eaf6'}}>{rhs}</span>
-          {moved && (
-            <span draggable
+          {done
+            ? <span style={{...chipStyle,background:'#e8f5e9',border:'2px solid #43a047'}}>{finalRhs}</span>
+            : <span {...pick('r')} style={{...chipStyle,background:'#e8eaf6'}}>{rhs}</span>}
+          {moved && !done && (
+            <span draggable {...pick('c')}
               onDragStart={e=>{ dragRef.current='right'; e.dataTransfer.effectAllowed='move'; }}
               style={{...chipStyle,background:'#e8f5e9',border:'2px solid #43a047',cursor:'grab',userSelect:'none'}}>
               {signedNum(-constant)}
@@ -1678,11 +1756,11 @@ function DragStep({ xCoeff, constant, rhs, onDone }) {
         </div>
       </div>
 
-      {moved && (
+      {!done && <SimplifyBar count={sel.length} err={selErr} onSimplify={simplifySel} like={moved}
+        idle="אחרי הגרירה: לחץ על שני המספרים שבצד ימין, ואז על פשט"/>}
+
+      {done && (
         <div style={{textAlign:'center',marginTop:16}}>
-          <div style={{fontWeight:'bold',fontSize:18,color:'#1a237e',marginBottom:12,direction:'ltr'}}>
-            {xLabel(xCoeff)} = {finalRhs}
-          </div>
           <button className="btn btn-success" onClick={onDone}>✓ עכשיו פתור את x</button>
         </div>)}
     </div>);

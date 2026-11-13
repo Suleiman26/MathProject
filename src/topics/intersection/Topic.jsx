@@ -115,6 +115,11 @@ function DragEqSolver({initLeft,initRight,onSolved,mode='linear'}){
   const [overSide,setOverSide]=useState(null);
   const [special,setSpecial]=useState('');
   const [fb,setFb]=useState(null);
+  const [sel,setSel]=useState([]); // ids of the terms the student tapped
+  const [selErr,setSelErr]=useState('');
+  const toggleSel=(tid)=>{setSel(p=>p.includes(tid)?p.filter(i=>i!==tid):[...p,tid]);setSelErr('');setFb(null);};
+  // a side never keeps a leftover 0 next to other terms
+  const dropZeros=(terms)=>{const r=terms.filter(t=>t.coef!==0);return r.length?r:[mkTerm(0,'num')];};
 
   function checkState(l,r){
     if(mode==='quadratic'){
@@ -157,20 +162,25 @@ function DragEqSolver({initLeft,initRight,onSolved,mode='linear'}){
     return {status:'working'};
   }
 
+  // Combine only the terms the student selected: same family, same side
   const simplify=()=>{
-    const simplSide=(terms)=>{
-      const x2Sum=terms.filter(t=>t.type==='x2').reduce((s,t)=>s+t.coef,0);
-      const xSum=terms.filter(t=>t.type==='x').reduce((s,t)=>s+t.coef,0);
-      const nSum=terms.filter(t=>t.type==='num').reduce((s,t)=>s+t.coef,0);
-      const res=[];
-      if(x2Sum!==0) res.push(mkTerm(x2Sum,'x2'));
-      if(xSum!==0) res.push(mkTerm(xSum,'x'));
-      if(nSum!==0) res.push(mkTerm(nSum,'num'));
-      if(res.length===0) res.push(mkTerm(0,'num'));
-      return res;
-    };
-    const nl=simplSide(left), nr=simplSide(right);
-    setLeft(nl);setRight(nr);setFb(null);
+    const chosen=[...left.filter(t=>sel.includes(t.id)).map(t=>({...t,side:'left'})),
+                  ...right.filter(t=>sel.includes(t.id)).map(t=>({...t,side:'right'}))];
+    if(chosen.length<2) return;
+    if(new Set(chosen.map(t=>t.type)).size>1){
+      setSelErr(mode==='quadratic'?'לא ניתן לפשט איברים שאינם מאותה משפחה (x², x, מספרים)':'לא ניתן לפשט איברים שאינם מאותה משפחה (x, מספרים)');return;}
+    if(new Set(chosen.map(t=>t.side)).size>1){setSelErr('ניתן לפשט רק איברים שנמצאים באותו צד');return;}
+    const side=chosen[0].side, type=chosen[0].type;
+    const sum=chosen.reduce((s,t)=>s+t.coef,0);
+    const terms=side==='left'?left:right;
+    const first=terms.findIndex(t=>sel.includes(t.id));
+    const res=[];
+    terms.forEach((t,i)=>{
+      if(!sel.includes(t.id)) res.push(t);
+      else if(i===first&&sum!==0) res.push(mkTerm(sum,type)); // the result takes the place of the first selected term
+    });
+    if(side==='left') setLeft(dropZeros(res)); else setRight(dropZeros(res));
+    setSel([]);setSelErr('');setFb(null);
   };
 
   // Drag handlers
@@ -197,9 +207,9 @@ function DragEqSolver({initLeft,initRight,onSolved,mode='linear'}){
     if(src.length===0) src.push(mkTerm(0,'num'));
     const dst=targetSide==='left'?[...left]:[...right];
     dst.push(mkTerm(-term.coef,term.type));
-    if(fromSide==='left'){setLeft(src);setRight(dst);}
-    else{setRight(src);setLeft(dst);}
-    setDragId(null);setDragFrom(null);setFb(null);
+    if(fromSide==='left'){setLeft(src);setRight(dropZeros(dst));}
+    else{setRight(src);setLeft(dropZeros(dst));}
+    setDragId(null);setDragFrom(null);setFb(null);setSel([]);setSelErr('');
   };
   const onDragEnd=()=>{setDragId(null);setDragFrom(null);setOverSide(null);};
 
@@ -255,9 +265,9 @@ function DragEqSolver({initLeft,initRight,onSolved,mode='linear'}){
     if(src.length===0) src.push(mkTerm(0,'num'));
     const dst=targetSide==='left'?[...left]:[...right];
     dst.push(mkTerm(-term.coef,term.type));
-    if(fromSide==='left'){setLeft(src);setRight(dst);}
-    else{setRight(src);setLeft(dst);}
-    setFb(null);
+    if(fromSide==='left'){setLeft(src);setRight(dropZeros(dst));}
+    else{setRight(src);setLeft(dropZeros(dst));}
+    setFb(null);setSel([]);setSelErr('');
   };
 
   useEffect(()=>{
@@ -267,6 +277,10 @@ function DragEqSolver({initLeft,initRight,onSolved,mode='linear'}){
   });
 
   const state=checkState(left,right);
+  // like terms still waiting on one side (two or more terms of the same family)
+  const hasLike=(terms)=>{const live=terms.filter(t=>t.coef!==0);return new Set(live.map(t=>t.type)).size<live.length;};
+  const needSimplify=state.status==='working'&&(hasLike(left)||hasLike(right));
+  const showSimplify=state.status==='working'||hasLike(left)||hasLike(right); // nothing left to combine once the equation is arranged
 
   const handleSpecial=()=>{
     if(state.status==='contradiction'&&special==='none'){setFb('ok');setTimeout(()=>onSolved('parallel'),600);}
@@ -288,8 +302,9 @@ function DragEqSolver({initLeft,initRight,onSolved,mode='linear'}){
     return terms.map((t,i)=>{
       const txt=fmtTerm(t,i===0);
       if(!txt) return null;
-      const cls=`term-chip ${t.type==='x2'?'x2-term':t.type==='x'?'x-term':'n-term'} ${dragId===t.id?'dragging':''}`;
-      return <span key={t.id} className={cls} draggable
+      const cls=`term-chip ${t.type==='x2'?'x2-term':t.type==='x'?'x-term':'n-term'} ${dragId===t.id?'dragging':''}${sel.includes(t.id)?' selected':''}`;
+      return <span key={t.id} className={cls} draggable role="button" aria-pressed={sel.includes(t.id)}
+        onClick={()=>showSimplify&&toggleSel(t.id)}
         onDragStart={e=>onDragStart(e,t.id,side)}
         onDragEnd={onDragEnd}
         onTouchStart={e=>onTouchStart(e,t.id,side)}
@@ -315,10 +330,15 @@ function DragEqSolver({initLeft,initRight,onSolved,mode='linear'}){
         {renderTerms(right,'right')}
       </div>
     </div>
-    <p className="hint">{mode==='quadratic'?'גרור איברים לצד שמאל כדי לקבל ... = 0':'גרור איברים מצד לצד כדי לבודד את x'}</p>
+    <p className="hint">{mode==='quadratic'?<>גרור איברים לצד שמאל כדי לקבל <span dir="ltr" style={{unicodeBidi:'isolate'}}>... = 0</span></>:'גרור איברים מצד לצד כדי לבודד את x'}</p>
+    {showSimplify&&<><p className="hint sel-hint">{sel.length>=2?`${sel.length} איברים נבחרו — לחץ פשט לאיחוד`
+      :sel.length===1?'איבר 1 נבחר — בחר עוד איבר מאותה משפחה באותו צד'
+      :needSimplify?'יש איברים דומים באותו צד — לחץ עליהם כדי לבחור, ואז לחץ פשט'
+      :'לחיצה על איבר = בחירה • גרירה = העברה לצד השני'}</p>
     <div className="simplify-row">
-      <button className="btn bo" onClick={simplify}>כנס איברים דומים</button>
+      <button className="btn bo" disabled={sel.length<2} onClick={simplify}>פשט{sel.length>=2?` (${sel.length})`:' ≡'}</button>
     </div>
+    {selErr&&<div className="fb err sel-err">✗ {selErr}</div>}</>}
 
     {state.status==='solved'&&<div style={{marginTop:12}}>
       <div className="fb ok" style={{fontSize:16,fontWeight:700}}>x = {state.x}</div>
