@@ -1115,6 +1115,90 @@
       "old": "        <span className=\"c1\">x {data.ineq1.sign} {data.ineq1.v}</span>\n        <span className=\"iq-and\">וגם</span>\n        <span className=\"c2\">x {data.ineq2.sign} {data.ineq2.v}</span>\n",
       "new": "        <span className=\"c1\">{ieqFinal(data.ineq1.sign,data.ineq1.v)}</span>\n        <span className=\"iq-and\">וגם</span>\n        <span className=\"c2\">{ieqFinal(data.ineq2.sign,data.ineq2.v)}</span>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "// The final solution is always written with > or ≥ (x < 3 is shown as 3 > x).\nfunction isGtSign(s){return s==='>'||s==='≥';}\nfunction iqNum(n){return n<0?'−'+Math.abs(n):String(n);}\nfunction ieqFinal(sign,value){\n  return isGtSign(sign) ? `x ${sign} ${iqNum(value)}` : `${iqNum(value)} ${flipSign(sign)} x`;\n",
+      "new": "// The final solution is always written with < or ≤ (x > 3 is shown as 3 < x).\nfunction isLtSign(s){return s==='<'||s==='≤';}\nfunction iqNum(n){return n<0?'−'+Math.abs(n):String(n);}\nfunction ieqFinal(sign,value){\n  return isLtSign(sign) ? `x ${sign} ${iqNum(value)}` : `${iqNum(value)} ${flipSign(sign)} x`;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "  const gt=isGtSign(sign);\n  return <div>\n    <div className=\"iq-final-t\">כתבו את הפתרון הסופי. את הסימן כותבים תמיד כך: <span className=\"iq-m\">{closedOfSign(sign)?'≥':'>'}</span></div>\n    <div className=\"ans-row\" style={{direction:'ltr'}}>\n      {gt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>x {sign}</span>}\n      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>\n      {!gt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>{flipSign(sign)} x</span>}\n",
+      "new": "  const lt=isLtSign(sign);\n  return <div>\n    <div className=\"iq-final-t\">כתבו את הפתרון הסופי. את הסימן כותבים תמיד כך: <span className=\"iq-m\">{closedOfSign(sign)?'≤':'<'}</span></div>\n    <div className=\"ans-row\" style={{direction:'ltr'}}>\n      {lt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>x {sign}</span>}\n      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>\n      {!lt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>{flipSign(sign)} x</span>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "    // \"5 > x\" is the same inequality as \"x < 5\"\n",
+      "new": "    // \"5 < x\" is the same inequality as \"x > 5\"\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "    <div className=\"iq-final-t\">את הסימן כותבים תמיד כך: <span className=\"iq-m\">&gt;</span> או <span className=\"iq-m\">≥</span>. אם x צריך להיות בצד השני, לחצו ״החלפת צדדים״.</div>\n    <div className=\"choice-row\" style={{direction:'ltr'}}>\n      {xFirst?xEl:numEl}\n      {['>','≥'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}\n",
+      "new": "    <div className=\"iq-final-t\">את הסימן כותבים תמיד כך: <span className=\"iq-m\">&lt;</span> או <span className=\"iq-m\">≤</span>. אם x צריך להיות בצד השני, לחצו ״החלפת צדדים״.</div>\n    <div className=\"choice-row\" style={{direction:'ltr'}}>\n      {xFirst?xEl:numEl}\n      {['<','≤'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "          <div className=\"iq-ex-f\">x ≥ 2</div>\n",
+      "new": "          <div className=\"iq-ex-f\">2 ≤ x</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "          <div className=\"iq-ex-f\">5 &gt; x</div>\n",
+      "new": "          <div className=\"iq-ex-f\">x &lt; 5</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "          <div className=\"iq-ex-f res\">x &gt; 4</div>\n",
+      "new": "          <div className=\"iq-ex-f\">x &gt; 4</div>\n          <div className=\"iq-ex-w\">בפתרון הסופי כותבים תמיד <span className=\"iq-m\">&lt;</span>: מחליפים צדדים</div>\n          <div className=\"iq-ex-f res\">4 &lt; x</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "          <div className=\"iq-ex-f res\">x <b className=\"iq-flip\">≥</b> −4</div>\n",
+      "new": "          <div className=\"iq-ex-f\">x <b className=\"iq-flip\">≥</b> −4</div>\n          <div className=\"iq-ex-w\">בפתרון הסופי כותבים תמיד <span className=\"iq-m\">≤</span>: מחליפים צדדים</div>\n          <div className=\"iq-ex-f res\">−4 ≤ x</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} placeholder=\"לדוגמה: 1, 2, 3\" style={{minWidth:160}}/>\n",
+      "new": "      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} placeholder={'לדוגמה: \\u20661, 2, 3\\u2069'} style={{minWidth:160}}/>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "  let m=t.match(/^(-?\\d+)(≤|<)x(≤|<)(-?\\d+)$/);\n  if(!m){\n    // the same range written with > : \"5 ≥ x > -2\"\n    const g=t.match(/^(-?\\d+)(≥|>)x(≥|>)(-?\\d+)$/);\n    if(g) m=[g[0],g[4],flipSign(g[3]),flipSign(g[2]),g[1]];\n  }\n",
+      "new": "  // the range is written only with < or ≤ (\"-2 < x ≤ 5\"); a > or ≥ gets a hint\n  if(/[>≥]/.test(t)) return 'gt';\n  const m=t.match(/^(-?\\d+)(≤|<)x(≤|<)(-?\\d+)$/);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "    if(ok){ setNotationFb('ok'); setTimeout(()=>setPhase(data.result.type==='empty'?6:5),500); }\n",
+      "new": "    if(ok==='gt'){ setNotationFb('gt'); return; }\n    if(ok){ setNotationFb('ok'); setTimeout(()=>setPhase(data.result.type==='empty'?6:5),500); }\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "              placeholder={data.result.type==='empty' ? 'אין פתרון' : 'לדוגמה: -2 < x ≤ 5'} style={{minWidth:170}}/>\n",
+      "new": "              placeholder={data.result.type==='empty' ? 'אין פתרון' : 'לדוגמה: \\u2066-2 < x ≤ 5\\u2069'} style={{minWidth:170}}/>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "          {notationFb==='ok' && <Fb ok={true}/>}\n",
+      "new": "          {notationFb==='gt' && <div className=\"fb err iq-gt-hint\">כמעט! את הסימן כותבים תמיד כך: <span className=\"iq-m\">&lt;</span> או <span className=\"iq-nw\"><span className=\"iq-m\">≤</span>,</span> מהמספר הקטן אל הגדול. לדוגמה: <span className=\"iq-m\">−2 &lt; x ≤ 5</span></div>}\n          {notationFb==='ok' && <Fb ok={true}/>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: final answers always written with < or ≤ (Sulaiman's RTL request), > form gets a hint, math placeholders isolated LTR",
+      "old": "          <input value={listTxt} onChange={e=>{setListTxt(e.target.value);setListFb(null);}} placeholder=\"לדוגמה: 1, 2, 3\" style={{minWidth:160}}/>\n",
+      "new": "          <input value={listTxt} onChange={e=>{setListTxt(e.target.value);setListFb(null);}} placeholder={'לדוגמה: \\u20661, 2, 3\\u2069'} style={{minWidth:160}}/>\n",
+      "count": 1
     }
   ],
   "parabola-practice": [

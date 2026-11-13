@@ -1,7 +1,7 @@
 'use client';
 /* Display helpers for the quadratic-function topic (not Sulaiman's math):
    - drawGraph: the coordinate grid + parabola, sharp on retina screens (fixes board #62)
-   - MonoRows / monoCheck: rising / falling ranges written as [ ] > [ ] (fixes board #39) */
+   - MonoRows / monoCheck: rising / falling ranges written as [ ] < [ ] (fixes board #39) */
 import React from 'react';
 
 // ── Graph ────────────────────────────────────────────────────────────────────
@@ -231,8 +231,9 @@ export function drawGraph(canvas, p) {
   }
 }
 
-// ── Rising / falling ranges: [ ] > [ ] ───────────────────────────────────────
-// One box holds x, the other the number (the vertex's x). The sign is always ">".
+// ── Rising / falling ranges: [ ] < [ ] ───────────────────────────────────────
+// One box holds x, the other the number (the vertex's x). The sign is always "<"
+// (Sulaiman, board #39 round 2: "x < 2" or "2 < x", never ">").
 // What a box holds: 'x', a number (decimal or a/b), null when empty, NaN when unreadable.
 export function monoSide(s) {
   const t = String(s == null ? '' : s).replace(/\s+/g, '').replace(/[−–]/g, '-').replace(',', '.');
@@ -244,15 +245,15 @@ export function monoSide(s) {
   return Number.isFinite(v) ? v : NaN;
 }
 const isNum = (v) => typeof v === 'number' && !Number.isNaN(v);
-// a row → 'empty' | 'form' | { dir: 'gt' (x > n) | 'lt' (n > x), n }
-function monoRow(v) {
+// a row "[l] < [r]" → 'empty' | 'form' | { dir: 'gt' (x > n, written n < x) | 'lt' (x < n), n }
+export function monoRow(v) {
   const l = monoSide(v.l), r = monoSide(v.r);
   if (l === null || r === null) return 'empty';
-  if (l === 'x' && isNum(r)) return { dir: 'gt', n: r };
-  if (r === 'x' && isNum(l)) return { dir: 'lt', n: l };
+  if (l === 'x' && isNum(r)) return { dir: 'lt', n: r };
+  if (r === 'x' && isNum(l)) return { dir: 'gt', n: l };
   return 'form';
 }
-// a > 0: rises for x > vx, falls for vx > x.  a < 0: the other way round.
+// a > 0: rises for x > vx (vx < x), falls for x < vx.  a < 0: the other way round.
 export function monoCheck(a, vx, rise, fall) {
   const R = monoRow(rise), F = monoRow(fall);
   const res = (code, okR, okF) => ({ code, rise: okR, fall: okF });
@@ -277,14 +278,14 @@ export function MonoRows({ rise, fall, setRise, setFall, res, onEdit, onEnter })
   return (
     <>
       <div className="pp-mon-hint">
-        כותבים <span className="pp-ltr" dir="ltr">x</span> במשבצת אחת ואת המספר במשבצת השנייה. הסימן שבאמצע קבוע: הצד הגדול נכתב משמאל לו.
+        כותבים <span className="pp-ltr" dir="ltr">x</span> במשבצת אחת ואת המספר במשבצת השנייה. הסימן שבאמצע קבוע: הצד הקטן נכתב משמאל לו.
       </div>
       {rows.map(([k, l, v, set]) => (
         <div className={'pp-range' + (res && res.code !== 'ok' && !res[k] ? ' bad' : '')} key={k}>
           <span className="pp-range-l">{l}</span>
           <span className="pp-range-m" dir="ltr">
             {box(v, set, 'l', l)}
-            <span className="pp-gt" aria-label="גדול מ">&gt;</span>
+            <span className="pp-gt" aria-label="קטן מ">&lt;</span>
             {box(v, set, 'r', l)}
           </span>
         </div>
@@ -300,14 +301,14 @@ export function MonoError({ res }) {
       {res.code === 'empty' && <>יש למלא את שתי המשבצות בכל שורה: באחת <span className="pp-ltr" dir="ltr">x</span> ובשנייה מספר</>}
       {res.code === 'form' && <>בכל שורה צריך להיות <span className="pp-ltr" dir="ltr">x</span> במשבצת אחת ומספר במשבצת השנייה</>}
       {res.code === 'num' && <>המספר לא נכון — הגבול בין עלייה לירידה הוא ה-x של הקודקוד</>}
-      {res.code === 'dir' && <>המספר נכון, אבל הכיוון הפוך — שים לב לכיוון הפרבולה, ולכך שהצד הגדול נכתב משמאל לסימן</>}
+      {res.code === 'dir' && <>המספר נכון, אבל הכיוון הפוך — שים לב לכיוון הפרבולה, ולכך שהצד הקטן נכתב משמאל לסימן</>}
     </div>
   );
 }
 
-// the same ranges as plain text for the summary, always with ">"
+// the same ranges as plain text for the summary, always with "<"
 export function MonoSummary({ a, vx }) {
   const n = fmt(vx);
-  const gt = <span className="pp-ltr" dir="ltr">x &gt; {n}</span>, lt = <span className="pp-ltr" dir="ltr">{n} &gt; x</span>;
+  const gt = <span className="pp-ltr" dir="ltr">{n} &lt; x</span>, lt = <span className="pp-ltr" dir="ltr">x &lt; {n}</span>;
   return <span>עולה: {a > 0 ? gt : lt}, יורדת: {a > 0 ? lt : gt}</span>;
 }

@@ -31,11 +31,11 @@ function integersInRange(lo,closedLo,hi,closedHi){
   const out=[]; for(let i=start;i<=end;i++) out.push(i);
   return out;
 }
-// The final solution is always written with > or ≥ (x < 3 is shown as 3 > x).
-function isGtSign(s){return s==='>'||s==='≥';}
+// The final solution is always written with < or ≤ (x > 3 is shown as 3 < x).
+function isLtSign(s){return s==='<'||s==='≤';}
 function iqNum(n){return n<0?'−'+Math.abs(n):String(n);}
 function ieqFinal(sign,value){
-  return isGtSign(sign) ? `x ${sign} ${iqNum(value)}` : `${iqNum(value)} ${flipSign(sign)} x`;
+  return isLtSign(sign) ? `x ${sign} ${iqNum(value)}` : `${iqNum(value)} ${flipSign(sign)} x`;
 }
 function Fb({ok}){
   return <div className={`fb ${ok?'ok':'err'}`}>{ok?'✓ נכון!':'✗ לא נכון, נסו שוב'}</div>;
@@ -151,13 +151,13 @@ function SolvedConfirm({sign,value,onCorrect}){
     if(!isNaN(n) && n===value){ setFb('ok'); setTimeout(onCorrect,450); }
     else setFb('err');
   }
-  const gt=isGtSign(sign);
+  const lt=isLtSign(sign);
   return <div>
-    <div className="iq-final-t">כתבו את הפתרון הסופי. את הסימן כותבים תמיד כך: <span className="iq-m">{closedOfSign(sign)?'≥':'>'}</span></div>
+    <div className="iq-final-t">כתבו את הפתרון הסופי. את הסימן כותבים תמיד כך: <span className="iq-m">{closedOfSign(sign)?'≤':'<'}</span></div>
     <div className="ans-row" style={{direction:'ltr'}}>
-      {gt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>x {sign}</span>}
+      {lt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>x {sign}</span>}
       <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>
-      {!gt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>{flipSign(sign)} x</span>}
+      {!lt && <span style={{fontSize:'1.3rem',fontWeight:700,color:'#831843'}}>{flipSign(sign)} x</span>}
       <button className="btn bp" onClick={check}>✓ בדוק</button>
       {fb==='err' && <Fb ok={false}/>}
       {fb==='ok' && <Fb ok={true}/>}
@@ -463,7 +463,7 @@ function NotationInputRay({expectedSign,expectedValue,onCorrect}){
   const [fb,setFb]=useState(null);
   function check(){
     const n=parseInt(String(txt).replace('−','-'),10);
-    // "5 > x" is the same inequality as "x < 5"
+    // "5 < x" is the same inequality as "x > 5"
     const meant=sign && (xFirst?sign:flipSign(sign));
     if(sign && !isNaN(n) && meant===expectedSign && n===expectedValue){ setFb('ok'); setTimeout(onCorrect,450); }
     else setFb('err');
@@ -471,10 +471,10 @@ function NotationInputRay({expectedSign,expectedValue,onCorrect}){
   const xEl=<span style={{fontSize:'1.2rem',fontWeight:700,color:'#831843'}}>x</span>;
   const numEl=<input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>;
   return <div>
-    <div className="iq-final-t">את הסימן כותבים תמיד כך: <span className="iq-m">&gt;</span> או <span className="iq-m">≥</span>. אם x צריך להיות בצד השני, לחצו ״החלפת צדדים״.</div>
+    <div className="iq-final-t">את הסימן כותבים תמיד כך: <span className="iq-m">&lt;</span> או <span className="iq-m">≤</span>. אם x צריך להיות בצד השני, לחצו ״החלפת צדדים״.</div>
     <div className="choice-row" style={{direction:'ltr'}}>
       {xFirst?xEl:numEl}
-      {['>','≥'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}
+      {['<','≤'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}
       {xFirst?numEl:xEl}
     </div>
     <div style={{textAlign:'center'}}><button type="button" className="btn iq-swap" onClick={()=>{setXFirst(v=>!v);setFb(null);}}>⇄ החלפת צדדים</button></div>
@@ -514,14 +514,14 @@ function IqExplainCircles(){
         <div className="iq-ex-card">
           <div className="iq-ex-h"><span className="iq-dot full"></span>עיגול מלא: המספר בפנים</div>
           <div className="iq-ex-t">מתאים לסימנים <span className="iq-m">≥</span> ו-<span className="iq-m">≤</span> (גדול או שווה, קטן או שווה).</div>
-          <div className="iq-ex-f">x ≥ 2</div>
+          <div className="iq-ex-f">2 ≤ x</div>
           <IqMiniLine value={2} closed={true} dir="right"/>
           <div className="iq-ex-t">גם 2 עצמו וגם כל המספרים שגדולים ממנו.</div>
         </div>
         <div className="iq-ex-card">
           <div className="iq-ex-h"><span className="iq-dot"></span>עיגול ריק: המספר בחוץ</div>
           <div className="iq-ex-t">מתאים לסימנים <span className="iq-m">&gt;</span> ו-<span className="iq-m">&lt;</span> (גדול ממש, קטן ממש).</div>
-          <div className="iq-ex-f">5 &gt; x</div>
+          <div className="iq-ex-f">x &lt; 5</div>
           <IqMiniLine value={5} closed={false} dir="left"/>
           <div className="iq-ex-t">רק המספרים שקטנים מ-5. המספר 5 עצמו לא שייך לפתרון.</div>
         </div>
@@ -544,7 +544,9 @@ function IqExplainSolve(){
           <div className="iq-ex-f">2x &gt; 8</div>
           <div className="iq-ex-w">מחלקים ב-2. זה מספר חיובי, ולכן הסימן נשאר</div>
           <div className="iq-ex-f">2x ÷ 2 &gt; 8 ÷ 2</div>
-          <div className="iq-ex-f res">x &gt; 4</div>
+          <div className="iq-ex-f">x &gt; 4</div>
+          <div className="iq-ex-w">בפתרון הסופי כותבים תמיד <span className="iq-m">&lt;</span>: מחליפים צדדים</div>
+          <div className="iq-ex-f res">4 &lt; x</div>
         </div>
       </div>
       <div className="iq-rule">
@@ -566,7 +568,9 @@ function IqExplainSolve(){
           <div className="iq-ex-f">−3x ≤ 12</div>
           <div className="iq-ex-w flip">מחלקים ב-<span className="iq-m">(−3)</span>. זה מספר שלילי, ולכן הסימן מתהפך!</div>
           <div className="iq-ex-f">−3x ÷ (−3) <b className="iq-flip">≥</b> 12 ÷ (−3)</div>
-          <div className="iq-ex-f res">x <b className="iq-flip">≥</b> −4</div>
+          <div className="iq-ex-f">x <b className="iq-flip">≥</b> −4</div>
+          <div className="iq-ex-w">בפתרון הסופי כותבים תמיד <span className="iq-m">≤</span>: מחליפים צדדים</div>
+          <div className="iq-ex-f res">−4 ≤ x</div>
         </div>
       </div>
     </div>
@@ -666,7 +670,7 @@ function Ch2C(){
     <div className="hint">כתבו את כל הערכים השלמים המקיימים את התחום המסומן</div>
     <NumberLineStatic segments={[{type:'interval',a:data.lo,b:data.hi,closedA:data.closedLo,closedB:data.closedHi,color:'#7c3aed'}]}/>
     {!done && <div className="ans-row">
-      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} placeholder="לדוגמה: 1, 2, 3" style={{minWidth:160}}/>
+      <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} placeholder={'לדוגמה: \u20661, 2, 3\u2069'} style={{minWidth:160}}/>
       <button className="btn bp" onClick={check}>✓ בדוק</button>
     </div>}
     {fb==='err' && <Fb ok={false}/>}
@@ -701,12 +705,9 @@ function checkIntersectionNotation(text,result){
     const m=t.match(/^x=(-?\d+)$/);
     return !!m && parseInt(m[1],10)===result.value;
   }
-  let m=t.match(/^(-?\d+)(≤|<)x(≤|<)(-?\d+)$/);
-  if(!m){
-    // the same range written with > : "5 ≥ x > -2"
-    const g=t.match(/^(-?\d+)(≥|>)x(≥|>)(-?\d+)$/);
-    if(g) m=[g[0],g[4],flipSign(g[3]),flipSign(g[2]),g[1]];
-  }
+  // the range is written only with < or ≤ ("-2 < x ≤ 5"); a > or ≥ gets a hint
+  if(/[>≥]/.test(t)) return 'gt';
+  const m=t.match(/^(-?\d+)(≤|<)x(≤|<)(-?\d+)$/);
   if(!m) return false;
   const lo=parseInt(m[1],10), signA=m[2], signB=m[3], hi=parseInt(m[4],10);
   return lo===result.lo && hi===result.hi && signA===(result.closedLo?'≤':'<') && signB===(result.closedHi?'≤':'<');
@@ -760,6 +761,7 @@ function Ch3(){
 
   function checkNotation(){
     const ok=checkIntersectionNotation(notationTxt,data.result);
+    if(ok==='gt'){ setNotationFb('gt'); return; }
     if(ok){ setNotationFb('ok'); setTimeout(()=>setPhase(data.result.type==='empty'?6:5),500); }
     else setNotationFb('err');
   }
@@ -814,10 +816,11 @@ function Ch3(){
         {(data.result.type==='empty' || boundaryOk) && <div>
           <div className="ans-row">
             <input value={notationTxt} onChange={e=>{setNotationTxt(e.target.value);setNotationFb(null);}}
-              placeholder={data.result.type==='empty' ? 'אין פתרון' : 'לדוגמה: -2 < x ≤ 5'} style={{minWidth:170}}/>
+              placeholder={data.result.type==='empty' ? 'אין פתרון' : 'לדוגמה: \u2066-2 < x ≤ 5\u2069'} style={{minWidth:170}}/>
             <button className="btn bp" onClick={checkNotation}>✓ בדוק</button>
           </div>
           {notationFb==='err' && <Fb ok={false}/>}
+          {notationFb==='gt' && <div className="fb err iq-gt-hint">כמעט! את הסימן כותבים תמיד כך: <span className="iq-m">&lt;</span> או <span className="iq-nw"><span className="iq-m">≤</span>,</span> מהמספר הקטן אל הגדול. לדוגמה: <span className="iq-m">−2 &lt; x ≤ 5</span></div>}
           {notationFb==='ok' && <Fb ok={true}/>}
         </div>}
       </div>}
@@ -825,7 +828,7 @@ function Ch3(){
       {phase===5 && <div className="step-card">
         <div className="hint">שלב 4: רשמו את כל הערכים השלמים המקיימים את שני האי-שוויונות</div>
         <div className="ans-row">
-          <input value={listTxt} onChange={e=>{setListTxt(e.target.value);setListFb(null);}} placeholder="לדוגמה: 1, 2, 3" style={{minWidth:160}}/>
+          <input value={listTxt} onChange={e=>{setListTxt(e.target.value);setListFb(null);}} placeholder={'לדוגמה: \u20661, 2, 3\u2069'} style={{minWidth:160}}/>
           <button className="btn bp" onClick={checkList}>✓ בדוק</button>
         </div>
         {listFb==='err' && <Fb ok={false}/>}

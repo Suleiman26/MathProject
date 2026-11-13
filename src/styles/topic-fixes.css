@@ -247,6 +247,12 @@ html[data-page="inequalities"] .iq-rule-flip { display: grid; grid-template-colu
 html[data-page="inequalities"] .iq-rule-flip span { background: var(--surface, #fff); border-radius: 10px; padding: 5px 8px; text-align: center; font-weight: 600; font-size: 14px; }
 html[data-page="inequalities"] .iq-rule-flip b { direction: ltr; unicode-bidi: isolate; display: inline-block; font-size: 19px; line-height: 1; vertical-align: -1px; padding: 0 3px; color: var(--bad-600, #dc2626); }
 html[data-page="inequalities"] .iq-mini { direction: ltr; display: block; width: 100%; max-width: 320px; margin: 0 auto; }
+/* Fixes board #63 (2026-11-13, round 2): answers are typed with < / ≤. In an RTL box "-2 < x ≤ 5" would be
+   reordered and its signs mirrored, so math boxes take their direction from the text itself. */
+html[data-page="inequalities"] #root .ans-row input { unicode-bidi: plaintext; text-align: center; }
+html[data-page="inequalities"] #root .ans-row input::placeholder { unicode-bidi: plaintext; }
+html[data-page="inequalities"] .iq-gt-hint { text-wrap: balance; line-height: 1.7; }
+html[data-page="inequalities"] .iq-nw { white-space: nowrap; }
 @media (max-width: 600px) {
   html[data-page="inequalities"] .iq-ex-grid { grid-template-columns: minmax(0, 1fr); }
   html[data-page="inequalities"] .iq-line.iq-tap { gap: 0; font-size: 18px; }
