@@ -203,6 +203,56 @@ html[data-page="inequalities"] .iq-col .hint { display: none; }
 html[data-page="inequalities"] .iq-sols { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
 html[data-page="inequalities"] .iq-sols span:not(.iq-and) { direction: ltr; unicode-bidi: isolate; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 18px; color: #fff; background: var(--c); }
 html[data-page="inequalities"] .iq-and { font-weight: 700; color: var(--ink-2, #44403c); }
+/* Fixes board 2026-11-13 (#57 tap like terms, #59/#60 explanations, #63 final answer with >) */
+html[data-page="inequalities"] .iq-m { direction: ltr; unicode-bidi: isolate; display: inline-block; font-weight: 700; color: var(--ink, #1c1b19); white-space: nowrap; }
+html[data-page="inequalities"] .iq-line.iq-tap { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px; white-space: normal; }
+html[data-page="inequalities"] #root .iq-term { appearance: none; -webkit-appearance: none; border: 0; background: transparent; box-shadow: inset 0 -2px 0 var(--a-200, #fbcfe8); font: inherit; color: inherit; min-height: 44px; min-width: 40px; padding: 4px 8px; border-radius: 10px; cursor: pointer; white-space: pre; transition: background 120ms ease-out, transform 100ms ease-out; -webkit-tap-highlight-color: transparent; }
+html[data-page="inequalities"] #root .iq-term:active { transform: scale(.95); }
+html[data-page="inequalities"] #root .iq-term.sel { background: var(--a-100, #fce7f3); box-shadow: none; outline: 2px solid var(--a-600, #db2777); outline-offset: 1px; }
+html[data-page="inequalities"] .iq-tap-sign { padding: 0 8px; }
+html[data-page="inequalities"] .iq-like { margin: 0 0 10px; text-align: center; font-size: 14.5px; font-weight: 600; color: var(--warn-800, #92400e); text-wrap: balance; }
+html[data-page="inequalities"] #root .iq-col .iq-term { min-width: 34px; padding: 4px 5px; }
+html[data-page="inequalities"] .iq-final-t { text-align: center; font-size: 14.5px; font-weight: 600; color: var(--ink-2, #44403c); text-wrap: balance; }
+html[data-page="inequalities"] #root .iq-swap { font-size: 14px; margin: 0 0 10px; }
+html[data-page="inequalities"] #root .iq-swap .iq-m { color: inherit; }
+html[data-page="inequalities"] .iq-explain { margin: 4px 0 14px; border: 1px solid var(--a-200, #fbcfe8); border-radius: 14px; background: var(--a-50, #fdf2f8); text-align: start; }
+html[data-page="inequalities"] .iq-explain > summary { cursor: pointer; list-style: none; min-height: 44px; padding: 12px 14px; font-weight: 700; color: var(--a-800, #9d174d); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+html[data-page="inequalities"] .iq-explain > summary::-webkit-details-marker { display: none; }
+html[data-page="inequalities"] .iq-explain > summary::after { content: "פתיחה ▾"; font-size: 12.5px; font-weight: 600; color: var(--a-600, #db2777); flex: none; }
+html[data-page="inequalities"] .iq-explain[open] > summary::after { content: "סגירה ▴"; }
+html[data-page="inequalities"] .iq-ex-body { display: grid; gap: 10px; padding: 0 12px 12px; font-size: 14.5px; line-height: 1.6; color: var(--ink-2, #44403c); }
+html[data-page="inequalities"] .iq-ex-body p { margin: 0 2px; }
+html[data-page="inequalities"] .iq-ex-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+html[data-page="inequalities"] .iq-ex-card { display: grid; gap: 6px; align-content: start; background: var(--surface, #fff); border-radius: 12px; padding: 12px; }
+html[data-page="inequalities"] .iq-ex-h { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--a-800, #9d174d); }
+html[data-page="inequalities"] .iq-dot { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #7c3aed; background: #fff; }
+html[data-page="inequalities"] .iq-dot.full { background: #7c3aed; }
+html[data-page="inequalities"] .iq-ex-t { font-size: 14px; }
+html[data-page="inequalities"] .iq-ex-f { direction: ltr; unicode-bidi: isolate; text-align: center; font-size: 18px; font-weight: 700; color: var(--ink, #1c1b19); font-variant-numeric: tabular-nums; }
+html[data-page="inequalities"] .iq-ex-steps { display: grid; gap: 3px; }
+html[data-page="inequalities"] .iq-ex-f.res { justify-self: center; margin-top: 4px; padding: 4px 18px; border-radius: 999px; font-size: 20px; font-weight: 800; color: #fff; background: var(--a-600, #db2777); }
+html[data-page="inequalities"] .iq-ex-f.res .iq-flip { color: #fff; }
+html[data-page="inequalities"] .iq-ex-w { text-align: center; font-size: 13.5px; color: var(--ink-3, #78716c); }
+html[data-page="inequalities"] .iq-ex-w::before { content: "↓ "; }
+html[data-page="inequalities"] .iq-ex-w.flip { color: var(--bad-700, #b91c1c); font-weight: 700; }
+html[data-page="inequalities"] .iq-ex-w.flip .iq-m { color: inherit; }
+html[data-page="inequalities"] .iq-flip { color: var(--bad-600, #dc2626); font-weight: 800; }
+html[data-page="inequalities"] .iq-rule { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--warn-50, #fffbeb); border: 2px solid var(--warn-500, #f59e0b); color: var(--warn-900, #78350f); }
+html[data-page="inequalities"] .iq-rule-h { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15.5px; }
+html[data-page="inequalities"] .iq-rule-h::before { content: "!"; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--warn-500, #f59e0b); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 15px; line-height: 1; }
+html[data-page="inequalities"] .iq-rule-t { font-size: 15px; line-height: 1.55; }
+html[data-page="inequalities"] .iq-rule-t b { color: var(--bad-700, #b91c1c); }
+html[data-page="inequalities"] .iq-rule-t .iq-m { color: inherit; }
+html[data-page="inequalities"] .iq-rule-flip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+html[data-page="inequalities"] .iq-rule-flip span { background: var(--surface, #fff); border-radius: 10px; padding: 5px 8px; text-align: center; font-weight: 600; font-size: 14px; }
+html[data-page="inequalities"] .iq-rule-flip b { direction: ltr; unicode-bidi: isolate; display: inline-block; font-size: 19px; line-height: 1; vertical-align: -1px; padding: 0 3px; color: var(--bad-600, #dc2626); }
+html[data-page="inequalities"] .iq-mini { direction: ltr; display: block; width: 100%; max-width: 320px; margin: 0 auto; }
+@media (max-width: 600px) {
+  html[data-page="inequalities"] .iq-ex-grid { grid-template-columns: minmax(0, 1fr); }
+  html[data-page="inequalities"] .iq-line.iq-tap { gap: 0; font-size: 18px; }
+  html[data-page="inequalities"] #root .iq-term { min-width: 32px; padding: 4px 5px; }
+  html[data-page="inequalities"] .iq-tap-sign { padding: 0 5px; }
+}
 @media (max-width: 720px) {
   html[data-page="inequalities"] .iq-pair { grid-template-columns: minmax(0, 1fr); }
 }
