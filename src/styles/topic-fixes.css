@@ -743,10 +743,12 @@ html[data-page="quadratic-solver"] #root .qs-ex li > * { grid-column: 2; }
 html[data-page="quadratic-solver"] #root .qs-exm { font-size: 1.05rem; gap: 6px; }
 html[data-page="quadratic-solver"] #root .qs-calc { background: var(--surface); border: 1.5px solid var(--a-300); border-radius: 12px; padding: 10px 12px; }
 @media (max-width: 560px) {
-  html[data-page="quadratic-solver"] #root .qs-template { font-size: 1.05rem; gap: 5px; margin-inline: -8px; }
-  html[data-page="quadratic-solver"] #root .qs-template .qs-fr-n, html[data-page="quadratic-solver"] #root .qs-template .qs-fr-d, html[data-page="quadratic-solver"] #root .qs-template .qs-rad-b { gap: 3px; }
+  html[data-page="quadratic-solver"] #root .qs-template { font-size: .95rem; gap: 6px 3px; margin-inline: -10px; flex-wrap: wrap; }
+  html[data-page="quadratic-solver"] #root .qs-template .qs-x { flex: 0 0 100%; text-align: left; padding-inline-start: 12px; font-size: 1.1rem; }
+  html[data-page="quadratic-solver"] #root .qs-template .qs-fr-n, html[data-page="quadratic-solver"] #root .qs-template .qs-fr-d, html[data-page="quadratic-solver"] #root .qs-template .qs-rad-b { gap: 1px; }
+  html[data-page="quadratic-solver"] #root .qs-template .qs-rad-b { padding-inline: 2px 1px; }
   html[data-page="quadratic-solver"] #root .qs-template .qs-fr-n { padding-inline: 2px; }
-  html[data-page="quadratic-solver"] #root .card .qs-template input.qs-slot { width: 44px; height: 44px; font-size: 1rem; border-radius: 10px; }
+  html[data-page="quadratic-solver"] #root .card .qs-template input.qs-slot { width: 40px; height: 44px; font-size: .95rem; border-radius: 10px; padding: 0; }
   html[data-page="quadratic-solver"] #root .qs-formula { font-size: 1.2rem; }
   html[data-page="quadratic-solver"] #root .qs-line { flex-wrap: nowrap; gap: 6px; font-size: 1.2rem; }
   html[data-page="quadratic-solver"] #root .card .qs-line input.qs-slot { width: 60px; height: 48px; font-size: 1.2rem; }

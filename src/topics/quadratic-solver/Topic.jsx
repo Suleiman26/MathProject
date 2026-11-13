@@ -576,7 +576,7 @@ function FormulaInfo({openFirst}){
         <div className="qs-ex-title">דוגמה פתורה: <span dir="ltr" className="qs-ltr">x² − 5x + 6 = 0</span></div>
         <ol className="qs-ex">
           <li><span>מזהים את המקדמים:</span><div className="qs-exm" dir="ltr">a = 1 ,  b = −5 ,  c = 6</div></li>
-          <li><span>מציבים אותם בנוסחה:</span><div className="qs-exm" dir="ltr"><span>x<sub>1,2</sub> =</span><Frac n={<>−(−5) ± <Root>(−5)² − 4·1·6</Root></>} d="2·1"/></div></li>
+          <li><span>מציבים אותם בנוסחה:</span><div className="qs-exm" dir="ltr"><span>x<sub>1,2</sub> =</span><Frac n={<>−(−5) ± <Root>(−5)² − 4·(1)·(6)</Root></>} d="2·(1)"/></div></li>
           <li><span>מחשבים את מה שמתחת לשורש:</span><div className="qs-exm" dir="ltr"><span>25 − 24 = 1</span><span className="qs-gap">,</span><Root>1</Root><span>= 1</span></div></li>
           <li><span>פעם עם + ופעם עם −:</span>
             <div className="qs-exm" dir="ltr"><span>x<sub>1</sub> =</span><Frac n="5 + 1" d="2"/><span>=</span><Frac n="6" d="2"/><span>= 3</span></div>
@@ -752,7 +752,7 @@ function FormulaTemplate({a,b,c}){
       <div className="qs-chips" dir="ltr"><span>a = {fmtN(a)}</span><span>b = {fmtN(b)}</span><span>c = {fmtN(c)}</span></div>
       <div className="qs-template" dir="ltr">
         <span className="qs-x">x<sub>1,2</sub> =</span>
-        <Frac n={<>−{slot('b1')} ± <Root>{slot('b2')}<sup>2</sup> − 4·{slot('a1')}·{slot('c1')}</Root></>} d={<>2·{slot('a2')}</>}/>
+        <Frac n={<>−({slot('b1')}) ± <Root>({slot('b2')})<sup>2</sup> − 4·({slot('a1')})·({slot('c1')})</Root></>} d={<>2·({slot('a2')})</>}/>
       </div>
       {!ok&&<>
         <div className="qs-tip">מספר שלילי כותבים עם מינוס, למשל <span dir="ltr" className="qs-ltr">−3</span>.</div>

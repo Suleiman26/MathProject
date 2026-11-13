@@ -645,6 +645,18 @@
       "old": "      <div className=\"phases\">\n",
       "new": "      {!(phase===4&&route==='none')&&<FormulaInfo/>}\n      <div className=\"phases\">\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #61: parentheses around every substituted slot in the root-formula template and worked example",
+      "old": "          <li><span>מציבים אותם בנוסחה:</span><div className=\"qs-exm\" dir=\"ltr\"><span>x<sub>1,2</sub> =</span><Frac n={<>−(−5) ± <Root>(−5)² − 4·1·6</Root></>} d=\"2·1\"/></div></li>\n",
+      "new": "          <li><span>מציבים אותם בנוסחה:</span><div className=\"qs-exm\" dir=\"ltr\"><span>x<sub>1,2</sub> =</span><Frac n={<>−(−5) ± <Root>(−5)² − 4·(1)·(6)</Root></>} d=\"2·(1)\"/></div></li>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #61: parentheses around every substituted slot in the root-formula template and worked example",
+      "old": "        <Frac n={<>−{slot('b1')} ± <Root>{slot('b2')}<sup>2</sup> − 4·{slot('a1')}·{slot('c1')}</Root></>} d={<>2·{slot('a2')}</>}/>\n",
+      "new": "        <Frac n={<>−({slot('b1')}) ± <Root>({slot('b2')})<sup>2</sup> − 4·({slot('a1')})·({slot('c1')})</Root></>} d={<>2·({slot('a2')})</>}/>\n",
+      "count": 1
     }
   ],
   "inequalities": [
