@@ -577,6 +577,192 @@
       "old": "    { k:4, label:'4 — גורם משותף' },\n    { k:5, label:'5 — הכל יחד' },\n",
       "new": "    { k:5, label:'4 — הכל יחד' },   // 'common factor' moved to the quadratic equations topic (c = 0)\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "function parseExpr2(s) {\n",
+      "new": "// ── Simplifying by selection (fixes board #57) ──\n// The student taps terms; only terms of one family that sit on one side can be combined.\n// sel holds keys like \"left:2\" (side : index in that side's list).\nfunction combineSelected(left, right, sel, linear) {\n  const chosen = sel.map(k=>{ const [side,i]=k.split(':'); const t=(side==='left'?left:right)[+i]; return t?{...t,side,idx:+i}:null; }).filter(Boolean);\n  if(chosen.length<2) return null;\n  if(new Set(chosen.map(t=>t.power)).size>1) return {err:linear?'לא ניתן לפשט איברים שאינם מאותה משפחה (x, מספרים)':'לא ניתן לפשט איברים שאינם מאותה משפחה (x², x, מספרים)'};\n  if(new Set(chosen.map(t=>t.side)).size>1) return {err:'ניתן לפשט רק איברים שנמצאים באותו צד'};\n  const side=chosen[0].side, power=chosen[0].power;\n  const sum=chosen.reduce((s,t)=>s+t.coeff,0);\n  const idxs=chosen.map(t=>t.idx), first=Math.min(...idxs);\n  const terms=[];\n  (side==='left'?left:right).forEach((t,i)=>{\n    if(!idxs.includes(i)){ if(t.coeff!==0) terms.push(t); }\n    else if(i===first&&sum!==0) terms.push({coeff:sum,power}); // the result takes the first selected term's place\n  });\n  return {side, terms};\n}\n// two or more terms of one family still waiting on this side\nfunction hasLikeTerms(terms) {\n  const live=terms.filter(t=>t.coeff!==0);\n  return new Set(live.map(t=>t.power)).size<live.length;\n}\n// \"ax = number\" (or the mirror): x stands alone and the equation can be solved\nfunction isolatedX(left, right) {\n  const l=left.filter(t=>t.coeff!==0), r=right.filter(t=>t.coeff!==0);\n  const ok=(a,b)=>a.length===1&&a[0].power===1&&b.length<=1&&b.every(t=>t.power===0);\n  return ok(l,r)||ok(r,l);\n}\n// \"ax²+bx+c = 0\" (or the mirror): one side is 0, the other has x² and no like terms left\nfunction arrangedQuad(left, right) {\n  const l=left.filter(t=>t.coeff!==0), r=right.filter(t=>t.coeff!==0);\n  const ok=(a,b)=>b.length===0&&a.some(t=>t.power===2)&&!hasLikeTerms(a);\n  return ok(l,r)||ok(r,l);\n}\nfunction SimplifyBar({ count, err, like, idle, onSimplify }) {\n  const hint = count>=2 ? `${count} איברים נבחרו — לחץ פשט לאיחוד`\n    : count===1 ? 'איבר 1 נבחר — בחר עוד איבר מאותה משפחה באותו צד'\n    : like ? 'יש איברים דומים באותו צד — לחץ עליהם כדי לבחור, ואז לחץ פשט'\n    : (idle||'לחיצה על איבר = בחירה • גרירה = העברה לצד השני');\n  return (\n    <div className=\"ea-simplify\">\n      <div className=\"ea-sel-hint\">{hint}</div>\n      <button className=\"btn btn-hint\" disabled={count<2} onClick={onSimplify}>פשט{count>=2?` (${count})`:' ≡'}</button>\n      {err&&<div className=\"feedback-err\" style={{textAlign:'center'}}>✗ {err}</div>}\n    </div>);\n}\n\nfunction parseExpr2(s) {\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "function TermChip({ coeff, power, isFirst, onMouseDown, dimmed }) {\n  return (\n    <span onMouseDown={onMouseDown} title=\"גרור לצד השני\"\n",
+      "new": "function TermChip({ coeff, power, isFirst, onMouseDown, dimmed, selected }) {\n  return (\n    <span onMouseDown={onMouseDown} title=\"גרור לצד השני\" className={`ea-pick${selected?' ea-sel':''}`}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "  const [solInp, setSolInp] = useState('');\n  const [fb, setFb] = useState('');\n  const [ghost, setGhost] = useState(null);\n",
+      "new": "  const [sel, setSel] = useState([]);\n  const [selErr, setSelErr] = useState('');\n  const [solInp, setSolInp] = useState('');\n  const [fb, setFb] = useState('');\n  const [ghost, setGhost] = useState(null);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "      if (dr.active) {\n",
+      "new": "      if (!dr.active) {\n        // a tap (no drag): select / unselect this term\n        const k = dr.side+':'+dr.idx;\n        setSel(p=>p.includes(k)?p.filter(x=>x!==k):[...p,k]); setSelErr('');\n      }\n      if (dr.active) {\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "            setCanSolve(false);\n",
+      "new": "            setCanSolve(false); setSel([]); setSelErr('');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "    dragRef.current=null; setGhost(null); setOverSide(null); setDraggingInfo(null);\n  }\n\n  function checkLCD() {\n    if(eq.level===3){\n",
+      "new": "    setSel([]); setSelErr('');\n    dragRef.current=null; setGhost(null); setOverSide(null); setDraggingInfo(null);\n  }\n\n  function checkLCD() {\n    if(eq.level===3){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "  function collect() {\n    const newL=doCollect(left), newR=doCollect(right);\n    const safeL=newL.length?newL:[{coeff:0,power:0}];\n    const safeR=newR.length?newR:[{coeff:0,power:0}];\n    setLeft(safeL); setRight(safeR);\n    const lx=newL.filter(t=>t.power===1), lc=newL.filter(t=>t.power===0);\n    const rx=newR.filter(t=>t.power===1), rc=newR.filter(t=>t.power===0);\n    setCanSolve(\n      (lx.length===1&&lc.length===0&&rx.length===0&&rc.length===1)||\n      (rx.length===1&&rc.length===0&&lx.length===0&&lc.length===1));\n    setFb('');\n",
+      "new": "  function simplifySel() {\n    const res=combineSelected(left, right, sel, true);\n    if(!res) return;\n    if(res.err){ setSelErr(res.err); return; }\n    if(res.side==='left') setLeft(res.terms); else setRight(res.terms);\n    setSel([]); setSelErr(''); setFb('');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "\n  return (\n    <div className=\"section-wrapper\">\n      <div className=\"section-title\">תת-פרק 1 — משוואה לינארית עם נעלם במכנה</div>\n",
+      "new": "  const solvable = isolatedX(left, right);\n\n  return (\n    <div className=\"section-wrapper\">\n      <div className=\"section-title\">תת-פרק 1 — משוואה לינארית עם נעלם במכנה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "            גרור כל איבר לצד השני של המשוואה — הסימן יתהפך אוטומטית\n",
+      "new": "            גרור כל איבר לצד השני של המשוואה — הסימן יתהפך אוטומטית.\n            כדי לפשט: לחץ על איברים דומים שנמצאים באותו צד, ואז על \"פשט\".\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "                      dimmed={draggingInfo?.side==='left'&&draggingInfo?.idx===realIdx}\n",
+      "new": "                      selected={sel.includes('left:'+realIdx)}\n                      dimmed={draggingInfo?.side==='left'&&draggingInfo?.idx===realIdx}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "                      dimmed={draggingInfo?.side==='right'&&draggingInfo?.idx===realIdx}\n",
+      "new": "                      selected={sel.includes('right:'+realIdx)}\n                      dimmed={draggingInfo?.side==='right'&&draggingInfo?.idx===realIdx}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "          <div style={{display:'flex',justifyContent:'flex-end',marginTop:10}}>\n            <button className=\"btn btn-hint\" onClick={collect}>⊕ כנס איברים משותפים</button>\n          </div>\n          {canSolve&&(\n",
+      "new": "          {!solvable&&<SimplifyBar count={sel.length} err={selErr} onSimplify={simplifySel}\n            like={hasLikeTerms(left)||hasLikeTerms(right)}/>}\n          {solvable&&(\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "          {!canSolve&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>\n            גרור איברים ולחץ \"כנס איברים משותפים\" עד שנשאר x לבד\n",
+      "new": "          {!solvable&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>\n            גרור איברים ופשט איברים דומים עד שנשאר x לבד\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "  const [aInp, setAInp] = useState('');\n  const [bInp, setBInp] = useState('');\n  const [cInp, setCInp] = useState('');\n",
+      "new": "  const [sel, setSel] = useState([]);\n  const [selErr, setSelErr] = useState('');\n  const [aInp, setAInp] = useState('');\n  const [bInp, setBInp] = useState('');\n  const [cInp, setCInp] = useState('');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "      if(dr.active){\n",
+      "new": "      if(!dr.active){\n        // a tap (no drag): select / unselect this term\n        const k=dr.side+':'+dr.idx;\n        setSel(p=>p.includes(k)?p.filter(x=>x!==k):[...p,k]); setSelErr('');\n      }\n      if(dr.active){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "            setQuadReady(false);\n",
+      "new": "            setQuadReady(false); setSel([]); setSelErr('');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "    setLeft([]); setRight([]); setQuadReady(false);\n",
+      "new": "    setLeft([]); setRight([]); setQuadReady(false); setSel([]); setSelErr('');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "  function collect() {\n    const newL=doCollect(left), newR=doCollect(right);\n    const safeL=newL.length?newL:[{coeff:0,power:0}];\n    const safeR=newR.length?newR:[{coeff:0,power:0}];\n    setLeft(safeL); setRight(safeR);\n    const rIsZero=newR.every(t=>t.coeff===0), lHasX2=newL.some(t=>t.power===2&&t.coeff!==0);\n    const lIsZero=newL.every(t=>t.coeff===0), rHasX2=newR.some(t=>t.power===2&&t.coeff!==0);\n    setQuadReady((rIsZero&&lHasX2)||(lIsZero&&rHasX2));\n    setFb('');\n",
+      "new": "  function simplifySel() {\n    const res=combineSelected(left, right, sel);\n    if(!res) return;\n    if(res.err){ setSelErr(res.err); return; }\n    if(res.side==='left') setLeft(res.terms); else setRight(res.terms);\n    setSel([]); setSelErr(''); setFb('');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "\n  function MultDisplay() {\n    if(lv===1){\n      const {a,b}=display;\n",
+      "new": "  const arranged=arrangedQuad(left, right);\n\n  function MultDisplay() {\n    if(lv===1){\n      const {a,b}=display;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "            גרור כל איבר לצד השני — הסימן יתהפך. לחץ \"כנס\" כדי לאסוף. כשהצד הימין הוא 0 — ממשיכים.\n",
+      "new": "            גרור כל איבר לצד השני — הסימן יתהפך. כדי לפשט: לחץ על איברים דומים שנמצאים באותו צד, ואז על \"פשט\". כשהצד הימין הוא 0 — ממשיכים.\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "                      dimmed={draggingInfo?.side==='left'&&draggingInfo?.idx===ri}\n",
+      "new": "                      selected={sel.includes('left:'+ri)}\n                      dimmed={draggingInfo?.side==='left'&&draggingInfo?.idx===ri}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "                      dimmed={draggingInfo?.side==='right'&&draggingInfo?.idx===ri}\n",
+      "new": "                      selected={sel.includes('right:'+ri)}\n                      dimmed={draggingInfo?.side==='right'&&draggingInfo?.idx===ri}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "          <div style={{display:'flex',justifyContent:'space-between',marginTop:10,alignItems:'center'}}>\n            <button className=\"btn btn-hint\" onClick={collect}>⊕ כנס איברים משותפים</button>\n            {quadReady&&phase===3&&<button className=\"btn btn-primary\" onClick={()=>{setPhase(4);setFb('');}}>המשך ←</button>}\n          </div>\n          {!quadReady&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>\n            גרור ואסוף עד שהצד הימין = 0 ויש x² בצד שמאל\n",
+      "new": "          {!arranged&&<SimplifyBar count={sel.length} err={selErr} onSimplify={simplifySel}\n            like={hasLikeTerms(left)||hasLikeTerms(right)}/>}\n          {arranged&&phase===3&&<div style={{textAlign:'center',marginTop:12}}>\n            <button className=\"btn btn-primary\" onClick={()=>{setPhase(4);setFb('');}}>המשך ←</button>\n          </div>}\n          {!arranged&&<div style={{fontSize:13,color:'#888',textAlign:'center',marginTop:8}}>\n            גרור ופשט עד שהצד הימין = 0 ויש x² בצד שמאל\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "  const dragRef = useRef(null);\n\n",
+      "new": "  const [sel, setSel] = useState([]);       // tapped terms: 'x' (the x term), 'c' (the number that moves), 'r' (the number on the right)\n  const [selErr, setSelErr] = useState('');\n  const [merged, setMerged] = useState(false);\n  const dragRef = useRef(null);\n\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "  return (\n    <div>\n      <div style={{fontSize:13,color:'#888',textAlign:'center',marginBottom:14,direction:'rtl'}}>\n",
+      "new": "  // the two numbers on the right are combined only after the student selects both and presses \"פשט\"\n  const done = moved && (merged || rhs===0);\n  const toggle = k => { if(done) return; setSel(p=>p.includes(k)?p.filter(x=>x!==k):[...p,k]); setSelErr(''); };\n  const pick = k => ({ className:`ea-pick${sel.includes(k)?' ea-sel':''}`, onClick:()=>toggle(k) });\n  function simplifySel() {\n    if(sel.length<2) return;\n    if(sel.includes('x')) { setSelErr('לא ניתן לפשט איברים שאינם מאותה משפחה (x, מספרים)'); return; }\n    if(!moved) { setSelErr('ניתן לפשט רק איברים שנמצאים באותו צד'); return; }\n    setMerged(true); setSel([]); setSelErr('');\n  }\n\n  return (\n    <div>\n      <div style={{fontSize:13,color:'#888',textAlign:'center',marginBottom:14,direction:'rtl'}}>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "        גרור את האיבר <strong style={{color:'#e65100'}}>{signedNum(constant)}</strong> לצד ימין — הסימן יתהפך\n",
+      "new": "        גרור את האיבר <strong dir=\"ltr\" style={{color:'#e65100',unicodeBidi:'isolate'}}>{signedNum(constant)}</strong> לצד ימין — הסימן יתהפך\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "          onDrop={()=>{ if(dragRef.current==='right'){ setMoved(false); dragRef.current=null; }}}\n",
+      "new": "          onDrop={()=>{ if(dragRef.current==='right'){ setMoved(false); setSel([]); setSelErr(''); dragRef.current=null; }}}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "          <span style={{...chipStyle,background:'#e8eaf6'}}>{xLabel(xCoeff)}</span>\n          {!moved && (\n            <span draggable\n",
+      "new": "          <span {...pick('x')} style={{...chipStyle,background:'#e8eaf6'}}>{xLabel(xCoeff)}</span>\n          {!moved && (\n            <span draggable {...pick('c')}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "          onDrop={()=>{ if(dragRef.current==='left'){ setMoved(true); dragRef.current=null; }}}\n",
+      "new": "          onDrop={()=>{ if(dragRef.current==='left'){ setMoved(true); setSel([]); setSelErr(''); dragRef.current=null; }}}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "          <span style={{...chipStyle,background:'#e8eaf6'}}>{rhs}</span>\n          {moved && (\n            <span draggable\n",
+      "new": "          {done\n            ? <span style={{...chipStyle,background:'#e8f5e9',border:'2px solid #43a047'}}>{finalRhs}</span>\n            : <span {...pick('r')} style={{...chipStyle,background:'#e8eaf6'}}>{rhs}</span>}\n          {moved && !done && (\n            <span draggable {...pick('c')}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "      {moved && (\n        <div style={{textAlign:'center',marginTop:16}}>\n          <div style={{fontWeight:'bold',fontSize:18,color:'#1a237e',marginBottom:12,direction:'ltr'}}>\n            {xLabel(xCoeff)} = {finalRhs}\n          </div>\n",
+      "new": "      {!done && <SimplifyBar count={sel.length} err={selErr} onSimplify={simplifySel} like={moved}\n        idle=\"אחרי הגרירה: לחץ על שני המספרים שבצד ימין, ואז על פשט\"/>}\n\n      {done && (\n        <div style={{textAlign:'center',marginTop:16}}>\n",
+      "count": 1
     }
   ],
   "quadratic-solver": [
@@ -842,6 +1028,72 @@
       "why": "Sulaiman's fix list (2026-10-30), approved by Abed: intersection. The arranged equation stays visible after step 2 and above the coefficient inputs; coefficients are accepted for the equation exactly as the student arranged it.",
       "old": "        {phase==='coefs'?<>\n",
       "new": "        {phase==='coefs'&&<div className=\"isx-eq\" dir=\"ltr\">{arrangedStr}</div>}\n        {phase==='coefs'?<>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "\n  function checkState(l,r){\n",
+      "new": "  const [sel,setSel]=useState([]); // ids of the terms the student tapped\n  const [selErr,setSelErr]=useState('');\n  const toggleSel=(tid)=>{setSel(p=>p.includes(tid)?p.filter(i=>i!==tid):[...p,tid]);setSelErr('');setFb(null);};\n  // a side never keeps a leftover 0 next to other terms\n  const dropZeros=(terms)=>{const r=terms.filter(t=>t.coef!==0);return r.length?r:[mkTerm(0,'num')];};\n\n  function checkState(l,r){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "  const simplify=()=>{\n    const simplSide=(terms)=>{\n      const x2Sum=terms.filter(t=>t.type==='x2').reduce((s,t)=>s+t.coef,0);\n      const xSum=terms.filter(t=>t.type==='x').reduce((s,t)=>s+t.coef,0);\n      const nSum=terms.filter(t=>t.type==='num').reduce((s,t)=>s+t.coef,0);\n      const res=[];\n      if(x2Sum!==0) res.push(mkTerm(x2Sum,'x2'));\n      if(xSum!==0) res.push(mkTerm(xSum,'x'));\n      if(nSum!==0) res.push(mkTerm(nSum,'num'));\n      if(res.length===0) res.push(mkTerm(0,'num'));\n      return res;\n    };\n    const nl=simplSide(left), nr=simplSide(right);\n    setLeft(nl);setRight(nr);setFb(null);\n",
+      "new": "  // Combine only the terms the student selected: same family, same side\n  const simplify=()=>{\n    const chosen=[...left.filter(t=>sel.includes(t.id)).map(t=>({...t,side:'left'})),\n                  ...right.filter(t=>sel.includes(t.id)).map(t=>({...t,side:'right'}))];\n    if(chosen.length<2) return;\n    if(new Set(chosen.map(t=>t.type)).size>1){\n      setSelErr(mode==='quadratic'?'לא ניתן לפשט איברים שאינם מאותה משפחה (x², x, מספרים)':'לא ניתן לפשט איברים שאינם מאותה משפחה (x, מספרים)');return;}\n    if(new Set(chosen.map(t=>t.side)).size>1){setSelErr('ניתן לפשט רק איברים שנמצאים באותו צד');return;}\n    const side=chosen[0].side, type=chosen[0].type;\n    const sum=chosen.reduce((s,t)=>s+t.coef,0);\n    const terms=side==='left'?left:right;\n    const first=terms.findIndex(t=>sel.includes(t.id));\n    const res=[];\n    terms.forEach((t,i)=>{\n      if(!sel.includes(t.id)) res.push(t);\n      else if(i===first&&sum!==0) res.push(mkTerm(sum,type)); // the result takes the place of the first selected term\n    });\n    if(side==='left') setLeft(dropZeros(res)); else setRight(dropZeros(res));\n    setSel([]);setSelErr('');setFb(null);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "    if(fromSide==='left'){setLeft(src);setRight(dst);}\n    else{setRight(src);setLeft(dst);}\n    setDragId(null);setDragFrom(null);setFb(null);\n",
+      "new": "    if(fromSide==='left'){setLeft(src);setRight(dropZeros(dst));}\n    else{setRight(src);setLeft(dropZeros(dst));}\n    setDragId(null);setDragFrom(null);setFb(null);setSel([]);setSelErr('');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "    if(fromSide==='left'){setLeft(src);setRight(dst);}\n    else{setRight(src);setLeft(dst);}\n    setFb(null);\n",
+      "new": "    if(fromSide==='left'){setLeft(src);setRight(dropZeros(dst));}\n    else{setRight(src);setLeft(dropZeros(dst));}\n    setFb(null);setSel([]);setSelErr('');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "\n  const handleSpecial=()=>{\n",
+      "new": "  // like terms still waiting on one side (two or more terms of the same family)\n  const hasLike=(terms)=>{const live=terms.filter(t=>t.coef!==0);return new Set(live.map(t=>t.type)).size<live.length;};\n  const needSimplify=state.status==='working'&&(hasLike(left)||hasLike(right));\n\n  const handleSpecial=()=>{\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "      const cls=`term-chip ${t.type==='x2'?'x2-term':t.type==='x'?'x-term':'n-term'} ${dragId===t.id?'dragging':''}`;\n      return <span key={t.id} className={cls} draggable\n",
+      "new": "      const cls=`term-chip ${t.type==='x2'?'x2-term':t.type==='x'?'x-term':'n-term'} ${dragId===t.id?'dragging':''}${sel.includes(t.id)?' selected':''}`;\n      return <span key={t.id} className={cls} draggable role=\"button\" aria-pressed={sel.includes(t.id)}\n        onClick={()=>toggleSel(t.id)}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "    <p className=\"hint\">{mode==='quadratic'?'גרור איברים לצד שמאל כדי לקבל ... = 0':'גרור איברים מצד לצד כדי לבודד את x'}</p>\n    <div className=\"simplify-row\">\n      <button className=\"btn bo\" onClick={simplify}>כנס איברים דומים</button>\n    </div>\n",
+      "new": "    <p className=\"hint\">{mode==='quadratic'?<>גרור איברים לצד שמאל כדי לקבל <span dir=\"ltr\" style={{unicodeBidi:'isolate'}}>... = 0</span></>:'גרור איברים מצד לצד כדי לבודד את x'}</p>\n    <p className=\"hint sel-hint\">{sel.length>=2?`${sel.length} איברים נבחרו — לחץ פשט לאיחוד`\n      :sel.length===1?'איבר 1 נבחר — בחר עוד איבר מאותה משפחה באותו צד'\n      :needSimplify?'יש איברים דומים באותו צד — לחץ עליהם כדי לבחור, ואז לחץ פשט'\n      :'לחיצה על איבר = בחירה • גרירה = העברה לצד השני'}</p>\n    <div className=\"simplify-row\">\n      <button className=\"btn bo\" disabled={sel.length<2} onClick={simplify}>פשט{sel.length>=2?` (${sel.length})`:' ≡'}</button>\n    </div>\n    {selErr&&<div className=\"fb err sel-err\">✗ {selErr}</div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "\n  const handleSpecial=()=>{\n",
+      "new": "  const showSimplify=state.status==='working'||hasLike(left)||hasLike(right); // nothing left to combine once the equation is arranged\n\n  const handleSpecial=()=>{\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "    <p className=\"hint sel-hint\">{sel.length>=2?`${sel.length} איברים נבחרו — לחץ פשט לאיחוד`\n",
+      "new": "    {showSimplify&&<><p className=\"hint sel-hint\">{sel.length>=2?`${sel.length} איברים נבחרו — לחץ פשט לאיחוד`\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "    {selErr&&<div className=\"fb err sel-err\">✗ {selErr}</div>}\n",
+      "new": "    {selErr&&<div className=\"fb err sel-err\">✗ {selErr}</div>}</>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
+      "old": "        onClick={()=>toggleSel(t.id)}\n",
+      "new": "        onClick={()=>showSimplify&&toggleSel(t.id)}\n",
       "count": 1
     }
   ],

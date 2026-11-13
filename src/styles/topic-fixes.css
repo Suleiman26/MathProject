@@ -132,6 +132,13 @@ html[data-page="equations-advanced"] .sm-ex ol { margin: 0; padding-inline-start
 html[data-page="equations-advanced"] .sm-ex li + li { margin-top: 4px; }
 html[data-page="equations-advanced"] .sm-ex li::marker { font-weight: 800; color: var(--a-600, #3f51b5); }
 html[data-page="equations-advanced"] .ab-row { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+/* board #57: tap like terms to select them, then "פשט" combines only those */
+html[data-page="equations-advanced"] #root .ea-pick { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; min-width: 44px; justify-content: center; }
+html[data-page="equations-advanced"] #root .ea-pick.ea-sel { border-color: var(--a-700, #3949ab) !important; transform: translateY(-2px); box-shadow: 0 0 0 3px var(--a-700, #3949ab), 0 6px 14px rgba(57, 73, 171, .25); }
+html[data-page="equations-advanced"] #root .ea-simplify { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 12px; }
+html[data-page="equations-advanced"] #root .ea-simplify .btn { min-width: 132px; }
+html[data-page="equations-advanced"] #root .ea-simplify .feedback-err { text-wrap: balance; }
+html[data-page="equations-advanced"] #root .ea-sel-hint { font-size: 13.5px; color: var(--ink-3, #64748b); text-align: center; min-height: 1.5em; line-height: 1.5; }
 html[data-page="equations-advanced"] .ab-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 20px; font-weight: 800; }
 @media (max-width: 640px) {
   html[data-page="equations-advanced"] .sm-examples { grid-template-columns: minmax(0, 1fr); }
@@ -590,6 +597,13 @@ html[data-page="inequalities"] #root .iq-num { height: var(--ctl-h); width: 96px
 /* left side = right side: two boxes share the row (inline 110–130px each) */
 html[data-page="intersection"] #root .step-card .ans-row > input { flex: 1 1 0; width: 0 !important; min-width: 96px; max-width: 160px; }
 html[data-page="intersection"] #root .step-card .ans-row { justify-content: center; }
+/* board #57: tap like terms to select them, then "פשט" combines only those.
+   A selected term lifts and gets a dark ring (works on all three term colours). */
+html[data-page="intersection"] #root .term-chip { min-height: 44px; min-width: 44px; justify-content: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+html[data-page="intersection"] #root .term-chip.selected { border-color: var(--a-700, #1d4ed8); transform: translateY(-2px); box-shadow: 0 0 0 2px var(--a-700, #1d4ed8), 0 6px 14px rgba(29, 78, 216, .25); }
+html[data-page="intersection"] #root .step-card > .hint.sel-hint { font-size: .9rem !important; color: var(--ink-3, #64748b) !important; min-height: 1.5em; }
+html[data-page="intersection"] #root .simplify-row .btn { min-width: 132px; }
+html[data-page="intersection"] #root .sel-err { text-wrap: balance; }
 
 /* ── linear function ────────────────────────────────────────────────────── */
 /* answer rows written as a formula ("A: x = [ ] y = [ ]", "m = Δy / Δx"):
