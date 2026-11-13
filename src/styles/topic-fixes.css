@@ -464,6 +464,16 @@ html[data-page="ratio-percent"] .ans-row label { display: inline-flex; align-ite
   html[data-page="ratio-percent"] .rp-sq { width: 44px; height: 44px; }
 }
 html[data-page="ratio-percent"] :is(span, b, bdi)[dir="ltr"] { direction: ltr; unicode-bidi: isolate; }
+/* ratio table: arrow from the ratio row to the amount row with "×k" on it (fixes board #46). Sits on the right (RTL row-label side). */
+html[data-page="ratio-percent"] .rp-tw { position: relative; width: max-content; max-width: 100%; margin: 12px auto; padding-right: 46px; direction: rtl; }
+html[data-page="ratio-percent"] .rp-tw > .rp-table { margin: 0; }
+html[data-page="ratio-percent"] .rp-mul { position: absolute; right: 16px; width: 26px; box-sizing: border-box; border: 2.5px solid #0d9488; border-left: 0; border-radius: 0 16px 16px 0; pointer-events: none; animation: rp-mul-in .45s ease-out both; }
+html[data-page="ratio-percent"] .rp-mul::after { content: ""; position: absolute; left: -3px; bottom: -6.75px; border: 5.5px solid transparent; border-right: 8px solid #0d9488; border-left: 0; }
+html[data-page="ratio-percent"] .rp-mul > b { position: absolute; top: 50%; right: 0; transform: translate(50%, -50%); padding: 2px 7px; border-radius: 999px; background: #0d9488; color: #fff; font-size: .95rem; font-weight: 700; line-height: 1.3; white-space: nowrap; box-shadow: 0 0 0 3px #f0fdfa; }
+html[data-page="ratio-percent"] .card .rp-mul > b { box-shadow: 0 0 0 3px #fff; }
+html[data-page="ratio-percent"] .rp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@keyframes rp-mul-in { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { html[data-page="ratio-percent"] .rp-mul { animation: none; } }
 
 /* pythagoras: where the theorem comes from + a solved example (Sulaiman, fixes board #47) */
 html[data-page="pythagoras"] .py-intro { max-width: 1040px; margin: 20px auto 0; padding: 0 16px; }

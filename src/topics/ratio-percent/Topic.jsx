@@ -306,7 +306,7 @@ function Ch1Ratio(){
               onKeyDown={e=>e.key==='Enter'&&check2()}/>
             <button className="btn bg" onClick={check2}>✓ בדוק</button>
           </div>
-          {fb==='more'?<div className="fb ok rp-more">👍 יפה! צמצמת נכון ל-{cur[0]} : {cur[1]}. אבל אפשר לצמצם עוד. המשיכו.</div>
+          {fb==='more'?<div className="fb ok rp-more">👍 יפה! צמצמת נכון ל-<span dir="ltr">{cur[0]} : {cur[1]}</span>. אבל אפשר לצמצם עוד. המשיכו.</div>
             :fb==='same'?<div className="fb err">זה אותו יחס בלי צמצום. חלקו את שני המספרים באותו מספר.</div>
             :<Fb fb={fb}/>}
         </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ {ex.simA} : {ex.simB}</div>}
@@ -337,11 +337,35 @@ function genRatioAmount(kind){
   return {kind,ctx,a,b,k,total:(a+b)*k,A:a*k,B:b*k};
 }
 
-function RatioTable({h1,h2,rows}){
-  return <table className="rp-table">
+/* mult: shows an arrow beside the table from the ratio row to the amount row, with "×mult" on it (fixes board #46) */
+function RatioTable({h1,h2,rows,mult}){
+  const wrap=useRef(null);
+  const [pos,setPos]=useState(null);
+  useEffect(()=>{
+    if(!mult||!wrap.current) return;
+    const el=wrap.current;
+    const measure=()=>{
+      const tr=el.querySelectorAll('tbody tr');
+      if(tr.length<2) return;
+      const o=el.getBoundingClientRect().top, ra=tr[tr.length-2].getBoundingClientRect(), rb=tr[tr.length-1].getBoundingClientRect();
+      const top=ra.top-o+ra.height/2, bot=rb.top-o+rb.height/2;
+      setPos({top,height:bot-top});
+    };
+    measure();
+    const ro=typeof ResizeObserver!=='undefined'?new ResizeObserver(measure):null;
+    if(ro) ro.observe(el);
+    return ()=>{if(ro) ro.disconnect();};
+  },[mult]);
+  const table=<table className="rp-table">
     <thead><tr><th></th><th>{h1}</th><th>{h2}</th><th>סה״כ</th></tr></thead>
     <tbody>{rows.map((r,i)=><tr key={i}><th>{r[0]}</th>{r.slice(1).map((c,j)=><td key={j}>{c}</td>)}</tr>)}</tbody>
   </table>;
+  if(!mult) return table;
+  return <div className="rp-tw" ref={wrap}>
+    {table}
+    {pos&&<div className="rp-mul" style={{top:pos.top,height:pos.height}} aria-hidden="true"><b dir="ltr">×{mult}</b></div>}
+    <span className="rp-sr">כופלים את שורת היחס ב-{mult} ומקבלים את שורת הכמות.</span>
+  </div>;
 }
 
 function PackVis({a,b,c1,c2,n=1}){
@@ -395,7 +419,7 @@ function Ch1Amount(){
     <div className="example-box">
       <div className="ex-title">דוגמה פתורה</div>
       <div>היחס בין בנים לבנות בכיתה הוא <b dir="ltr">2 : 3</b>, ויש בכיתה <b>20</b> תלמידים. כמה בנים וכמה בנות?</div>
-      <RatioTable h1="בנים" h2="בנות" rows={[['יחס',2,3,5],['כמות',8,12,20]]}/>
+      <RatioTable h1="בנים" h2="בנות" rows={[['יחס',2,3,5],['כמות',8,12,20]]} mult={4}/>
       <div>בכל קבוצה יש <span dir="ltr">2 + 3 = 5</span> תלמידים. <span dir="ltr">20 : 5 = 4</span> קבוצות.<br/>
         בנים: <span dir="ltr">2 · 4 = 8</span>, בנות: <span dir="ltr">3 · 4 = 12</span>. בדיקה: <span dir="ltr">8 + 12 = 20</span> ✓</div>
     </div>
@@ -438,7 +462,7 @@ function Ch1Amount(){
       {ex.kind==='table'&&<>
         <div className="card-t">טבלת יחסים</div>
         <p className="q-text">היחס בין {c.l1} ל{c.l2} הוא <b dir="ltr">{ex.a} : {ex.b}</b>, ובסך הכל יש <b>{ex.total}</b> {c.unit}. השלימו את הטבלה.</p>
-        <RatioTable h1={c.l1} h2={c.l2} rows={[['יחס',cellIn(0),cellIn(1),cellIn(2)],['כמות',cellIn(3),cellIn(4),cellIn(5)]]}/>
+        <RatioTable h1={c.l1} h2={c.l2} rows={[['יחס',cellIn(0),cellIn(1),cellIn(2)],['כמות',cellIn(3),cellIn(4),cellIn(5)]]} mult={done?ex.k:null}/>
         {!done&&<div className="center"><button className="btn bg" onClick={checkTable}>✓ בדוק</button></div>}
         {!done&&fb==='err'&&<div className="fb err">יש תאים שגויים (מסומנים באדום). שורת היחס: חלקי היחס וסכומם. שורת הכמות: כל מספר כפול מספר הקבוצות.</div>}
         {done&&<div className="fb ok">✓ נכון! כל מספר בשורת היחס כפול {ex.k} נותן את שורת הכמות.</div>}
