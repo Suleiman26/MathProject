@@ -156,7 +156,8 @@ function Phase1({eqData,onNext}){
     let next,desc;
     if(addSub){
       const v=op==='+'?k:-k; // the term that is added to both sides
-      const add=side=>[...side.filter(t=>!(t.type==='const'&&t.num===0)),mkTerm(fam,v)];
+      // board #75: where the added term cancels one (x² + 5 − 5), the computer does it; the student simplifies only the other side
+      const add=side=>{const s=side.filter(t=>!(t.type==='const'&&t.num===0));const i=s.findIndex(t=>t.type===fam&&t.den===1&&t.num===-v);if(i<0)return[...s,mkTerm(fam,v)];const r=s.filter((_,j)=>j!==i);return r.length?r:[mkTerm('const',0)]};
       next={left:add(cur.left),right:add(cur.right)};
       const q=sideStr([mkTerm(fam,Math.abs(v))]);
       desc=v>0?<>מוסיפים <M>{q}</M> לשני האגפים</>:<>מחסרים <M>{q}</M> משני האגפים</>;
