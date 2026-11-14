@@ -16,7 +16,7 @@
 //     grade = the LOWEST grade in its `g`), hard-coded here on 2026-11-08.
 //   • chapter = the exact chapter name in src/home/chapters.js (used to link
 //     "what to review" to /topics/<topic>?ch=<chapter>); "" for a topic with
-//     no chapter buttons (equation-solver).
+//     no chapter buttons.
 //   • kinds: which answer kinds it can make. TYPED (['number']) = typed only
 //     (pr.powers, pr.mixed); with BOTH, some variants are still typed only (see the top
 //     of topics/powers-roots.js) and come back as kind 'number' on a choice slot.
@@ -60,7 +60,7 @@ const LIST = [
   ['dn.mul', 'directed-numbers', '3. כפל', BOTH, dn.mul],
   ['dn.div', 'directed-numbers', '4. חילוק', BOTH, dn.div],
   ['dn.combo', 'directed-numbers', '6. תרגול מקיף', BOTH, dn.combo],
-  ['eq.linear', 'equation-solver', '', BOTH, eq.linear],
+  ['eq.linear', 'equation-solver', '2. פתרון משוואות', BOTH, eq.linear],   // the topic has chapter buttons since 2026-11-14
   ['pr.powers', 'powers-roots', '1. הבנת חזקות', TYPED, pr.powers],
   ['pr.laws', 'powers-roots', '2. חוקי חזקות', BOTH, pr.laws],
   ['pr.param', 'powers-roots', '3. פרמטרי', BOTH, pr.param],
@@ -100,7 +100,7 @@ const LIST = [
   ['ea.linfrac', 'equations-advanced', '1 — לינארית עם מכנה', BOTH, ea.linearFrac],
   ['ea.sm', 'equations-advanced', '3 — כפל מקוצר', BOTH, ea.shortMult],
   ['ea.combo', 'equations-advanced', '4 — הכל יחד', BOTH, ea.combined],
-  ['qs.coef', 'quadratic-solver', 'שלב 2: מקדמים', BOTH, qs.coefficients],
+  ['qs.coef', 'quadratic-solver', '4. נוסחת השורשים', BOTH, qs.coefficients],   // chapters renamed 2026-11-13 (a, b, c are read for the formula)
 ];
 
 // The keypad of a typed question: digits, "−" and "⌫" always; "/" (fraction) and "." (decimal)
