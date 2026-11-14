@@ -1346,6 +1346,73 @@ function genIsoHeight(forceSub){
   return{sub,dir,half,base,leg};
 }
 
+// Fixes board #74: the three bold words (גובה / תיכון / חוצה זווית) are
+// buttons — tapping one opens a short explanation with a small drawing,
+// tapping it again closes it, tapping another one switches.
+const ISO_WORDS={
+  height:{t:'גובה',d:'קטע שיוצא מקודקוד ומאונך לצלע שמולו.',f:'AM ⊥ BC',
+    also:'במשולש שווה שוקיים הגובה לבסיס AM הוא גם תיכון וגם חוצה זווית הראש.'},
+  median:{t:'תיכון',d:'קטע שמחבר קודקוד עם אמצע הצלע שמולו, וחוצה אותה לשני חלקים שווים.',f:'BM = MC',
+    also:'במשולש שווה שוקיים התיכון לבסיס AM הוא גם גובה וגם חוצה זווית הראש.'},
+  bisector:{t:'חוצה זווית',d:'קטע שיוצא מקודקוד וחוצה את הזווית לשתי זוויות שוות.',f:'∠BAM = ∠CAM',
+    also:'במשולש שווה שוקיים חוצה זווית הראש AM הוא גם גובה וגם תיכון לבסיס.'},
+};
+
+function IsoWordSVG({kind}){
+  const A={x:85,y:26},B={x:28,y:124},C={x:142,y:124},M={x:85,y:124};
+  const red='#dc2626';
+  const lbl=(p,dx,dy,t)=><text x={p.x+dx} y={p.y+dy} textAnchor="middle" dominantBaseline="middle" fontSize="13" fontWeight="700" fill="#1e3a5f">{t}</text>;
+  // a short tick across the middle of each half-angle arc = "these two angles are equal"
+  const arcTick=(to)=>{
+    const a1=Math.atan2(to.y-A.y,to.x-A.x),a2=Math.atan2(M.y-A.y,M.x-A.x),m=(a1+a2)/2;
+    return <line x1={A.x+23*Math.cos(m)} y1={A.y+23*Math.sin(m)} x2={A.x+33*Math.cos(m)} y2={A.y+33*Math.sin(m)} stroke={red} strokeWidth="1.6"/>;
+  };
+  return <svg className="iso-pop-svg" viewBox="0 0 170 150" role="img" aria-label={ISO_WORDS[kind].t+': '+ISO_WORDS[kind].f} style={{direction:'ltr'}}>
+    <polygon points={`${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`} fill="rgba(37,99,235,0.05)" stroke="#2563eb" strokeWidth="2.5" strokeLinejoin="round"/>
+    {tickMarks(A,B,1).map((t,i)=><line key={'l'+i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="#2563eb" strokeWidth="2"/>)}
+    {tickMarks(A,C,1).map((t,i)=><line key={'r'+i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="#2563eb" strokeWidth="2"/>)}
+    <line x1={A.x} y1={A.y} x2={M.x} y2={M.y} stroke={red} strokeWidth="2" strokeDasharray="5,3"/>
+    {kind==='height'&&<path d={rightAngleMark(M,A,B,11)} fill="none" stroke={red} strokeWidth="1.6"/>}
+    {kind==='median'&&<>
+      {tickMarks(B,M,2).map((t,i)=><line key={'m1'+i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke={red} strokeWidth="2"/>)}
+      {tickMarks(M,C,2).map((t,i)=><line key={'m2'+i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke={red} strokeWidth="2"/>)}
+      <circle cx={M.x} cy={M.y} r="3" fill={red}/>
+    </>}
+    {kind==='bisector'&&<>
+      <path d={angleArcAtVertex(A.x,A.y,B,M,28).path} fill="none" stroke={red} strokeWidth="1.6"/>
+      <path d={angleArcAtVertex(A.x,A.y,M,C,28).path} fill="none" stroke={red} strokeWidth="1.6"/>
+      {arcTick(B)}{arcTick(C)}
+    </>}
+    {lbl(A,0,-13,'A')}{lbl(B,-11,9,'B')}{lbl(C,11,9,'C')}{lbl(M,0,15,'M')}
+  </svg>;
+}
+
+function IsoHeightIntro(){
+  const [open,setOpen]=useState(null);
+  const [shown,setShown]=useState('height');
+  const tap=k=>{if(open===k)setOpen(null);else{setOpen(k);setShown(k);}};
+  const word=k=><button type="button" className={`iso-word ${open===k?'on':''}`} data-k={k}
+    aria-expanded={open===k} aria-controls="iso-pop" onClick={()=>tap(k)}>{ISO_WORDS[k].t}</button>;
+  const w=ISO_WORDS[shown];
+  return <>
+    <p className="iso-lead">במשולש שווה שוקיים, ה{word('height')} לבסיס הוא גם {word('median')} וגם {word('bisector')} — שלוש התכונות מתקיימות יחד באותו קטע.</p>
+    <p className="iso-tip">לחצו על מילה מודגשת כדי לראות הסבר ודוגמה.</p>
+    <div id="iso-pop" className={`iso-pop ${open?'open':''}`} role="region" aria-live="polite" aria-hidden={!open}>
+      <div className="iso-pop-in">
+        <div className="iso-pop-card" key={shown}>
+          <IsoWordSVG kind={shown}/>
+          <div className="iso-pop-txt">
+            <div className="iso-pop-t">{w.t}</div>
+            <div className="iso-pop-d">{w.d}</div>
+            <div className="iso-pop-f"><span dir="ltr">{w.f}</span></div>
+            <div className="iso-pop-also">{w.also}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </>;
+}
+
 function IsoHeightExercise({forceSub}){
   const [ex,setEx]=useState(()=>genIsoHeight(forceSub));
   const [fb,setFb]=useState(null);
@@ -1375,7 +1442,7 @@ function IsoHeightExercise({forceSub}){
   return <div className="content">
     {showInfo&&<div className="info-box">
       <h3>📐 הגובה לבסיס</h3>
-      <p>במשולש שווה שוקיים, הגובה לבסיס הוא גם <strong>תיכון</strong> (חוצה את הבסיס לשני חלקים שווים) וגם <strong>חוצה זווית</strong> (חוצה את זווית הראש לשני חלקים שווים) — שלוש התכונות מתקיימות יחד באותו קטע.</p>
+      <IsoHeightIntro/>
       <div className="graph-wrap">
         <div style={{position:'relative',width:'100%',maxWidth:640}}>
         {(()=>{
@@ -1393,7 +1460,7 @@ function IsoHeightExercise({forceSub}){
         </div>
       </div>
       <p style={{textAlign:'center',fontSize:12,color:'#64748b',marginTop:-6}}>
-        AM ⊥ BC (גובה) &nbsp;|&nbsp; BM = MC (תיכון, בסימון אדום) &nbsp;|&nbsp; ∠BAM = ∠CAM (חוצה זווית, בסימון אדום)</p>
+        <span dir="ltr" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>AM ⊥ BC</span> (גובה) &nbsp;|&nbsp; <span dir="ltr" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>BM = MC</span> (תיכון, בסימון אדום) &nbsp;|&nbsp; <span dir="ltr" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>∠BAM = ∠CAM</span> (חוצה זווית, בסימון אדום)</p>
       <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
     </div>}
 
