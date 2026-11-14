@@ -5,6 +5,8 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// The root sign that covers everything under it (fixes board #65).
+import { Root } from '@/components/Root';
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useEffect,useCallback,useRef,useMemo}=React;
@@ -843,7 +845,7 @@ function ChRightExercise({forceSub}){
           <span dir="ltr">c² = 25</span>
         </div>
         <div className="ans-row" style={{justifyContent:'center'}}>
-          <span dir="ltr">c = √25 = 5</span>
+          <span dir="ltr">c = <Root>25</Root> = 5</span>
         </div>
         <a className="tri-py-link" href={'/topics/pythagoras?ch='+encodeURIComponent('פרק 1 — משולשים')}>לרענון החומר: פרק ״משפט פיתגורס״ ←</a>
       </>:<>

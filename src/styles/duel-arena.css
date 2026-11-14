@@ -656,9 +656,7 @@ html.kp-open .dar-pill { display: none; }
 .dmx-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: .8em; line-height: 1.15; margin: 0 .14em; }
 .dmx-num { border-bottom: .09em solid currentColor; padding: 0 .22em .04em; }
 .dmx-den { padding: .04em .22em 0; }
-.dmx-sqrt { display: inline-flex; align-items: flex-start; vertical-align: baseline; }
-.dmx-rad { font-size: 1.12em; line-height: 1; margin-top: -.02em; }
-.dmx-body { border-top: .09em solid currentColor; padding: .06em .12em 0 .06em; line-height: 1.05; }
+/* .dmx-sqrt: the shared root sign (src/components/Root.jsx, root.css) */
 .dmx-sup { font-size: .62em; line-height: 0; vertical-align: .55em; }
 
 /* ── shared keyframes ────────────────────────────────────────────────────── */

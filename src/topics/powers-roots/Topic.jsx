@@ -5,6 +5,8 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// The root sign that covers everything under it (fixes board #65).
+import { Root, RootText } from '@/components/Root';
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useEffect,useRef,useCallback,useMemo}=React;
@@ -14,19 +16,9 @@ function Fb({fb}){if(!fb)return null;return fb==='ok'?<div className="fb ok">✓
 function Frac({n,d,style}){return <span className="frac" style={style}><span className="frac-num">{n}</span><span className="frac-den">{d}</span></span>;}
 // Shows a power the way it is written in a notebook (small raised exponent), never with "^".
 // "x^12" → x¹², "2^(−3)" → 2⁻³, "x^2y^3" → x²y³.
+// Roots get a real root sign whose bar covers everything under it: "√(x^4)", "√12" (board #65).
 function Mx({s}){
-  const out=[];let buf='',i=0,k=0;
-  const flush=()=>{if(buf){out.push(buf);buf='';}};
-  while(i<s.length){
-    if(s[i]!=='^'){buf+=s[i];i++;continue;}
-    let e='';i++;
-    if(s[i]==='('){let d=1;i++;while(i<s.length){if(s[i]==='(')d++;else if(s[i]===')'){d--;if(d===0){i++;break;}}e+=s[i];i++;}}
-    else if(/[0-9]/.test(s[i]||'')){while(i<s.length&&/[0-9]/.test(s[i])){e+=s[i];i++;}}
-    else{e=s[i]||'';i++;}
-    flush();out.push(<sup key={k++}>{e}</sup>);
-  }
-  flush();
-  return <span className="mx">{out}</span>;
+  return <span className="mx"><RootText s={s} pow flat/></span>;
 }
 // Letters for the parametric exercises (not only x and y).
 const VARS=['x','y','z','a','b','m','n','t'];
@@ -518,7 +510,7 @@ function RootExactInfo(){
   // open on computers; on phones it starts closed so the exercise stays close
   const [wide]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(min-width: 700px)').matches);
   return <div className="info pw-info">
-    <p><b>דוגמה:</b> <span className="mx">√49 = 7</span>, כי <span className="mx">7<sup>2</sup> = 7·7 = 49</span>. שואלים: איזה מספר כפול עצמו נותן 49?</p>
+    <p><b>דוגמה:</b> <span className="mx"><Root>49</Root> = 7</span>, כי <span className="mx">7<sup>2</sup> = 7·7 = 49</span>. שואלים: איזה מספר כפול עצמו נותן 49?</p>
     <p>השורשים המדויקים נמצאים על <b>האלכסון של לוח הכפל</b>: שם כל מספר כפול עצמו.</p>
     <details className="sq-details" open={wide}>
       <summary>לוח הכפל — האלכסון</summary>
@@ -528,16 +520,16 @@ function RootExactInfo(){
       </tbody></table></div>
     </details>
     <p className="pw-warn">⭐ חשוב לדעת בעל פה את השורשים המדויקים לפחות עד 100:</p>
-    <div className="sq-chips" dir="ltr">{n.map(k=><span key={k}>√{k*k} = {k}</span>)}</div>
+    <div className="sq-chips" dir="ltr">{n.map(k=><span key={k}><Root>{k*k}</Root> = {k}</span>)}</div>
   </div>;
 }
 
 // Simplifying roots: the rule, why it is true (law 4: power of a product), and an example.
 function RootSimplifyInfo(){
   return <div className="info pw-info">
-    <p><b>הכלל:</b> <span className="mx">√(a·b) = √a · √b</span>. שורש של מכפלה שווה למכפלת השורשים (כש-a ו-b אינם שליליים).</p>
-    <p><b>למה?</b> לפי חוק 4 בחוקי חזקות (חזקה של מכפלה): <Mx s="(√a · √b)^2 = (√a)^2 · (√b)^2 = a·b"/>. כלומר <span className="mx">√a · √b</span> הוא המספר שבריבוע נותן <span className="mx">a·b</span>, ולכן הוא <span className="mx">√(a·b)</span>.</p>
-    <p><b>דוגמה:</b> <span className="mx">√12 = √(4·3) = √4 · √3 = 2√3</span></p>
+    <p><b>הכלל:</b> <Mx s="√(a·b) = √a · √b"/>. שורש של מכפלה שווה למכפלת השורשים (כש-a ו-b אינם שליליים).</p>
+    <p><b>למה?</b> לפי חוק 4 בחוקי חזקות (חזקה של מכפלה): <Mx s="(√a · √b)^2 = (√a)^2 · (√b)^2 = a·b"/>. כלומר <Mx s="√a · √b"/> הוא המספר שבריבוע נותן <span className="mx">a·b</span>, ולכן הוא <Mx s="√(a·b)"/>.</p>
+    <p><b>דוגמה:</b> <Mx s="√12 = √(4·3) = √4 · √3 = 2√3"/></p>
     <p>הטריק: מחפשים את <b>הריבוע המושלם הגדול ביותר</b> שמחלק את המספר (מהאלכסון של לוח הכפל), ומוציאים את השורש שלו מחוץ לשורש.</p>
   </div>;
 }
@@ -580,7 +572,7 @@ function Ch4(){
 
   return <div className="content">
     <div className="info">
-      <b>שורש ריבועי</b> הוא הפעולה ההפוכה לחזקה שנייה: <span style={{direction:'ltr',display:'inline-block'}}>√n² = n</span>
+      <b>שורש ריבועי</b> הוא הפעולה ההפוכה לחזקה שנייה: <span style={{direction:'ltr',display:'inline-block'}}><Root>n²</Root> = n</span>
     </div>
     <div className="sub-btns">
       {rootNames.map((l,i)=><button key={i} className={`sub-btn ${subIdx===i?'active':''}`} onClick={()=>switchSub(i)}>{String.fromCharCode(1488+i)}. {l}</button>)}
@@ -591,7 +583,7 @@ function Ch4(){
       <div className="card-t">{rootNames[subIdx]}</div>
 
       {ex.sub===0?<>
-        <div className="eq-box">√{ex.val} = ?</div>
+        <div className="eq-box"><Root>{ex.val}</Root> = ?</div>
         <div className="vis-wrap">
           <div style={{textAlign:'center'}}>
             <svg viewBox="0 0 120 120" style={{width:100,height:100}}>
@@ -611,47 +603,45 @@ function Ch4(){
       </>
 
       :ex.sub===1?<>
-        <div className="eq-box">{ex.q} = ?√?</div>
+        <div className="eq-box"><RootText s={ex.q} flat/> = ?<Root>?</Root></div>
         <div className={`step-card ${step>1?'done':''}`}>
-          <div className="step-label">שלב 1 — פרק: √({ex.val}) = √(__ · __)</div>
+          <div className="step-label">שלב 1 — פרק: <span className="mx"><Root>{ex.val}</Root> = <Root>__ · __</Root></span></div>
           {step===1?<><div className="ans-row">
-            <span>√(</span>
+            <Root row>
             <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="ריבועי" style={{width:55}}/>
             <span>·</span>
             <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="שארית" style={{width:55}} onKeyDown={e=>e.key==='Enter'&&check()}/>
-            <span>)</span>
+            </Root>
             <button className="btn bg" onClick={check}>✓ בדוק</button>
-          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ √({ex.a*ex.a}·{ex.b})</div>}
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}><span>✓ <Root>{ex.a*ex.a}·{ex.b}</Root></span></div>}
         </div>
         {step>=2&&<div className={`step-card ${step>=10?'done':''}`}>
           <div className="step-label">שלב 2 — הוצא מהשורש</div>
           {step<10?<><div className="ans-row">
             <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:50}}/>
-            <span>√</span>
-            <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>
+            <Root row><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/></Root>
             <button className="btn bg" onClick={check}>✓ בדוק</button>
-          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.a}√{ex.b}</div>}
+          </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}><span>✓ {ex.a}<Root>{ex.b}</Root></span></div>}
         </div>}
       </>
 
       :<>
-        <div className="eq-box">{ex.q} = ?</div>
+        <div className="eq-box"><RootText s={ex.q} flat/> = ?</div>
         <div className={`step-card ${step>=10?'done':''}`}>
           <div className="step-label">חשב</div>
           {step<10?<><div className="ans-row">
             {(ex.opType===3)?<>
               <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:50}}/>
-              <span>√</span>
-              <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>
+              <Root row><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder="?" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/></Root>
             </>:ex.opType===2?<>
               <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="מקדם" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>
-              <span>√{ex.base}</span>
+              <Root>{ex.base}</Root>
             </>:<>
               <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder="?" onKeyDown={e=>e.key==='Enter'&&check()}/>
             </>}
             <button className="btn bg" onClick={check}>✓ בדוק</button>
           </div><Fb fb={fb}/></>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>
-            {ex.opType===3?`✓ ${ex.coef}√${ex.base}`:ex.opType===2?`✓ ${ex.ans}√${ex.base}`:`✓ ${ex.ans}`}
+            {ex.opType===3?<span>✓ {ex.coef}<Root>{ex.base}</Root></span>:ex.opType===2?<span>✓ {ex.ans}<Root>{ex.base}</Root></span>:`✓ ${ex.ans}`}
           </div>}
         </div>
       </>}

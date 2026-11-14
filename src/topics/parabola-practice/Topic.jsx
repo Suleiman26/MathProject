@@ -8,6 +8,8 @@ import ReactDOM from 'react-dom';
 // Fraction drawn as numerator over denominator (Sulaiman, fixes board #54).
 const Fr = ({ n, d }) => <span className="pp-fr" dir="ltr"><span>{n}</span><span>{d}</span></span>;
 // Sharp graph drawing (#62) and the [ ] > [ ] range rows (#39) live in ./extras.jsx.
+// The root sign that covers everything under it (fixes board #65).
+import { Root } from '@/components/Root';
 import { drawGraph, graphDpr, monoCheck, MonoRows, MonoError, MonoSummary, signCheck, SignRows, SignError, SignSummary, SIGN_EMPTY, QuadIntro } from './extras';
 // ===== BEGIN ORIGINAL =====
 
@@ -656,7 +658,7 @@ function QuadSolver({ a, b, c, onDone }) {
         <div className="pp-template" dir="ltr">
           <span className="pp-x">x₁,₂ =</span>
           <span className="pp-frac">
-            <span className="pp-num">−({box('b1')}) ± √( ({box('b2')})² − 4·({box('a1')})·({box('c1')}) )</span>
+            <span className="pp-num">−({box('b1')}) ± <Root row>({box('b2')})² − 4·({box('a1')})·({box('c1')})</Root></span>
             <span className="pp-den">2·({box('a2')})</span>
           </span>
         </div>
@@ -669,7 +671,7 @@ function QuadSolver({ a, b, c, onDone }) {
         {disc < 0 && <div className="pp-calc-he" dir="rtl">Δ שלילי ← <b>אין חיתוך עם ציר x</b> (הפרבולה כולה מעל או מתחת לציר).</div>}
         {disc === 0 && <div>x = <Fr n={-b} d={2 * a} /> = <b>{f2(r1)}</b> <span dir="rtl">(Δ = 0 ← נקודת חיתוך אחת)</span></div>}
         {disc > 0 && <>
-          <div>√Δ = √{disc} = {f2(Math.sqrt(disc))}</div>
+          <div><Root>Δ</Root> = <Root>{disc}</Root> = {f2(Math.sqrt(disc))}</div>
           <div>x₁ = <Fr n={<>{-b} + {f2(Math.sqrt(disc))}</>} d={2 * a} /> = <b>{f2(r1)}</b></div>
           <div>x₂ = <Fr n={<>{-b} − {f2(Math.sqrt(disc))}</>} d={2 * a} /> = <b>{f2(r2)}</b></div>
         </>}
@@ -693,7 +695,7 @@ function Section7() {
         <div className="section-title">7 — חיתוך עם ציר x (שורשים)</div>
         <div className="explanation">
           נמצא את נקודות החיתוך עם ציר x על ידי פתרון <strong>ax²+bx+c=0</strong> בעזרת נוסחת השורשים:<br />
-          <bdi dir="ltr">x = <Fr n="−b ± √(b²−4ac)" d="2a" /></bdi>
+          <bdi dir="ltr">x = <Fr n={<>−b ± <Root>b²−4ac</Root></>} d="2a" /></bdi>
         </div>
         <div className="formula">y = {a}x² {b >= 0 ? '+' : ''}{b}x {c >= 0 ? '+' : ''}{c}</div>
         <div style={{marginTop: 14}}>

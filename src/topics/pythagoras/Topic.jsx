@@ -5,6 +5,8 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// The root sign that covers everything under it (fixes board #65).
+import { Root } from '@/components/Root';
 // ===== BEGIN ORIGINAL =====
 
 const {useState, useMemo} = React;
@@ -722,7 +724,7 @@ function PyIntro() {
             <li><b>זיהוי היתר:</b> היתר הוא הצלע שמול הזווית הישרה. נקרא לו c.</li>
             <li><b>כתיבת המשוואה:</b> <bdi dir="ltr">a² + b² = c²</bdi></li>
             <li><b>הצבת ערכים:</b> <bdi dir="ltr">6² + 8² = c²</bdi></li>
-            <li><b>חישוב:</b> <bdi dir="ltr">36 + 64 = c²</bdi>, כלומר <bdi dir="ltr">c² = 100</bdi>, ולכן <bdi dir="ltr">c = √100 = 10</bdi></li>
+            <li><b>חישוב:</b> <bdi dir="ltr">36 + 64 = c²</bdi>, כלומר <bdi dir="ltr">c² = 100</bdi>, ולכן <bdi dir="ltr">c = <Root>100</Root> = 10</bdi></li>
           </ol>
           <p className="py-ans">✓ אורך היתר הוא 10</p>
         </div>

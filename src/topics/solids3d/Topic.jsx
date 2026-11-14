@@ -6,6 +6,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Solid3D, has3D } from '@/components/solid3d'; // added: 3D view (flat drawings stay as fallback)
+// The root sign that covers everything under it (fixes board #65): rootTxt draws the roots of a text line.
+import { Root, RootText } from '@/components/Root';
+const rootTxt = (s) => (typeof s === 'string' && s.includes('√') ? <RootText s={s} /> : s);
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useEffect,useRef} = React;
@@ -95,7 +98,7 @@ function CoeffSuffixInput({suffix,expectedCoeff,onCorrect}){
     <div className="ans-row">
       <input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:90}}
         onKeyDown={e=>{if(e.key==='Enter') check();}}/>
-      <span style={{fontSize:'1.2rem',fontWeight:700,color:'#0f766e'}}>{suffix}</span>
+      <span style={{fontSize:'1.2rem',fontWeight:700,color:'#0f766e'}}>{rootTxt(suffix)}</span>
       <button className="btn bp" onClick={check}>✓ בדוק</button>
     </div>
     {fb==='err' && <Fb ok={false}/>}
@@ -108,9 +111,9 @@ function MultiStep({steps, doneMsg}){
   const [idx,setIdx]=useState(0);
   const [done,setDone]=useState(false);
   return <div>
-    {steps.slice(0,idx).map((s,i)=><div key={i} className="step-done">✓ {s.hint}</div>)}
+    {steps.slice(0,idx).map((s,i)=><div key={i} className="step-done">✓ {rootTxt(s.hint)}</div>)}
     {!done && idx<steps.length && <div>
-      <div className="hint">{steps[idx].hint}</div>
+      <div className="hint">{rootTxt(steps[idx].hint)}</div>
       {steps[idx].render(()=>{
         if(idx+1>=steps.length) setDone(true);
         else setIdx(idx+1);
@@ -190,14 +193,14 @@ function Ch1PartA(){
     <div className="parts-row">
       {CUBE_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
     </div>
-    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+    <div className="def-box">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
   </div>;
 }
 function Ch1PartB(){
   return <div className="step-card">
     <div className="formula-box">V = a³<small>נפח הקובייה = צלע בחזקת שלוש (הצלע מוכפלת בעצמה 3 פעמים)</small></div>
     <div className="formula-box">S = 6a²<small>שטח הפנים = סכום שטחי 6 הפאות הריבועיות החופפות</small></div>
-    <div className="formula-box">d<sub>בסיס</sub> = a√2 &nbsp;,&nbsp; d = a√3<small>אלכסון פאה מתקבל מפיתגורס במישור; האלכסון המרחבי מתקבל מהפעלה נוספת של פיתגורס בין אלכסון הבסיס לגובה</small></div>
+    <div className="formula-box">d<sub>בסיס</sub> = a<Root>2</Root> &nbsp;,&nbsp; d = a<Root>3</Root><small>אלכסון פאה מתקבל מפיתגורס במישור; האלכסון המרחבי מתקבל מהפעלה נוספת של פיתגורס בין אלכסון הבסיס לגובה</small></div>
   </div>;
 }
 function Ch1Q1(){ // volume
@@ -244,7 +247,7 @@ function Ch1Q4(){ // combined: given space diagonal (as a√3), find V and S
   function reset(){ setData(genCube()); setDone(false); }
   const {a}=data;
   return <div className="step-card">
-    <div className="given-box">האלכסון המרחבי של הקובייה: d = {a}√3</div>
+    <div className="given-box">האלכסון המרחבי של הקובייה: <span className="mp-mx" dir="ltr">d = {a}<Root>3</Root></span></div>
     <div className="hint">מצאו את אורך הצלע, ולאחר מכן את הנפח ואת שטח הפנים</div>
     <div className="svg-wrap"><CubeSVG a={a} showSpaceDiag={true}/></div>
     {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
@@ -329,14 +332,14 @@ function Ch2PartA(){
     <div className="parts-row">
       {BOX_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
     </div>
-    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+    <div className="def-box">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
   </div>;
 }
 function Ch2PartB(){
   return <div className="step-card">
     <div className="formula-box">V = l·w·h<small>נפח התיבה = מכפלת שלושת המידות: אורך, רוחב וגובה</small></div>
     <div className="formula-box">S = 2(lw+lh+wh)<small>שטח הפנים = סכום שטחי 3 הזוגות של פאות חופפות, כפול 2</small></div>
-    <div className="formula-box">d = √(l²+w²+h²)<small>האלכסון המרחבי מתקבל מהפעלת פיתגורס במרחב על שלוש המידות יחד</small></div>
+    <div className="formula-box">d = <Root>l²+w²+h²</Root><small>האלכסון המרחבי מתקבל מהפעלת פיתגורס במרחב על שלוש המידות יחד</small></div>
   </div>;
 }
 function Ch2Q1(){
@@ -499,7 +502,7 @@ function Ch3PartA(){
     <div className="parts-row">
       {CYL_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
     </div>
-    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+    <div className="def-box">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
   </div>;
 }
 function Ch3PartB(){
@@ -646,13 +649,13 @@ function Ch4PartA(){
     <div className="parts-row">
       {CONE_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
     </div>
-    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+    <div className="def-box">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
   </div>;
 }
 function Ch4PartB(){
   return <div>
     <div className="formula-box">V = <Frac num="1" den="3"/> πr²h<small>נפח החרוט = שליש מנפח הגליל בעל אותו בסיס וגובה</small></div>
-    <div className="formula-box">l = √(r²+h²)<small>גובה אלכסוני מתקבל מפיתגורס במשולש שצלעותיו r, h ו-l</small></div>
+    <div className="formula-box">l = <Root>r²+h²</Root><small>גובה אלכסוני מתקבל מפיתגורס במשולש שצלעותיו r, h ו-l</small></div>
     <div className="formula-box">S = πr² + πrl<small>שטח הפנים = שטח הבסיס העגול (πr²) בתוספת שטח המעטפת החרוטית הפרושה (πrl)</small></div>
   </div>;
 }
@@ -828,13 +831,13 @@ function Ch5PartA(){
     <div className="parts-row">
       {PYR_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
     </div>
-    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+    <div className="def-box">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
   </div>;
 }
 function Ch5PartB(){
   return <div>
     <div className="formula-box">V = <Frac num="1" den="3"/> · שטח_בסיס · h<small>נפח הפירמידה = שליש משטח הבסיס כפול הגובה</small></div>
-    <div className="formula-box">m = √(h² + (חצי-צלע)²)<small>אפותם (גובה הפאה הצדדית) מתקבל מפיתגורס בין הגובה לחצי צלע הבסיס</small></div>
+    <div className="formula-box">m = <Root>h² + (חצי-צלע)²</Root><small>אפותם (גובה הפאה הצדדית) מתקבל מפיתגורס בין הגובה לחצי צלע הבסיס</small></div>
     <div className="formula-box">S = שטח_בסיס + סכום שטחי הפאות הצדדיות<small>כל פאה צדדית היא משולש ששטחו (1/2)·צלע·m</small></div>
   </div>;
 }
@@ -860,7 +863,7 @@ function Ch5Q1Tri(){
   const coeff=k*h/3;
   return <div className="step-card">
     <div className="given-box">בסיס משולש שווה-צלעות: b = {b}, גובה הפירמידה h = {h}</div>
-    <div className="hint">שטח הבסיס: <Frac num="√3" den="4"/>b² = {k}√3. חשבו את נפח הפירמידה (בצורת מקדם × √3)</div>
+    <div className="hint">שטח הבסיס: <span className="mp-mx" dir="ltr"><Frac num={<Root>3</Root>} den="4"/>b² = {k}<Root>3</Root></span>. חשבו את נפח הפירמידה (בצורת מקדם × <Root>3</Root>)</div>
     {!done && <CoeffSuffixInput suffix="√3" expectedCoeff={coeff} onCorrect={()=>setDone(true)}/>}
     {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
   </div>;
@@ -886,8 +889,8 @@ function Ch5Q2Tri(){
   const k=b*b/4;
   const intPart=3*b*m/2;
   return <div className="step-card">
-    <div className="given-box">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = {k}√3)</div>
-    <div className="hint">חשבו את שטח הפנים הכולל (בצורה: מספר שלם + מקדם×√3)</div>
+    <div className="given-box">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = <span className="mp-mx" dir="ltr">{k}<Root>3</Root></span>)</div>
+    <div className="hint">חשבו את שטח הפנים הכולל (בצורה: מספר שלם + מקדם×<Root>3</Root>)</div>
     {!done && <EquationResultInput requiredNums={[b,m]} expected={intPart+k*Math.sqrt(3)} tolerance={0.05} placeholder={`לדוגמה: 3×${b}×${m}/2+${k}√3=...`} onCorrect={()=>setDone(true)}/>}
     {done && <div className="banner">✅ כל הכבוד!<button className="btn bg" onClick={reset}>תרגיל חדש ↺</button></div>}
   </div>;
@@ -937,7 +940,7 @@ function Ch5Q4Tri(){
   const Vcoeff=k*h/3;
   const intPart=3*b*m/2;
   return <div className="step-card">
-    <div className="given-box">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = {k}√3)</div>
+    <div className="given-box">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = <span className="mp-mx" dir="ltr">{k}<Root>3</Root></span>)</div>
     <div className="hint">מצאו את גובה הפירמידה, ולאחר מכן את הנפח ואת שטח הפנים</div>
     {!done && <MultiStep doneMsg="✅ כל הכבוד!" steps={[
       {hint:'שלב 1: חשבו h² = m²-(חצי-צלע)²', render:(onOk)=><EquationResultInput requiredNums={[m,half]} expected={sq} placeholder={`לדוגמה: ${m}²-${half}²=...`} onCorrect={onOk}/>},
@@ -1020,7 +1023,7 @@ function Ch6PartA(){
     <div className="parts-row">
       {SPHERE_PARTS.map(p=><button key={p.id} className={`part-btn ${active===p.id?'active':''}`} onClick={()=>setActive(p.id)}>{p.label}</button>)}
     </div>
-    <div className="def-box">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
+    <div className="def-box">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>
   </div>;
 }
 function Ch6PartB(){
