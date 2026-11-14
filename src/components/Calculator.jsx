@@ -179,8 +179,8 @@ export default function Calculator({ onClose, eqn }) {
     >
       <div className="calc-top">
         <div className="calc-screen" dir="ltr" role="status" aria-live="polite">
-          <div className={"calc-sub" + subKind} dir={subKind === " is-err" ? "rtl" : "ltr"}>{sub ? (subKind === " is-err" ? sub : <RootText s={sub} flat />) : " "}</div>
-          <div className={"calc-main" + mainKind + (mainLen > 14 ? " is-long" : "")} dir={mainDir} ref={line}>{main ? (mainDir === "rtl" ? main : <RootText s={main} flat />) : "0"}</div>
+          <div className={"calc-sub" + subKind} dir={subKind === " is-err" ? "rtl" : "ltr"}>{sub ? (subKind === " is-err" || typeof sub !== "string" ? sub : <RootText s={sub} flat />) : " "}</div>
+          <div className={"calc-main" + mainKind + (mainLen > 14 ? " is-long" : "")} dir={mainDir} ref={line}>{main ? (mainDir === "rtl" || typeof main !== "string" ? main : <RootText s={main} flat />) : "0"}</div>
         </div>
         <button type="button" className="calc-c" aria-label="ניקוי" onClick={() => press("C")}>C</button>
         <button type="button" className="calc-x" aria-label="סגירת המחשבון" onClick={onClose}>
