@@ -534,6 +534,10 @@ html[data-page="circle"] .area-f span { font-size: .95rem; font-weight: 600; dis
 html[data-page="circle"] .area-hint { font-size: var(--q-ask); font-weight: 600; line-height: 1.45; color: var(--ink); text-wrap: balance; }
 html[data-page="circle"] .pi-btn { background: #e0f2fe; color: #0369a1; font-size: 18px; padding: 4px 14px; font-family: inherit; }
 html[data-page="circle"] .area-note { text-align: center; font-size: .9rem; color: #6b7280; margin-top: 2px; }
+/* "הכל יחד", the added exercise types (board #78): the tip after a wrong answer, fractions inside the step rows */
+html[data-page="circle"] .ch5-tip { margin: 8px auto 0; padding: 8px 12px; max-width: 34ch; border-radius: 10px; background: #fff7ed; color: #9a3412; font-size: .95rem; font-weight: 500; line-height: 1.7; text-wrap: balance; }
+html[data-page="circle"] .ch5-tip bdi, html[data-page="circle"] .area-hint bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+html[data-page="circle"] :is(.eq-row, .ans-row, .hint) .mp-frac { font-size: .85em; }
 @media (max-width: 560px) {
   html[data-page="circle"] .rad-def { flex-direction: column; }
   html[data-page="circle"] .area-q { gap: 8px; }
