@@ -901,6 +901,36 @@
       "old": "      {moved && (\n        <div style={{textAlign:'center',marginTop:16}}>\n          <div style={{fontWeight:'bold',fontSize:18,color:'#1a237e',marginBottom:12,direction:'ltr'}}>\n            {xLabel(xCoeff)} = {finalRhs}\n          </div>\n",
       "new": "      {!done && <SimplifyBar count={sel.length} err={selErr} onSimplify={simplifySel} like={moved}\n        idle=\"אחרי הגרירה: לחץ על שני המספרים שבצד ימין, ואז על פשט\"/>}\n\n      {done && (\n        <div style={{textAlign:'center',marginTop:16}}>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #76: factoring example only in the factoring sub-chapter, expansion example only in the expansion sub-chapter",
+      "old": "function SMExamples() {\n  return (\n    <div className=\"sm-examples\">\n      <div className=\"sm-ex\">\n",
+      "new": "// Fixes board #76: each example shows only inside its own sub-chapter (kind 'bet' = expansion, 'alef' = factoring)\nfunction SMExamples({ kind }) {\n  return (\n    <div className=\"sm-examples\" style={{gridTemplateColumns:'minmax(0,1fr)'}}>\n      {kind==='bet'&&<div className=\"sm-ex\">\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #76: factoring example only in the factoring sub-chapter, expansion example only in the expansion sub-chapter",
+      "old": "      </div>\n      <div className=\"sm-ex\">\n",
+      "new": "      </div>}\n      {kind==='alef'&&<div className=\"sm-ex\">\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #76: factoring example only in the factoring sub-chapter, expansion example only in the expansion sub-chapter",
+      "old": "      </div>\n    </div>);\n}\n\n// ══ Mixed practice: factoring and expansion, in random order ═\n",
+      "new": "      </div>}\n    </div>);\n}\n\n// ══ Mixed practice: factoring and expansion, in random order ═\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #76: factoring example only in the factoring sub-chapter, expansion example only in the expansion sub-chapter",
+      "old": "      {showDiff&&<SMExamples/>}\n",
+      "new": "",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #76: factoring example only in the factoring sub-chapter, expansion example only in the expansion sub-chapter",
+      "old": "      {showLevels&&(\n",
+      "new": "      {(sub==='alef'||sub==='bet')&&<SMExamples kind={sub}/>}\n      {showLevels&&(\n",
+      "count": 1
     }
   ],
   "quadratic-solver": [

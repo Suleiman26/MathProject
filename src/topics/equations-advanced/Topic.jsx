@@ -1386,10 +1386,11 @@ function checkFactoredText(raw, type, n, b) {
 }
 
 // ══ Worked examples: expansion and factoring, step by step ═
-function SMExamples() {
+// Fixes board #76: each example shows only inside its own sub-chapter (kind 'bet' = expansion, 'alef' = factoring)
+function SMExamples({ kind }) {
   return (
-    <div className="sm-examples">
-      <div className="sm-ex">
+    <div className="sm-examples" style={{gridTemplateColumns:'minmax(0,1fr)'}}>
+      {kind==='bet'&&<div className="sm-ex">
         <div className="sm-ex-t">דוגמה לפיתוח</div>
         <div className="sm-ex-q" dir="ltr">(x + 3)²</div>
         <ol>
@@ -1397,8 +1398,8 @@ function SMExamples() {
           <li>זיהוי a ו-b: <span className="ltr-m">a = x , b = 3</span></li>
           <li>הצבה בנוסחה: <span className="ltr-m">x² + 2·x·3 + 3² = <b>x² + 6x + 9</b></span></li>
         </ol>
-      </div>
-      <div className="sm-ex">
+      </div>}
+      {kind==='alef'&&<div className="sm-ex">
         <div className="sm-ex-t">דוגמה לפירוק</div>
         <div className="sm-ex-q" dir="ltr">x² − 10x + 25</div>
         <ol>
@@ -1406,7 +1407,7 @@ function SMExamples() {
           <li>זיהוי a ו-b: <span className="ltr-m">a = x</span> (כי <span className="ltr-m">x² = a²</span>), <span className="ltr-m">b = 5</span> (כי <span className="ltr-m">25 = 5²</span>). בדיקה: <span className="ltr-m">2·x·5 = 10x ✓</span></li>
           <li>פירוק: <span className="ltr-m"><b>(x − 5)²</b></span></li>
         </ol>
-      </div>
+      </div>}
     </div>);
 }
 
@@ -2166,12 +2167,12 @@ function Section3() {
     <div className="section-wrapper">
       <div className="section-title">תת-פרק 3 — נוסחאות כפל מקוצר</div>
       <FormulasRef/>
-      {showDiff&&<SMExamples/>}
       <div className="sub-tabs">
         {subTabs.map(t=>(
           <button key={t.k} className={`sub-tab${sub===t.k?' active':''}`}
             onClick={()=>{setSub(t.k);setLevel(1);}}>{t.label}</button>))}
       </div>
+      {(sub==='alef'||sub==='bet')&&<SMExamples kind={sub}/>}
       {showLevels&&(
         <div className="difficulty-row">
           <button className={`diff-btn${level===1?' active':''}`} onClick={()=>setLevel(1)}>לינארית</button>
