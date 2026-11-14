@@ -1955,6 +1955,114 @@
       "old": "      <div className=\"card-t\">{ex.sub==='circToArea'?'מהיקף לשטח':ex.sub==='sectorToR'?'מגזרה לרדיוס':'שטח טבעת'}</div>\n",
       "new": "      <div className=\"card-t\">{ex.steps?ex.title:ex.sub==='circToArea'?'מהיקף לשטח':ex.sub==='sectorToR'?'מגזרה לרדיוס':'שטח טבעת'}</div>\n\n      {ex.steps&&<>\n        <div className=\"area-q\">\n          <div className=\"graph-wrap\"><CircleSVG rVal={ex.draw.rVal} showDiam={ex.draw.showDiam} dVal={ex.draw.dVal}\n            sectorAngle={ex.draw.angle} label={ex.draw.label} sectorColor={ex.draw.strong?'rgba(3,105,161,0.28)':undefined}\n            arcHighlight={ex.draw.arc?[0,ex.draw.angle]:null}\n            extra={<>\n              {ex.draw.inTag&&<text x={150} y={ex.draw.showDiam?84:90} textAnchor=\"middle\" fontSize=\"14\" fontWeight=\"700\" fill=\"#0369a1\">{ex.draw.inTag}</text>}\n              {ex.draw.outTag&&<text x={150} y={36} textAnchor=\"middle\" fontSize=\"14\" fontWeight=\"700\" fill=\"#2563eb\">{ex.draw.outTag}</text>}\n              {ex.draw.arcTag&&(()=>{const m=ex.draw.angle/2,q=pt(150,130,94,m);\n                return <text x={q.x} y={m>80?q.y-2:q.y} textAnchor={m>80?'middle':'start'} dominantBaseline={m>80?undefined:'central'} fontSize=\"14\" fontWeight=\"700\" fill=\"#ea580c\">{ex.draw.arcTag}</text>;})()}\n            </>}/></div>\n          <div className=\"area-f\">\n            <small>הנוסחה</small>\n            {ex.formula[0]==='{'?<b dir=\"ltr\"><Fx t={ex.formula.slice(1,-1)}/></b>:ex.formula.includes('[')?<span><Mx t={ex.formula}/></span>:<b dir=\"ltr\">{ex.formula}</b>}\n            {ex.formula2&&<b dir=\"ltr\">{ex.formula2}</b>}\n          </div>\n        </div>\n        {ex.given&&<p className=\"hint area-hint\" dir=\"ltr\">{ex.given}</p>}\n        <p className=\"hint area-hint\"><Mx t={ex.ask}/></p>\n        {ex.steps.map((st,i)=>i<phase\n          ?<div key={i} className=\"step-card done\"><div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}><span>✓ <Fx t={st.done}/></span></div></div>\n          :i===phase?<div key={i} className=\"step-card\"><div className=\"step-label\">{st.label}</div>\n            {st.hint&&<p className=\"hint\" dir=\"ltr\"><Fx t={st.hint}/></p>}\n            {st.hint2&&<p className=\"hint\">{st.hint2}</p>}\n            <div className=\"eq-row\"><span><Fx t={st.lhs}/></span> <input value={a1} aria-label={st.label} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/>\n              {st.unit&&<span>{st.unit}</span>}\n              {st.ans2!=null&&<><span>{st.mid}</span> <input value={a2} aria-label=\"2r\" onChange={e=>{setA2(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></>}</div>\n            {fb==='err'&&<p className=\"hint ch5-tip\">💡 <Mx t={st.tip}/></p>}</div>\n          :null)}\n      </>}\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">r = {ex.r}. חשב את היקף המעגל:</p>\n",
+      "new": "        <p className=\"hint\"><bdi dir=\"ltr\">r = {ex.r}</bdi>. חשב את היקף המעגל:</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">היקף המעגל הוא {ex.circCoeff}π. מצא את הרדיוס.</p>\n",
+      "new": "        <p className=\"hint\">היקף המעגל הוא <bdi dir=\"ltr\">{ex.circCoeff}π</bdi>. מצא את הרדיוס.</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">r = {ex.r}. חשב את ההיקף לפי π ≈ 3.14</p>\n",
+      "new": "        <p className=\"hint\"><bdi dir=\"ltr\">r = {ex.r}</bdi>. חשב את ההיקף לפי <bdi dir=\"ltr\">π ≈ 3.14</bdi></p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "      <p className=\"hint area-hint\">{ex.sub==='calc'?`r = ${ex.r}. חשבו את שטח המעגל.`:ex.sub==='findR'?`שטח המעגל הוא ${ex.area}π. מה הרדיוס?`:`r = ${ex.r}, θ = ${ex.angle}°. חשבו את שטח הגזרה.`}</p>\n",
+      "new": "      <p className=\"hint area-hint\">{ex.sub==='calc'?<><bdi dir=\"ltr\">r = {ex.r}</bdi>. חשבו את שטח המעגל.</>:ex.sub==='findR'?<>שטח המעגל הוא <bdi dir=\"ltr\">{ex.area}π</bdi>. מה הרדיוס?</>:<><bdi dir=\"ltr\">r = {ex.r}, θ = {ex.angle}°</bdi>. חשבו את שטח הגזרה.</>}</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "      <div className=\"graph-wrap\"><CircleSVG rVal={ex.r} arcHighlight={[0,ex.angle]} sectorAngle={ex.sub==='sectorPerim'?ex.angle:null} label={ex.angle+'°'}/></div>\n\n      {ex.sub==='arcLen'&&<>\n        <p className=\"hint\">r = {ex.r}, θ = {ex.angle}°. חשב את אורך הקשת.</p>\n",
+      "new": "      <div className=\"graph-wrap\"><CircleSVG rVal={ex.r} arcHighlight={[0,ex.angle]} sectorAngle={ex.sub==='arcLen'?null:ex.angle} label={ex.sub==='findAngle'?'?':ex.angle+'°'}/></div>\n\n      {ex.sub==='arcLen'&&<>\n        <p className=\"hint\"><bdi dir=\"ltr\">r = {ex.r}, θ = {ex.angle}°</bdi>. חשב את אורך הקשת.</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">אורך הקשת הוא {ex.arcCoeff}π, r = {ex.r}. מצא את הזווית המרכזית.</p>\n",
+      "new": "        <p className=\"hint\">אורך הקשת הוא <bdi dir=\"ltr\">{ex.arcCoeff===1?'':ex.arcCoeff}π</bdi>, <bdi dir=\"ltr\">r = {ex.r}</bdi>. מצא את הזווית המרכזית.</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "          <p className=\"hint\">(θ/360)·{ex.fullCircCoeff}π = {ex.arcCoeff}π</p>\n",
+      "new": "          <p className=\"hint\" dir=\"ltr\">(θ/360)·{ex.fullCircCoeff}π = {ex.arcCoeff}π</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">r = {ex.r}, θ = {ex.angle}°. חשב את היקף הגזרה.</p>\n",
+      "new": "        <p className=\"hint\"><bdi dir=\"ltr\">r = {ex.r}, θ = {ex.angle}°</bdi>. חשב את היקף הגזרה.</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "  // a radius and an angle that give a whole number of π: 'arc' for the arc, 'sec' for the sector area\n",
+      "new": "  const pc=n=>n===1?'π':n+'π';   // 1π is written π\n  // a radius and an angle that give a whole number of π: 'arc' for the arc, 'sec' for the sector area\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "    const arcStep={label:'שלב 2 — אורך הקשת',lhs:`L = [${angle}|360] · ${c}π =`,ans:arc,unit:'π',done:`L = [${angle}|360] · ${c}π = ${arc}π`,tip:`הזווית היא ${fr(angle,360)} מסיבוב שלם, לכן הקשת היא ${fr(angle,360)} מההיקף {${c}π}.`};\n    if(sub==='arcLen')return{sub,r,angle,title:'קשת מרדיוס וזווית',formula:fArc,draw:{rVal:r,angle,label:angle+'°',arc:true,arcTag:'L = ?'},given:`r = ${r} , θ = ${angle}°`,ask:'חשב את אורך הקשת.',steps:[circ,arcStep]};\n    if(sub==='sectorPerim')return{sub,r,angle,title:'היקף גזרה',formula:fArc,formula2:'P = L + 2r',draw:{rVal:r,angle,label:angle+'°',arc:true},given:`r = ${r} , θ = ${angle}°`,ask:'חשב את היקף הגזרה.',steps:[circ,arcStep,\n      {label:'שלב 3 — היקף גזרה = קשת + 2r',lhs:'P =',ans:arc,unit:'π',mid:'+',ans2:c,done:`P = ${arc}π + ${c}`,tip:`הקשת היא {${arc}π}, ושני הרדיוסים יחד הם {2 · ${r}}.`}]};\n    if(sub==='angleFromArc')return{sub,r,angle,title:'זווית מקשת ורדיוס',formula:fArc,draw:{rVal:r,angle,label:'?',arc:true,arcTag:`L = ${arc}π`},given:`L = ${arc}π , r = ${r}`,ask:'מצא את הזווית המרכזית.',steps:[circ,\n      {label:'שלב 2 — מצא את הזווית',hint:`[θ|360] · ${c}π = ${arc}π`,lhs:'θ =',ans:angle,unit:'°',done:`θ = [${arc}|${c}] · 360° = ${angle}°`,tip:`הקשת היא ${fr(arc,c)} מההיקף, לכן הזווית היא ${fr(arc,c)} מ-360°.`}]};\n    const mult=360/angle;\n    return{sub,r,angle,title:'רדיוס מקשת וזווית',formula:fArc,draw:{rVal:'?',angle,label:angle+'°',arc:true,arcTag:`L = ${arc}π`},given:`L = ${arc}π , θ = ${angle}°`,ask:'מצא את הרדיוס.',steps:[\n      {label:'שלב 1 — היקף המעגל כולו',hint:`[${angle}|360] · 2πr = ${arc}π`,hint2:`הכפל ב-${mult}:`,lhs:'2πr =',ans:c,unit:'π',done:`2πr = ${mult} · ${arc}π = ${c}π`,tip:`הקשת היא [1|${mult}] מההיקף, לכן ההיקף גדול ממנה פי ${mult}.`},\n",
+      "new": "    const arcStep={label:'שלב 2 — אורך הקשת',lhs:`L = [${angle}|360] · ${c}π =`,ans:arc,unit:'π',done:`L = [${angle}|360] · ${c}π = ${pc(arc)}`,tip:`הזווית היא ${fr(angle,360)} מסיבוב שלם, לכן הקשת היא ${fr(angle,360)} מההיקף {${c}π}.`};\n    if(sub==='arcLen')return{sub,r,angle,title:'קשת מרדיוס וזווית',formula:fArc,draw:{rVal:r,angle,label:angle+'°',arc:true,arcTag:'L = ?'},given:`r = ${r} , θ = ${angle}°`,ask:'חשב את אורך הקשת.',steps:[circ,arcStep]};\n    if(sub==='sectorPerim')return{sub,r,angle,title:'היקף גזרה',formula:fArc,formula2:'P = L + 2r',draw:{rVal:r,angle,label:angle+'°',arc:true},given:`r = ${r} , θ = ${angle}°`,ask:'חשב את היקף הגזרה.',steps:[circ,arcStep,\n      {label:'שלב 3 — היקף גזרה = קשת + 2r',lhs:'P =',ans:arc,unit:'π',mid:'+',ans2:c,done:`P = ${pc(arc)} + ${c}`,tip:`הקשת היא {${pc(arc)}}, ושני הרדיוסים יחד הם {2 · ${r}}.`}]};\n    if(sub==='angleFromArc')return{sub,r,angle,title:'זווית מקשת ורדיוס',formula:fArc,draw:{rVal:r,angle,label:'?',arc:true,arcTag:`L = ${pc(arc)}`},given:`L = ${pc(arc)} , r = ${r}`,ask:'מצא את הזווית המרכזית.',steps:[circ,\n      {label:'שלב 2 — מצא את הזווית',hint:`[θ|360] · ${c}π = ${pc(arc)}`,lhs:'θ =',ans:angle,unit:'°',done:`θ = [${arc}|${c}] · 360° = ${angle}°`,tip:`הקשת היא ${fr(arc,c)} מההיקף, לכן הזווית היא ${fr(arc,c)} מ-360°.`}]};\n    const mult=360/angle;\n    return{sub,r,angle,title:'רדיוס מקשת וזווית',formula:fArc,draw:{rVal:'?',angle,label:angle+'°',arc:true,arcTag:`L = ${pc(arc)}`},given:`L = ${pc(arc)} , θ = ${angle}°`,ask:'מצא את הרדיוס.',steps:[\n      {label:'שלב 1 — היקף המעגל כולו',hint:`[${angle}|360] · 2πr = ${pc(arc)}`,hint2:`הכפל ב-${mult}:`,lhs:'2πr =',ans:c,unit:'π',done:`2πr = ${mult} · ${pc(arc)} = ${c}π`,tip:`הקשת היא [1|${mult}] מההיקף, לכן ההיקף גדול ממנה פי ${mult}.`},\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "    {label:'שלב 2 — שטח הגזרה',lhs:`[${angle}|360] · ${q}π =`,ans:sa,unit:'π',done:`[${angle}|360] · ${q}π = ${sa}π`,tip:`הזווית היא ${fr(angle,360)} מסיבוב שלם, לכן הגזרה היא ${fr(angle,360)} מהשטח {${q}π}.`}]};\n  return{sub:'angleFromSector',r,angle,title:'זווית משטח גזרה',formula:fSec,draw:{rVal:r,angle,label:'?',strong:true},ask:`שטח הגזרה הוא {${sa}π} והרדיוס הוא ${r}. מצא את הזווית המרכזית.`,steps:[full,\n    {label:'שלב 2 — מצא את הזווית',hint:`[θ|360] · ${q}π = ${sa}π`,lhs:'θ =',ans:angle,unit:'°',done:`θ = [${sa}|${q}] · 360° = ${angle}°`,tip:`הגזרה היא ${fr(sa,q)} מהמעגל, לכן הזווית היא ${fr(sa,q)} מ-360°.`}]};\n",
+      "new": "    {label:'שלב 2 — שטח הגזרה',lhs:`[${angle}|360] · ${q}π =`,ans:sa,unit:'π',done:`[${angle}|360] · ${q}π = ${pc(sa)}`,tip:`הזווית היא ${fr(angle,360)} מסיבוב שלם, לכן הגזרה היא ${fr(angle,360)} מהשטח {${q}π}.`}]};\n  return{sub:'angleFromSector',r,angle,title:'זווית משטח גזרה',formula:fSec,draw:{rVal:r,angle,label:'?',strong:true},ask:`שטח הגזרה הוא {${pc(sa)}} והרדיוס הוא ${r}. מצא את הזווית המרכזית.`,steps:[full,\n    {label:'שלב 2 — מצא את הזווית',hint:`[θ|360] · ${q}π = ${pc(sa)}`,lhs:'θ =',ans:angle,unit:'°',done:`θ = [${sa}|${q}] · 360° = ${angle}°`,tip:`הגזרה היא ${fr(sa,q)} מהמעגל, לכן הזווית היא ${fr(sa,q)} מ-360°.`}]};\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">היקף המעגל הוא {ex.circCoeff}π. מצא את שטחו.</p>\n        {phase>0&&<div className=\"step-card done\"><div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.circCoeff}π → r = {ex.r}</div></div>}\n        {phase===0&&<div className=\"step-card\"><div className=\"step-label\">שלב 1 — מצא r מהיקף</div>\n          <p className=\"hint\">2πr = {ex.circCoeff}π</p>\n",
+      "new": "        <p className=\"hint\">היקף המעגל הוא <bdi dir=\"ltr\">{ex.circCoeff}π</bdi>. מצא את שטחו.</p>\n        {phase>0&&<div className=\"step-card done\"><div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.circCoeff}π → r = {ex.r}</div></div>}\n        {phase===0&&<div className=\"step-card\"><div className=\"step-label\">שלב 1 — מצא r מהיקף</div>\n          <p className=\"hint\" dir=\"ltr\">2πr = {ex.circCoeff}π</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">שטח גזרה = {ex.sectorArea}π, θ = {ex.angle}°. מצא את הרדיוס.</p>\n        {phase>0&&<div className=\"step-card done\"><div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ πr² = {ex.rSquared}π</div></div>}\n        {phase===0&&<div className=\"step-card\"><div className=\"step-label\">שלב 1 — מצא πr²</div>\n          <p className=\"hint\">({ex.angle}/360)·πr² = {ex.sectorArea}π</p>\n",
+      "new": "        <p className=\"hint\">שטח הגזרה הוא <bdi dir=\"ltr\">{ex.sectorArea===1?'':ex.sectorArea}π</bdi>, <bdi dir=\"ltr\">θ = {ex.angle}°</bdi>. מצא את הרדיוס.</p>\n        {phase>0&&<div className=\"step-card done\"><div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ πr² = {ex.rSquared}π</div></div>}\n        {phase===0&&<div className=\"step-card\"><div className=\"step-label\">שלב 1 — מצא πr²</div>\n          <p className=\"hint\" dir=\"ltr\">({ex.angle}/360)·πr² = {ex.sectorArea}π</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">R = {ex.R}, r = {ex.r}. חשב את שטח הטבעת (השטח בין שני המעגלים).</p>\n",
+      "new": "        <p className=\"hint\"><bdi dir=\"ltr\">R = {ex.R}, r = {ex.r}</bdi>. חשב את שטח הטבעת (השטח בין שני המעגלים).</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\" style={{fontSize:16}}>איזה חלק מסיבוב שלם היא זווית של <b>{ex.deg}°</b>?</p>\n",
+      "new": "        <p className=\"hint\" style={{fontSize:16}}>איזה חלק מסיבוב שלם היא זווית של <b><bdi dir=\"ltr\">{ex.deg}°</bdi></b>?</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\" style={{fontSize:16}}>המר {ex.deg}° לרדיאנים</p>\n",
+      "new": "        <p className=\"hint\" style={{fontSize:16}}>המר <bdi dir=\"ltr\">{ex.deg}°</bdi> לרדיאנים</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\" style={{fontSize:16}}>המר {fmtFrac(ex.num,ex.den)} רדיאנים למעלות</p>\n",
+      "new": "        <p className=\"hint\" style={{fontSize:16}}>המר <bdi dir=\"ltr\">{fmtFrac(ex.num,ex.den)}</bdi> רדיאנים למעלות</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
+      "old": "        <p className=\"hint\">r = {ex.r}, θ = {fmtFrac(ex.num,ex.den)} rad. חשב אורך קשת.</p>\n",
+      "new": "        <p className=\"hint\"><bdi dir=\"ltr\">r = {ex.r}, θ = {fmtFrac(ex.num,ex.den)} rad</bdi>. חשב אורך קשת.</p>\n",
+      "count": 1
     }
   ],
   "quadrilaterals": [

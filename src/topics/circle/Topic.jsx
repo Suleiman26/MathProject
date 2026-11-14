@@ -239,12 +239,12 @@ function Ch2(){
       <div className="graph-wrap"><CircleSVG rVal={ex.sub==='findR'?null:ex.r} showDiam={ex.sub==='calc'}/></div>
 
       {ex.sub==='calc'&&<>
-        <p className="hint">r = {ex.r}. חשב את היקף המעגל:</p>
+        <p className="hint"><bdi dir="ltr">r = {ex.r}</bdi>. חשב את היקף המעגל:</p>
         <div className="eq-row"><span>C = 2π·{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} disabled={allDone} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&!allDone&&checkStep()}/> <span>π</span></div>
       </>}
 
       {ex.sub==='findR'&&<>
-        <p className="hint">היקף המעגל הוא {ex.circCoeff}π. מצא את הרדיוס.</p>
+        <p className="hint">היקף המעגל הוא <bdi dir="ltr">{ex.circCoeff}π</bdi>. מצא את הרדיוס.</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.circCoeff}π</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — כתוב משוואה</div>
           <div className="eq-row">2πr = <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> π</div></div>}
@@ -254,7 +254,7 @@ function Ch2(){
       </>}
 
       {ex.sub==='numerical'&&<>
-        <p className="hint">r = {ex.r}. חשב את ההיקף לפי π ≈ 3.14</p>
+        <p className="hint"><bdi dir="ltr">r = {ex.r}</bdi>. חשב את ההיקף לפי <bdi dir="ltr">π ≈ 3.14</bdi></p>
         <div className="eq-row"><span>C = 2×3.14×{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} disabled={allDone} style={{width:70}} onKeyDown={e=>e.key==='Enter'&&!allDone&&checkStep()}/></div>
       </>}
 
@@ -366,7 +366,7 @@ function Ch3(){
           {ex.sub==='sector'&&<span>שטח גזרה = <Frac n="θ" d="360°"/> · πr²</span>}
         </div>
       </div>
-      <p className="hint area-hint">{ex.sub==='calc'?`r = ${ex.r}. חשבו את שטח המעגל.`:ex.sub==='findR'?`שטח המעגל הוא ${ex.area}π. מה הרדיוס?`:`r = ${ex.r}, θ = ${ex.angle}°. חשבו את שטח הגזרה.`}</p>
+      <p className="hint area-hint">{ex.sub==='calc'?<><bdi dir="ltr">r = {ex.r}</bdi>. חשבו את שטח המעגל.</>:ex.sub==='findR'?<>שטח המעגל הוא <bdi dir="ltr">{ex.area}π</bdi>. מה הרדיוס?</>:<><bdi dir="ltr">r = {ex.r}, θ = {ex.angle}°</bdi>. חשבו את שטח הגזרה.</>}</p>
       <div className="eq-row">
         <span>{ex.sub==='findR'?'r =':'S ='}</span>
         <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} disabled={done} style={{width:96}} onKeyDown={e=>e.key==='Enter'&&!done&&check()}/>
@@ -452,10 +452,10 @@ function Ch4(){
 
     <div className="card">
       <div className="card-t">{ex.sub==='arcLen'?'אורך קשת':ex.sub==='findAngle'?'מציאת זווית מקשת':'היקף גזרה'}</div>
-      <div className="graph-wrap"><CircleSVG rVal={ex.r} arcHighlight={[0,ex.angle]} sectorAngle={ex.sub==='sectorPerim'?ex.angle:null} label={ex.angle+'°'}/></div>
+      <div className="graph-wrap"><CircleSVG rVal={ex.r} arcHighlight={[0,ex.angle]} sectorAngle={ex.sub==='arcLen'?null:ex.angle} label={ex.sub==='findAngle'?'?':ex.angle+'°'}/></div>
 
       {ex.sub==='arcLen'&&<>
-        <p className="hint">r = {ex.r}, θ = {ex.angle}°. חשב את אורך הקשת.</p>
+        <p className="hint"><bdi dir="ltr">r = {ex.r}, θ = {ex.angle}°</bdi>. חשב את אורך הקשת.</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.fullCircCoeff}π</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — היקף המעגל</div>
           <div className="eq-row"><span>2π·{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
@@ -465,18 +465,18 @@ function Ch4(){
       </>}
 
       {ex.sub==='findAngle'&&<>
-        <p className="hint">אורך הקשת הוא {ex.arcCoeff}π, r = {ex.r}. מצא את הזווית המרכזית.</p>
+        <p className="hint">אורך הקשת הוא <bdi dir="ltr">{ex.arcCoeff===1?'':ex.arcCoeff}π</bdi>, <bdi dir="ltr">r = {ex.r}</bdi>. מצא את הזווית המרכזית.</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.fullCircCoeff}π</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — היקף המעגל</div>
           <div className="eq-row"><span>2π·{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
         {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ θ = {ex.angle}°</div></div>}
         {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — פתור</div>
-          <p className="hint">(θ/360)·{ex.fullCircCoeff}π = {ex.arcCoeff}π</p>
+          <p className="hint" dir="ltr">(θ/360)·{ex.fullCircCoeff}π = {ex.arcCoeff}π</p>
           <div className="ans-row"><span>θ =</span><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/><span>°</span></div></div>}
       </>}
 
       {ex.sub==='sectorPerim'&&<>
-        <p className="hint">r = {ex.r}, θ = {ex.angle}°. חשב את היקף הגזרה.</p>
+        <p className="hint"><bdi dir="ltr">r = {ex.r}, θ = {ex.angle}°</bdi>. חשב את היקף הגזרה.</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.fullCircCoeff}π</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — היקף המעגל</div>
           <div className="eq-row"><span>2π·{ex.r} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
@@ -508,6 +508,7 @@ const CH5_MORE=['rFromArea','rFromCirc','dFromArea','dFromCirc','circFromArea','
 function genCh5More(sub){
   const A=[30,45,60,90,120,150,180], A2=[30,45,60,90,120,180];
   const fr=(a,b)=>{const g=gcd(a,b);return`[${a/g}|${b/g}]`;};
+  const pc=n=>n===1?'π':n+'π';   // 1π is written π
   // a radius and an angle that give a whole number of π: 'arc' for the arc, 'sec' for the sector area
   const ra=(kind,angles,maxR)=>{
     for(let i=0;i<400;i++){const angle=pick(angles),r=randInt(2,maxR);
@@ -540,24 +541,24 @@ function genCh5More(sub){
     const {r,angle,v:arc}=ra('arc',sub==='rFromArc'?A2:A,15),c=2*r;
     const fArc='{L = [θ|360°] · 2πr}';
     const circ={label:'שלב 1 — היקף המעגל כולו',lhs:`2π · ${r} =`,ans:c,unit:'π',done:`2πr = ${c}π`,tip:`כופלים {2 · ${r}}, וה-π נשאר.`};
-    const arcStep={label:'שלב 2 — אורך הקשת',lhs:`L = [${angle}|360] · ${c}π =`,ans:arc,unit:'π',done:`L = [${angle}|360] · ${c}π = ${arc}π`,tip:`הזווית היא ${fr(angle,360)} מסיבוב שלם, לכן הקשת היא ${fr(angle,360)} מההיקף {${c}π}.`};
+    const arcStep={label:'שלב 2 — אורך הקשת',lhs:`L = [${angle}|360] · ${c}π =`,ans:arc,unit:'π',done:`L = [${angle}|360] · ${c}π = ${pc(arc)}`,tip:`הזווית היא ${fr(angle,360)} מסיבוב שלם, לכן הקשת היא ${fr(angle,360)} מההיקף {${c}π}.`};
     if(sub==='arcLen')return{sub,r,angle,title:'קשת מרדיוס וזווית',formula:fArc,draw:{rVal:r,angle,label:angle+'°',arc:true,arcTag:'L = ?'},given:`r = ${r} , θ = ${angle}°`,ask:'חשב את אורך הקשת.',steps:[circ,arcStep]};
     if(sub==='sectorPerim')return{sub,r,angle,title:'היקף גזרה',formula:fArc,formula2:'P = L + 2r',draw:{rVal:r,angle,label:angle+'°',arc:true},given:`r = ${r} , θ = ${angle}°`,ask:'חשב את היקף הגזרה.',steps:[circ,arcStep,
-      {label:'שלב 3 — היקף גזרה = קשת + 2r',lhs:'P =',ans:arc,unit:'π',mid:'+',ans2:c,done:`P = ${arc}π + ${c}`,tip:`הקשת היא {${arc}π}, ושני הרדיוסים יחד הם {2 · ${r}}.`}]};
-    if(sub==='angleFromArc')return{sub,r,angle,title:'זווית מקשת ורדיוס',formula:fArc,draw:{rVal:r,angle,label:'?',arc:true,arcTag:`L = ${arc}π`},given:`L = ${arc}π , r = ${r}`,ask:'מצא את הזווית המרכזית.',steps:[circ,
-      {label:'שלב 2 — מצא את הזווית',hint:`[θ|360] · ${c}π = ${arc}π`,lhs:'θ =',ans:angle,unit:'°',done:`θ = [${arc}|${c}] · 360° = ${angle}°`,tip:`הקשת היא ${fr(arc,c)} מההיקף, לכן הזווית היא ${fr(arc,c)} מ-360°.`}]};
+      {label:'שלב 3 — היקף גזרה = קשת + 2r',lhs:'P =',ans:arc,unit:'π',mid:'+',ans2:c,done:`P = ${pc(arc)} + ${c}`,tip:`הקשת היא {${pc(arc)}}, ושני הרדיוסים יחד הם {2 · ${r}}.`}]};
+    if(sub==='angleFromArc')return{sub,r,angle,title:'זווית מקשת ורדיוס',formula:fArc,draw:{rVal:r,angle,label:'?',arc:true,arcTag:`L = ${pc(arc)}`},given:`L = ${pc(arc)} , r = ${r}`,ask:'מצא את הזווית המרכזית.',steps:[circ,
+      {label:'שלב 2 — מצא את הזווית',hint:`[θ|360] · ${c}π = ${pc(arc)}`,lhs:'θ =',ans:angle,unit:'°',done:`θ = [${arc}|${c}] · 360° = ${angle}°`,tip:`הקשת היא ${fr(arc,c)} מההיקף, לכן הזווית היא ${fr(arc,c)} מ-360°.`}]};
     const mult=360/angle;
-    return{sub,r,angle,title:'רדיוס מקשת וזווית',formula:fArc,draw:{rVal:'?',angle,label:angle+'°',arc:true,arcTag:`L = ${arc}π`},given:`L = ${arc}π , θ = ${angle}°`,ask:'מצא את הרדיוס.',steps:[
-      {label:'שלב 1 — היקף המעגל כולו',hint:`[${angle}|360] · 2πr = ${arc}π`,hint2:`הכפל ב-${mult}:`,lhs:'2πr =',ans:c,unit:'π',done:`2πr = ${mult} · ${arc}π = ${c}π`,tip:`הקשת היא [1|${mult}] מההיקף, לכן ההיקף גדול ממנה פי ${mult}.`},
+    return{sub,r,angle,title:'רדיוס מקשת וזווית',formula:fArc,draw:{rVal:'?',angle,label:angle+'°',arc:true,arcTag:`L = ${pc(arc)}`},given:`L = ${pc(arc)} , θ = ${angle}°`,ask:'מצא את הרדיוס.',steps:[
+      {label:'שלב 1 — היקף המעגל כולו',hint:`[${angle}|360] · 2πr = ${pc(arc)}`,hint2:`הכפל ב-${mult}:`,lhs:'2πr =',ans:c,unit:'π',done:`2πr = ${mult} · ${pc(arc)} = ${c}π`,tip:`הקשת היא [1|${mult}] מההיקף, לכן ההיקף גדול ממנה פי ${mult}.`},
       {label:'שלב 2 — חלק ב-2π',lhs:`r = [${c}|2] =`,ans:r,unit:'',done:`r = [${c}|2] = ${r}`,tip:`כמה זה ${c} לחלק ל-2?`}]};
   }
   const {r,angle,v:sa}=ra('sec',A,12),q=r*r;
   const fSec='שטח גזרה = {[θ|360°] · πr²}';
   const full={label:'שלב 1 — שטח המעגל כולו',lhs:`π · ${r}² =`,ans:q,unit:'π',done:`πr² = ${q}π`,tip:`כופלים {${r} · ${r}}, וה-π נשאר.`};
   if(sub==='sectorArea')return{sub,r,angle,title:'גזרה מרדיוס וזווית',formula:fSec,draw:{rVal:r,angle,label:angle+'°',strong:true},given:`r = ${r} , θ = ${angle}°`,ask:'חשב את שטח הגזרה.',steps:[full,
-    {label:'שלב 2 — שטח הגזרה',lhs:`[${angle}|360] · ${q}π =`,ans:sa,unit:'π',done:`[${angle}|360] · ${q}π = ${sa}π`,tip:`הזווית היא ${fr(angle,360)} מסיבוב שלם, לכן הגזרה היא ${fr(angle,360)} מהשטח {${q}π}.`}]};
-  return{sub:'angleFromSector',r,angle,title:'זווית משטח גזרה',formula:fSec,draw:{rVal:r,angle,label:'?',strong:true},ask:`שטח הגזרה הוא {${sa}π} והרדיוס הוא ${r}. מצא את הזווית המרכזית.`,steps:[full,
-    {label:'שלב 2 — מצא את הזווית',hint:`[θ|360] · ${q}π = ${sa}π`,lhs:'θ =',ans:angle,unit:'°',done:`θ = [${sa}|${q}] · 360° = ${angle}°`,tip:`הגזרה היא ${fr(sa,q)} מהמעגל, לכן הזווית היא ${fr(sa,q)} מ-360°.`}]};
+    {label:'שלב 2 — שטח הגזרה',lhs:`[${angle}|360] · ${q}π =`,ans:sa,unit:'π',done:`[${angle}|360] · ${q}π = ${pc(sa)}`,tip:`הזווית היא ${fr(angle,360)} מסיבוב שלם, לכן הגזרה היא ${fr(angle,360)} מהשטח {${q}π}.`}]};
+  return{sub:'angleFromSector',r,angle,title:'זווית משטח גזרה',formula:fSec,draw:{rVal:r,angle,label:'?',strong:true},ask:`שטח הגזרה הוא {${pc(sa)}} והרדיוס הוא ${r}. מצא את הזווית המרכזית.`,steps:[full,
+    {label:'שלב 2 — מצא את הזווית',hint:`[θ|360] · ${q}π = ${pc(sa)}`,lhs:'θ =',ans:angle,unit:'°',done:`θ = [${sa}|${q}] · 360° = ${angle}°`,tip:`הגזרה היא ${fr(sa,q)} מהמעגל, לכן הזווית היא ${fr(sa,q)} מ-360°.`}]};
 }
 // What was typed in a box: a number, with or without the sign that stands after the box (π or °).
 function ch5Num(str,unit){
@@ -676,10 +677,10 @@ function Ch5(){
 
       {ex.sub==='circToArea'&&<>
         <div className="graph-wrap"><CircleSVG rVal="?"/></div>
-        <p className="hint">היקף המעגל הוא {ex.circCoeff}π. מצא את שטחו.</p>
+        <p className="hint">היקף המעגל הוא <bdi dir="ltr">{ex.circCoeff}π</bdi>. מצא את שטחו.</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ 2πr = {ex.circCoeff}π → r = {ex.r}</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — מצא r מהיקף</div>
-          <p className="hint">2πr = {ex.circCoeff}π</p>
+          <p className="hint" dir="ltr">2πr = {ex.circCoeff}π</p>
           <div className="ans-row"><span>r =</span><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
         {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ S = π · {ex.r}² = {ex.area}π</div></div>}
         {phase===1&&<div className="step-card"><div className="step-label">שלב 2 — חשב שטח</div>
@@ -688,10 +689,10 @@ function Ch5(){
 
       {ex.sub==='sectorToR'&&<>
         <div className="graph-wrap"><CircleSVG rVal="?" sectorAngle={ex.angle} label={ex.angle+'°'}/></div>
-        <p className="hint">שטח גזרה = {ex.sectorArea}π, θ = {ex.angle}°. מצא את הרדיוס.</p>
+        <p className="hint">שטח הגזרה הוא <bdi dir="ltr">{ex.sectorArea===1?'':ex.sectorArea}π</bdi>, <bdi dir="ltr">θ = {ex.angle}°</bdi>. מצא את הרדיוס.</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ πr² = {ex.rSquared}π</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — מצא πr²</div>
-          <p className="hint">({ex.angle}/360)·πr² = {ex.sectorArea}π</p>
+          <p className="hint" dir="ltr">({ex.angle}/360)·πr² = {ex.sectorArea}π</p>
           <p className="hint">הכפל ב-{ex.mult}:</p>
           <div className="eq-row"><span>πr² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
         {phase>1&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r² = {ex.rSquared}</div></div>}
@@ -704,7 +705,7 @@ function Ch5(){
 
       {ex.sub==='annulus'&&<>
         <div className="graph-wrap"><AnnulusSVG/></div>
-        <p className="hint">R = {ex.R}, r = {ex.r}. חשב את שטח הטבעת (השטח בין שני המעגלים).</p>
+        <p className="hint"><bdi dir="ltr">R = {ex.R}, r = {ex.r}</bdi>. חשב את שטח הטבעת (השטח בין שני המעגלים).</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ S₁ = π·{ex.R}² = {ex.bigArea}π</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — שטח המעגל הגדול</div>
           <div className="eq-row"><span>S₁ = π·{ex.R}² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> <span>π</span></div></div>}
@@ -861,7 +862,7 @@ function RadPart({part}){
       </>}
 
       {ex.sub==='degToFrac'&&<>
-        <p className="hint" style={{fontSize:16}}>איזה חלק מסיבוב שלם היא זווית של <b>{ex.deg}°</b>?</p>
+        <p className="hint" style={{fontSize:16}}>איזה חלק מסיבוב שלם היא זווית של <b><bdi dir="ltr">{ex.deg}°</bdi></b>?</p>
         <div className="choice-row">
           {ex.opts.map(o=><button key={o.deg} className={`choice-btn rad-frac ${a1===String(o.deg)?'active':''} ${allDone&&o.deg===ex.deg?'correct':''}`}
             onClick={()=>{if(!allDone){setA1(String(o.deg));setFb(null);}}} disabled={allDone}><Frac n={o.num} d={o.den}/></button>)}
@@ -877,7 +878,7 @@ function RadPart({part}){
       </>}
 
       {ex.sub==='degToRad'&&<>
-        <p className="hint" style={{fontSize:16}}>המר {ex.deg}° לרדיאנים</p>
+        <p className="hint" style={{fontSize:16}}>המר <bdi dir="ltr">{ex.deg}°</bdi> לרדיאנים</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.deg} · π/180</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — כתוב נוסחה</div>
           <div className="eq-row"><input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:50}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/> · π/180</div></div>}
@@ -890,7 +891,7 @@ function RadPart({part}){
       </>}
 
       {ex.sub==='radToDeg'&&<>
-        <p className="hint" style={{fontSize:16}}>המר {fmtFrac(ex.num,ex.den)} רדיאנים למעלות</p>
+        <p className="hint" style={{fontSize:16}}>המר <bdi dir="ltr">{fmtFrac(ex.num,ex.den)}</bdi> רדיאנים למעלות</p>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ ({ex.num}/{ex.den}) · 180</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">שלב 1 — הצב בנוסחה</div>
           <div className="eq-row">(<input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:35}}/>/<input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} style={{width:35}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/>) · 180</div></div>}
@@ -901,7 +902,7 @@ function RadPart({part}){
 
       {ex.sub==='arcRad'&&<>
         <div className="graph-wrap"><CircleSVG rVal={ex.r} arcHighlight={[0,ex.deg]} label={fmtFrac(ex.num,ex.den)+' rad'}/></div>
-        <p className="hint">r = {ex.r}, θ = {fmtFrac(ex.num,ex.den)} rad. חשב אורך קשת.</p>
+        <p className="hint"><bdi dir="ltr">r = {ex.r}, θ = {fmtFrac(ex.num,ex.den)} rad</bdi>. חשב אורך קשת.</p>
         <div className="formula-box" style={{fontSize:16}}>L = r · θ = {ex.r} · {fmtFrac(ex.num,ex.den)}</div>
         {phase>0&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ L = {ex.arcCoeff}π</div></div>}
         {phase===0&&<div className="step-card"><div className="step-label">חשב</div>
