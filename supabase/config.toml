@@ -107,7 +107,8 @@ port = 56424
 # sender_name = "Admin"
 
 [storage]
-enabled = false
+# on: the fixes board keeps images/PDFs in the private "fix-files" bucket (migration 20261114120000)
+enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
@@ -406,6 +407,11 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # the function checks our own session token itself. Without this, a deploy that
 # forgets --no-verify-jwt makes the gateway answer 401 to every invitee.
 [functions.duel-start]
+verify_jwt = false
+
+# Fixes board attachments: the admin page calls fix-files with the publishable key;
+# the function checks the admin PIN session itself.
+[functions.fix-files]
 verify_jwt = false
 
 # Duels push (spec §7.4): only the database calls duel-push (pg_net, from duel_invite),

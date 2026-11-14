@@ -1,11 +1,14 @@
 'use client';
 /* Fixes board: what to fix in each topic, what was fixed and waits for review,
-   what was approved. Replaces sending PDF lists back and forth. */
+   what was approved. Replaces sending PDF lists back and forth.
+   Items and comments can carry images, PDFs and links (FixAttach.jsx, ../files.js). */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, ChatCircle, Check, ArrowCounterClockwise, ArrowSquareOut, PencilSimple, ListChecks } from "@phosphor-icons/react";
 import { useAdmin, PageHead } from "../AdminShell";
 import { Sheet, Empty, useToast, ago } from "../ui";
 import { TOPICS } from "@/topics/registry";
+import { viewUrls, deleteFile, deleteItemFiles } from "../files";
+import { AttachBar, Attachments, Viewer, Linked, usePending, sendPending, useDropPaste, ATTACH_NOTE } from "./FixAttach";
 
 export const STATUS = {
   new: { label: "חדש", tone: "st-new" },
@@ -42,11 +45,36 @@ export default function Fixes() {
   const [name, setName] = useName();
   const [edit, setEdit] = useState(null); // {} = new, item = edit
   const [busy, setBusy] = useState(false);
+  const [urls, setUrls] = useState({});     // file id → 1-hour view link
+  const [view, setView] = useState(null);   // {list, index}: the image viewer
+  const sheetPending = usePending();
+  const sheetBox = useRef(null);
+  const sheetOver = useDropPaste(sheetBox, sheetPending, !!edit && !a.preview);
+  const urlsAt = useRef(0);
 
+  async function loadUrls(list, force) {
+    if (a.preview) return;
+    const ids = (list || []).flatMap((i) => (i.files || []).filter((f) => f.kind === "file").map((f) => f.id));
+    const missing = force ? ids : ids.filter((id) => !urls[id]);
+    if (!missing.length) return;
+    try { const u = await viewUrls(a.tok, missing); setUrls((o) => ({ ...(force ? {} : o), ...u })); urlsAt.current = Date.now(); }
+    catch (e) { toast("הקבצים לא נטענו: " + e.message, true); }
+  }
   async function reload() {
-    try { const r = await a.run("admin_fixes", {}); setItems(Array.isArray(r) ? r : []); }
+    try {
+      const r = await a.run("admin_fixes", {});
+      const list = Array.isArray(r) ? r : [];
+      setItems(list);
+      loadUrls(list, Date.now() - urlsAt.current > 50 * 60 * 1000);   // view links last an hour
+    }
     catch (e) { setItems([]); toast("לא נטען: " + e.message, true); }
   }
+  // a tab left open for long: refresh the view links when it comes back
+  useEffect(() => {
+    const v = () => { if (document.visibilityState === "visible" && items && Date.now() - urlsAt.current > 50 * 60 * 1000) loadUrls(items, true); };
+    document.addEventListener("visibilitychange", v);
+    return () => document.removeEventListener("visibilitychange", v);
+  }); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { reload(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.id, (items || []).filter((i) => f.has(i.status)).length])), [items]);
@@ -61,12 +89,17 @@ export default function Fixes() {
   const total = (items || []).filter((i) => i.status !== "later").length;
   const done = counts.done || 0;
 
-  async function act(item, body, status) {
+  async function act(item, body, status, pending) {
     if (!name) return toast("קודם בחרו מי אתם (למעלה)", true);
+    const withFiles = !!(pending && pending.ready.length);
     setBusy(true);
     try {
-      const r = await a.run("admin_fix_comment", { item_id: item.id, author: name, body, new_status: status || null });
+      const r = await a.run("admin_fix_comment", { item_id: item.id, author: name, body, new_status: status || null, has_files: withFiles });
       if (r && r.error) throw new Error(r.error);
+      if (withFiles) {
+        const failed = await sendPending({ tok: a.tok, itemId: item.id, commentId: r.id || null, pending, author: name });
+        if (failed) { await reload(); toast(`${failed} קבצים לא הועלו — אפשר לנסות שוב`, true); return false; }
+      }
       await reload();
       if (status === "done") toast("אושר ✓");
       else if (status === "reopened") toast("נשלח לתיקון נוסף");
@@ -86,15 +119,36 @@ export default function Fixes() {
         ? await a.run("admin_fix_edit", { item_id: it.id, topic: it.topic, section: it.section || "", body: it.body })
         : await a.run("admin_fix_add", { topic: it.topic, section: it.section || "", body: it.body, author: name });
       if (r && r.error) throw new Error(r.error);
+      const itemId = it.id || (r && r.id);
+      if (itemId && sheetPending.ready.length) {
+        const failed = await sendPending({ tok: a.tok, itemId, pending: sheetPending, author: name || "צוות" });
+        if (failed) { await reload(); setEdit((e) => (e && !e.id ? { ...e, id: itemId } : e)); toast(`${failed} קבצים לא הועלו — אפשר לנסות שוב`, true); return; }
+      }
+      sheetPending.clear();
       await reload(); close(); toast(it.id ? "נשמר" : "נוסף לרשימה");
     } catch (e) { toast("לא נשמר: " + e.message, true); }
     finally { setBusy(false); }
   }
   async function removeItem(close) {
     if (!confirm("למחוק את התיקון הזה?")) return;
-    try { await a.run("admin_fix_delete", { item_id: edit.id }); await reload(); close(); toast("נמחק"); }
+    try {
+      if (!a.preview && (edit.files || []).some((f) => f.kind === "file")) await deleteItemFiles(a.tok, edit.id);   // the stored files go first
+      await a.run("admin_fix_delete", { item_id: edit.id }); sheetPending.clear(); await reload(); close(); toast("נמחק");
+    }
     catch (e) { toast("לא נמחק: " + e.message, true); }
   }
+
+  async function removeFile(f) {
+    if (!confirm(f.kind === "link" ? "למחוק את הקישור?" : "למחוק את הקובץ?")) return;
+    try {
+      await deleteFile(a.tok, f);
+      setView(null);
+      setEdit((e) => (e && e.files ? { ...e, files: e.files.filter((x) => x.id !== f.id) } : e));
+      await reload(); toast("נמחק");
+    } catch (e) { toast("לא נמחק: " + e.message, true); }
+  }
+  const openView = (list, index) => setView({ list, index });
+  const editFiles = edit && edit.id ? (edit.files || []).filter((f) => !f.comment_id) : [];
 
   return (
     <>
@@ -138,44 +192,61 @@ export default function Fixes() {
               <h2>{topicName(slug)}</h2><span className="fx-n">{list.length}</span>
               {slug !== "general" && <a className="fx-open" href={"/topics/" + slug} target="_blank" rel="noopener"><ArrowSquareOut size={15} />פתיחת הנושא</a>}
             </header>
-            <ul className="fx-list">{list.map((it) => <Item key={it.id} it={it} busy={busy} onAct={act} onEdit={() => setEdit({ ...it })} />)}</ul>
+            <ul className="fx-list">{list.map((it) => <Item key={it.id} it={it} busy={busy} onAct={act} onEdit={() => { sheetPending.clear(); setEdit({ ...it }); }}
+              urls={urls} onView={openView} onDeleteFile={removeFile} preview={a.preview} />)}</ul>
           </section>
         ))}
 
       {edit && (
-        <Sheet title={edit.id ? "עריכת תיקון" : "תיקון חדש"} saving={busy} onClose={() => setEdit(null)} onSave={saveItem} onDelete={edit.id ? removeItem : null}>
+        <Sheet title={edit.id ? "עריכת תיקון" : "תיקון חדש"} saving={busy || sheetPending.busy} onClose={() => { sheetPending.clear(); setEdit(null); }} onSave={saveItem} onDelete={edit.id ? removeItem : null}>
           <label className="field"><span>נושא</span>
             <select value={edit.topic} onChange={(e) => setEdit({ ...edit, topic: e.target.value })}>{TOPIC_OPTIONS.map((t) => <option key={t} value={t}>{topicName(t)}</option>)}</select>
           </label>
           <label className="field"><span>תת־פרק (לא חובה)</span>
             <input type="text" value={edit.section || ""} placeholder="למשל: חוקי חזקות" onChange={(e) => setEdit({ ...edit, section: e.target.value })} />
           </label>
-          <label className="field"><span>מה צריך לתקן?</span>
-            <textarea className="fx-ta" rows={5} value={edit.body} placeholder="תארו מה לא תקין או מה להוסיף. אפשר כמה שורות." onChange={(e) => setEdit({ ...edit, body: e.target.value })} />
-          </label>
+          <div ref={sheetBox} className={"fa-drop" + (sheetOver ? " over" : "")}>
+            <label className="field"><span>מה צריך לתקן?</span>
+              <textarea className="fx-ta" rows={5} value={edit.body} placeholder="תארו מה לא תקין או מה להוסיף. אפשר כמה שורות." onChange={(e) => setEdit({ ...edit, body: e.target.value })} />
+            </label>
+            <div className="field"><span>קבצים וקישורים (לא חובה)</span>
+              {editFiles.length > 0 && <Attachments files={editFiles} urls={urls} onView={openView} onDelete={removeFile} />}
+              <AttachBar pending={sheetPending} disabled={busy} offline={a.preview} />
+              <small className="fa-note">{ATTACH_NOTE}</small>
+            </div>
+          </div>
           {!edit.id && <p className="note">התיקון יופיע כ״חדש״. אחרי שאתקן אותו הוא יעבור ל״תוקן · לבדיקה״, ואז תאשרו או תחזירו לתיקון.</p>}
         </Sheet>
       )}
+      {view && <Viewer list={view.list} index={view.index} urls={urls} onClose={() => setView(null)} onDelete={removeFile} />}
     </>
   );
 }
 
-function Item({ it, busy, onAct, onEdit }) {
+function Item({ it, busy, onAct, onEdit, urls, onView, onDeleteFile, preview }) {
   const [mode, setMode] = useState(null); // null | "comment" | "reopen"
   const [text, setText] = useState("");
   const [all, setAll] = useState(false);
   const ta = useRef(null);
+  const box = useRef(null);
+  const pending = usePending();
+  const over = useDropPaste(box, pending, !!mode && !preview);
+  const files = it.files || [];
+  const filesOf = (cid) => files.filter((f) => (f.comment_id || null) === cid);
   useEffect(() => { if (mode && ta.current) ta.current.focus(); }, [mode]);
   const st = STATUS[it.status] || STATUS.new;
   const thread = it.comments || [];
   const visible = all ? thread : thread.slice(-2);
 
+  const canSend = !!text.trim() || pending.ready.length > 0;
   async function send() {
+    if (pending.busy) return;
     if (mode === "reopen" && !text.trim()) return ta.current && ta.current.focus();
-    if (!text.trim()) return;
-    const ok = await onAct(it, text, mode === "reopen" ? "reopened" : null);
-    if (ok) { setMode(null); setText(""); }
+    if (!canSend) return;
+    const ok = await onAct(it, text, mode === "reopen" ? "reopened" : null, pending);
+    if (ok) { setMode(null); setText(""); pending.clear(); }
   }
+  const cancel = () => { setMode(null); setText(""); pending.clear(); };
 
   return (
     <li className={"fx-item " + st.tone}>
@@ -185,7 +256,8 @@ function Item({ it, busy, onAct, onEdit }) {
         <span className="grow" />
         <button type="button" className="ibtn fx-edit" onClick={onEdit} aria-label="עריכה"><PencilSimple size={16} /></button>
       </div>
-      <p className="fx-body">{it.body}</p>
+      <p className="fx-body"><Linked text={it.body} /></p>
+      <Attachments files={filesOf(null)} urls={urls} onView={onView} onDelete={onDeleteFile} />
       <div className="fx-meta">{it.author} · {ago(it.created_at)}</div>
 
       {thread.length > 0 && (
@@ -194,20 +266,22 @@ function Item({ it, busy, onAct, onEdit }) {
           {visible.map((c) => (
             <li key={c.id} className={c.author === "Claude" ? "bot" : ""}>
               <div className="fx-ch"><b>{c.author}</b>{c.status && <span className={"fx-st sm " + (STATUS[c.status] || STATUS.new).tone}>{(STATUS[c.status] || STATUS.new).label}</span>}<time>{ago(c.created_at)}</time></div>
-              {c.body && <p>{c.body}</p>}
+              {c.body && <p><Linked text={c.body} /></p>}
+              <Attachments files={filesOf(c.id)} urls={urls} onView={onView} onDelete={onDeleteFile} />
             </li>
           ))}
         </ol>
       )}
 
       {mode ? (
-        <div className="fx-reply">
+        <div ref={box} className={"fx-reply fa-drop" + (over ? " over" : "")}>
           <textarea ref={ta} className="fx-ta" rows={3} value={text} onChange={(e) => setText(e.target.value)}
             placeholder={mode === "reopen" ? "מה עדיין לא תקין? (חובה, כדי שאדע מה לתקן)" : "כתבו תגובה…"}
             onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }} />
+          <AttachBar pending={pending} disabled={busy} offline={preview} />
           <div className="fx-actions">
-            <button type="button" className={"abtn sm " + (mode === "reopen" ? "warn" : "pri")} disabled={busy || !text.trim()} onClick={send}>{mode === "reopen" ? "החזרה לתיקון" : "שליחה"}</button>
-            <button type="button" className="abtn sm ghost" onClick={() => { setMode(null); setText(""); }}>ביטול</button>
+            <button type="button" className={"abtn sm " + (mode === "reopen" ? "warn" : "pri")} disabled={busy || pending.busy || (mode === "reopen" ? !text.trim() : !canSend)} onClick={send}>{busy && pending.ready.length ? "שולח…" : mode === "reopen" ? "החזרה לתיקון" : "שליחה"}</button>
+            <button type="button" className="abtn sm ghost" disabled={busy} onClick={cancel}>ביטול</button>
           </div>
         </div>
       ) : (
