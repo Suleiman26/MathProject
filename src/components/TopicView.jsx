@@ -8,7 +8,7 @@ import TopBar from "./TopBar";
 import Keypad from "./Keypad";
 import { accountApi, useAccount } from "@/lib/account";
 import { chapterStats } from "@/home/chapters";
-import { calcAllowed } from "@/lib/calc-topics";
+import { calcAllowed, eqnAllowed } from "@/lib/calc-topics";
 
 // the side calculator: its code is fetched only when a student opens it
 const Calculator = lazy(() => import("./Calculator"));
@@ -83,12 +83,14 @@ export default function TopicView({ slug }) {
   // The chapter is read from the active chapter button, the same way the answer tracker does.
   const [calcOk, setCalcOk] = useState(() => calcAllowed(slug, ""));
   const [calcOpen, setCalcOpen] = useState(false);
+  const [eqnOk, setEqnOk] = useState(() => eqnAllowed(slug, "")); // the equation mode (MODE 5 3), where quadratics are solved
   useEffect(() => {
     if (!loaded) return;
     let t = 0;
     const check = () => {
       const ok = calcAllowed(slug, activeChapter());
       setCalcOk(ok);
+      setEqnOk(eqnAllowed(slug, activeChapter()));
       if (!ok) setCalcOpen(false);
     };
     const later = () => { clearTimeout(t); t = setTimeout(check, 60); }; // after the topic drew the new chapter
@@ -106,7 +108,7 @@ export default function TopicView({ slug }) {
       <TopBar title={meta.title.split(/\s[—–-]\s/)[0]} calc={calcOk} calcOpen={calcOpen} onCalc={() => setCalcOpen((o) => !o)} />
       <div id="root">{Topic ? <Topic /> : <div className="mp-boot" aria-hidden="true"><span /></div>}</div>
       <Keypad page={slug} calc={calcOk} />
-      {calcOk && calcOpen && <Suspense fallback={null}><Calculator onClose={() => setCalcOpen(false)} /></Suspense>}
+      {calcOk && calcOpen && <Suspense fallback={null}><Calculator eqn={eqnOk} onClose={() => setCalcOpen(false)} /></Suspense>}
     </>
   );
 }

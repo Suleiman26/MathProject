@@ -1,6 +1,6 @@
 /* Side calculator on topic pages (src/components/Calculator.jsx, fixes board #55).
    Private prefix: calc- (plus .mp-calc-btn in the top bar and .kp-calc in the keypad bar).
-   Phone (< 600 px): a low sheet at the bottom, 8 + 52 + 6 + 34 + 8 + 4×44 + 3×6 + 8 = 310 px (+ safe area).
+   Phone (< 600 px): a low sheet at the bottom, 8 + 52 + 1 + 44 + 3 + 4×44 + 3×6 + 8 = 310 px (+ safe area).
    600–1179 px: a card in the bottom-left corner. ≥ 1180 px: docked at the left, the page moves over. */
 @layer page {
   /* ── the button in the top bar ── */
@@ -95,7 +95,7 @@
   /* the last results: tap one to use it again */
   .calc-hist {
     display: flex; align-items: center; gap: 6px;
-    height: 34px; margin: 6px 0 8px; padding: 0 2px;
+    height: 44px; margin: 1px 0 3px; padding: 0 2px; /* 44: the chips' hit areas (32 + 6 + 6) are not cut */
     overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
   }
   .calc-hist::-webkit-scrollbar { display: none; }
@@ -115,6 +115,41 @@
   .calc-chip-e::after { content: " ="; }
   .calc-chip-r { flex: none; }
   .calc-chip:active { transform: scale(.96); background: var(--a-100, #ccfbf1); }
+
+  /* ── equation mode (MODE 5 3: aX²+bX+c=0), only where a quadratic is solved ── */
+  /* the MODE key: dark, like the key on a real scientific calculator */
+  .calc-mode {
+    position: relative; flex: none; height: 32px; margin: 0; padding: 0 11px;
+    display: inline-flex; align-items: center;
+    border: 0; border-radius: 10px;
+    background: var(--ink-2, #4f4d48); color: #fff;
+    box-shadow: 0 1px 0 rgb(28 27 25 / .3);
+    font: 700 .72rem/1 var(--font, system-ui); letter-spacing: .05em; /* Latin capitals only */
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform 100ms ease-out, background-color 100ms ease-out;
+  }
+  .calc-mode::after { content: ""; position: absolute; inset: -6px -3px; } /* 44 px hit area */
+  .calc-mode:active { transform: scale(.96); }
+  .calc-mode[aria-pressed="true"] { background: var(--a-600, #0d9488); }
+  .calc-chip > span[dir="rtl"] { unicode-bidi: isolate; white-space: nowrap; }
+  .calc-chip.calc-pick b { font-weight: 700; color: var(--a-700, #0f766e); }
+  .calc-chip.calc-pick b::after { content: ":"; }
+  .calc-chip.calc-exit { background: var(--surface-3, #f2f1ee); color: var(--ink-2, #4f4d48); box-shadow: inset 0 0 0 1px var(--line, #e7e5e0); font-weight: 500; }
+  .calc-chip.calc-exit:active { background: var(--line, #e7e5e0); }
+  .calc-chip-n { flex: none; font-weight: 500; opacity: .75; }
+  .calc-chip.calc-root[aria-pressed="true"] { background: var(--a-600, #0d9488); color: #fff; box-shadow: none; }
+  .calc-note {
+    flex: none; padding: 0 4px; white-space: nowrap; unicode-bidi: isolate;
+    font: 600 .86rem/1 var(--font, system-ui); font-variant-numeric: tabular-nums; color: var(--ink-2, #4f4d48);
+  }
+  .calc-hist .calc-mode ~ .calc-hint { margin-inline: 4px auto; white-space: nowrap; }
+  .calc-hist .calc-mode ~ .calc-exit { margin-left: auto; } /* the way back sits at the far end of the row */
+  .calc-var { margin-right: 5px; color: var(--a-700, #0f766e); }
+  .calc-dim { color: var(--ink-3, #8a877f); }
+  .calc-main.is-menu { font-size: 1.3rem; }
+  .calc-main.is-menu.is-long { font-size: 1.15rem; }
+  .calc-main.is-eq.is-long { font-size: 1rem; } /* X1=−0.3542486889 must show whole, also on a 375 px phone */
+  .calc-main.is-he { font-size: 1.2rem; text-align: right; }
 
   /* keys: 6 × 4 */
   .calc-keys { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
@@ -142,12 +177,16 @@
   .calc-key:active { transform: scale(.96); background: var(--a-100, #ccfbf1); }
   .calc-key.calc-d:active { background: var(--a-50, #f0fdfa); box-shadow: 0 0 0 1px var(--a-200, #99f6e4); }
   .calc-key.calc-eq:active { background: var(--a-700, #0f766e); }
-  .calc :is(.calc-key, .calc-chip, .calc-c, .calc-x):focus-visible { outline: 2px solid var(--a-600, #0d9488); outline-offset: 2px; }
+  .calc :is(.calc-key, .calc-chip, .calc-mode, .calc-c, .calc-x):focus-visible { outline: 2px solid var(--a-600, #0d9488); outline-offset: 2px; }
   @media (hover: hover) and (pointer: fine) {
     .calc-key:hover { background: var(--a-50, #f0fdfa); }
     .calc-key.calc-op:hover { background: var(--a-100, #ccfbf1); }
     .calc-key.calc-eq:hover { background: var(--a-700, #0f766e); }
     .calc-chip:hover { background: var(--a-100, #ccfbf1); }
+    .calc-chip.calc-exit:hover { background: var(--line, #e7e5e0); }
+    .calc-chip.calc-root[aria-pressed="true"]:hover { background: var(--a-700, #0f766e); }
+    .calc-mode:hover { background: var(--ink, #1c1b19); }
+    .calc-mode[aria-pressed="true"]:hover { background: var(--a-700, #0f766e); }
     .calc-x:hover { background: var(--surface-3, #f2f1ee); }
     .calc-c:hover { background: var(--bad-100, #fee2e2); }
   }
