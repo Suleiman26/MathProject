@@ -1013,6 +1013,7 @@ html[data-page="parabola-practice"] .pp-shapes { display: inline-flex; gap: 6px;
 html[data-page="parabola-practice"] #root .card button.pp-shape { min-height: 40px; padding: 4px 12px; border-radius: 10px; border: 1.5px solid var(--a-200, #c7d2fe); background: var(--surface, #fff); color: var(--a-900, #1a237e); font-size: 15px; font-weight: 700; direction: ltr; unicode-bidi: isolate; white-space: nowrap; box-shadow: none; }
 html[data-page="parabola-practice"] #root .card button.pp-shape.on { border-color: var(--a-600, #3949ab); background: var(--a-600, #3949ab); color: #fff; }
 html[data-page="parabola-practice"] .pp-or { font-size: 15px; font-weight: 700; color: var(--ink-2, #44403c); margin: 0 2px; }
+html[data-page="parabola-practice"] #root .card button.pp-shape.on .pp-or { color: #fff; opacity: .9; }
 html[data-page="parabola-practice"] .pp-sfill { flex: 1 1 100%; justify-content: center; }
 html[data-page="parabola-practice"] #root .card .pp-srow .pp-rv { width: 60px !important; }
 @media (max-width: 420px) {
