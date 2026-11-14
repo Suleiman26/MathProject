@@ -85,7 +85,7 @@ function fitAngleLabel(vert,p1,p2,arcR,txt,size,maxD,centroid,diagTo,letter){
   return{x:letter.x+side*(7+w/2),y:letter.y-4,size:s};
 }
 
-function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[], letterOut=false}){
+function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={}, ticks={}, parallelArrows={}, rightAngleAt=[], diagonals=[], letterOut=false, extra=null}){
   const n=order.length;
   const pts=order.map(k=>verts[k]);
   const sides=order.map((k,i)=>({id:k+order[(i+1)%n], a:verts[k], b:verts[order[(i+1)%n]]}));
@@ -102,6 +102,7 @@ function QuadBase({verts, order, highlight, onPart, sideLabels={}, angleLabels={
           stroke={active?'#7c3aed':'#94a3b8'} strokeWidth={active?3:1.5}
           strokeDasharray="6,4" style={{cursor:'pointer'}} onClick={()=>onPart('diag',id)}/>;
       })}
+      {extra}
 
       {sides.map(s=>{
         const midx=(s.a.x+s.b.x)/2, midy=(s.a.y+s.b.y)/2;
@@ -186,7 +187,7 @@ function SegTick({p,ux,uy,count}){
   })}</>;
 }
 
-function InteractiveQuadBase({verts, order, diagonals=[], activeProp, alwaysRight=[]}){
+function InteractiveQuadBase({verts, order, diagonals=[], activeProp, alwaysRight=[], letterOut=false}){
   const n=order.length;
   const pts=order.map(k=>verts[k]);
   const sides=order.map((k,i)=>({id:k+order[(i+1)%n], a:verts[k], b:verts[order[(i+1)%n]]}));
@@ -294,7 +295,9 @@ function InteractiveQuadBase({verts, order, diagonals=[], activeProp, alwaysRigh
         const showRight = (active && mark==='right') || alwaysRight.includes(k);
         const showArc = active && mark==='arc';
         const arc=angleArcAtVertex(v.x,v.y,prev,next,showRight?16:20);
-        const labelDx=(v.x-cx)>=0?18:-18, labelDy=(v.y-cy)>=0?18:-18;
+        // letterOut: the corner letter sits just outside its corner, straight out from the centre (same rule as QuadBase)
+        const om=Math.hypot(v.x-cx,v.y-cy)||1;
+        const labelDx=letterOut?(v.x-cx)/om*17:((v.x-cx)>=0?18:-18), labelDy=letterOut?(v.y-cy)/om*17+4:((v.y-cy)>=0?18:-18);
         return <g key={k}>
           {showRight && <RightSquareMark v={v} prev={prev} next={next} active={active && mark==='right'}/>}
           {showArc && <path d={arc.path} fill="none" stroke="#7c3aed" strokeWidth={3}/>}
@@ -306,14 +309,14 @@ function InteractiveQuadBase({verts, order, diagonals=[], activeProp, alwaysRigh
 }
 
 /* ═══════════════════ Property explorer (Part A) ═══════════════════ */
-function PropertyExplorer({verts, order, diagonals=[], properties, alwaysRight=[]}){
+function PropertyExplorer({verts, order, diagonals=[], properties, alwaysRight=[], letterOut=false}){
   const [active,setActive]=useState(null);
   const prop = properties.find(p=>p.id===active);
   return (
     <div className="card">
       <div className="card-t">חלק א׳ — הצגה ויזואלית</div>
       <div className="quad-wrap">
-        <InteractiveQuadBase verts={verts} order={order} diagonals={diagonals} activeProp={prop||null} alwaysRight={alwaysRight}/>
+        <InteractiveQuadBase verts={verts} order={order} diagonals={diagonals} activeProp={prop||null} alwaysRight={alwaysRight} letterOut={letterOut}/>
       </div>
       <div className="prop-list">
         {properties.map(p=>(
@@ -344,6 +347,102 @@ function SolvedExample({title, visual, given, steps}){
           </li>
         ))}
       </ol>
+    </div>
+  );
+}
+
+/* ═══════════════════ Part B as sub-chapters (fixes board #77) ═══════════════════
+   Every exercise type of a shape is its own sub-chapter: explanation → solved
+   example → practice. The last tab is a poster with all the shape's formulas. */
+const F_DIAG=<>S = <Frac n="d₁·d₂" d="2"/></>;
+const F_TRAP=<>S = <Frac n="b₁+b₂" d="2"/> · h</>;
+// Hebrew words inside a formula: each word is isolated so the formula keeps its left-to-right order
+const F_ISO_H=<span dir="ltr" className="sc-ltr"><bdi>שוק</bdi>² = <bdi>גובה</bdi>² + (<Frac n="b₂−b₁" d="2"/>)²</span>;
+// helper drawings for the solved examples: a dashed segment (height, diagonal) with its label beside it
+function HelpLine({from,to,label,lx=8,ly=5,anchor='start',sq,color='#7c3aed'}){
+  return <g>
+    <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke={color} strokeWidth={2.5} strokeDasharray="6,4"/>
+    {sq&&<RightSquareMark v={to} prev={from} next={sq} active={false}/>}
+    {label!=null&&<text x={(from.x+to.x)/2+lx} y={(from.y+to.y)/2+ly} textAnchor={anchor} fontSize="13" fontWeight="700" fill={color}>{label}</text>}
+  </g>;
+}
+function Lbl({x,y,children,color='#7c3aed',anchor='middle'}){
+  return <text x={x} y={y} textAnchor={anchor} fontSize="13" fontWeight="700" fill={color}>{children}</text>;
+}
+function Tri({pts,fill='#ede9fe'}){
+  return <polygon points={pts.map(q=>`${q.x},${q.y}`).join(' ')} fill={fill} stroke="none"/>;
+}
+function FormulaPoster({name, visual, formulas, facts}){
+  return (
+    <div className="sc-poster">
+      <div className="sc-poster-head">
+        <div className="sc-poster-kicker">סיכום נוסחאות</div>
+        <div className="sc-poster-name">{name}</div>
+      </div>
+      {visual&&<div className="quad-wrap sc-poster-fig">{visual}</div>}
+      <div className="sc-ptiles">
+        {formulas.map((f,i)=>(
+          <div key={i} className={`sc-ptile ${f.wide?'wide':''}`}>
+            <div className="sc-ptile-l">{f.label}</div>
+            <div className="sc-ptile-f">{f.math}</div>
+            {f.note&&<div className="sc-ptile-n">{f.note}</div>}
+          </div>
+        ))}
+      </div>
+      <ul className="sc-pfacts">
+        {facts.map((t,i)=><li key={i}>{t}</li>)}
+      </ul>
+    </div>
+  );
+}
+function SubChapters({items, poster}){
+  const [cur,setCur]=useState(0);
+  const top=React.useRef(null);
+  const n=items.length;
+  const next=()=>{
+    setCur(c=>Math.min(c+1,n));
+    if(top.current&&top.current.scrollIntoView) top.current.scrollIntoView({block:'start',behavior:'smooth'});
+  };
+  const it=items[cur];
+  return (
+    <div className="card sc-card" ref={top}>
+      <div className="card-t">חלק ב׳ — תרגילים</div>
+      <div className="sub-tabs sc-tabs">
+        {items.map((x,i)=>(
+          <button key={i} className={`sub-tab ${cur===i?'active':''}`} onClick={()=>setCur(i)}>{x.tab}</button>
+        ))}
+        <button className={`sub-tab sc-tab-poster ${cur===n?'active':''}`} onClick={()=>setCur(n)}>סיכום נוסחאות</button>
+      </div>
+      {it?<div className="sc-body" key={cur}>
+        <div className="sc-sec">
+          <div className="sc-h"><span className="sc-n">1</span>הסבר</div>
+          <div className="sc-explain">{it.explain}</div>
+          {it.formula&&<div className="formula-box">{it.formula}</div>}
+          {it.more}
+        </div>
+        <div className="sc-sec">
+          <div className="sc-h"><span className="sc-n">2</span>דוגמה פתורה</div>
+          <div className="sc-example ex-card">
+            {it.example.visual&&<div className="quad-wrap">{it.example.visual}</div>}
+            {it.example.given&&<div className="given-box">{it.example.given}</div>}
+            <ol className="ex-steps">
+              {it.example.steps.map((st,i)=>(
+                <li key={i} className="ex-step">
+                  <div className="ex-text">{st.text}</div>
+                  {st.math&&<div className="formula-box ex-math">{st.math}</div>}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+        <div className="sc-sec">
+          <div className="sc-h"><span className="sc-n">3</span>עכשיו תורך — תרגול</div>
+          {it.practice}
+        </div>
+        <div className="sc-next">
+          <button className="sc-next-btn" onClick={next}>{cur<n-1?<>הבא: {items[cur+1].tab} ←</>:<>לסיכום הנוסחאות ←</>}</button>
+        </div>
+      </div>:<FormulaPoster key="poster" {...poster}/>}
     </div>
   );
 }
@@ -486,11 +585,11 @@ function ReasonedAngleQuestion({title, genFn, reasonOptions}){
 /* ═══════════════════ SQUARE ═══════════════════ */
 const SQ_VERTS={A:{x:200,y:60},B:{x:200,y:160},C:{x:100,y:160},D:{x:100,y:60}};
 const SQ_ORDER=['A','B','C','D'];
-function SquareShape({highlight,onPart,angleLabels={},sideLabels={}}){
+function SquareShape({highlight,onPart,angleLabels={},sideLabels={},extra}){
   return <QuadBase verts={SQ_VERTS} order={SQ_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
     ticks={{AB:1,BC:1,CD:1,DA:1}} parallelArrows={{AB:1,CD:1,BC:2,DA:2}}
-    rightAngleAt={['A','B','C','D']} diagonals={[['A','C'],['B','D']]}/>;
+    rightAngleAt={['A','B','C','D']} diagonals={[['A','C'],['B','D']]} extra={extra}/>;
 }
 const SQUARE_PROPS=[
   {id:'sides',label:'צלעות שוות',kind:'side',ids:['AB','BC','CD','DA'],mark:'tick',def:'כל 4 הצלעות שוות באורכן.'},
@@ -517,38 +616,59 @@ function genSquareSide(){
     given:`שטח S = ${S} (הוצא שורש כדי למצוא את הצלע)`,
     visual:<SquareShape/>};
 }
-function SquareExample(){
-  return <SolvedExample title="דוגמה פתורה — שטח והיקף של ריבוע"
-    visual={<SquareShape sideLabels={{AB:6}}/>}
-    given={<>נתון ריבוע ABCD שאורך הצלע שלו <bdi>a = 6</bdi>. נחשב את השטח ואת ההיקף.</>}
-    steps={[
-      {text:<><b>שטח:</b> בריבוע כל הצלעות שוות, לכן השטח הוא צלע כפול צלע.</>, math:<>S = a² = 6 · 6 = 36</>},
-      {text:<><b>היקף:</b> ההיקף הוא סכום ארבע הצלעות, וכולן שוות ל-6.</>, math:<>P = 4a = 4 · 6 = 24</>},
-    ]}/>;
-}
+const SQUARE_SUBS=[
+  {tab:'שטח',
+    explain:<>שטח הריבוע הוא <b>צלע כפול צלע</b>. כל הצלעות בריבוע שוות, לכן מספיק לדעת צלע אחת.</>,
+    formula:<>S = a²</>,
+    example:{visual:<SquareShape sideLabels={{AB:6}}/>,
+      given:<>נתון ריבוע ABCD שאורך הצלע שלו <bdi>a = 6</bdi>. נחשב את השטח.</>,
+      steps:[
+        {text:<>בריבוע כל הצלעות שוות, לכן השטח הוא צלע כפול צלע.</>, math:<>S = a² = 6 · 6 = 36</>},
+      ]},
+    practice:<NumericQuestion title="שטח" genFn={genSquareArea}/>},
+  {tab:'היקף',
+    explain:<>ההיקף הוא <b>סכום ארבע הצלעות</b>. בריבוע כולן שוות, לכן כופלים את הצלע ב-4.</>,
+    formula:<>P = 4a</>,
+    example:{visual:<SquareShape sideLabels={{AB:6}}/>,
+      given:<>נתון ריבוע ABCD שאורך הצלע שלו <bdi>a = 6</bdi>. נחשב את ההיקף.</>,
+      steps:[
+        {text:<>ההיקף הוא סכום ארבע הצלעות, וכולן שוות ל-6.</>, math:<>P = 4a = 4 · 6 = 24</>},
+      ]},
+    practice:<NumericQuestion title="היקף" genFn={genSquarePerimeter}/>},
+  {tab:'צלע',
+    explain:<>כשנתון השטח ומחפשים את הצלע, שואלים: <b>איזה מספר כפול עצמו נותן את השטח?</b> המספר הזה הוא השורש הריבועי של השטח.</>,
+    formula:<>a² = S &nbsp;→&nbsp; a = √S</>,
+    example:{visual:<SquareShape sideLabels={{AB:'?'}}/>,
+      given:<>נתון ריבוע ששטחו <bdi>S = 49</bdi>. נמצא את אורך הצלע.</>,
+      steps:[
+        {text:<>מציבים את השטח בנוסחה.</>, math:<>a² = 49</>},
+        {text:<>מוציאים שורש: איזה מספר כפול עצמו נותן 49?</>, math:<>a = √49 = 7</>},
+        {text:<>בודקים את התשובה.</>, math:<>7 · 7 = 49 ✓</>},
+      ]},
+    practice:<NumericQuestion title="צלע (נתון שטח)" genFn={genSquareSide}/>},
+];
+const SQUARE_POSTER={name:'ריבוע', visual:<SquareShape/>,
+  formulas:[
+    {label:'שטח', math:<>S = a²</>},
+    {label:'היקף', math:<>P = 4a</>},
+    {label:'צלע מתוך השטח', math:<>a = √S</>, wide:true},
+  ],
+  facts:['כל 4 הצלעות שוות','כל 4 הזוויות ישרות (90°)','האלכסונים שווים, ניצבים וחוצים זה את זה']};
 function Ch1Square(){
   return <div className="content">
     <PropertyExplorer verts={SQ_VERTS} order={SQ_ORDER} diagonals={[['A','C'],['B','D']]} properties={SQUARE_PROPS}/>
-    <SquareExample/>
-    <div className="card">
-      <div className="card-t">חלק ב׳ — תרגילים</div>
-      <div className="q-grid">
-        <NumericQuestion title="שטח" genFn={genSquareArea}/>
-        <NumericQuestion title="היקף" genFn={genSquarePerimeter}/>
-        <NumericQuestion title="צלע (נתון שטח)" genFn={genSquareSide}/>
-      </div>
-    </div>
+    <SubChapters items={SQUARE_SUBS} poster={SQUARE_POSTER}/>
   </div>;
 }
 
 /* ═══════════════════ RECTANGLE ═══════════════════ */
 const RC_VERTS={A:{x:220,y:70},B:{x:220,y:170},C:{x:80,y:170},D:{x:80,y:70}};
 const RC_ORDER=['A','B','C','D'];
-function RectShape({highlight,onPart,angleLabels={},sideLabels={}}){
+function RectShape({highlight,onPart,angleLabels={},sideLabels={},extra}){
   return <QuadBase verts={RC_VERTS} order={RC_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
     ticks={{AB:1,CD:1,BC:2,DA:2}} parallelArrows={{AB:1,CD:1,BC:2,DA:2}}
-    rightAngleAt={['A','B','C','D']} diagonals={[['A','C'],['B','D']]}/>;
+    rightAngleAt={['A','B','C','D']} diagonals={[['A','C'],['B','D']]} extra={extra}/>;
 }
 const RECT_PROPS=[
   {id:'seq',label:'צלעות נגדיות שוות',kind:'side',ids:['AB','CD','BC','DA'],mark:'tick',groups:[['AB','CD'],['BC','DA']],def:'צלעות נגדיות שוות זו לזו (AB=CD, BC=DA) — כל זוג מסומן במספר קווים משלו.'},
@@ -580,28 +700,60 @@ function genRectSide(){
     given:`שטח S = ${S}, אורך l = ${l}`,
     visual:<RectShape sideLabels={{DA:l}}/>};
 }
+const RECT_SUBS=[
+  {tab:'שטח',
+    explain:<>שטח המלבן הוא <b>אורך כפול רוחב</b>.</>,
+    formula:<>S = l·w</>,
+    example:{visual:<RectShape sideLabels={{DA:8,AB:5}}/>,
+      given:<>נתון מלבן שאורכו <bdi>l = 8</bdi> ורוחבו <bdi>w = 5</bdi>. נחשב את השטח.</>,
+      steps:[
+        {text:<>כופלים את האורך ברוחב.</>, math:<>S = l·w = 8 · 5 = 40</>},
+      ]},
+    practice:<NumericQuestion title="שטח" genFn={genRectArea}/>},
+  {tab:'היקף',
+    explain:<>במלבן יש <b>שני אורכים ושני רוחבים</b>. לכן מחברים אורך ורוחב, ואת הסכום כופלים ב-2.</>,
+    formula:<>P = 2(l+w)</>,
+    example:{visual:<RectShape sideLabels={{DA:8,AB:5}}/>,
+      given:<>נתון מלבן שאורכו <bdi>l = 8</bdi> ורוחבו <bdi>w = 5</bdi>. נחשב את ההיקף.</>,
+      steps:[
+        {text:<>מחברים אורך ורוחב.</>, math:<>8 + 5 = 13</>},
+        {text:<>כופלים ב-2, כי כל צלע מופיעה פעמיים.</>, math:<>P = 2 · 13 = 26</>},
+      ]},
+    practice:<NumericQuestion title="היקף" genFn={genRectPerimeter}/>},
+  {tab:'צלע',
+    explain:<>כשנתונים השטח והאורך, כותבים את נוסחת השטח <b>כמשוואה</b>: במקום הרוחב שמים סימן שאלה. כדי לפתור מחלקים את השטח באורך.</>,
+    formula:<>S = l·w</>,
+    example:{visual:<RectShape sideLabels={{DA:7,AB:'?'}}/>,
+      given:<>נתון מלבן ששטחו <bdi>S = 42</bdi> ואורכו <bdi>l = 7</bdi>. נמצא את הרוחב.</>,
+      steps:[
+        {text:<>כותבים משוואה לפי נוסחת השטח, עם ? במקום הרוחב. (בתרגול מקלידים כפל בעזרת כוכבית: <bdi>42=7*?</bdi>)</>, math:<>42 = 7 · ?</>},
+        {text:<>מחלקים את השטח באורך.</>, math:<>? = 42 : 7 = 6</>},
+        {text:<>הרוחב הוא 6. בודקים:</>, math:<>7 · 6 = 42 ✓</>},
+      ]},
+    practice:<EquationSideQuestion title="צלע (רוחב, נתון שטח ואורך)" genFn={genRectSide}/>},
+];
+const RECT_POSTER={name:'מלבן', visual:<RectShape/>,
+  formulas:[
+    {label:'שטח', math:<>S = l·w</>},
+    {label:'היקף', math:<>P = 2(l+w)</>},
+    {label:'צלע מתוך השטח', math:<>w = <Frac n="S" d="l"/></>, wide:true},
+  ],
+  facts:['צלעות נגדיות שוות ומקבילות','כל 4 הזוויות ישרות (90°)','האלכסונים שווים וחוצים זה את זה']};
 function Ch2Rectangle(){
   return <div className="content">
     <PropertyExplorer verts={RC_VERTS} order={RC_ORDER} diagonals={[['A','C'],['B','D']]} properties={RECT_PROPS}/>
-    <div className="card">
-      <div className="card-t">חלק ב׳ — תרגילים</div>
-      <div className="q-grid">
-        <NumericQuestion title="שטח" genFn={genRectArea}/>
-        <NumericQuestion title="היקף" genFn={genRectPerimeter}/>
-        <EquationSideQuestion title="צלע (רוחב, נתון שטח ואורך)" genFn={genRectSide}/>
-      </div>
-    </div>
+    <SubChapters items={RECT_SUBS} poster={RECT_POSTER}/>
   </div>;
 }
 
 /* ═══════════════════ RHOMBUS ═══════════════════ */
 const RH_VERTS={A:{x:150,y:40},B:{x:230,y:130},C:{x:150,y:220},D:{x:70,y:130}};
 const RH_ORDER=['A','B','C','D'];
-function RhombusShape({highlight,onPart,angleLabels={},sideLabels={}}){
+function RhombusShape({highlight,onPart,angleLabels={},sideLabels={},extra}){
   return <QuadBase verts={RH_VERTS} order={RH_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
     ticks={{AB:1,BC:1,CD:1,DA:1}} parallelArrows={{AB:1,CD:1,BC:2,DA:2}}
-    rightAngleAt={[]} diagonals={[['A','C'],['B','D']]}/>;
+    rightAngleAt={[]} diagonals={[['A','C'],['B','D']]} extra={extra}/>;
 }
 const RHOMBUS_PROPS=[
   {id:'sides',label:'צלעות שוות',kind:'side',ids:['AB','BC','CD','DA'],mark:'tick',def:'כל 4 הצלעות שוות באורכן.'},
@@ -613,7 +765,7 @@ const RHOMBUS_PROPS=[
 function genRhombusArea(){
   let d1=randInt(2,20); if(d1%2!==0) d1++;
   const d2=randInt(2,20);
-  return {d1,d2, answer:(d1*d2)/2, formula:'S = (d₁·d₂)/2', askLabel:'S =',
+  return {d1,d2, answer:(d1*d2)/2, formula:F_DIAG, askLabel:'S =',
     given:`אלכסון d₁ = ${d1}, אלכסון d₂ = ${d2}`,
     visual:<RhombusShape/>};
 }
@@ -642,29 +794,80 @@ const OPP_ADJ_REASONS=[
   {key:'opposite', label:'זווית נגדית (שווה לנתונה)'},
   {key:'adjacent', label:'זווית סמוכה (משלימה ל-180°)'},
 ];
+const RH_O={x:150,y:130};
+const RHOMBUS_SUBS=[
+  {tab:'זווית',
+    explain:<>במעוין <b>זוויות נגדיות שוות</b> זו לזו, ו<b>זוויות סמוכות</b> (שתי זוויות ליד אותה צלע) משלימות זו את זו ל-180°. לכן מספיק לדעת זווית אחת כדי למצוא את כולן.</>,
+    example:{visual:<RhombusShape angleLabels={{A:'60°'}}/>,
+      given:<>נתון מעוין ABCD שבו הזווית <bdi>A = 60°</bdi>. נמצא את שאר הזוויות.</>,
+      steps:[
+        {text:<>הזווית C נמצאת מול הזווית A. זוויות נגדיות שוות.</>, math:<>C = 60°</>},
+        {text:<>הזווית B סמוכה לזווית A. זוויות סמוכות משלימות ל-180°.</>, math:<>B = 180° − 60° = 120°</>},
+        {text:<>גם הזווית D סמוכה לזווית A.</>, math:<>D = 180° − 60° = 120°</>},
+      ]},
+    practice:<ReasonedAngleQuestion title="זווית" genFn={genRhombusAngle} reasonOptions={OPP_ADJ_REASONS}/>},
+  {tab:'שטח',
+    explain:<>שטח המעוין הוא <b>מכפלת האלכסונים חלקי 2</b>.</>,
+    formula:F_DIAG,
+    example:{visual:<RhombusShape extra={<>
+        <HelpLine from={RH_VERTS.A} to={RH_VERTS.C} label="8" ly={-38}/>
+        <HelpLine from={RH_VERTS.D} to={RH_VERTS.B} label="6" color="#0e7490" lx={-38} ly={-7} anchor="middle"/>
+      </>}/>,
+      given:<>נתון מעוין שהאלכסונים שלו <bdi>d₁ = 8</bdi> ו-<bdi>d₂ = 6</bdi>. נחשב את השטח.</>,
+      steps:[
+        {text:<>כופלים את שני האלכסונים.</>, math:<>d₁·d₂ = 8 · 6 = 48</>},
+        {text:<>מחלקים ב-2.</>, math:<>S = <Frac n="48" d="2"/> = 24</>},
+      ]},
+    practice:<NumericQuestion title="שטח" genFn={genRhombusArea}/>},
+  {tab:'היקף',
+    explain:<>כל ארבע הצלעות של המעוין שוות, לכן ההיקף הוא <b>4 כפול הצלע</b>.</>,
+    formula:<>P = 4a</>,
+    example:{visual:<RhombusShape sideLabels={{AB:9}}/>,
+      given:<>נתון מעוין שאורך הצלע שלו <bdi>a = 9</bdi>. נחשב את ההיקף.</>,
+      steps:[
+        {text:<>ארבע צלעות שוות, כל אחת באורך 9.</>, math:<>P = 4a = 4 · 9 = 36</>},
+      ]},
+    practice:<NumericQuestion title="היקף" genFn={genRhombusPerimeter}/>},
+  {tab:'צלע',
+    explain:<>האלכסונים במעוין <b>ניצבים וחוצים זה את זה</b>, ולכן הם מחלקים אותו ל-4 משולשים ישרי-זווית. בכל משולש כזה הניצבים הם חצאי האלכסונים (p ו-q), והיתר הוא צלע המעוין (a). משתמשים במשפט פיתגורס.</>,
+    formula:<>a² = p² + q²</>,
+    example:{visual:<RhombusShape sideLabels={{AB:'a'}} extra={<>
+        <Tri pts={[RH_VERTS.A,RH_O,RH_VERTS.B]}/>
+        <RightSquareMark v={RH_O} prev={RH_VERTS.A} next={RH_VERTS.B} active={false}/>
+        <Lbl x={141} y={95} anchor="end">4</Lbl>
+        <Lbl x={190} y={147} color="#0e7490">3</Lbl>
+      </>}/>,
+      given:<>נתון מעוין שבו חצי אלכסון אחד הוא 4 וחצי האלכסון השני הוא 3. נמצא את הצלע a.</>,
+      steps:[
+        {text:<>מציבים את חצאי האלכסונים במשפט פיתגורס.</>, math:<>a² = 4² + 3²</>},
+        {text:<>מחשבים.</>, math:<>a² = 16 + 9 = 25</>},
+        {text:<>מוציאים שורש.</>, math:<>a = √25 = 5</>},
+      ]},
+    practice:<NumericQuestion title="צלע (פיתגורס)" genFn={genRhombusSide}/>},
+];
+const RHOMBUS_POSTER={name:'מעוין', visual:<RhombusShape/>,
+  formulas:[
+    {label:'שטח', math:F_DIAG},
+    {label:'היקף', math:<>P = 4a</>},
+    {label:'צלע (פיתגורס)', math:<>a² = p² + q²</>, note:'p ו-q הם חצאי האלכסונים'},
+    {label:'זוויות סמוכות', math:<>α + β = 180°</>},
+  ],
+  facts:['כל 4 הצלעות שוות','זוויות נגדיות שוות','האלכסונים ניצבים וחוצים זה את זה']};
 function Ch3Rhombus(){
   return <div className="content">
     <PropertyExplorer verts={RH_VERTS} order={RH_ORDER} diagonals={[['A','C'],['B','D']]} properties={RHOMBUS_PROPS}/>
-    <div className="card">
-      <div className="card-t">חלק ב׳ — תרגילים</div>
-      <div className="q-grid">
-        <ReasonedAngleQuestion title="זווית" genFn={genRhombusAngle} reasonOptions={OPP_ADJ_REASONS}/>
-        <NumericQuestion title="שטח" genFn={genRhombusArea}/>
-        <NumericQuestion title="היקף" genFn={genRhombusPerimeter}/>
-        <NumericQuestion title="צלע (פיתגורס)" genFn={genRhombusSide}/>
-      </div>
-    </div>
+    <SubChapters items={RHOMBUS_SUBS} poster={RHOMBUS_POSTER}/>
   </div>;
 }
 
 /* ═══════════════════ PARALLELOGRAM ═══════════════════ */
 const PG_VERTS={A:{x:230,y:70},B:{x:190,y:170},C:{x:70,y:170},D:{x:110,y:70}};
 const PG_ORDER=['A','B','C','D'];
-function ParallelogramShape({highlight,onPart,angleLabels={},sideLabels={}}){
+function ParallelogramShape({highlight,onPart,angleLabels={},sideLabels={},extra,noDiag=false}){
   return <QuadBase verts={PG_VERTS} order={PG_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
     ticks={{AB:1,CD:1,BC:2,DA:2}} parallelArrows={{AB:1,CD:1,BC:2,DA:2}}
-    rightAngleAt={[]} diagonals={[['A','C'],['B','D']]}/>;
+    rightAngleAt={[]} diagonals={noDiag?[]:[['A','C'],['B','D']]} extra={extra}/>;
 }
 const PARA_PROPS=[
   {id:'seq',label:'צלעות נגדיות שוות',kind:'side',ids:['AB','CD','BC','DA'],mark:'tick',groups:[['AB','CD'],['BC','DA']],def:'צלעות נגדיות שוות זו לזו — כל זוג מסומן במספר קווים משלו.'},
@@ -701,18 +904,61 @@ function genParaAngle(){
       {vertex:'D', name:'זווית D', value:180-A, reason:'adjacent'},
     ]};
 }
+const PG_F={x:110,y:170};
+const PARA_SUBS=[
+  {tab:'זווית',
+    explain:<>במקבילית <b>זוויות נגדיות שוות</b> זו לזו, ו<b>זוויות סמוכות</b> (שתי זוויות ליד אותה צלע) משלימות זו את זו ל-180°. לכן מספיק לדעת זווית אחת כדי למצוא את כולן.</>,
+    example:{visual:<ParallelogramShape angleLabels={{A:'45°'}}/>,
+      given:<>נתונה מקבילית ABCD שבה הזווית <bdi>A = 45°</bdi>. נמצא את שאר הזוויות.</>,
+      steps:[
+        {text:<>הזווית C נמצאת מול הזווית A. זוויות נגדיות שוות.</>, math:<>C = 45°</>},
+        {text:<>הזווית B סמוכה לזווית A. זוויות סמוכות משלימות ל-180°.</>, math:<>B = 180° − 45° = 135°</>},
+        {text:<>גם הזווית D סמוכה לזווית A.</>, math:<>D = 180° − 45° = 135°</>},
+      ]},
+    practice:<ReasonedAngleQuestion title="זווית" genFn={genParaAngle} reasonOptions={OPP_ADJ_REASONS}/>},
+  {tab:'שטח',
+    explain:<>שטח המקבילית הוא <b>בסיס כפול הגובה לאותו בסיס</b>. הגובה הוא קטע שיורד אל הבסיס בזווית ישרה (90°). שימו לב: הגובה אינו הצלע הנטויה!</>,
+    formula:<>S = b·h</>,
+    example:{visual:<ParallelogramShape noDiag sideLabels={{BC:10}} extra={<HelpLine from={PG_VERTS.D} to={PG_F} sq={PG_VERTS.B} label="6"/>}/>,
+      given:<>נתונה מקבילית שהבסיס שלה <bdi>b = 10</bdi> והגובה לבסיס הזה <bdi>h = 6</bdi>. נחשב את השטח.</>,
+      steps:[
+        {text:<>כופלים את הבסיס בגובה.</>, math:<>S = b·h = 10 · 6 = 60</>},
+      ]},
+    practice:<NumericQuestion title="שטח" genFn={genParaArea}/>},
+  {tab:'היקף',
+    explain:<>במקבילית צלעות נגדיות שוות, לכן יש <b>שתי צלעות באורך a ושתי צלעות באורך b</b>. מחברים את שתי הצלעות השונות, ואת הסכום כופלים ב-2.</>,
+    formula:<>P = 2(a+b)</>,
+    example:{visual:<ParallelogramShape sideLabels={{AB:7,BC:12}}/>,
+      given:<>נתונה מקבילית שצלעותיה <bdi>a = 7</bdi> ו-<bdi>b = 12</bdi>. נחשב את ההיקף.</>,
+      steps:[
+        {text:<>מחברים את שתי הצלעות השונות.</>, math:<>7 + 12 = 19</>},
+        {text:<>כופלים ב-2, כי כל צלע מופיעה פעמיים.</>, math:<>P = 2 · 19 = 38</>},
+      ]},
+    practice:<NumericQuestion title="היקף" genFn={genParaPerimeter}/>},
+  {tab:'צלע',
+    explain:<>כשנתונים השטח והגובה, כותבים את נוסחת השטח <b>כמשוואה</b>: במקום הבסיס שמים סימן שאלה. כדי לפתור מחלקים את השטח בגובה.</>,
+    formula:<>S = b·h</>,
+    example:{visual:<ParallelogramShape noDiag sideLabels={{BC:'?'}} extra={<HelpLine from={PG_VERTS.D} to={PG_F} sq={PG_VERTS.B} label="8"/>}/>,
+      given:<>נתונה מקבילית ששטחה <bdi>S = 72</bdi> והגובה שלה <bdi>h = 8</bdi>. נמצא את הבסיס.</>,
+      steps:[
+        {text:<>כותבים משוואה לפי נוסחת השטח, עם ? במקום הבסיס. (בתרגול מקלידים כפל בעזרת כוכבית: <bdi>72=?*8</bdi>)</>, math:<>72 = ? · 8</>},
+        {text:<>מחלקים את השטח בגובה.</>, math:<>? = 72 : 8 = 9</>},
+        {text:<>הבסיס הוא 9. בודקים:</>, math:<>9 · 8 = 72 ✓</>},
+      ]},
+    practice:<EquationSideQuestion title="צלע (בסיס, נתון שטח וגובה)" genFn={genParaSide}/>},
+];
+const PARA_POSTER={name:'מקבילית', visual:<ParallelogramShape/>,
+  formulas:[
+    {label:'שטח', math:<>S = b·h</>, note:'h הוא הגובה לבסיס b'},
+    {label:'היקף', math:<>P = 2(a+b)</>},
+    {label:'בסיס מתוך השטח', math:<>b = <Frac n="S" d="h"/></>},
+    {label:'זוויות סמוכות', math:<>α + β = 180°</>},
+  ],
+  facts:['צלעות נגדיות שוות ומקבילות','זוויות נגדיות שוות','האלכסונים חוצים זה את זה']};
 function Ch4Parallelogram(){
   return <div className="content">
     <PropertyExplorer verts={PG_VERTS} order={PG_ORDER} diagonals={[['A','C'],['B','D']]} properties={PARA_PROPS}/>
-    <div className="card">
-      <div className="card-t">חלק ב׳ — תרגילים</div>
-      <div className="q-grid">
-        <ReasonedAngleQuestion title="זווית" genFn={genParaAngle} reasonOptions={OPP_ADJ_REASONS}/>
-        <NumericQuestion title="שטח" genFn={genParaArea}/>
-        <NumericQuestion title="היקף" genFn={genParaPerimeter}/>
-        <EquationSideQuestion title="צלע (בסיס, נתון שטח וגובה)" genFn={genParaSide}/>
-      </div>
-    </div>
+    <SubChapters items={PARA_SUBS} poster={PARA_POSTER}/>
   </div>;
 }
 
@@ -722,20 +968,20 @@ const TI_VERTS={A:{x:190,y:70},B:{x:230,y:180},C:{x:70,y:180},D:{x:110,y:70}};
 const TR_VERTS={A:{x:190,y:70},B:{x:210,y:180},C:{x:90,y:180},D:{x:90,y:70}};
 const T_ORDER=['A','B','C','D'];
 
-function TrapGeneralShape({highlight,onPart,angleLabels={},sideLabels={}}){
+function TrapGeneralShape({highlight,onPart,angleLabels={},sideLabels={},extra}){
   return <QuadBase verts={TG_VERTS} order={T_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
-    ticks={{}} parallelArrows={{BC:1,DA:1}} rightAngleAt={[]} diagonals={[]}/>;
+    ticks={{}} parallelArrows={{BC:1,DA:1}} rightAngleAt={[]} diagonals={[]} extra={extra}/>;
 }
-function TrapIsoShape({highlight,onPart,angleLabels={},sideLabels={}}){
+function TrapIsoShape({highlight,onPart,angleLabels={},sideLabels={},extra,noDiag=false}){
   return <QuadBase verts={TI_VERTS} order={T_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
-    ticks={{AB:1,CD:1}} parallelArrows={{BC:1,DA:1}} rightAngleAt={[]} diagonals={[['A','C'],['B','D']]}/>;
+    ticks={{AB:1,CD:1}} parallelArrows={{BC:1,DA:1}} rightAngleAt={[]} diagonals={noDiag?[]:[['A','C'],['B','D']]} extra={extra}/>;
 }
-function TrapRightShape({highlight,onPart,angleLabels={},sideLabels={}}){
+function TrapRightShape({highlight,onPart,angleLabels={},sideLabels={},extra}){
   return <QuadBase verts={TR_VERTS} order={T_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
-    ticks={{}} parallelArrows={{BC:1,DA:1}} rightAngleAt={['C','D']} diagonals={[]}/>;
+    ticks={{}} parallelArrows={{BC:1,DA:1}} rightAngleAt={['C','D']} diagonals={[]} extra={extra}/>;
 }
 
 const TRAP_GEN_PROPS=[
@@ -769,7 +1015,7 @@ function genTrapGenBasesEven(){
 function genTrapGenArea(){
   const [b1,b2]=genTrapGenBasesEven();
   const h=randInt(2,20);
-  return {b1,b2,h, answer:((b1+b2)/2)*h, formula:'S = ((b₁+b₂)/2)·h', askLabel:'S =',
+  return {b1,b2,h, answer:((b1+b2)/2)*h, formula:F_TRAP, askLabel:'S =',
     given:`בסיס עליון b₁ = ${b1}, בסיס תחתון b₂ = ${b2}, גובה h = ${h}`,
     visual:<TrapGeneralShape sideLabels={{DA:b1,BC:b2}}/>};
 }
@@ -782,7 +1028,7 @@ function genTrapGenPerimeter(){
 function genTrapGenSide(){
   const [b1,b2]=genTrapGenBasesEven();
   const h=randInt(2,20); const S=((b1+b2)/2)*h;
-  return {b1,b2,h, answer:b2, requiredNums:[b1,h,S], formula:'S = ((b₁+b₂)/2)·h', askLabel:'b₂ =',
+  return {b1,b2,h, answer:b2, requiredNums:[b1,h,S], formula:F_TRAP, askLabel:'b₂ =',
     given:`שטח S = ${S}, גובה h = ${h}, בסיס עליון b₁ = ${b1}`,
     visual:<TrapGeneralShape sideLabels={{DA:b1}}/>};
 }
@@ -800,18 +1046,63 @@ function genTrapGenAngle(){
     formula:'סכום זוויות מרובע = 360°', askLabel:'זווית D =',
     visual:<TrapGeneralShape angleLabels={{A:a1+'°',B:a2+'°',C:a3+'°',D:'?'}}/>};
 }
+const TG_F={x:120,y:180};
+const TRAP_GEN_SUBS=[
+  {tab:'זווית',
+    explain:<>סכום הזוויות בכל מרובע הוא <b>360°</b>. כשנתונות שלוש זוויות, מחברים אותן ומחסרים את הסכום מ-360°.</>,
+    formula:<>A + B + C + D = 360°</>,
+    example:{visual:<TrapGeneralShape angleLabels={{A:'120°',B:'60°',C:'70°',D:'?'}}/>,
+      given:<>נתון טרפז ABCD שבו שלוש זוויות נתונות: <bdi>A = 120°</bdi>, <bdi>B = 60°</bdi>, <bdi>C = 70°</bdi>. נמצא את הזווית D.</>,
+      steps:[
+        {text:<>מחברים את שלוש הזוויות הנתונות.</>, math:<>120° + 60° + 70° = 250°</>},
+        {text:<>מחסרים את הסכום מ-360°.</>, math:<>D = 360° − 250° = 110°</>},
+      ]},
+    practice:<NumericQuestion title="זווית (הרביעית)" genFn={genTrapGenAngle}/>},
+  {tab:'שטח',
+    explain:<>שטח הטרפז: <b>מחברים את שני הבסיסים, מחלקים ב-2 וכופלים בגובה</b>. הגובה הוא קטע שמחבר בין שני הבסיסים בזווית ישרה (90°).</>,
+    formula:F_TRAP,
+    example:{visual:<TrapGeneralShape sideLabels={{DA:6,BC:10}} extra={<HelpLine from={TG_VERTS.D} to={TG_F} sq={TG_VERTS.B} label="5"/>}/>,
+      given:<>נתון טרפז שבסיסיו <bdi>b₁ = 6</bdi> ו-<bdi>b₂ = 10</bdi> וגובהו <bdi>h = 5</bdi>. נחשב את השטח.</>,
+      steps:[
+        {text:<>מחברים את שני הבסיסים.</>, math:<>6 + 10 = 16</>},
+        {text:<>מחלקים ב-2.</>, math:<><Frac n="16" d="2"/> = 8</>},
+        {text:<>כופלים בגובה.</>, math:<>S = 8 · 5 = 40</>},
+      ]},
+    practice:<NumericQuestion title="שטח" genFn={genTrapGenArea}/>},
+  {tab:'היקף',
+    explain:<>ההיקף הוא <b>סכום ארבע הצלעות</b>: שני הבסיסים ושתי השוקיים. בטרפז כללי כל הצלעות יכולות להיות שונות, לכן פשוט מחברים את כולן.</>,
+    formula:<>P = b₁+b₂+l₁+l₂</>,
+    example:{visual:<TrapGeneralShape sideLabels={{DA:6,BC:10,AB:5,CD:7}}/>,
+      given:<>נתון טרפז שבסיסיו 6 ו-10 ושוקיו 5 ו-7. נחשב את ההיקף.</>,
+      steps:[
+        {text:<>מחברים את ארבע הצלעות.</>, math:<>P = 6 + 10 + 5 + 7 = 28</>},
+      ]},
+    practice:<NumericQuestion title="היקף" genFn={genTrapGenPerimeter}/>},
+  {tab:'בסיס שני',
+    explain:<>כשנתונים השטח, הגובה ובסיס אחד, כותבים את נוסחת השטח <b>כמשוואה</b>: במקום הבסיס החסר שמים סימן שאלה. פותרים אחורה, צעד אחרי צעד: מחלקים בגובה, כופלים ב-2 ומחסרים את הבסיס הידוע.</>,
+    formula:F_TRAP,
+    example:{visual:<TrapGeneralShape sideLabels={{DA:6,BC:'?'}} extra={<HelpLine from={TG_VERTS.D} to={TG_F} sq={TG_VERTS.B} label="5"/>}/>,
+      given:<>נתון טרפז ששטחו <bdi>S = 40</bdi>, גובהו <bdi>h = 5</bdi> והבסיס העליון שלו <bdi>b₁ = 6</bdi>. נמצא את הבסיס השני.</>,
+      steps:[
+        {text:<>כותבים משוואה לפי נוסחת השטח, עם ? במקום הבסיס החסר. (בתרגול מקלידים כך: <bdi>40=(6+?)/2*5</bdi>)</>, math:<>40 = <Frac n="6+?" d="2"/> · 5</>},
+        {text:<>מחלקים את שני האגפים בגובה.</>, math:<><Frac n="6+?" d="2"/> = 40 : 5 = 8</>},
+        {text:<>כופלים ב-2.</>, math:<>6 + ? = 16</>},
+        {text:<>מחסרים את הבסיס הידוע.</>, math:<>? = 16 − 6 = 10</>},
+      ]},
+    practice:<EquationSideQuestion title="בסיס שני (נתון שטח, גובה ובסיס אחד)" genFn={genTrapGenSide}/>},
+];
+const TRAP_GEN_POSTER={name:'טרפז כללי', visual:<TrapGeneralShape/>,
+  formulas:[
+    {label:'שטח', math:F_TRAP, note:'h הוא הגובה בין הבסיסים', wide:true},
+    {label:'היקף', math:<>P = b₁+b₂+l₁+l₂</>, wide:true},
+    {label:'סכום הזוויות', math:<>360°</>},
+    {label:'זוויות ליד אותה שוק', math:<>α + β = 180°</>},
+  ],
+  facts:['רק זוג אחד של צלעות מקבילות: הבסיסים','שתי הצלעות האחרות הן השוקיים']};
 function ChTrapGeneral(){
   return <div className="content">
     <PropertyExplorer verts={TG_VERTS} order={T_ORDER} diagonals={[]} properties={TRAP_GEN_PROPS}/>
-    <div className="card">
-      <div className="card-t">חלק ב׳ — תרגילים</div>
-      <div className="q-grid">
-        <NumericQuestion title="זווית (הרביעית)" genFn={genTrapGenAngle}/>
-        <NumericQuestion title="שטח" genFn={genTrapGenArea}/>
-        <NumericQuestion title="היקף" genFn={genTrapGenPerimeter}/>
-        <EquationSideQuestion title="בסיס שני (נתון שטח, גובה ובסיס אחד)" genFn={genTrapGenSide}/>
-      </div>
-    </div>
+    <SubChapters items={TRAP_GEN_SUBS} poster={TRAP_GEN_POSTER}/>
   </div>;
 }
 
@@ -824,7 +1115,7 @@ function genTrapIsoBase(){
 }
 function genTrapIsoArea(){
   const {h,s,b1,b2}=genTrapIsoBase();
-  return {b1,b2,h,s, answer:((b1+b2)/2)*h, formula:'S = ((b₁+b₂)/2)·h', askLabel:'S =',
+  return {b1,b2,h,s, answer:((b1+b2)/2)*h, formula:F_TRAP, askLabel:'S =',
     given:`בסיס עליון b₁ = ${b1}, בסיס תחתון b₂ = ${b2}, גובה h = ${h}`,
     visual:<TrapIsoShape sideLabels={{DA:b1,BC:b2}}/>};
 }
@@ -836,7 +1127,7 @@ function genTrapIsoPerimeter(){
 }
 function genTrapIsoSide(){
   const {h,s,b1,b2}=genTrapIsoBase();
-  return {b1,b2,s, answer:h, formula:'שוק² = גובה² + ((b₂-b₁)/2)²', askLabel:'h =',
+  return {b1,b2,s, answer:h, formula:F_ISO_H, askLabel:'h =',
     given:`b₁=${b1}, b₂=${b2}, שוק = ${s} (השתמש בפיתגורס)`,
     visual:<TrapIsoShape sideLabels={{DA:b1,BC:b2,AB:s,CD:s}}/>};
 }
@@ -853,18 +1144,68 @@ const BASE_COINT_REASONS=[
   {key:'baseEqual', label:'זווית בסיס (שווה לנתונה)'},
   {key:'coInterior', label:'זווית חד-צדדית (משלימה ל-180°)'},
 ];
+const TI_F={x:110,y:180};
+const TRAP_ISO_SUBS=[
+  {tab:'זווית',
+    explain:<>בטרפז שווה-שוקיים <b>זוויות הבסיס שוות</b>: שתי הזוויות שליד אותו בסיס שוות זו לזו. שתי זוויות שליד אותה שוק (זוויות חד-צדדיות) <b>משלימות ל-180°</b>.</>,
+    example:{visual:<TrapIsoShape noDiag angleLabels={{A:'120°'}}/>,
+      given:<>נתון טרפז שווה-שוקיים ABCD שבו זווית הבסיס <bdi>A = 120°</bdi>. נמצא את שאר הזוויות.</>,
+      steps:[
+        {text:<>הזוויות A ו-D נמצאות ליד אותו בסיס (AD). זוויות בסיס שוות.</>, math:<>D = 120°</>},
+        {text:<>הזוויות A ו-B נמצאות ליד אותה שוק (AB). זוויות חד-צדדיות משלימות ל-180°.</>, math:<>B = 180° − 120° = 60°</>},
+        {text:<>הזוויות D ו-C נמצאות ליד אותה שוק (CD), ולכן גם הן משלימות ל-180°.</>, math:<>C = 180° − 120° = 60°</>},
+      ]},
+    practice:<ReasonedAngleQuestion title="זווית" genFn={genTrapIsoAngle} reasonOptions={BASE_COINT_REASONS}/>},
+  {tab:'שטח',
+    explain:<>שטח הטרפז: <b>מחברים את שני הבסיסים, מחלקים ב-2 וכופלים בגובה</b>. הגובה הוא קטע שמחבר בין שני הבסיסים בזווית ישרה (90°). אם הגובה לא נתון, מוצאים אותו קודם בעזרת משפט פיתגורס (תת-הפרק ״גובה״).</>,
+    formula:F_TRAP,
+    example:{visual:<TrapIsoShape noDiag sideLabels={{DA:4,BC:10}} extra={<HelpLine from={TI_VERTS.D} to={TI_F} sq={TI_VERTS.B} label="4"/>}/>,
+      given:<>נתון טרפז שווה-שוקיים שבסיסיו <bdi>b₁ = 4</bdi> ו-<bdi>b₂ = 10</bdi> וגובהו <bdi>h = 4</bdi>. נחשב את השטח.</>,
+      steps:[
+        {text:<>מחברים את שני הבסיסים.</>, math:<>4 + 10 = 14</>},
+        {text:<>מחלקים ב-2.</>, math:<><Frac n="14" d="2"/> = 7</>},
+        {text:<>כופלים בגובה.</>, math:<>S = 7 · 4 = 28</>},
+      ]},
+    practice:<NumericQuestion title="שטח (פיתגורס לגובה)" genFn={genTrapIsoArea}/>},
+  {tab:'היקף',
+    explain:<>ההיקף הוא סכום ארבע הצלעות. בטרפז שווה-שוקיים <b>שתי השוקיים שוות</b>, לכן מחברים את שני הבסיסים ומוסיפים פעמיים את השוק.</>,
+    formula:<>P = b₁+b₂+2·שוק</>,
+    example:{visual:<TrapIsoShape noDiag sideLabels={{DA:4,BC:10,AB:5,CD:5}}/>,
+      given:<>נתון טרפז שווה-שוקיים שבסיסיו 4 ו-10 ואורך כל שוק 5. נחשב את ההיקף.</>,
+      steps:[
+        {text:<>שתי השוקיים יחד:</>, math:<>2 · 5 = 10</>},
+        {text:<>מוסיפים את שני הבסיסים.</>, math:<>P = 4 + 10 + 10 = 24</>},
+      ]},
+    practice:<NumericQuestion title="היקף" genFn={genTrapIsoPerimeter}/>},
+  {tab:'גובה',
+    explain:<>מורידים גובה מקצה הבסיס הקצר אל הבסיס הארוך. נוצר <b>משולש ישר-זווית</b>: היתר הוא השוק, ניצב אחד הוא הגובה, והניצב השני הוא חצי מההפרש בין הבסיסים. משתמשים במשפט פיתגורס.</>,
+    formula:F_ISO_H,
+    example:{visual:<TrapIsoShape noDiag sideLabels={{DA:4,BC:10,CD:5}} extra={<>
+        <Tri pts={[TI_VERTS.C,TI_F,TI_VERTS.D]}/>
+        <HelpLine from={TI_VERTS.D} to={TI_F} sq={TI_VERTS.B} label="h"/>
+        <Lbl x={93} y={175} color="#0e7490">3</Lbl>
+      </>}/>,
+      given:<>נתון טרפז שווה-שוקיים שבסיסיו <bdi>b₁ = 4</bdi> ו-<bdi>b₂ = 10</bdi> ואורך השוק 5. נמצא את הגובה h.</>,
+      steps:[
+        {text:<>מוצאים את הניצב שעל הבסיס: חצי מההפרש בין הבסיסים.</>, math:<><Frac n="10 − 4" d="2"/> = 3</>},
+        {text:<>מציבים במשפט פיתגורס: השוק היא היתר.</>, math:<>5² = h² + 3²</>},
+        {text:<>מבודדים את h².</>, math:<>h² = 25 − 9 = 16</>},
+        {text:<>מוציאים שורש.</>, math:<>h = √16 = 4</>},
+      ]},
+    practice:<NumericQuestion title="גובה (פיתגורס)" genFn={genTrapIsoSide}/>},
+];
+const TRAP_ISO_POSTER={name:'טרפז שווה-שוקיים', visual:<TrapIsoShape/>,
+  formulas:[
+    {label:'שטח', math:F_TRAP, wide:true},
+    {label:'היקף', math:<>P = b₁+b₂+2·שוק</>, wide:true},
+    {label:'גובה (פיתגורס)', math:<span dir="ltr" className="sc-ltr"><bdi>שוק</bdi>² = h² + (<Frac n="b₂−b₁" d="2"/>)²</span>, wide:true},
+    {label:'זוויות ליד אותה שוק', math:<>α + β = 180°</>, wide:true},
+  ],
+  facts:['שתי השוקיים שוות','זוויות הבסיס שוות','האלכסונים שווים']};
 function ChTrapIso(){
   return <div className="content">
     <PropertyExplorer verts={TI_VERTS} order={T_ORDER} diagonals={[['A','C'],['B','D']]} properties={TRAP_ISO_PROPS}/>
-    <div className="card">
-      <div className="card-t">חלק ב׳ — תרגילים</div>
-      <div className="q-grid">
-        <ReasonedAngleQuestion title="זווית" genFn={genTrapIsoAngle} reasonOptions={BASE_COINT_REASONS}/>
-        <NumericQuestion title="שטח (פיתגורס לגובה)" genFn={genTrapIsoArea}/>
-        <NumericQuestion title="היקף" genFn={genTrapIsoPerimeter}/>
-        <NumericQuestion title="גובה (פיתגורס)" genFn={genTrapIsoSide}/>
-      </div>
-    </div>
+    <SubChapters items={TRAP_ISO_SUBS} poster={TRAP_ISO_POSTER}/>
   </div>;
 }
 
@@ -877,7 +1218,7 @@ function genTrapRightBase(){
 }
 function genTrapRightArea(){
   const {h,s,b1,b2}=genTrapRightBase();
-  return {b1,b2,h,s, answer:((b1+b2)/2)*h, formula:'S = ((b₁+b₂)/2)·h', askLabel:'S =',
+  return {b1,b2,h,s, answer:((b1+b2)/2)*h, formula:F_TRAP, askLabel:'S =',
     given:`בסיס עליון b₁ = ${b1}, בסיס תחתון b₂ = ${b2}, שוק ניצבה (גובה) h = ${h}`,
     visual:<TrapRightShape sideLabels={{DA:b1,BC:b2,CD:h}}/>};
 }
@@ -890,7 +1231,7 @@ function genTrapRightPerimeter(){
 function genTrapRightSide(){
   const {h,s,b1,b2}=genTrapRightBase();
   const S=((b1+b2)/2)*h;
-  return {b1,b2,h, answer:b2, requiredNums:[b1,h,S], formula:'S = ((b₁+b₂)/2)·h', askLabel:'b₂ =',
+  return {b1,b2,h, answer:b2, requiredNums:[b1,h,S], formula:F_TRAP, askLabel:'b₂ =',
     given:`שטח S = ${S}, שוק ניצבה h = ${h}, בסיס עליון b₁ = ${b1}`,
     visual:<TrapRightShape sideLabels={{DA:b1,CD:h}}/>};
 }
@@ -900,18 +1241,69 @@ function genTrapRightAngle(){
     given:`שתי הזוויות הישרות (90°) ידועות; הזווית הנוספת = ${given}°`,
     visual:<TrapRightShape angleLabels={{A:given+'°',B:'?'}}/>};
 }
+const TR_F={x:190,y:180};
+const TRAP_RIGHT_SUBS=[
+  {tab:'זווית',
+    explain:<>בטרפז ישר-זווית <b>שתי זוויות הן ישרות (90°)</b>. שתי הזוויות האחרות נמצאות ליד אותה שוק, ולכן הן <b>משלימות זו את זו ל-180°</b>.</>,
+    example:{visual:<TrapRightShape angleLabels={{A:'120°',B:'?'}}/>,
+      given:<>נתון טרפז ישר-זווית ABCD. הזוויות C ו-D ישרות, והזווית <bdi>A = 120°</bdi>. נמצא את הזווית B.</>,
+      steps:[
+        {text:<>הזוויות A ו-B נמצאות ליד אותה שוק (AB), בין שני הבסיסים. הן משלימות ל-180°.</>, math:<>B = 180° − 120° = 60°</>},
+        {text:<>בודקים: סכום כל הזוויות במרובע הוא 360°.</>, math:<>90° + 90° + 120° + 60° = 360° ✓</>},
+      ]},
+    practice:<NumericQuestion title="זווית (השלישית)" genFn={genTrapRightAngle}/>},
+  {tab:'שטח',
+    explain:<>שטח הטרפז: <b>מחברים את שני הבסיסים, מחלקים ב-2 וכופלים בגובה</b>. הגובה הוא קטע שמחבר בין שני הבסיסים בזווית ישרה (90°). בטרפז ישר-זווית הגובה h הוא השוק שניצבת לבסיסים.</>,
+    formula:F_TRAP,
+    example:{visual:<TrapRightShape sideLabels={{DA:5,BC:9,CD:3}}/>,
+      given:<>נתון טרפז ישר-זווית שבסיסיו <bdi>b₁ = 5</bdi> ו-<bdi>b₂ = 9</bdi>, והשוק הניצבת שלו <bdi>h = 3</bdi>. נחשב את השטח.</>,
+      steps:[
+        {text:<>מחברים את שני הבסיסים.</>, math:<>5 + 9 = 14</>},
+        {text:<>מחלקים ב-2.</>, math:<><Frac n="14" d="2"/> = 7</>},
+        {text:<>כופלים בגובה.</>, math:<>S = 7 · 3 = 21</>},
+      ]},
+    practice:<NumericQuestion title="שטח" genFn={genTrapRightArea}/>},
+  {tab:'היקף',
+    explain:<>כדי לחשב היקף צריך את כל ארבע הצלעות, אבל <b>השוק האלכסונית חסרה</b>. נסמן אותה c. מורידים גובה מקצה הבסיס הקצר: נוצר משולש ישר-זווית שהניצבים שלו הם הגובה h וההפרש בין הבסיסים, והיתר שלו הוא c. מוצאים את c בעזרת משפט פיתגורס, ורק אז מחברים את הצלעות.</>,
+    formula:<>c² = (b₂−b₁)² + h²</>,
+    example:{visual:<TrapRightShape sideLabels={{DA:5,BC:9,CD:3,AB:'c'}} extra={<>
+        <Tri pts={[TR_VERTS.A,TR_F,TR_VERTS.B]}/>
+        <HelpLine from={TR_VERTS.A} to={TR_F} sq={TR_VERTS.C} label="3" lx={-8} anchor="end"/>
+        <Lbl x={201} y={197} color="#0e7490">4</Lbl>
+      </>}/>,
+      given:<>נתון טרפז ישר-זווית שבסיסיו <bdi>b₁ = 5</bdi> ו-<bdi>b₂ = 9</bdi>, והשוק הניצבת שלו <bdi>h = 3</bdi>. נחשב את ההיקף.</>,
+      steps:[
+        {text:<>מוצאים את הניצב שעל הבסיס: ההפרש בין הבסיסים.</>, math:<>9 − 5 = 4</>},
+        {text:<>מציבים במשפט פיתגורס. השוק האלכסונית c היא היתר.</>, math:<>c² = 4² + 3² = 25</>},
+        {text:<>מוציאים שורש.</>, math:<>c = √25 = 5</>},
+        {text:<>עכשיו מחברים את ארבע הצלעות.</>, math:<>P = 5 + 9 + 3 + 5 = 22</>},
+      ]},
+    practice:<NumericQuestion title="היקף (פיתגורס לשוק האלכסונית)" genFn={genTrapRightPerimeter}/>},
+  {tab:'בסיס שני',
+    explain:<>כשנתונים השטח, השוק הניצבת (הגובה) ובסיס אחד, כותבים את נוסחת השטח <b>כמשוואה</b>: במקום הבסיס החסר שמים סימן שאלה. פותרים אחורה, צעד אחרי צעד: מחלקים בגובה, כופלים ב-2 ומחסרים את הבסיס הידוע.</>,
+    formula:F_TRAP,
+    example:{visual:<TrapRightShape sideLabels={{DA:5,CD:3,BC:'?'}}/>,
+      given:<>נתון טרפז ישר-זווית ששטחו <bdi>S = 21</bdi>, השוק הניצבת שלו <bdi>h = 3</bdi> והבסיס העליון שלו <bdi>b₁ = 5</bdi>. נמצא את הבסיס השני.</>,
+      steps:[
+        {text:<>כותבים משוואה לפי נוסחת השטח, עם ? במקום הבסיס החסר. (בתרגול מקלידים כך: <bdi>21=(5+?)/2*3</bdi>)</>, math:<>21 = <Frac n="5+?" d="2"/> · 3</>},
+        {text:<>מחלקים את שני האגפים בגובה.</>, math:<><Frac n="5+?" d="2"/> = 21 : 3 = 7</>},
+        {text:<>כופלים ב-2.</>, math:<>5 + ? = 14</>},
+        {text:<>מחסרים את הבסיס הידוע.</>, math:<>? = 14 − 5 = 9</>},
+      ]},
+    practice:<EquationSideQuestion title="בסיס שני (נתון שטח ושוק ניצבה)" genFn={genTrapRightSide}/>},
+];
+const TRAP_RIGHT_POSTER={name:'טרפז ישר-זווית', visual:<TrapRightShape/>,
+  formulas:[
+    {label:'שטח', math:F_TRAP, note:'h הוא השוק הניצבת לבסיסים', wide:true},
+    {label:'שוק אלכסונית (פיתגורס)', math:<>c² = (b₂−b₁)² + h²</>, note:'c היא השוק האלכסונית', wide:true},
+    {label:'היקף', math:<>P = b₁+b₂+h+c</>, wide:true},
+    {label:'שתי הזוויות שאינן ישרות', math:<>α + β = 180°</>, wide:true},
+  ],
+  facts:['שתי זוויות ישרות (90°)','שוק אחת ניצבת לשני הבסיסים']};
 function ChTrapRight(){
   return <div className="content">
     <PropertyExplorer verts={TR_VERTS} order={T_ORDER} diagonals={[]} properties={TRAP_RIGHT_PROPS} alwaysRight={['C','D']}/>
-    <div className="card">
-      <div className="card-t">חלק ב׳ — תרגילים</div>
-      <div className="q-grid">
-        <NumericQuestion title="זווית (השלישית)" genFn={genTrapRightAngle}/>
-        <NumericQuestion title="שטח" genFn={genTrapRightArea}/>
-        <NumericQuestion title="היקף (פיתגורס לשוק האלכסונית)" genFn={genTrapRightPerimeter}/>
-        <EquationSideQuestion title="בסיס שני (נתון שטח ושוק ניצבה)" genFn={genTrapRightSide}/>
-      </div>
-    </div>
+    <SubChapters items={TRAP_RIGHT_SUBS} poster={TRAP_RIGHT_POSTER}/>
   </div>;
 }
 
@@ -932,11 +1324,11 @@ function Ch5Trapezoid(){
 /* ═══════════════════ KITE ═══════════════════ */
 const KT_VERTS={T:{x:150,y:40},R:{x:210,y:120},B:{x:150,y:230},L:{x:90,y:120}};
 const KT_ORDER=['T','R','B','L'];
-function KiteShape({highlight,onPart,angleLabels={},sideLabels={},noDiag=false}){
+function KiteShape({highlight,onPart,angleLabels={},sideLabels={},noDiag=false,extra}){
   return <QuadBase verts={KT_VERTS} order={KT_ORDER} highlight={highlight} onPart={onPart}
     sideLabels={sideLabels} angleLabels={angleLabels}
     ticks={{TR:1,LT:1,RB:2,BL:2}} parallelArrows={{}} rightAngleAt={[]}
-    diagonals={noDiag?[]:[['T','B'],['L','R']]} letterOut/>;
+    diagonals={noDiag?[]:[['T','B'],['L','R']]} letterOut extra={extra}/>;
 }
 const KITE_PROPS=[
   {id:'sides',label:'צלעות שוות (סמוכות)',kind:'side',ids:['TR','RB','BL','LT'],mark:'tick',groups:[['TR','LT'],['RB','BL']],def:'יש שני זוגות של צלעות שוות, אך הן סמוכות זו לזו (לא נגדיות כמו במקבילית) — כל זוג מסומן במספר קווים משלו.'},
@@ -946,7 +1338,7 @@ const KITE_PROPS=[
 function genKiteArea(){
   let d1=randInt(2,20); if(d1%2!==0 && d1<20) d1++;
   const d2=randInt(2,20);
-  return {d1,d2, answer:(d1*d2)/2, formula:'S = (d₁·d₂)/2', askLabel:'S =',
+  return {d1,d2, answer:(d1*d2)/2, formula:F_DIAG, askLabel:'S =',
     given:`אלכסון ראשי d₁ = ${d1}, אלכסון משני d₂ = ${d2}`,
     visual:<KiteShape/>};
 }
@@ -961,7 +1353,7 @@ function genKitePerimeter(){
 function genKiteSide(){
   let d1=randInt(2,20); if(d1%2!==0 && d1<20) d1++;
   const d2=randInt(2,20); const S=(d1*d2)/2;
-  return {d1, answer:d2, formula:'S = (d₁·d₂)/2', askLabel:'d₂ =',
+  return {d1, answer:d2, formula:F_DIAG, askLabel:'d₂ =',
     given:`שטח S = ${S}, אלכסון d₁ = ${d1}`,
     visual:<KiteShape/>};
 }
@@ -1009,19 +1401,68 @@ function KiteAreaExplain(){
       {text:<>מציבים <bdi>h₁ + h₂ = d₁</bdi> ומקבלים את הנוסחה:</>, math:<>S = <Frac n="d₁·d₂" d="2"/></>},
     ]}/>;
 }
+const KITE_SUBS=[
+  {tab:'זווית',
+    explain:<>סכום הזוויות בכל מרובע הוא <b>360°</b>, וגם בדלתון. כשנתונות שלוש זוויות, מחברים אותן ומחסרים את הסכום מ-360°.</>,
+    formula:<>T + R + B + L = 360°</>,
+    example:{visual:<KiteShape noDiag angleLabels={{T:'90°',R:'110°',B:'50°',L:'?'}}/>,
+      given:<>נתון דלתון שבו שלוש זוויות: 90°, 110° ו-50°. נמצא את הזווית הרביעית.</>,
+      steps:[
+        {text:<>מחברים את שלוש הזוויות הנתונות.</>, math:<>90° + 110° + 50° = 250°</>},
+        {text:<>מחסרים את הסכום מ-360°.</>, math:<>L = 360° − 250° = 110°</>},
+      ]},
+    practice:<NumericQuestion title="זווית (הרביעית)" genFn={genKiteAngle}/>},
+  {tab:'שטח',
+    explain:<>שטח הדלתון הוא <b>מכפלת האלכסונים חלקי 2</b>. למטה מוסבר מאיפה הנוסחה מגיעה.</>,
+    formula:F_DIAG,
+    more:<KiteAreaExplain/>,
+    example:{visual:<KiteShape extra={<>
+        <HelpLine from={KT_VERTS.T} to={KT_VERTS.B} label="10" ly={-40}/>
+        <HelpLine from={KT_VERTS.L} to={KT_VERTS.R} label="6" color="#0e7490" lx={-28} ly={-7} anchor="middle"/>
+      </>}/>,
+      given:<>נתון דלתון שהאלכסון הראשי שלו <bdi>d₁ = 10</bdi> והאלכסון המשני <bdi>d₂ = 6</bdi>. נחשב את השטח.</>,
+      steps:[
+        {text:<>כופלים את שני האלכסונים.</>, math:<>d₁·d₂ = 10 · 6 = 60</>},
+        {text:<>מחלקים ב-2.</>, math:<>S = <Frac n="60" d="2"/> = 30</>},
+      ]},
+    practice:<NumericQuestion title="שטח" genFn={genKiteArea}/>},
+  {tab:'היקף',
+    explain:<>בדלתון יש <b>שני זוגות של צלעות סמוכות שוות</b>: שתי צלעות קצרות (a) ושתי צלעות ארוכות (b). מחברים צלע קצרה וצלע ארוכה, ואת הסכום כופלים ב-2.</>,
+    formula:<>P = 2(a+b)</>,
+    example:{visual:<KiteShape noDiag sideLabels={{TR:5,LT:5,RB:8,BL:8}}/>,
+      given:<>נתון דלתון שהצלע הקצרה שלו <bdi>a = 5</bdi> והצלע הארוכה <bdi>b = 8</bdi>. נחשב את ההיקף.</>,
+      steps:[
+        {text:<>מחברים צלע קצרה וצלע ארוכה.</>, math:<>5 + 8 = 13</>},
+        {text:<>כופלים ב-2, כי כל צלע מופיעה פעמיים.</>, math:<>P = 2 · 13 = 26</>},
+      ]},
+    practice:<NumericQuestion title="היקף" genFn={genKitePerimeter}/>},
+  {tab:'אלכסון שני',
+    explain:<>כשנתונים השטח ואלכסון אחד, מציבים אותם בנוסחת השטח ופותרים אחורה: <b>כופלים את השטח ב-2 ומחלקים באלכסון הידוע</b>.</>,
+    formula:F_DIAG,
+    example:{visual:<KiteShape extra={<>
+        <HelpLine from={KT_VERTS.T} to={KT_VERTS.B} label="10" ly={-40}/>
+        <HelpLine from={KT_VERTS.L} to={KT_VERTS.R} label="?" color="#0e7490" lx={-28} ly={-7} anchor="middle"/>
+      </>}/>,
+      given:<>נתון דלתון ששטחו <bdi>S = 30</bdi> והאלכסון הראשי שלו <bdi>d₁ = 10</bdi>. נמצא את האלכסון השני.</>,
+      steps:[
+        {text:<>מציבים בנוסחת השטח.</>, math:<>30 = <Frac n="10·d₂" d="2"/></>},
+        {text:<>כופלים את שני האגפים ב-2.</>, math:<>60 = 10·d₂</>},
+        {text:<>מחלקים באלכסון הידוע.</>, math:<>d₂ = 60 : 10 = 6</>},
+      ]},
+    practice:<NumericQuestion title="אלכסון שני (נתון שטח ואלכסון אחד)" genFn={genKiteSide}/>},
+];
+const KITE_POSTER={name:'דלתון', visual:<KiteShape/>,
+  formulas:[
+    {label:'שטח', math:F_DIAG},
+    {label:'היקף', math:<>P = 2(a+b)</>},
+    {label:'אלכסון מתוך השטח', math:<>d₂ = <Frac n="2·S" d="d₁"/></>},
+    {label:'סכום הזוויות', math:<>360°</>},
+  ],
+  facts:['שני זוגות של צלעות סמוכות שוות','האלכסון הראשי ניצב לאלכסון המשני וחוצה אותו','הזוויות שבין הצלעות הלא-שוות שוות זו לזו']};
 function Ch6Kite(){
   return <div className="content">
-    <PropertyExplorer verts={KT_VERTS} order={KT_ORDER} diagonals={[['T','B'],['L','R']]} properties={KITE_PROPS}/>
-    <KiteAreaExplain/>
-    <div className="card">
-      <div className="card-t">חלק ב׳ — תרגילים</div>
-      <div className="q-grid">
-        <NumericQuestion title="זווית (הרביעית)" genFn={genKiteAngle}/>
-        <NumericQuestion title="שטח" genFn={genKiteArea}/>
-        <NumericQuestion title="היקף" genFn={genKitePerimeter}/>
-        <NumericQuestion title="אלכסון שני (נתון שטח ואלכסון אחד)" genFn={genKiteSide}/>
-      </div>
-    </div>
+    <PropertyExplorer verts={KT_VERTS} order={KT_ORDER} diagonals={[['T','B'],['L','R']]} properties={KITE_PROPS} letterOut/>
+    <SubChapters items={KITE_SUBS} poster={KITE_POSTER}/>
   </div>;
 }
 
