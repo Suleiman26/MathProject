@@ -11,6 +11,12 @@
       "old": "const [rx,ry]=fromSvg(e.clientX-rect.left,e.clientY-rect.top);",
       "new": "const [rx,ry]=fromSvg((e.clientX-rect.left)*SVG_W/rect.width,(e.clientY-rect.top)*SVG_H/rect.height);",
       "count": 4
+    },
+    {
+      "why": "Fixes board item #75: step 7 rearrange - inverse operation auto-cancels its term",
+      "old": "  function applySide(terms){\n    if(opType==='+')return[...terms,rqMkTerm(addType,k)];\n    if(opType==='−')return[...terms,rqMkTerm(addType,-k)];\n",
+      "new": "  /* Fixes board #75: the inverse operation cancels its term right away on the side where it\n     meets its opposite (y − 2x + 2x → y); only the other side is left for the student to simplify. */\n  function addTerm(terms,num){\n    const i=terms.findIndex(t=>t.type===addType&&t.den===1&&t.num===-num);\n    if(i<0)return[...terms,rqMkTerm(addType,num)];\n    const rest=terms.filter((_,j)=>j!==i);\n    return rest.length?rest:[rqMkTerm('const',0)];\n  }\n  function applySide(terms){\n    if(opType==='+')return addTerm(terms,k);\n    if(opType==='−')return addTerm(terms,-k);\n",
+      "count": 1
     }
   ],
   "equation-solver": [
@@ -1336,6 +1342,42 @@
       "why": "Fixes board item #63: the given inequality in 'from notation to ray' comes both ways (> and <); final answers stay < / ≤",
       "old": "    <div className=\"formula-box\" style={{direction:'ltr'}}>{ieqFinal(data.sign,data.value)}</div>\n",
       "new": "    <div className=\"formula-box\" style={{direction:'ltr'}}>{data.xFirst?`x ${data.sign} ${iqNum(data.value)}`:`${iqNum(data.value)} ${flipSign(data.sign)} x`}</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #75: inverse operation auto-simplifies the side where it cancels a number",
+      "old": "function IeqSolver({a,b,c,sign,onSolved}){\n",
+      "new": "// Add k to both sides. Where k meets its opposite number the pair cancels right away (board #75).\nfunction iqAddBoth(state,k){\n  let auto=null;\n  function side(terms,name){\n    const i=terms.findIndex(t=>t.type==='const'&&t.coef===-k);\n    if(i<0) return iqClean([...terms,ieqMkTerm('const',k)]);\n    auto=auto?'both':name;\n    return iqClean(terms.filter((_,j)=>j!==i));\n  }\n  const left=side(state.left,'left'), right=side(state.right,'right');\n  return {left,right,auto};\n}\nfunction IeqSolver({a,b,c,sign,onSolved}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #75: inverse operation auto-simplifies the side where it cancels a number",
+      "old": "  const [solvedInfo,setSolvedInfo]=useState(null);\n",
+      "new": "  const [auto,setAuto]=useState(null);\n  const [solvedInfo,setSolvedInfo]=useState(null);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #75: inverse operation auto-simplifies the side where it cancels a number",
+      "old": "    setErr(null); setNote(null); setSel(new Set()); setSelErr('');\n    if(opSym==='+'||opSym==='-'){\n      // the number is written on both sides; the student joins like terms himself\n      const k=opSym==='+'?n:-n;\n      if(hist.length>0) setHist(h=>[...h,cur]);\n      setState({...state,left:iqClean([...state.left,ieqMkTerm('const',k)]),right:iqClean([...state.right,ieqMkTerm('const',k)])});\n",
+      "new": "    setErr(null); setNote(null); setAuto(null); setSel(new Set()); setSelErr('');\n    if(opSym==='+'||opSym==='-'){\n      // the number is written on both sides. Fixes board #75: on a side where it cancels a number\n      // (x + 5 − 5) the computer simplifies by itself; the student joins like terms only on the other side\n      const k=opSym==='+'?n:-n;\n      const res=iqAddBoth(state,k);\n      if(res.auto){\n        const written=`${iqTerms([...state.left,ieqMkTerm('const',k)])}  ${state.sign}  ${iqTerms([...state.right,ieqMkTerm('const',k)])}`;\n        setHist(h=>hist.length>0?[...h,cur,written]:[...h,written]);\n      } else if(hist.length>0) setHist(h=>[...h,cur]);\n      setAuto(res.auto?{side:res.auto,num:Math.abs(k),more:iqHasLike(res.left)||iqHasLike(res.right)}:null);\n      setState({...state,left:res.left,right:res.right});\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #75: inverse operation auto-simplifies the side where it cancels a number",
+      "old": "    setState({...state,[side]:iqClean(out)}); setSel(new Set()); setSelErr(''); setNote(null);\n",
+      "new": "    setState({...state,[side]:iqClean(out)}); setSel(new Set()); setSelErr(''); setNote(null); setAuto(null);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #75: inverse operation auto-simplifies the side where it cancels a number",
+      "old": "    {canTap && hasLike && sel.size===0 && <div className=\"iq-like\">לחצו על איברים מאותה משפחה באותו צד, ואז על ״פשט״</div>}\n",
+      "new": "    {auto && !pending && !confirmed && sel.size===0 && <div className=\"iq-like iq-auto\">{auto.side==='both'?<>ה-<span className=\"iq-m\">{auto.num}</span> התבטל בשני האגפים, והמחשב פישט לבד.</>:<>ב{auto.side==='left'?'אגף שמאל':'אגף ימין'} ה-<span className=\"iq-m\">{auto.num}</span> התבטל, והמחשב פישט לבד.{auto.more?' נשאר לכם לפשט את האגף השני: לחצו על שני המספרים ואז על ״פשט״.':''}</>}</div>}\n    {canTap && hasLike && sel.size===0 && !auto && <div className=\"iq-like\">לחצו על איברים מאותה משפחה באותו צד, ואז על ״פשט״</div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #75: inverse operation auto-simplifies the side where it cancels a number",
+      "old": "    {!solvedInfo && <div className=\"hint\">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), והיא נכתבת על שני האגפים. אחר כך לוחצים על איברים מאותה משפחה (מספרים עם מספרים, x עם x) באותו צד, ורק אז מופיע ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}\n",
+      "new": "    {!solvedInfo && <div className=\"hint\">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), והיא נכתבת על שני האגפים. בצד שבו הפעולה מבטלת מספר, המחשב מפשט לבד. בצד השני לוחצים על איברים מאותה משפחה (מספרים עם מספרים, x עם x), ורק אז מופיע ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}\n",
       "count": 1
     }
   ],
