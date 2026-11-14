@@ -333,6 +333,12 @@
       "old": "      <p>במשולש שווה שוקיים, הגובה לבסיס הוא גם <strong>תיכון</strong> (חוצה את הבסיס לשני חלקים שווים) וגם <strong>חוצה זווית</strong> (חוצה את זווית הראש לשני חלקים שווים) — שלוש התכונות מתקיימות יחד באותו קטע.</p>\n",
       "new": "      <IsoHeightIntro/>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #74: isosceles height intro - tappable words + caption formulas kept left-to-right",
+      "old": "        AM ⊥ BC (גובה) &nbsp;|&nbsp; BM = MC (תיכון, בסימון אדום) &nbsp;|&nbsp; ∠BAM = ∠CAM (חוצה זווית, בסימון אדום)</p>\n",
+      "new": "        <span dir=\"ltr\" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>AM ⊥ BC</span> (גובה) &nbsp;|&nbsp; <span dir=\"ltr\" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>BM = MC</span> (תיכון, בסימון אדום) &nbsp;|&nbsp; <span dir=\"ltr\" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>∠BAM = ∠CAM</span> (חוצה זווית, בסימון אדום)</p>\n",
+      "count": 1
     }
   ],
   "powers-roots": [

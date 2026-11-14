@@ -1460,7 +1460,7 @@ function IsoHeightExercise({forceSub}){
         </div>
       </div>
       <p style={{textAlign:'center',fontSize:12,color:'#64748b',marginTop:-6}}>
-        AM ⊥ BC (גובה) &nbsp;|&nbsp; BM = MC (תיכון, בסימון אדום) &nbsp;|&nbsp; ∠BAM = ∠CAM (חוצה זווית, בסימון אדום)</p>
+        <span dir="ltr" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>AM ⊥ BC</span> (גובה) &nbsp;|&nbsp; <span dir="ltr" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>BM = MC</span> (תיכון, בסימון אדום) &nbsp;|&nbsp; <span dir="ltr" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>∠BAM = ∠CAM</span> (חוצה זווית, בסימון אדום)</p>
       <div className="center" style={{marginTop:6}}><button className="btn bp" onClick={()=>setShowInfo(false)} style={{fontSize:12}}>הבנתי ✓</button></div>
     </div>}
 
