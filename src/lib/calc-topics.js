@@ -29,19 +29,38 @@ export const CALC_TOPICS = {
   "directed-numbers": false,
   "powers-roots": false,
   "equation-solver": false,
-  "equations-advanced": false,
+  "equations-advanced": false, // (its quadratic chapters get the calculator through EQN_TOPICS below)
   "inequalities": false,
+};
+
+/* Where the calculator also has the scientific "equation mode" (board #55, reopened 2026-11-14, Sulaiman:
+   "where a quadratic equation has to be solved, add a scientific calculator: MODE 5 3, then a, b, c").
+   Same kind of rule as above. A chapter listed here always gets the calculator button, even when
+   CALC_TOPICS says `false` for its topic (equations-advanced: only its quadratic chapters). */
+export const EQN_TOPICS = {
+  "quadratic-solver": true,
+  "parabola-practice": { only: ["7. שורשים", "9. חיוביות/שליליות", "10. חקירה מלאה"] }, // where the roots are needed
+  "intersection": { only: ["2. ישר–פרבולה"] },
+  "equations-advanced": { only: ["2 — ריבועית עם מכנה", "4 — הכל יחד"] },
 };
 
 const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
 
-/** Does this topic (in this chapter, if it has chapters) get the calculator? */
-export function calcAllowed(slug, chapter) {
-  const rule = CALC_TOPICS[slug];
+function allowed(rule, chapter) {
   if (!rule) return false;
   if (rule === true) return true;
   const ch = norm(chapter);
   if (rule.only) return rule.only.map(norm).includes(ch);
   if (rule.except) return !rule.except.map(norm).includes(ch);
   return true;
+}
+
+/** Does this chapter's calculator have the equation mode (MODE 5 3: aX² + bX + c = 0)? */
+export function eqnAllowed(slug, chapter) {
+  return allowed(EQN_TOPICS[slug], chapter);
+}
+
+/** Does this topic (in this chapter, if it has chapters) get the calculator? */
+export function calcAllowed(slug, chapter) {
+  return allowed(CALC_TOPICS[slug], chapter) || eqnAllowed(slug, chapter);
 }

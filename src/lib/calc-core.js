@@ -161,6 +161,7 @@ export function errorText(code) {
   if (code === "undefined") return "לא מוגדר";
   if (code === "big") return "מספר גדול מדי";
   if (code === "syntax") return "ביטוי לא שלם";
+  if (code === "notquad") return "עם a = 0 זו לא משוואה ריבועית";
   return "";
 }
 
@@ -229,4 +230,105 @@ export function insertValue(expr, value, fresh) {
   if (fresh || !expr || endsOperand(expr)) return txt;
   if (txt.startsWith("−") && /[+−]$/.test(expr)) return expr + "(" + txt;
   return expr + txt;
+}
+
+/* ── EQN mode: aX² + bX + c = 0, like MODE 5 3 on a real scientific calculator (board #55) ──
+   The student types a, then b, then c ("=" after each); the calculator shows X1 and X2. */
+
+/** MODE menus. → { mode: "comp" | "eqn" } · { menu: "mode" | "eqn" | null } · null (a key that does nothing here). */
+export function menuPick(menu, key) {
+  if (menu === "mode") {
+    if (key === "1") return { mode: "comp" };
+    if (key === "5") return { menu: "eqn" };
+    if (key === "C" || key === "⌫") return { menu: null };
+  } else if (menu === "eqn") {
+    if (key === "3") return { mode: "eqn" };
+    if (key === "C" || key === "⌫") return { menu: "mode" };
+  }
+  return null;
+}
+
+/** The roots, in the order a real calculator shows them: X1 = (−b+√Δ)/2a, X2 = (−b−√Δ)/2a.
+    → { ok, kind: "two", x1, x2, d } · { ok, kind: "one", x, d: 0 } · { ok, kind: "none", d }
+    · { ok: false, error: "notquad" | "big" | "syntax" } */
+export function solveQuadratic(a, b, c) {
+  if (![a, b, c].every((v) => typeof v === "number" && Number.isFinite(v))) return { ok: false, error: "syntax" };
+  if (a === 0) return { ok: false, error: "notquad" };
+  const b2 = b * b, ac4 = 4 * a * c;
+  let d = b2 - ac4;
+  // 0.2² − 4·1·0.01 must be 0, not 7e-18
+  if (Math.abs(d) <= 1e-12 * Math.max(Math.abs(b2), Math.abs(ac4))) d = 0;
+  if (!Number.isFinite(d)) return { ok: false, error: "big" };
+  const fits = (v) => Number.isFinite(v) && Math.abs(v) < 1e100;
+  if (d < 0) return { ok: true, kind: "none", d: round(d) };
+  if (d === 0) {
+    const x = -b / (2 * a);
+    return fits(x) ? { ok: true, kind: "one", x: round(x), d: 0 } : { ok: false, error: "big" };
+  }
+  // the steady way: no "big − almost as big" (x² − 100000x + 1 keeps its small root exact)
+  const s = Math.sqrt(d);
+  const q = -(b + (b < 0 ? -s : s)) / 2;
+  const viaA = q / a, viaC = c / q;
+  const x1 = b < 0 ? viaA : viaC, x2 = b < 0 ? viaC : viaA;
+  if (!fits(x1) || !fits(x2)) return { ok: false, error: "big" };
+  return { ok: true, kind: "two", x1: round(x1), x2: round(x2), d: round(d) };
+}
+
+export const EQN_NAMES = ["a", "b", "c"];
+
+/** step 0/1/2 = typing a/b/c · step 3 = the answer (view = which root is on the screen). */
+export function eqnStart() {
+  return { step: 0, co: [null, null, null], text: "", sol: null, view: 0 };
+}
+
+/** How many answer screens the solution has (X1 and X2 → 2). */
+export function eqnScreens(sol) { return sol && sol.kind === "two" ? 2 : 1; }
+
+/** One key press in EQN mode → { state, error } (error = "" or a code for errorText). */
+export function eqnPress(st, key) {
+  const ok = (state) => ({ state, error: "" });
+  if (key === "C") return ok(st.step === 3 || st.text === "" ? eqnStart() : { ...st, text: "" });
+
+  if (st.step === 3) {
+    if (key === "⌫") return ok({ ...st, step: 2, text: "", sol: null, view: 0 }); // back to c (its value stays)
+    if (key === "=") {
+      if (st.view + 1 < eqnScreens(st.sol)) return ok({ ...st, view: st.view + 1 });
+      return ok({ ...st, step: 0, text: "", sol: null, view: 0 }); // round again: a, b, c keep their values
+    }
+    const next = pressKey("", key, false);
+    return ok(next === "" ? st : { ...eqnStart(), text: next }); // typing starts a new equation
+  }
+
+  if (key === "⌫") {
+    if (st.text !== "") return ok({ ...st, text: pressKey(st.text, "⌫", false) });
+    return ok(st.step > 0 ? { ...st, step: st.step - 1 } : st);
+  }
+  if (key === "=") {
+    let value;
+    if (st.text === "") value = st.co[st.step] == null ? 0 : st.co[st.step]; // "=" alone keeps what is there
+    else {
+      const res = evaluate(closed(st.text));
+      if (!res.ok) return { state: st, error: res.error };
+      value = res.value;
+    }
+    if (st.step === 0 && value === 0) return { state: { ...st, text: "" }, error: "notquad" };
+    const co = st.co.slice();
+    co[st.step] = value;
+    if (st.step < 2) return ok({ ...st, co, step: st.step + 1, text: "" });
+    const sol = solveQuadratic(co[0], co[1], co[2]);
+    if (!sol.ok) return { state: { ...st, co, text: "" }, error: sol.error };
+    return ok({ step: 3, co, text: "", sol, view: 0 });
+  }
+  return ok({ ...st, text: pressKey(st.text, key, false) });
+}
+
+/** "X²−5X+6=0" from the three numbers (for the small line above the answer). */
+export function eqnText(a, b, c) {
+  const part = (v, tail, first) => {
+    if (v === 0) return "";
+    const n = Math.abs(v);
+    const num = n === 1 && tail ? "" : format(n);
+    return (v < 0 ? "−" : first ? "" : "+") + num + tail;
+  };
+  return part(a, "X²", true) + part(b, "X", false) + part(c, "", false) + "=0";
 }
