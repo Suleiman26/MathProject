@@ -38,75 +38,184 @@ function makeTri() {
 }
 
 /* ═══════════════ Chapter 2 data ═══════════════ */
-function makeQuad() {
-  const types = ['square', 'rectangle', 'trapezoid'];
-  const type = types[randInt(0, 2)];
-
-  const mkT = (verts, rightAt, sideNames, hyp, missingName, missingVal, known) => ({
-    verts: new Set(verts), rightAt, sideNames, hyp, missingName, missingVal, known
-  });
-
-  if (type === 'square') {
-    const s = randInt(3, 15);
-    const diag = Math.sqrt(2) * s;
-    return {
-      type, label: '\u05E8\u05D9\u05D1\u05D5\u05E2',
-      sideLabels: { AB: s, BC: s, CD: s, AD: s },
-      dashLine: ['A', 'C'],
-      rightAngles: [['A','B','D'], ['B','A','C'], ['C','B','D'], ['D','A','C']],
-      validTriangles: [
-        mkT(['A','B','C'], 'B', ['AB','AC','BC'], 'AC', 'AC', diag, {AB:s, BC:s}),
-        mkT(['A','C','D'], 'D', ['AC','AD','CD'], 'AC', 'AC', diag, {AD:s, CD:s}),
-      ]
-    };
-  }
-
-  if (type === 'rectangle') {
-    let w, h;
-    do { w = randInt(3, 15); h = randInt(3, 15); } while (w === h);
-    const diag = Math.sqrt(w * w + h * h);
-    return {
-      type, label: '\u05DE\u05DC\u05D1\u05DF',
-      sideLabels: { AB: w, BC: h, CD: w, AD: h },
-      dashLine: ['A', 'C'],
-      rightAngles: [['A','B','D'], ['B','A','C'], ['C','B','D'], ['D','A','C']],
-      validTriangles: [
-        mkT(['A','B','C'], 'B', ['AB','AC','BC'], 'AC', 'AC', diag, {AB:w, BC:h}),
-        mkT(['A','C','D'], 'D', ['AC','AD','CD'], 'AC', 'AC', diag, {AD:h, CD:w}),
-      ]
-    };
-  }
-
-  /* right trapezoid — right angles at A and D */
-  const h = randInt(3, 12);
-  const topBase = randInt(3, 10);
-  const bottomBase = topBase + randInt(2, 6);
-
+/* Fixes board #72 (Sulaiman): many more shapes in the application chapter:
+   square, rectangle, right trapezoid, triangle inside a triangle (height),
+   isosceles triangle, kite, rhombus, and a triangle inside a rectangle.
+   Every shape is points (real lengths) + segments; the student finds the
+   right triangle that holds the dashed segment. Sometimes a leg is missing. */
+const PY_TRIPLES = [[3,4,5],[5,12,13],[8,15,17],[7,24,25],[20,21,29]];
+function pickTriple(maxHyp) {
+  const opts = [];
+  for (const [a, b, c] of PY_TRIPLES) for (let k = 1; c * k <= maxHyp; k++) opts.push([a * k, b * k, c * k]);
+  const t = opts[randInt(0, opts.length - 1)];
+  return Math.random() < 0.5 ? t : [t[1], t[0], t[2]];
+}
+/* two legs: often a Pythagorean triple (whole answer), otherwise random */
+function pickLegs(lo, hi) {
   if (Math.random() < 0.5) {
-    const bd = Math.sqrt(h * h + bottomBase * bottomBase);
-    return {
-      type, label: '\u05D8\u05E8\u05E4\u05D6 \u05D9\u05E9\u05E8 \u05D6\u05D5\u05D5\u05D9\u05EA',
-      dims: { bottomBase, topBase, h },
-      sideLabels: { AB: bottomBase, AD: h, CD: topBase },
-      dashLine: ['B', 'D'],
-      rightAngles: [['A','B','D'], ['D','A','C']],
-      validTriangles: [
-        mkT(['A','B','D'], 'A', ['AB','AD','BD'], 'BD', 'BD', bd, {AB:bottomBase, AD:h}),
-      ]
-    };
-  } else {
-    const ac = Math.sqrt(h * h + topBase * topBase);
-    return {
-      type, label: '\u05D8\u05E8\u05E4\u05D6 \u05D9\u05E9\u05E8 \u05D6\u05D5\u05D5\u05D9\u05EA',
-      dims: { bottomBase, topBase, h },
-      sideLabels: { AB: bottomBase, AD: h, CD: topBase },
-      dashLine: ['A', 'C'],
-      rightAngles: [['A','B','D'], ['D','A','C']],
-      validTriangles: [
-        mkT(['A','C','D'], 'D', ['AC','AD','CD'], 'AC', 'AC', ac, {AD:h, CD:topBase}),
-      ]
-    };
+    const [a, b] = pickTriple(40);
+    if (a >= lo && b >= lo && a <= hi && b <= hi) return [a, b];
   }
+  return [randInt(lo, hi), randInt(lo, hi)];
+}
+const segName = (p, q) => [p, q].sort().join('');
+const ptDist = (P, p, q) => Math.hypot(P[p][0] - P[q][0], P[p][1] - P[q][1]);
+
+/* right triangle a–r–b (right angle at r); `missing` is the dashed segment */
+function mkRT(P, a, r, b, missing) {
+  const legs = [segName(r, a), segName(r, b)], hyp = segName(a, b);
+  const known = {};
+  for (const n of [...legs, hyp]) if (n !== missing) known[n] = Math.round(ptDist(P, n[0], n[1]));
+  let missingVal;
+  if (missing === hyp) missingVal = Math.sqrt(known[legs[0]] ** 2 + known[legs[1]] ** 2);
+  else { const other = legs.find(n => n !== missing); missingVal = Math.sqrt(known[hyp] ** 2 - known[other] ** 2); }
+  return { verts: new Set([a, r, b]), rightAt: r, sideNames: [...legs, hyp].sort(), hyp, missingName: missing, missingVal, known };
+}
+
+function buildShape(sp) {
+  const vals = {};
+  for (const [p, q] of sp.labels) vals[segName(p, q)] = Math.round(ptDist(sp.P, p, q));
+  return { ...sp, vals, dashName: segName(sp.dash[0], sp.dash[1]) };
+}
+
+/* very flat shapes squeeze the labels together: draw a new one */
+function makeQuad() {
+  for (let i = 0; i < 200; i++) {
+    const q = makeQuadOnce();
+    const xs = Object.values(q.P).map(p => p[0]), ys = Object.values(q.P).map(p => p[1]);
+    const w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
+    if (Math.min(w, h) / Math.max(w, h) >= 0.4) return q;
+  }
+  return makeQuadOnce();
+}
+
+function makeQuadOnce() {
+  const kind = randInt(0, 7);
+
+  if (kind === 0) {                                   /* square */
+    const s = randInt(3, 15);
+    const P = { A: [0, 0], B: [s, 0], C: [s, s], D: [0, s] };
+    return buildShape({ type: 'square', label: 'ריבוע', P, outline: ['A','B','C','D'], lines: [], dash: ['A','C'],
+      labels: [['A','B'], ['B','C'], ['C','D'], ['A','D']],
+      ra: [['A','B','D'], ['B','A','C'], ['C','B','D'], ['D','A','C']],
+      validTriangles: [mkRT(P, 'A', 'B', 'C', 'AC'), mkRT(P, 'A', 'D', 'C', 'AC')] });
+  }
+
+  if (kind === 1) {                                   /* rectangle */
+    const ra = [['A','B','D'], ['B','A','C'], ['C','B','D'], ['D','A','C']];
+    if (Math.random() < 0.5) {
+      let w, h;
+      do { [w, h] = pickLegs(3, 15); } while (w === h);
+      const P = { A: [0, 0], B: [w, 0], C: [w, h], D: [0, h] };
+      return buildShape({ type: 'rectangle', label: 'מלבן', P, outline: ['A','B','C','D'], lines: [], dash: ['A','C'],
+        labels: [['A','B'], ['B','C'], ['C','D'], ['A','D']], ra,
+        validTriangles: [mkRT(P, 'A', 'B', 'C', 'AC'), mkRT(P, 'A', 'D', 'C', 'AC')] });
+    }
+    let w, h;
+    do { [w, h] = pickTriple(30); } while (w < 3 || h < 3);
+    const P = { A: [0, 0], B: [w, 0], C: [w, h], D: [0, h] };
+    return buildShape({ type: 'rectangle', label: 'מלבן', P, outline: ['A','B','C','D'], lines: [['A','C']], dash: ['B','C'],
+      labels: [['A','B'], ['C','D'], ['A','C', 'B']], ra,
+      validTriangles: [mkRT(P, 'A', 'B', 'C', 'BC')] });
+  }
+
+  if (kind === 2) {                                   /* right trapezoid — right angles at A and D */
+    const v = randInt(0, 2);
+    if (v < 2) {
+      const h = randInt(3, 12), topBase = randInt(3, 10), bottomBase = topBase + randInt(2, 6);
+      const P = { A: [0, 0], B: [bottomBase, 0], C: [topBase, h], D: [0, h] };
+      const base = { type: 'trapezoid', label: 'טרפז ישר זווית', P, outline: ['A','B','C','D'], lines: [],
+        labels: [['A','B'], ['A','D'], ['C','D']], ra: [['A','B','D'], ['D','A','C']] };
+      return v === 0
+        ? buildShape({ ...base, dash: ['B','D'], validTriangles: [mkRT(P, 'B', 'A', 'D', 'BD')] })
+        : buildShape({ ...base, dash: ['A','C'], validTriangles: [mkRT(P, 'A', 'D', 'C', 'AC')] });
+    }
+    const [eb, h] = pickLegs(3, 12), topBase = randInt(3, 10);
+    const P = { A: [0, 0], E: [topBase, 0], B: [topBase + eb, 0], C: [topBase, h], D: [0, h] };
+    return buildShape({ type: 'trapezoid', label: 'טרפז ישר זווית', P, outline: ['A','E','B','C','D'], lines: [['C','E']], dash: ['B','C'],
+      labels: [['C','D'], ['A','D'], ['C','E', 'B'], ['B','E', 'C']],
+      ra: [['A','B','D'], ['D','A','C'], ['E','C','B']],
+      validTriangles: [mkRT(P, 'C', 'E', 'B', 'BC')] });
+  }
+
+  if (kind === 3) {                                   /* isosceles triangle with its height */
+    if (Math.random() < 0.5) {                        /* find a side */
+      const [m, h] = pickLegs(3, 12);
+      const P = { B: [0, 0], D: [m, 0], C: [2 * m, 0], A: [m, h] };
+      return buildShape({ type: 'isosceles', label: 'משולש שווה-שוקיים', P, outline: ['B','D','C','A'], lines: [['A','D']], dash: ['A','B'],
+        labels: [['B','D', 'A'], ['C','D', 'A'], ['A','D', 'C']], ra: [['D','A','B']],
+        validTriangles: [mkRT(P, 'A', 'D', 'B', 'AB')] });
+    }
+    let m, h;                                         /* find the height */
+    do { [m, h] = pickTriple(26); } while (m < 3 || h < 3);
+    const P = { B: [0, 0], D: [m, 0], C: [2 * m, 0], A: [m, h] };
+    return buildShape({ type: 'isosceles', label: 'משולש שווה-שוקיים', P, outline: ['B','D','C','A'], lines: [], dash: ['A','D'],
+      labels: [['A','B'], ['A','C'], ['B','D', 'A'], ['C','D', 'A']], ra: [['D','A','B']],
+      validTriangles: [mkRT(P, 'A', 'D', 'B', 'AD'), mkRT(P, 'A', 'D', 'C', 'AD')] });
+  }
+
+  if (kind === 4) {                                   /* triangle inside a triangle (height AD) */
+    if (Math.random() < 0.5) {                        /* find AC */
+      const [q, h] = pickLegs(3, 12);
+      let p; do { p = randInt(4, 10); } while (p === q);
+      const P = { B: [0, 0], D: [p, 0], C: [p + q, 0], A: [p, h] };
+      return buildShape({ type: 'triangle', label: 'משולש', P, outline: ['B','D','C','A'], lines: [['A','D']], dash: ['A','C'],
+        labels: [['A','D', 'C'], ['B','D', 'A'], ['C','D', 'A']], ra: [['D','A','C']],
+        validTriangles: [mkRT(P, 'A', 'D', 'C', 'AC')] });
+    }
+    let q, h;                                         /* find DC */
+    do { [q, h] = pickTriple(26); } while (q < 3 || h < 3);
+    let p; do { p = randInt(4, 10); } while (p === q);
+    const P = { B: [0, 0], D: [p, 0], C: [p + q, 0], A: [p, h] };
+    return buildShape({ type: 'triangle', label: 'משולש', P, outline: ['B','D','C','A'], lines: [['A','D']], dash: ['C','D'],
+      labels: [['A','C'], ['A','D', 'C'], ['B','D', 'A']], ra: [['D','A','C']],
+      validTriangles: [mkRT(P, 'A', 'D', 'C', 'CD')] });
+  }
+
+  if (kind === 5) {                                   /* kite: diagonals meet at M at a right angle */
+    const v = randInt(0, 2);
+    let a, b, c;
+    if (v === 2) { do { [a, b] = pickTriple(20); } while (a < 2 || b < 3 || a > 9); }
+    else [a, b] = pickLegs(3, 9);
+    c = a + randInt(3, 7);
+    if (v === 1 && Math.random() < 0.5) { const t = pickTriple(26); if (t[1] > a + 1 && t[0] >= 3 && t[0] <= 10) { b = t[0]; c = t[1]; } }
+    const P = { A: [0, a], B: [-b, 0], C: [0, -c], D: [b, 0], M: [0, 0] };
+    const base = { type: 'kite', label: 'דלתון', P, outline: ['A','B','C','D'],
+      lines: [['A','M'], ['M','C'], ['B','M'], ['M','D']], vdir: { M: [1, -1] } };
+    if (v === 0) return buildShape({ ...base, dash: ['A','B'], labels: [['A','M', 'B'], ['B','M', 'A'], ['C','M', 'D']],
+      ra: [['M','A','B']], validTriangles: [mkRT(P, 'A', 'M', 'B', 'AB')] });
+    if (v === 1) return buildShape({ ...base, dash: ['B','C'], labels: [['A','M', 'B'], ['B','M', 'A'], ['C','M', 'D']],
+      ra: [['M','B','C']], validTriangles: [mkRT(P, 'B', 'M', 'C', 'BC')] });
+    return buildShape({ ...base, dash: ['B','M'], labels: [['A','B'], ['A','M', 'B'], ['C','M', 'D']],
+      ra: [['M','A','B']], validTriangles: [mkRT(P, 'A', 'M', 'B', 'BM')] });
+  }
+
+  if (kind === 6) {                                   /* rhombus: diagonals meet at M at a right angle */
+    const findSide = Math.random() < 0.5;
+    let a, b;
+    if (findSide) { do { [a, b] = pickLegs(3, 10); } while (a === b); }
+    else { do { [a, b] = pickTriple(20); } while (a < 3 || b < 3); }
+    const P = { A: [0, a], B: [-b, 0], C: [0, -a], D: [b, 0], M: [0, 0] };
+    const base = { type: 'rhombus', label: 'מעוין', P, outline: ['A','B','C','D'],
+      lines: [['A','M'], ['M','C'], ['B','M'], ['M','D']], vdir: { M: [1, -1] }, ra: [['M','A','B']] };
+    return findSide
+      ? buildShape({ ...base, dash: ['A','B'], labels: [['A','M', 'B'], ['B','M', 'A']], validTriangles: [mkRT(P, 'A', 'M', 'B', 'AB')] })
+      : buildShape({ ...base, dash: ['B','M'], labels: [['A','B'], ['A','M', 'B']], validTriangles: [mkRT(P, 'A', 'M', 'B', 'BM')] });
+  }
+
+  /* kind 7 — triangle inside a rectangle: E on side DC */
+  const left = Math.random() < 0.5;
+  const [e, h] = pickLegs(3, 12);
+  const rest = randInt(3, 10);
+  const w = e + rest;
+  const ex = left ? e : rest;                         /* DE = ex, EC = w − ex */
+  const P = { A: [0, 0], B: [w, 0], C: [w, h], E: [ex, h], D: [0, h] };
+  const ra = [['A','B','D'], ['B','A','C'], ['C','B','D'], ['D','A','C']];
+  return left
+    ? buildShape({ type: 'recttri', label: 'מלבן', P, outline: ['A','B','C','E','D'], lines: [], dash: ['A','E'], vdir: { E: [0.8, -1] },
+        labels: [['A','D'], ['D','E'], ['C','E'], ['A','B']], ra, validTriangles: [mkRT(P, 'A', 'D', 'E', 'AE')] })
+    : buildShape({ type: 'recttri', label: 'מלבן', P, outline: ['A','B','C','E','D'], lines: [], dash: ['B','E'], vdir: { E: [-0.8, -1] },
+        labels: [['B','C'], ['D','E'], ['C','E'], ['A','B']], ra, validTriangles: [mkRT(P, 'B', 'C', 'E', 'BE')] });
 }
 
 /* ═══════════════ Triangle SVG (Ch 1) ═══════════════ */
@@ -154,125 +263,101 @@ function TriSVG({ tri, showAns }) {
   );
 }
 
-/* ═══════════════ Quadrilateral SVG (Ch 2) ═══════════════ */
+/* ═══════════════ Shape SVG (Ch 2) ═══════════════ */
 function QuadSVG({ quad, selected, onClickVertex, clickMode, activeTri, showAns }) {
-  const { type, sideLabels, dashLine, rightAngles } = quad;
-  const maxD = 180, pad = 55;
+  const { P, outline, lines, dash, dashName, labels, vals, ra, vdir = {} } = quad;
+  const names = Object.keys(P);
+  const xs = names.map(n => P[n][0]), ys = names.map(n => P[n][1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const maxD = 200, pad = 55;
+  const sc = maxD / Math.max(maxX - minX, maxY - minY, 1);
+  const pts = {};
+  names.forEach(n => { pts[n] = { x: pad + (P[n][0] - minX) * sc, y: pad + (maxY - P[n][1]) * sc }; });
+  const svgW = (maxX - minX) * sc + pad * 2, svgH = (maxY - minY) * sc + pad * 2;
+  const cx = outline.reduce((s, v) => s + pts[v].x, 0) / outline.length;
+  const cy = outline.reduce((s, v) => s + pts[v].y, 0) / outline.length;
+  const polyStr = outline.map(v => `${pts[v].x},${pts[v].y}`).join(' ');
 
-  /* vertex coordinates */
-  let A, B, C, D;
-  if (type === 'square') {
-    const sc = maxD / sideLabels.AB, sz = sideLabels.AB * sc;
-    A = { x: pad, y: pad + sz }; B = { x: pad + sz, y: pad + sz };
-    C = { x: pad + sz, y: pad }; D = { x: pad, y: pad };
-  } else if (type === 'rectangle') {
-    const sc = maxD / Math.max(sideLabels.AB, sideLabels.BC);
-    const sw = sideLabels.AB * sc, sh = sideLabels.BC * sc;
-    A = { x: pad, y: pad + sh }; B = { x: pad + sw, y: pad + sh };
-    C = { x: pad + sw, y: pad }; D = { x: pad, y: pad };
-  } else {
-    const { bottomBase, topBase, h } = quad.dims;
-    const sc = maxD / Math.max(bottomBase, h);
-    A = { x: pad, y: pad + h * sc }; B = { x: pad + bottomBase * sc, y: pad + h * sc };
-    C = { x: pad + topBase * sc, y: pad }; D = { x: pad, y: pad };
-  }
-
-  const pts = { A, B, C, D };
-  const svgW = Math.max(B.x, C.x) + pad;
-  const svgH = Math.max(A.y, B.y) + pad;
-  const cx = (A.x + B.x + C.x + D.x) / 4, cy = (A.y + B.y + C.y + D.y) / 4;
-  const polyStr = [A, B, C, D].map(p => `${p.x},${p.y}`).join(' ');
-
-  /* dashed diagonal */
-  const dl0 = pts[dashLine[0]], dl1 = pts[dashLine[1]];
-  const dashName = [...dashLine].sort().join('');
-  const dlMx = (dl0.x + dl1.x) / 2, dlMy = (dl0.y + dl1.y) / 2;
-  const ddx = dl1.x - dl0.x, ddy = dl1.y - dl0.y, dlen = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
-  let dnx = -ddy / dlen * 22, dny = ddx / dlen * 22;
-  const toMid = dnx * (cx - dlMx) + dny * (cy - dlMy);
-  if (Math.abs(toMid) > 4) { if (toMid < 0) { dnx = -dnx; dny = -dny; } }
-  else if (dny > 0) { dnx = -dnx; dny = -dny; }
-
-  /* side labels (outside shape via perpendicular from center) */
-  const sides = [];
-  const addSide = (name, p1, p2) => {
-    if (sideLabels[name] === undefined) return;
+  /* a label next to segment p–q, on the side away from point `away` (default: the shape's centre) */
+  const labelAt = (p, q, away, dist = 24) => {
+    const p1 = pts[p], p2 = pts[q];
     const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
-    const sdx = p2.x - p1.x, sdy = p2.y - p1.y;
-    const slen = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
-    const n1x = -sdy / slen, n1y = sdx / slen;
-    const dot = n1x * (mx - cx) + n1y * (my - cy);
-    const nx = dot >= 0 ? n1x : -n1x, ny = dot >= 0 ? n1y : -n1y;
-    sides.push({ name, val: sideLabels[name], x: mx + nx * 24, y: my + ny * 24 });
+    const dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy) || 1;
+    let nx = -dy / len, ny = dx / len;
+    const ax = away ? pts[away].x : cx, ay = away ? pts[away].y : cy;
+    const dot = nx * (mx - ax) + ny * (my - ay);
+    if (dot < 0 || (Math.abs(dot) < 1 && ny > 0)) { nx = -nx; ny = -ny; }
+    return { x: mx + nx * dist, y: my + ny * dist };
   };
-  addSide('AB', A, B); addSide('BC', B, C); addSide('CD', C, D); addSide('AD', A, D);
 
-  /* right-angle marks */
+  const edges = outline.map((v, i) => [v, outline[(i + 1) % outline.length]]);
+  const isDash = (p, q) => segName(p, q) === dashName;
+  const dashAway = (labels.find(l => segName(l[0], l[1]) === dashName) || [])[2];
+  const dl = labelAt(dash[0], dash[1], dashAway);
+
   const raSize = 12;
   const raMark = (v, t1, t2) => {
     const vt = pts[v], p1 = pts[t1], p2 = pts[t2];
-    const dx1 = p1.x - vt.x, dy1 = p1.y - vt.y, d1 = Math.sqrt(dx1*dx1+dy1*dy1)||1;
-    const ux1 = dx1/d1*raSize, uy1 = dy1/d1*raSize;
-    const dx2 = p2.x - vt.x, dy2 = p2.y - vt.y, d2 = Math.sqrt(dx2*dx2+dy2*dy2)||1;
-    const ux2 = dx2/d2*raSize, uy2 = dy2/d2*raSize;
+    const d1 = Math.hypot(p1.x - vt.x, p1.y - vt.y) || 1, d2 = Math.hypot(p2.x - vt.x, p2.y - vt.y) || 1;
+    const ux1 = (p1.x - vt.x) / d1 * raSize, uy1 = (p1.y - vt.y) / d1 * raSize;
+    const ux2 = (p2.x - vt.x) / d2 * raSize, uy2 = (p2.y - vt.y) / d2 * raSize;
     return `${vt.x+ux1},${vt.y+uy1} ${vt.x+ux1+ux2},${vt.y+uy1+uy2} ${vt.x+ux2},${vt.y+uy2}`;
   };
 
-  /* vertex label positions (away from center) */
   const vlPos = v => {
-    const dx = pts[v].x - cx, dy = pts[v].y - cy;
-    const d = Math.sqrt(dx*dx+dy*dy)||1;
-    return { x: pts[v].x + dx/d*18, y: pts[v].y + dy/d*18 + 5 };
+    let dx, dy;
+    if (vdir[v]) { dx = vdir[v][0]; dy = -vdir[v][1]; }
+    else { dx = pts[v].x - cx; dy = pts[v].y - cy; if (Math.hypot(dx, dy) < 1) { dx = 0; dy = 1; } }
+    const d = Math.hypot(dx, dy) || 1;
+    return { x: pts[v].x + dx / d * 19, y: pts[v].y + dy / d * 19 + 5 };
   };
 
-  /* triangle highlight */
-  let triPoly = null;
-  if (activeTri) {
-    triPoly = [...activeTri.verts].map(v => `${pts[v].x},${pts[v].y}`).join(' ');
-  }
+  const triPoly = activeTri ? [...activeTri.verts].map(v => `${pts[v].x},${pts[v].y}`).join(' ') : null;
   const diagVal = showAns && activeTri ? fmtVal(activeTri.missingVal) : 'x';
 
   return (
     <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ maxWidth: '100%', height: 'auto', direction: 'ltr' }}>
-      {/* shape fill */}
-      <polygon points={polyStr} fill="#eef2ff" stroke="#4338ca" strokeWidth="2.5" />
-
-      {/* triangle highlight */}
+      <polygon points={polyStr} fill="#eef2ff" stroke="none" />
       {triPoly && <polygon points={triPoly} fill="rgba(99,102,241,0.18)" stroke="#6366f1" strokeWidth="2" />}
 
-      {/* dashed diagonal */}
-      <line x1={dl0.x} y1={dl0.y} x2={dl1.x} y2={dl1.y}
-        stroke="#6366f1" strokeWidth="2" strokeDasharray="8,5" />
+      {edges.filter(([p, q]) => !isDash(p, q)).map(([p, q]) => (
+        <line key={'e' + p + q} x1={pts[p].x} y1={pts[p].y} x2={pts[q].x} y2={pts[q].y}
+          stroke="#4338ca" strokeWidth="2.5" strokeLinecap="round" />
+      ))}
+      {lines.filter(([p, q]) => !isDash(p, q)).map(([p, q]) => (
+        <line key={'l' + p + q} x1={pts[p].x} y1={pts[p].y} x2={pts[q].x} y2={pts[q].y}
+          stroke="#4338ca" strokeWidth="1.8" />
+      ))}
+      <line x1={pts[dash[0]].x} y1={pts[dash[0]].y} x2={pts[dash[1]].x} y2={pts[dash[1]].y}
+        stroke="#6366f1" strokeWidth="2.2" strokeDasharray="8,5" />
 
-      {/* right-angle marks */}
-      {rightAngles.map((ra, i) =>
-        <polyline key={i} points={raMark(ra[0], ra[1], ra[2])} fill="none" stroke="#4338ca" strokeWidth="1.5" />
+      {ra.map((r, i) =>
+        <polyline key={i} points={raMark(r[0], r[1], r[2])} fill="none" stroke="#4338ca" strokeWidth="1.5" />
       )}
 
-      {/* vertex labels */}
-      {['A','B','C','D'].map(v => {
+      {names.map(v => {
         const p = vlPos(v);
         return <text key={v} x={p.x} y={p.y} textAnchor="middle"
           fontSize="15" fill="#4338ca" fontWeight="bold" fontFamily="serif">{v}</text>;
       })}
 
-      {/* side labels */}
-      {sides.map(s => (
-        <g key={s.name}>
-          <text x={s.x} y={s.y - 7} textAnchor="middle" fontSize="11" fill="#6b7280">{s.name}</text>
-          <text x={s.x} y={s.y + 9} textAnchor="middle" fontSize="15" fontWeight="bold" fill="#1e293b">{s.val}</text>
-        </g>
-      ))}
+      {labels.filter(([p, q]) => !isDash(p, q)).map(([p, q, away]) => {
+        const s = labelAt(p, q, away), n = segName(p, q);
+        return (
+          <g key={'t' + n}>
+            <text x={s.x} y={s.y - 7} textAnchor="middle" fontSize="11" fill="#6b7280">{n}</text>
+            <text x={s.x} y={s.y + 9} textAnchor="middle" fontSize="15" fontWeight="bold" fill="#1e293b">{vals[n]}</text>
+          </g>
+        );
+      })}
 
-      {/* diagonal label */}
-      <text x={dlMx+dnx} y={dlMy+dny-7} textAnchor="middle" fontSize="11" fill="#6b7280">{dashName}</text>
-      <text x={dlMx+dnx} y={dlMy+dny+10} textAnchor="middle" fontSize="16" fontWeight="bold" fill="#dc2626">{diagVal}</text>
+      <text x={dl.x} y={dl.y - 7} textAnchor="middle" fontSize="11" fill="#6b7280">{dashName}</text>
+      <text x={dl.x} y={dl.y + 10} textAnchor="middle" fontSize="16" fontWeight="bold" fill="#dc2626">{diagVal}</text>
 
-      {/* clickable vertex circles */}
-      {clickMode && ['A','B','C','D'].map(v => (
-        <circle key={'c'+v} cx={pts[v].x} cy={pts[v].y} r={14}
+      {clickMode && names.map(v => (
+        <circle key={'c' + v} cx={pts[v].x} cy={pts[v].y} r={14}
           fill={selected.has(v) ? '#4338ca' : 'rgba(67,56,202,0.1)'}
-          stroke="#4338ca" strokeWidth="2.5" style={{cursor:'pointer'}}
+          stroke="#4338ca" strokeWidth="2.5" style={{ cursor: 'pointer' }}
           onClick={() => onClickVertex(v)} />
       ))}
     </svg>
@@ -710,10 +795,12 @@ function Chapter2() {
     const legs = activeTri.sideNames.filter(n => n !== activeTri.hyp);
     const clean = s3.replace(/\s+/g, '').toUpperCase();
     const m = clean.match(/^([A-Z]{2})(?:\^2|\*\*2|\u00B2)\+([A-Z]{2})(?:\^2|\*\*2|\u00B2)=([A-Z]{2})(?:\^2|\*\*2|\u00B2)$/);
-    const ok = m && m[3] === activeTri.hyp && new Set([m[1], m[2]]).size === 2 &&
-      [m[1], m[2]].every(n => legs.includes(n));
+    const nz = s => s.split('').sort().join('');   /* MA and AM are the same segment */
+    const n1 = m && nz(m[1]), n2 = m && nz(m[2]), n3 = m && nz(m[3]);
+    const ok = m && n3 === activeTri.hyp && n1 !== n2 &&
+      [n1, n2].every(n => legs.includes(n));
     if (!ok) { setS3fb('\u2717 \u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA \u05D4\u05DE\u05E9\u05D5\u05D5\u05D0\u05D4.'); return; }
-    setS3fb(''); setEqOrd([m[1], m[2], m[3]]); setPhase(3);
+    setS3fb(''); setEqOrd([n1, n2, n3]); setPhase(3);
   };
 
   const chk4 = () => {
