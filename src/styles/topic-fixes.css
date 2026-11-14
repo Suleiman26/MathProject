@@ -997,3 +997,29 @@ html[data-page="triangles"] #root :is(.sub-tab-btn, .classify-badge) { font-size
 html[data-page="triangles"] #root h4 { font-size: 1rem; }
 
 } /* end W4 */
+
+/* parabola-practice: "what is a quadratic function" intro (board #66) */
+html[data-page="parabola-practice"] .pp-intro { margin: 4px 0 16px; padding: 16px 18px; border-radius: 16px; background: var(--a-50, #eef2ff); border: 1px solid var(--a-200, #c7d2fe); line-height: 1.7; font-size: 15px; color: var(--ink-1, #1c1917); }
+html[data-page="parabola-practice"] .pp-intro p { margin: 6px 0; }
+html[data-page="parabola-practice"] .pp-intro-h { font-weight: 800; font-size: 18px; color: var(--a-900, #1a237e); }
+html[data-page="parabola-practice"] .pp-intro-f { margin: 8px auto 10px; width: fit-content; padding: 8px 22px; border-radius: 12px; background: var(--surface, #fff); font-size: 24px; font-weight: 800; font-style: italic; color: var(--a-700, #303f9f); letter-spacing: .5px; box-shadow: 0 1px 0 var(--a-200, #c7d2fe); }
+html[data-page="parabola-practice"] .pp-intro-ex { display: grid; grid-template-columns: auto auto; justify-content: start; align-items: baseline; column-gap: 14px; row-gap: 4px; margin: 8px 0; padding: 10px 14px; border-radius: 12px; background: var(--surface, #fff); }
+html[data-page="parabola-practice"] .pp-intro-ex .pp-ltr { font-weight: 700; font-size: 16px; color: var(--a-900, #1a237e); }
+html[data-page="parabola-practice"] .pp-intro-ex small { direction: ltr; unicode-bidi: isolate; text-align: right; color: var(--ink-3, #78716c); font-size: 13.5px; }
+html[data-page="parabola-practice"] .pp-intro-go { font-weight: 700; color: var(--a-800, #283593); }
+/* positive / negative ranges with "<" only (board #67, #68) */
+html[data-page="parabola-practice"] .pp-srow { flex-wrap: wrap; row-gap: 10px; }
+html[data-page="parabola-practice"] .pp-shapes { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+html[data-page="parabola-practice"] #root .card button.pp-shape { min-height: 40px; padding: 4px 12px; border-radius: 10px; border: 1.5px solid var(--a-200, #c7d2fe); background: var(--surface, #fff); color: var(--a-900, #1a237e); font-size: 15px; font-weight: 700; direction: ltr; unicode-bidi: isolate; white-space: nowrap; box-shadow: none; }
+html[data-page="parabola-practice"] #root .card button.pp-shape.on { border-color: var(--a-600, #3949ab); background: var(--a-600, #3949ab); color: #fff; }
+html[data-page="parabola-practice"] .pp-or { font-size: 15px; font-weight: 700; color: var(--ink-2, #44403c); margin: 0 2px; }
+html[data-page="parabola-practice"] .pp-sfill { flex: 1 1 100%; justify-content: center; }
+html[data-page="parabola-practice"] #root .card .pp-srow .pp-rv { width: 60px !important; }
+@media (max-width: 420px) {
+  html[data-page="parabola-practice"] .pp-intro { padding: 14px; font-size: 14.5px; }
+  html[data-page="parabola-practice"] .pp-intro-f { font-size: 21px; padding: 6px 16px; }
+  html[data-page="parabola-practice"] .pp-srow .pp-range-l { flex-basis: 100%; }
+  html[data-page="parabola-practice"] .pp-sfill { gap: 5px; }
+  html[data-page="parabola-practice"] #root .card .pp-srow .pp-rv { width: 52px !important; }
+  html[data-page="parabola-practice"] #root .card button.pp-shape { font-size: 14px; padding: 4px 10px; }
+}

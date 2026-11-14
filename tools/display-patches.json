@@ -169,6 +169,12 @@
       "old": "                <span className=\"h-eq\">{eqStr(s.eq)}</span>\n",
       "new": "                <span className=\"h-eq\">{eqStr(s.eq,v)}</span>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #69: the inverse operation cancels its term right away; only the other side needs simplifying",
+      "old": "  function applySide(terms){\n    if(opType==='+')return[...terms,mkTerm(type,k)];\n    if(opType==='−')return[...terms,mkTerm(type,-k)];\n",
+      "new": "  /* Fixes board #69: the inverse operation cancels its term right away on the side where it\n     meets its opposite (2x + 3 − 3 → 2x); only the other side is left for the student to simplify. */\n  function addTerm(terms,num){\n    const i=terms.findIndex(t=>t.type===type&&t.den===1&&t.num===-num);\n    if(i<0)return[...terms,mkTerm(type,num)];\n    const rest=terms.filter((_,j)=>j!==i);\n    return rest.length?rest:[mkTerm('const',0)];\n  }\n  function applySide(terms){\n    if(opType==='+')return addTerm(terms,k);\n    if(opType==='−')return addTerm(terms,-k);\n",
+      "count": 1
     }
   ],
   "triangles": [
@@ -1307,6 +1313,18 @@
       "old": "          <input value={listTxt} onChange={e=>{setListTxt(e.target.value);setListFb(null);}} placeholder=\"לדוגמה: 1, 2, 3\" style={{minWidth:160}}/>\n",
       "new": "          <input value={listTxt} onChange={e=>{setListTxt(e.target.value);setListFb(null);}} placeholder={'לדוגמה: \\u20661, 2, 3\\u2069'} style={{minWidth:160}}/>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #63: the given inequality in 'from notation to ray' comes both ways (> and <); final answers stay < / ≤",
+      "old": "  return {sign,value,closed:closedOfSign(sign),dir:dirOfSign(sign)};\n",
+      "new": "  // the given inequality comes both ways (x > 3 / 3 < x); only final answers are always < / ≤\n  const xFirst=Math.random()<0.5;\n  return {sign,value,xFirst,closed:closedOfSign(sign),dir:dirOfSign(sign)};\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #63: the given inequality in 'from notation to ray' comes both ways (> and <); final answers stay < / ≤",
+      "old": "    <div className=\"formula-box\" style={{direction:'ltr'}}>{ieqFinal(data.sign,data.value)}</div>\n",
+      "new": "    <div className=\"formula-box\" style={{direction:'ltr'}}>{data.xFirst?`x ${data.sign} ${iqNum(data.value)}`:`${iqNum(data.value)} ${flipSign(data.sign)} x`}</div>\n",
+      "count": 1
     }
   ],
   "parabola-practice": [
@@ -1542,6 +1560,96 @@
       "why": "Fixes board items #39 and #62: rising/falling ranges are written as [ ] > [ ] with a fixed sign and two typed boxes (full investigation + chapter 8); the graph is drawn sharp (retina) with a modern grid by ./extras.jsx",
       "old": "            {monResult==='err' && <div className=\"msg-error\">לא נכון — שים לב לכיוון הפרבולה ול-x קודקוד</div>}\n            {monResult==='invalid' && <div className=\"msg-error\">יש להזין מספרים</div>}\n",
       "new": "            <MonoError res={monResult} />\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "        <div className=\"formula\" dir=\"ltr\">y = {r1(a)}x² {sgn(b)}x {sgn(c)}</div>\n",
+      "new": "        <QuadIntro />\n        <div className=\"formula\" dir=\"ltr\">y = {r1(a)}x² {sgn(b)}x {sgn(c)}</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "  const [answers, setAnswers] = useState({ posOp1: '>', posOp2: '<', negOp1: '<', negOp2: '>' });\n",
+      "new": "  const [answers, setAnswers] = useState({ pos: SIGN_EMPTY, neg: SIGN_EMPTY });\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "    setAnswers({ posOp1: '>', posOp2: '<', negOp1: '<', negOp2: '>' }); setAnsResult(null);\n",
+      "new": "    setAnswers({ pos: SIGN_EMPTY, neg: SIGN_EMPTY }); setAnsResult(null);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "  // check: every point sampled across the graph is covered correctly\n  const checkRegions = () => {\n    if (posRegions.length === 0 || negRegions.length === 0) { setRegionResult('missing'); return; }\n    const samples = 40;\n",
+      "new": "  // check (fixes board #67): the areas next to the roots (up to 1 unit on each side) must be\n  // marked in the right colour; farther away marking is optional, but never in the wrong colour\n  const checkRegions = () => {\n    if (posRegions.length === 0 || negRegions.length === 0) { setRegionResult('missing'); return; }\n    const samples = 320;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "      const isPos = wy > 0.1;\n",
+      "new": "      const d = Math.min(Math.abs(wx - lo), Math.abs(wx - hi));\n      if (d < 0.2) continue; // right at a root: either colour is fine\n      const isPos = wy > 0.1;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "      if (isPos && !markedPos) { allOk = false; break; }\n      if (isNeg && !markedNeg) { allOk = false; break; }\n      if (isPos && markedNeg) { allOk = false; break; }\n      if (isNeg && markedPos) { allOk = false; break; }\n",
+      "new": "      if (isPos && markedNeg) { allOk = false; break; }\n      if (isNeg && markedPos) { allOk = false; break; }\n      if (d > 1) continue; // far from the roots: no need to mark\n      if (isPos && !markedPos) { allOk = false; break; }\n      if (isNeg && !markedNeg) { allOk = false; break; }\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "  const checkAnswers = () => {\n    let ok;\n    if (a > 0) {\n      ok = (answers.posOp1 === '<' && answers.posOp2 === '>') && (answers.negOp1 === '>' && answers.negOp2 === '<');\n    } else {\n      ok = (answers.posOp1 === '>' && answers.posOp2 === '<') && (answers.negOp1 === '<' && answers.negOp2 === '>');\n    }\n    setAnsResult(ok ? 'ok' : 'err');\n  };\n",
+      "new": "  const checkAnswers = () => setAnsResult(signCheck(a, lo, hi, answers.pos, answers.neg));\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "          <span style={{color:'#b71c1c', fontWeight:'bold'}}>⚠ יש לכסות את כל הגרף בצבעים (ירוק ואדום) לפני לחיצה על \"בדוק סימון\"</span>\n",
+      "new": "          <span style={{color:'#b71c1c', fontWeight:'bold'}}>⚠ אין צורך לצבוע את כל הגרף: מספיק לסמן בירוק ובאדום את האזורים שליד נקודות החיתוך עם ציר x, משני הצדדים של כל נקודה</span>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "        {regionResult === 'err' && <div className=\"msg-error\">לא מדויק — ודא שסימנת את כל התחומים הנכונים</div>}\n",
+      "new": "        {regionResult === 'err' && <div className=\"msg-error\">לא מדויק — ודא שסימנת בצבע הנכון את שני הצדדים של כל נקודת חיתוך</div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "            <div className=\"input-row\" style={{marginTop: 8}}>\n              <label>חיובי: x</label>\n              <select value={answers.posOp1} onChange={e => setAnswers(p => ({...p, posOp1: e.target.value}))}>\n                <option>&lt;</option><option>&gt;</option>\n              </select>\n              <label>x₁ ו-x</label>\n              <select value={answers.posOp2} onChange={e => setAnswers(p => ({...p, posOp2: e.target.value}))}>\n                <option>&gt;</option><option>&lt;</option>\n              </select>\n              <label>x₂</label>\n            </div>\n            <div className=\"input-row\">\n              <label>שלילי: x</label>\n              <select value={answers.negOp1} onChange={e => setAnswers(p => ({...p, negOp1: e.target.value}))}>\n                <option>&gt;</option><option>&lt;</option>\n              </select>\n              <label>x₁ ו-x</label>\n              <select value={answers.negOp2} onChange={e => setAnswers(p => ({...p, negOp2: e.target.value}))}>\n                <option>&lt;</option><option>&gt;</option>\n              </select>\n              <label>x₂</label>\n            </div>\n            <button className=\"btn\" onClick={checkAnswers}>בדוק</button>\n            {ansResult === 'ok' && <div className=\"msg-success\">מצוין! ניסוח נכון</div>}\n            {ansResult === 'err' && <div className=\"msg-error\">לא נכון — נסה שוב</div>}\n",
+      "new": "            <SignRows pos={answers.pos} neg={answers.neg} res={ansResult}\n              setPos={f => setAnswers(p => ({...p, pos: f(p.pos)}))} setNeg={f => setAnswers(p => ({...p, neg: f(p.neg)}))}\n              onEdit={() => setAnsResult(null)} onEnter={checkAnswers} />\n            <button className=\"btn\" onClick={checkAnswers}>בדוק</button>\n            {ansResult && ansResult.code === 'ok' && <div className=\"msg-success\">מצוין! ניסוח נכון</div>}\n            <SignError res={ansResult} />\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "  const [posAns, setPosAns] = useState({op1:'<',op2:'>'});\n  const [negAns, setNegAns] = useState({op1:'>',op2:'<'});\n",
+      "new": "  const [posAns, setPosAns] = useState(SIGN_EMPTY);\n  const [negAns, setNegAns] = useState(SIGN_EMPTY);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "    setPosAns({op1:'<',op2:'>'}); setNegAns({op1:'>',op2:'<'}); setMonResult(null); setSignResult(null);\n",
+      "new": "    setPosAns(SIGN_EMPTY); setNegAns(SIGN_EMPTY); setMonResult(null); setSignResult(null);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "        a > 0 ? `חיובית: x<${Math.min(r1||0,r2||0)} או x>${Math.max(r1||0,r2||0)}, שלילית: בין השורשים` :\n                `שלילית: x<${Math.min(r1||0,r2||0)} או x>${Math.max(r1||0,r2||0)}, חיובית: בין השורשים`,\n",
+      "new": "        <SignSummary a={a} lo={Math.min(r1||0,r2||0)} hi={Math.max(r1||0,r2||0)} />,\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "                <div className=\"input-row\">\n                  <label>חיובי: x</label>\n                  <select value={posAns.op1} onChange={e=>setPosAns(p=>({...p,op1:e.target.value}))}><option>&lt;</option><option>&gt;</option></select>\n                  <label>x₁ ו-x</label>\n                  <select value={posAns.op2} onChange={e=>setPosAns(p=>({...p,op2:e.target.value}))}><option>&gt;</option><option>&lt;</option></select>\n                  <label>x₂</label>\n                </div>\n                <div className=\"input-row\">\n                  <label>שלילי: x</label>\n                  <select value={negAns.op1} onChange={e=>setNegAns(p=>({...p,op1:e.target.value}))}><option>&gt;</option><option>&lt;</option></select>\n                  <label>x₁ ו-x</label>\n                  <select value={negAns.op2} onChange={e=>setNegAns(p=>({...p,op2:e.target.value}))}><option>&lt;</option><option>&gt;</option></select>\n                  <label>x₂</label>\n                </div>\n                <button className=\"btn\" onClick={() => {\n                  let ok = a>0\n                    ? posAns.op1==='<'&&posAns.op2==='>'&&negAns.op1==='>'&&negAns.op2==='<'\n                    : posAns.op1==='>'&&posAns.op2==='<'&&negAns.op1==='<'&&negAns.op2==='>';\n                  setSignResult(ok?'ok':'err');\n                }}>בדוק</button>\n                {signResult==='ok' && <>\n",
+      "new": "                <SignRows pos={posAns} neg={negAns} setPos={setPosAns} setNeg={setNegAns} res={signResult}\n                  onEdit={() => setSignResult(null)} onEnter={() => setSignResult(signCheck(a, Math.min(...roots), Math.max(...roots), posAns, negAns))} />\n                <button className=\"btn\" onClick={() => setSignResult(signCheck(a, Math.min(...roots), Math.max(...roots), posAns, negAns))}>בדוק</button>\n                {signResult && signResult.code==='ok' && <>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #66 #67 #68: intro to the quadratic function; sign ranges with < only; marking near the roots is enough",
+      "old": "                {signResult==='err' && <div className=\"msg-error\">לא נכון — שים לב לכיוון הפרבולה</div>}\n",
+      "new": "                <SignError res={signResult} />\n",
       "count": 1
     }
   ],
@@ -1946,6 +2054,54 @@
       "why": "Fixes board #47 (Sulaiman): chapter 1 starts with where the theorem comes from (squares on the sides, 9+16=25) and one solved example",
       "old": "      {chapter === 1 ? <Chapter1 key=\"ch1\" /> : <Chapter2 key=\"ch2\" />}\n",
       "new": "      {chapter === 1 ? <><PyIntro key=\"in1\" /><Chapter1 key=\"ch1\" /></> : <Chapter2 key=\"ch2\" />}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #71: the missing side is marked x instead of ?",
+      "old": "    return n === missingName ? '?' : String(known[n]);\n",
+      "new": "    return n === missingName ? 'x' : String(known[n]);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #71: the missing side is marked x instead of ?",
+      "old": "  const diagVal = showAns && activeTri ? fmtVal(activeTri.missingVal) : '?';\n",
+      "new": "  const diagVal = showAns && activeTri ? fmtVal(activeTri.missingVal) : 'x';\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #71: the missing side is marked x instead of ?",
+      "old": "      const txt = t.unk ? '?\\u00B2' : String(t.v);\n",
+      "new": "      const txt = t.unk ? 'x\\u00B2' : String(t.v);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #71: the missing side is marked x instead of ?",
+      "old": "          <span style={{ fontSize: 20, fontFamily: 'monospace' }}>? = </span>\n",
+      "new": "          <span style={{ fontSize: 20, fontFamily: 'monospace' }}>x = </span>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #71: the missing side is marked x instead of ?",
+      "old": "        if (s3[i].trim() !== '?') { setS3fb('\\u05E1\\u05DE\\u05DF ? \\u05E2\\u05D1\\u05D5\\u05E8 \\u05D4\\u05E6\\u05DC\\u05E2 \\u05D4\\u05D7\\u05E1\\u05E8\\u05D4.'); return; }\n",
+      "new": "        if (s3[i].trim().toLowerCase() !== 'x') { setS3fb('\\u05E1\\u05DE\\u05DF x \\u05E2\\u05D1\\u05D5\\u05E8 \\u05D4\\u05E6\\u05DC\\u05E2 \\u05D4\\u05D7\\u05E1\\u05E8\\u05D4.'); return; }\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #71: the missing side is marked x instead of ?",
+      "old": "              <p>{'\\u05D4\\u05E6\\u05D1 \\u05D0\\u05EA \\u05D4\\u05E2\\u05E8\\u05DB\\u05D9\\u05DD \\u05D4\\u05E0\\u05EA\\u05D5\\u05E0\\u05D9\\u05DD \\u05D1\\u05DE\\u05E9\\u05D5\\u05D5\\u05D0\\u05D4 (\\u05E1\\u05DE\\u05DF ? \\u05DC\\u05E6\\u05DC\\u05E2 \\u05D4\\u05D7\\u05E1\\u05E8\\u05D4):'}</p>\n",
+      "new": "              <p>{'\\u05D4\\u05E6\\u05D1 \\u05D0\\u05EA \\u05D4\\u05E2\\u05E8\\u05DB\\u05D9\\u05DD \\u05D4\\u05E0\\u05EA\\u05D5\\u05E0\\u05D9\\u05DD \\u05D1\\u05DE\\u05E9\\u05D5\\u05D5\\u05D0\\u05D4 (\\u05E1\\u05DE\\u05DF x \\u05DC\\u05E6\\u05DC\\u05E2 \\u05D4\\u05D7\\u05E1\\u05E8\\u05D4):'}</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #71: the missing side is marked x instead of ?",
+      "old": "        if (s4[i].trim() !== '?') { setS4fb('\\u05E1\\u05DE\\u05DF ? \\u05E2\\u05D1\\u05D5\\u05E8 \\u05D4\\u05E6\\u05DC\\u05E2 \\u05D4\\u05D7\\u05E1\\u05E8\\u05D4.'); return; }\n",
+      "new": "        if (s4[i].trim().toLowerCase() !== 'x') { setS4fb('\\u05E1\\u05DE\\u05DF x \\u05E2\\u05D1\\u05D5\\u05E8 \\u05D4\\u05E6\\u05DC\\u05E2 \\u05D4\\u05D7\\u05E1\\u05E8\\u05D4.'); return; }\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #71: the missing side is marked x instead of ?",
+      "old": "              <p>{'\\u05D4\\u05E6\\u05D1 \\u05D0\\u05EA \\u05D4\\u05E2\\u05E8\\u05DB\\u05D9\\u05DD \\u05D4\\u05E0\\u05EA\\u05D5\\u05E0\\u05D9\\u05DD (\\u05E1\\u05DE\\u05DF ? \\u05DC\\u05E6\\u05DC\\u05E2 \\u05D4\\u05D7\\u05E1\\u05E8\\u05D4):'}</p>\n",
+      "new": "              <p>{'\\u05D4\\u05E6\\u05D1 \\u05D0\\u05EA \\u05D4\\u05E2\\u05E8\\u05DB\\u05D9\\u05DD \\u05D4\\u05E0\\u05EA\\u05D5\\u05E0\\u05D9\\u05DD (\\u05E1\\u05DE\\u05DF x \\u05DC\\u05E6\\u05DC\\u05E2 \\u05D4\\u05D7\\u05E1\\u05E8\\u05D4):'}</p>\n",
       "count": 1
     }
   ],

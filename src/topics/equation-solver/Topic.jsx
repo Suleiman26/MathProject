@@ -33,9 +33,17 @@ function eqStr(eq,v='x'){return`${sideStr(eq.left,v)} = ${sideStr(eq.right,v)}`}
 /* Apply the SAME operation to both sides of the equation (add/subtract/multiply/divide). */
 function doOperate(eq,opType,k,isX){
   const type=isX?'x':'const';
+  /* Fixes board #69: the inverse operation cancels its term right away on the side where it
+     meets its opposite (2x + 3 − 3 → 2x); only the other side is left for the student to simplify. */
+  function addTerm(terms,num){
+    const i=terms.findIndex(t=>t.type===type&&t.den===1&&t.num===-num);
+    if(i<0)return[...terms,mkTerm(type,num)];
+    const rest=terms.filter((_,j)=>j!==i);
+    return rest.length?rest:[mkTerm('const',0)];
+  }
   function applySide(terms){
-    if(opType==='+')return[...terms,mkTerm(type,k)];
-    if(opType==='−')return[...terms,mkTerm(type,-k)];
+    if(opType==='+')return addTerm(terms,k);
+    if(opType==='−')return addTerm(terms,-k);
     if(opType==='×')return terms.map(t=>mkTerm(t.type,t.num*k,t.den));
     if(opType==='÷')return terms.map(t=>{const[n,d]=simplify(t.num,t.den*Math.abs(k));return mkTerm(t.type,k<0?-n:n,d)});
     return terms;

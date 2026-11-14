@@ -123,7 +123,7 @@ function TriSVG({ tri, showAns }) {
 
   const label = n => {
     if (showAns && n === missingName) return fmtVal(missingVal);
-    return n === missingName ? '?' : String(known[n]);
+    return n === missingName ? 'x' : String(known[n]);
   };
   const col = n => n === missingName ? '#dc2626' : '#1e293b';
 
@@ -230,7 +230,7 @@ function QuadSVG({ quad, selected, onClickVertex, clickMode, activeTri, showAns 
   if (activeTri) {
     triPoly = [...activeTri.verts].map(v => `${pts[v].x},${pts[v].y}`).join(' ');
   }
-  const diagVal = showAns && activeTri ? fmtVal(activeTri.missingVal) : '?';
+  const diagVal = showAns && activeTri ? fmtVal(activeTri.missingVal) : 'x';
 
   return (
     <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ maxWidth: '100%', height: 'auto', direction: 'ltr' }}>
@@ -352,7 +352,7 @@ function Step4({ tri, eqOrder, onDone }) {
     if (!terms.length) return <span style={{ color: '#9ca3af' }}>0</span>;
     return terms.map((t, i) => {
       const pre = i === 0 ? (t.s < 0 ? '\u2212' : '') : (t.s > 0 ? ' + ' : ' \u2212 ');
-      const txt = t.unk ? '?\u00B2' : String(t.v);
+      const txt = t.unk ? 'x\u00B2' : String(t.v);
       const can = !t.unk && !rootMode;
       return (
         <React.Fragment key={t.id + '_' + i}>
@@ -392,7 +392,7 @@ function Step4({ tri, eqOrder, onDone }) {
       {rootMode && (
         <div style={{ textAlign: 'center', marginTop: 16, direction: 'ltr' }}>
           <div style={{ fontSize: 16, marginBottom: 10, color: '#4338ca', fontWeight: 600 }}>{'\u05D4\u05D5\u05E6\u05D0 \u05E9\u05D5\u05E8\u05E9 \u05DE\u05E9\u05E0\u05D9 \u05D4\u05D0\u05D2\u05E4\u05D9\u05DD:'}</div>
-          <span style={{ fontSize: 20, fontFamily: 'monospace' }}>? = </span>
+          <span style={{ fontSize: 20, fontFamily: 'monospace' }}>x = </span>
           <input style={{ width: 80 }} value={ans}
             onChange={e => { setAns(e.target.value); setFb(''); }}
             onKeyDown={e => e.key === 'Enter' && checkRoot()} />
@@ -448,7 +448,7 @@ function Chapter1() {
     for (let i = 0; i < 3; i++) {
       const nm = eqOrd[i];
       if (nm === tri.missingName) {
-        if (s3[i].trim() !== '?') { setS3fb('\u05E1\u05DE\u05DF ? \u05E2\u05D1\u05D5\u05E8 \u05D4\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4.'); return; }
+        if (s3[i].trim().toLowerCase() !== 'x') { setS3fb('\u05E1\u05DE\u05DF x \u05E2\u05D1\u05D5\u05E8 \u05D4\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4.'); return; }
       } else {
         const v = parseFloat(s3[i]);
         if (isNaN(v) || v !== tri.known[nm]) { setS3fb('\u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05D4\u05DE\u05E1\u05E4\u05E8\u05D9\u05D9\u05DD \u05E9\u05D4\u05D6\u05E0\u05EA.'); return; }
@@ -518,7 +518,7 @@ function Chapter1() {
           <div className={`card ${phase > 2 ? 'done' : 'on'}`}>
             <div className="card-t">{'\u05E9\u05DC\u05D1 3 \u2014 \u05D4\u05E6\u05D1\u05EA \u05E2\u05E8\u05DB\u05D9\u05DD'}</div>
             {phase === 2 ? (<>
-              <p>{'\u05D4\u05E6\u05D1 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05D1\u05DE\u05E9\u05D5\u05D5\u05D0\u05D4 (\u05E1\u05DE\u05DF ? \u05DC\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4):'}</p>
+              <p>{'\u05D4\u05E6\u05D1 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05D1\u05DE\u05E9\u05D5\u05D5\u05D0\u05D4 (\u05E1\u05DE\u05DF x \u05DC\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4):'}</p>
               <div className="eq" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 6 }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{eqOrd[0]}</div>
@@ -720,7 +720,7 @@ function Chapter2() {
     for (let i = 0; i < 3; i++) {
       const nm = eqOrd[i];
       if (nm === activeTri.missingName) {
-        if (s4[i].trim() !== '?') { setS4fb('\u05E1\u05DE\u05DF ? \u05E2\u05D1\u05D5\u05E8 \u05D4\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4.'); return; }
+        if (s4[i].trim().toLowerCase() !== 'x') { setS4fb('\u05E1\u05DE\u05DF x \u05E2\u05D1\u05D5\u05E8 \u05D4\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4.'); return; }
       } else {
         const v = parseFloat(s4[i]);
         if (isNaN(v) || v !== activeTri.known[nm]) { setS4fb('\u05D1\u05D3\u05D5\u05E7 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05E9\u05D4\u05D6\u05E0\u05EA.'); return; }
@@ -818,7 +818,7 @@ function Chapter2() {
           <div className={`card ${phase > 3 ? 'done' : 'on'}`}>
             <div className="card-t">{'\u05E9\u05DC\u05D1 4 \u2014 \u05D4\u05E6\u05D1\u05EA \u05E2\u05E8\u05DB\u05D9\u05DD'}</div>
             {phase === 3 ? (<>
-              <p>{'\u05D4\u05E6\u05D1 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD (\u05E1\u05DE\u05DF ? \u05DC\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4):'}</p>
+              <p>{'\u05D4\u05E6\u05D1 \u05D0\u05EA \u05D4\u05E2\u05E8\u05DB\u05D9\u05DD \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD (\u05E1\u05DE\u05DF x \u05DC\u05E6\u05DC\u05E2 \u05D4\u05D7\u05E1\u05E8\u05D4):'}</p>
               <div className="eq" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 6 }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 2 }}>{eqOrd[0]}</div>

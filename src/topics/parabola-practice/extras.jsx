@@ -312,3 +312,110 @@ export function MonoSummary({ a, vx }) {
   const gt = <span className="pp-ltr" dir="ltr">{n} &lt; x</span>, lt = <span className="pp-ltr" dir="ltr">x &lt; {n}</span>;
   return <span>עולה: {a > 0 ? gt : lt}, יורדת: {a > 0 ? lt : gt}</span>;
 }
+
+// ── Positive / negative ranges, always with "<" (fixes board #67, #68) ───────
+// Two shapes: between the roots "[ ] < x < [ ]", or outside them "x < [ ] או [ ] < x".
+// The student picks the shape and writes the roots; the smaller number is on the left.
+export const SIGN_EMPTY = { shape: null, l: '', r: '' };
+function signRow(v) {
+  if (!v || !v.shape) return 'empty';
+  const l = monoSide(v.l), r = monoSide(v.r);
+  if (l === null || r === null) return 'empty';
+  if (!isNum(l) || !isNum(r)) return 'form';
+  return { shape: v.shape, l, r };
+}
+// a > 0: positive outside the roots, negative between them. a < 0: the other way round.
+export function signCheck(a, lo, hi, pos, neg) {
+  const P = signRow(pos), N = signRow(neg);
+  const res = (code, okP, okN) => ({ code, pos: okP, neg: okN });
+  if (P === 'empty' || N === 'empty') return res('empty', P !== 'empty', N !== 'empty');
+  if (P === 'form' || N === 'form') return res('form', P !== 'form', N !== 'form');
+  const sP = P.shape === (a > 0 ? 'out' : 'in'), sN = N.shape === (a > 0 ? 'in' : 'out');
+  if (!sP || !sN) return res('shape', sP, sN);
+  const near = (u, t) => Math.abs(u - t) < 0.011;
+  const nP = near(P.l, lo) && near(P.r, hi), nN = near(N.l, lo) && near(N.r, hi);
+  if (!nP || !nN) return res('num', nP, nN);
+  return res('ok', true, true);
+}
+
+export function SignRows({ pos, neg, setPos, setNeg, res, onEdit, onEnter }) {
+  const rows = [['pos', 'חיובית כאשר', pos, setPos], ['neg', 'שלילית כאשר', neg, setNeg]];
+  const X = <span className="pp-var">x</span>;
+  const LT = <span className="pp-gt" aria-label="קטן מ">&lt;</span>;
+  const box = (v, set, side, name) => (
+    <input className="pp-rv" dir="ltr" type="text" inputMode="decimal" value={v[side]} maxLength={6}
+      autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+      aria-label={name + (side === 'l' ? ' — המספר השמאלי' : ' — המספר הימני')}
+      onChange={(e) => { const t = e.target.value; set((p) => ({ ...p, [side]: t })); onEdit && onEdit(); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' && onEnter) onEnter(); }} />
+  );
+  const shapes = [
+    ['in', <>▢ &lt; x &lt; ▢</>],
+    ['out', <>x &lt; ▢ <span className="pp-or">או</span> ▢ &lt; x</>],
+  ];
+  return (
+    <>
+      <div className="pp-mon-hint">
+        בחרו את צורת התחום, ואז כתבו את נקודות החיתוך עם ציר <span className="pp-ltr" dir="ltr">x</span>. הסימן תמיד <span className="pp-ltr" dir="ltr">&lt;</span>: המספר הקטן נכתב משמאל.
+      </div>
+      {rows.map(([k, l, v, set]) => (
+        <div className={'pp-range pp-srow' + (res && res.code !== 'ok' && !res[k] ? ' bad' : '')} key={k}>
+          <span className="pp-range-l">{l}</span>
+          <div className="pp-shapes" role="radiogroup" aria-label={l + ' — צורת התחום'}>
+            {shapes.map(([s, label]) => (
+              <button type="button" key={s} role="radio" aria-checked={v.shape === s}
+                className={'pp-shape' + (v.shape === s ? ' on' : '')} dir="ltr"
+                onClick={() => { set((p) => ({ ...p, shape: s })); onEdit && onEdit(); }}>{label}</button>
+            ))}
+          </div>
+          {v.shape && (
+            <span className="pp-range-m pp-sfill" dir="ltr">
+              {v.shape === 'in'
+                ? <>{box(v, set, 'l', l)}{LT}{X}{LT}{box(v, set, 'r', l)}</>
+                : <>{X}{LT}{box(v, set, 'l', l)}<span className="pp-or">או</span>{box(v, set, 'r', l)}{LT}{X}</>}
+            </span>
+          )}
+        </div>
+      ))}
+    </>
+  );
+}
+
+export function SignError({ res }) {
+  if (!res || res.code === 'ok') return null;
+  return (
+    <div className="msg-error">
+      {res.code === 'empty' && <>בכל שורה יש לבחור צורת תחום ולמלא את שני המספרים</>}
+      {res.code === 'form' && <>במשבצות כותבים רק מספרים: נקודות החיתוך עם ציר <span className="pp-ltr" dir="ltr">x</span></>}
+      {res.code === 'shape' && <>צורת התחום לא נכונה — שימו לב לכיוון הפתיחה של הפרבולה: איפה היא מעל ציר <span className="pp-ltr" dir="ltr">x</span> ואיפה מתחתיו</>}
+      {res.code === 'num' && <>הצורה נכונה, אבל המספרים לא — כותבים את נקודות החיתוך עם ציר <span className="pp-ltr" dir="ltr">x</span>, הקטנה משמאל</>}
+    </div>
+  );
+}
+
+// the same ranges as plain text for the summary, always with "<"
+export function SignSummary({ a, lo, hi }) {
+  const f = (v) => fmt(v);
+  const between = <span className="pp-ltr" dir="ltr">{f(lo)} &lt; x &lt; {f(hi)}</span>;
+  const outside = <><span className="pp-ltr" dir="ltr">x &lt; {f(lo)}</span> או <span className="pp-ltr" dir="ltr">{f(hi)} &lt; x</span></>;
+  return <span>חיובית: {a > 0 ? outside : between}, שלילית: {a > 0 ? between : outside}</span>;
+}
+
+// ── What is a quadratic function? (fixes board #66) ──────────────────────────
+// Shown first in chapter 1, before the sliders.
+export function QuadIntro() {
+  return (
+    <div className="pp-intro">
+      <div className="pp-intro-h">מהי פונקציה ריבועית?</div>
+      <div className="pp-intro-f" dir="ltr">y = ax² + bx + c</div>
+      <p><span className="pp-ltr" dir="ltr">a, b, c</span> הם מספרים קבועים שנקראים <b>מקדמים</b>, ו-<span className="pp-ltr" dir="ltr">a ≠ 0</span>.</p>
+      <p><b>למה ״ריבועית״?</b> כי החזקה הגבוהה ביותר של <span className="pp-ltr" dir="ltr">x</span> היא 2: <span className="pp-ltr" dir="ltr">x²</span> (x בריבוע). אם <span className="pp-ltr" dir="ltr">a = 0</span>, לא נשאר <span className="pp-ltr" dir="ltr">x²</span> והפונקציה כבר לא ריבועית.</p>
+      <div className="pp-intro-ex">
+        <span className="pp-ltr" dir="ltr">y = 2x² − 3x + 1</span><small>a = 2, b = −3, c = 1</small>
+        <span className="pp-ltr" dir="ltr">y = −x² + 4</span><small>a = −1, b = 0, c = 4</small>
+      </div>
+      <p><b>הגרף</b> של פונקציה ריבועית הוא עקומה שנקראת <b>פרבולה</b>. הנקודה הגבוהה ביותר או הנמוכה ביותר שלה נקראת <b>קודקוד</b>.</p>
+      <p className="pp-intro-go">עכשיו שחקו עם המקדמים: הזיזו את <span className="pp-ltr" dir="ltr">a, b, c</span> וראו איך הפרבולה משתנה.</p>
+    </div>
+  );
+}

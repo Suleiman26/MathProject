@@ -8,7 +8,7 @@ import ReactDOM from 'react-dom';
 // Fraction drawn as numerator over denominator (Sulaiman, fixes board #54).
 const Fr = ({ n, d }) => <span className="pp-fr" dir="ltr"><span>{n}</span><span>{d}</span></span>;
 // Sharp graph drawing (#62) and the [ ] > [ ] range rows (#39) live in ./extras.jsx.
-import { drawGraph, graphDpr, monoCheck, MonoRows, MonoError, MonoSummary } from './extras';
+import { drawGraph, graphDpr, monoCheck, MonoRows, MonoError, MonoSummary, signCheck, SignRows, SignError, SignSummary, SIGN_EMPTY, QuadIntro } from './extras';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useEffect, useRef, useCallback } = React;
@@ -205,6 +205,7 @@ function Section1() {
     <div className="section">
       <div className="card">
         <div className="section-title">1 — השפעת המקדמים על הגרף</div>
+        <QuadIntro />
         <div className="formula" dir="ltr">y = {r1(a)}x² {sgn(b)}x {sgn(c)}</div>
         <div style={{marginBottom: 8, color: '#555', fontSize: 14}}>קודקוד: <bdi dir="ltr">({r1(vx)}, {r1(vy)})</bdi></div>
         <Graph a={a} b={b} c={c} highlightVertex />
@@ -828,7 +829,7 @@ function Section9() {
   const [negRegions, setNegRegions] = useState([]);
   const [checked, setChecked] = useState(false);
   const [regionResult, setRegionResult] = useState(null);
-  const [answers, setAnswers] = useState({ posOp1: '>', posOp2: '<', negOp1: '<', negOp2: '>' });
+  const [answers, setAnswers] = useState({ pos: SIGN_EMPTY, neg: SIGN_EMPTY });
   const [ansResult, setAnsResult] = useState(null);
 
   const lo = Math.min(r1, r2), hi = Math.max(r1, r2);
@@ -837,7 +838,7 @@ function Section9() {
     let f; do { f = makeFunction(); } while (f.r1 === f.r2);
     setFn(f); setMode(null); setDragging(false); setDragStart(null); setCurrentDrag(null);
     setPosRegions([]); setNegRegions([]); setChecked(false); setRegionResult(null);
-    setAnswers({ posOp1: '>', posOp2: '<', negOp1: '<', negOp2: '>' }); setAnsResult(null);
+    setAnswers({ pos: SIGN_EMPTY, neg: SIGN_EMPTY }); setAnsResult(null);
   };
 
   const handleDown = ({ wx }) => {
@@ -859,37 +860,33 @@ function Section9() {
     setDragging(false); setCurrentDrag(null);
   };
 
-  // check: every point sampled across the graph is covered correctly
+  // check (fixes board #67): the areas next to the roots (up to 1 unit on each side) must be
+  // marked in the right colour; farther away marking is optional, but never in the wrong colour
   const checkRegions = () => {
     if (posRegions.length === 0 || negRegions.length === 0) { setRegionResult('missing'); return; }
-    const samples = 40;
+    const samples = 320;
     let allOk = true;
     for (let i = 0; i <= samples; i++) {
       const wx = -8 + (16 * i / samples);
       const wy = evalY(a, b, c, wx);
+      const d = Math.min(Math.abs(wx - lo), Math.abs(wx - hi));
+      if (d < 0.2) continue; // right at a root: either colour is fine
       const isPos = wy > 0.1;
       const isNeg = wy < -0.1;
       if (!isPos && !isNeg) continue; // near zero, skip
       const markedPos = posRegions.some(([x1, x2]) => wx >= x1 && wx <= x2);
       const markedNeg = negRegions.some(([x1, x2]) => wx >= x1 && wx <= x2);
-      if (isPos && !markedPos) { allOk = false; break; }
-      if (isNeg && !markedNeg) { allOk = false; break; }
       if (isPos && markedNeg) { allOk = false; break; }
       if (isNeg && markedPos) { allOk = false; break; }
+      if (d > 1) continue; // far from the roots: no need to mark
+      if (isPos && !markedPos) { allOk = false; break; }
+      if (isNeg && !markedNeg) { allOk = false; break; }
     }
     setChecked(allOk);
     setRegionResult(allOk ? 'ok' : 'err');
   };
 
-  const checkAnswers = () => {
-    let ok;
-    if (a > 0) {
-      ok = (answers.posOp1 === '<' && answers.posOp2 === '>') && (answers.negOp1 === '>' && answers.negOp2 === '<');
-    } else {
-      ok = (answers.posOp1 === '>' && answers.posOp2 === '<') && (answers.negOp1 === '<' && answers.negOp2 === '>');
-    }
-    setAnsResult(ok ? 'ok' : 'err');
-  };
+  const checkAnswers = () => setAnsResult(signCheck(a, lo, hi, answers.pos, answers.neg));
 
   // merge current drag preview into display
   const displayPos = mode === 'pos' && currentDrag ? [...posRegions, currentDrag] : posRegions;
@@ -903,7 +900,7 @@ function Section9() {
         <div style={{fontSize: 14, color: '#555', marginBottom: 8}}>שורשים: x₁={lo}, x₂={hi}</div>
         <div className="task-box">
           סמן את כל התחומים בהם הפונקציה חיובית (מעל ציר x) ושלילית (מתחת לציר x) — ניתן לסמן כמה תחומים<br/>
-          <span style={{color:'#b71c1c', fontWeight:'bold'}}>⚠ יש לכסות את כל הגרף בצבעים (ירוק ואדום) לפני לחיצה על "בדוק סימון"</span>
+          <span style={{color:'#b71c1c', fontWeight:'bold'}}>⚠ אין צורך לצבוע את כל הגרף: מספיק לסמן בירוק ובאדום את האזורים שליד נקודות החיתוך עם ציר x, משני הצדדים של כל נקודה</span>
         </div>
         <div style={{display:'flex', gap: 8, marginBottom: 10, flexWrap:'wrap'}}>
           <button className={`btn ${mode === 'pos' ? 'green' : ''}`} onClick={() => setMode('pos')}>+ סמן תחום חיובי (ירוק)</button>
@@ -929,38 +926,19 @@ function Section9() {
           <button className="btn orange" onClick={newFn}>פרבולה חדשה</button>
         </div>
         {regionResult === 'ok' && <div className="msg-success">מצוין! הסימון נכון</div>}
-        {regionResult === 'err' && <div className="msg-error">לא מדויק — ודא שסימנת את כל התחומים הנכונים</div>}
+        {regionResult === 'err' && <div className="msg-error">לא מדויק — ודא שסימנת בצבע הנכון את שני הצדדים של כל נקודת חיתוך</div>}
         {regionResult === 'missing' && <div className="msg-error">יש לסמן גם תחום חיובי וגם תחום שלילי</div>}
 
         {checked && (
           <div style={{marginTop: 16}}>
             <strong>חלק ב׳ — נסח:</strong>
             <div style={{fontSize: 14, color: '#555', margin: '8px 0'}}>x₁={lo}, x₂={hi}</div>
-            <div className="input-row" style={{marginTop: 8}}>
-              <label>חיובי: x</label>
-              <select value={answers.posOp1} onChange={e => setAnswers(p => ({...p, posOp1: e.target.value}))}>
-                <option>&lt;</option><option>&gt;</option>
-              </select>
-              <label>x₁ ו-x</label>
-              <select value={answers.posOp2} onChange={e => setAnswers(p => ({...p, posOp2: e.target.value}))}>
-                <option>&gt;</option><option>&lt;</option>
-              </select>
-              <label>x₂</label>
-            </div>
-            <div className="input-row">
-              <label>שלילי: x</label>
-              <select value={answers.negOp1} onChange={e => setAnswers(p => ({...p, negOp1: e.target.value}))}>
-                <option>&gt;</option><option>&lt;</option>
-              </select>
-              <label>x₁ ו-x</label>
-              <select value={answers.negOp2} onChange={e => setAnswers(p => ({...p, negOp2: e.target.value}))}>
-                <option>&lt;</option><option>&gt;</option>
-              </select>
-              <label>x₂</label>
-            </div>
+            <SignRows pos={answers.pos} neg={answers.neg} res={ansResult}
+              setPos={f => setAnswers(p => ({...p, pos: f(p.pos)}))} setNeg={f => setAnswers(p => ({...p, neg: f(p.neg)}))}
+              onEdit={() => setAnsResult(null)} onEnter={checkAnswers} />
             <button className="btn" onClick={checkAnswers}>בדוק</button>
-            {ansResult === 'ok' && <div className="msg-success">מצוין! ניסוח נכון</div>}
-            {ansResult === 'err' && <div className="msg-error">לא נכון — נסה שוב</div>}
+            {ansResult && ansResult.code === 'ok' && <div className="msg-success">מצוין! ניסוח נכון</div>}
+            <SignError res={ansResult} />
           </div>
         )}
       </div>
@@ -996,8 +974,8 @@ function Section10() {
   // step 4: sign/monotone
   const [riseAns, setRiseAns] = useState({l:'',r:''});
   const [fallAns, setFallAns] = useState({l:'',r:''});
-  const [posAns, setPosAns] = useState({op1:'<',op2:'>'});
-  const [negAns, setNegAns] = useState({op1:'>',op2:'<'});
+  const [posAns, setPosAns] = useState(SIGN_EMPTY);
+  const [negAns, setNegAns] = useState(SIGN_EMPTY);
   const [monResult, setMonResult] = useState(null);
   const [signResult, setSignResult] = useState(null);
 
@@ -1008,7 +986,7 @@ function Section10() {
     setInYaxis(''); setYAxisResult(null); setRoots([]); setRootsDone(false);
     setVtxInputs({inB:'',inA:'',inY:''}); setVtxStep(1); setVtxVx(null); setVtxResult1(null); setVtxResult2(null);
     resetDraw(); setRiseAns({l:'',r:''}); setFallAns({l:'',r:''});
-    setPosAns({op1:'<',op2:'>'}); setNegAns({op1:'>',op2:'<'}); setMonResult(null); setSignResult(null);
+    setPosAns(SIGN_EMPTY); setNegAns(SIGN_EMPTY); setMonResult(null); setSignResult(null);
   };
 
   const stepLabels = ['א. חיתוך ציר y','ב. חיתוך ציר x','ג. קודקוד','ד. שרטוט','ה. חיוביות/שליליות','ו. עלייה/ירידה'];
@@ -1020,8 +998,7 @@ function Section10() {
       vertex: [vx, vy],
       monotone: <MonoSummary a={a} vx={vx} />,
       sign: disc < 0 ? (a > 0 ? 'חיובית תמיד' : 'שלילית תמיד') :
-        a > 0 ? `חיובית: x<${Math.min(r1||0,r2||0)} או x>${Math.max(r1||0,r2||0)}, שלילית: בין השורשים` :
-                `שלילית: x<${Math.min(r1||0,r2||0)} או x>${Math.max(r1||0,r2||0)}, חיובית: בין השורשים`,
+        <SignSummary a={a} lo={Math.min(r1||0,r2||0)} hi={Math.max(r1||0,r2||0)} />,
     });
   };
 
@@ -1168,31 +1145,14 @@ function Section10() {
             {roots.length >= 2 ? (
               <>
                 <div style={{fontSize:14,color:'#555',margin:'8px 0'}}>שורשים: x₁={Math.min(...roots)%1===0?Math.min(...roots):Math.min(...roots).toFixed(2)}, x₂={Math.max(...roots)%1===0?Math.max(...roots):Math.max(...roots).toFixed(2)}</div>
-                <div className="input-row">
-                  <label>חיובי: x</label>
-                  <select value={posAns.op1} onChange={e=>setPosAns(p=>({...p,op1:e.target.value}))}><option>&lt;</option><option>&gt;</option></select>
-                  <label>x₁ ו-x</label>
-                  <select value={posAns.op2} onChange={e=>setPosAns(p=>({...p,op2:e.target.value}))}><option>&gt;</option><option>&lt;</option></select>
-                  <label>x₂</label>
-                </div>
-                <div className="input-row">
-                  <label>שלילי: x</label>
-                  <select value={negAns.op1} onChange={e=>setNegAns(p=>({...p,op1:e.target.value}))}><option>&gt;</option><option>&lt;</option></select>
-                  <label>x₁ ו-x</label>
-                  <select value={negAns.op2} onChange={e=>setNegAns(p=>({...p,op2:e.target.value}))}><option>&lt;</option><option>&gt;</option></select>
-                  <label>x₂</label>
-                </div>
-                <button className="btn" onClick={() => {
-                  let ok = a>0
-                    ? posAns.op1==='<'&&posAns.op2==='>'&&negAns.op1==='>'&&negAns.op2==='<'
-                    : posAns.op1==='>'&&posAns.op2==='<'&&negAns.op1==='<'&&negAns.op2==='>';
-                  setSignResult(ok?'ok':'err');
-                }}>בדוק</button>
-                {signResult==='ok' && <>
+                <SignRows pos={posAns} neg={negAns} setPos={setPosAns} setNeg={setNegAns} res={signResult}
+                  onEdit={() => setSignResult(null)} onEnter={() => setSignResult(signCheck(a, Math.min(...roots), Math.max(...roots), posAns, negAns))} />
+                <button className="btn" onClick={() => setSignResult(signCheck(a, Math.min(...roots), Math.max(...roots), posAns, negAns))}>בדוק</button>
+                {signResult && signResult.code==='ok' && <>
                   <div className="msg-success">מצוין!</div>
                   <button className="btn green" onClick={() => { markDone(4); setStep(5); }}>שלב הבא</button>
                 </>}
-                {signResult==='err' && <div className="msg-error">לא נכון — שים לב לכיוון הפרבולה</div>}
+                <SignError res={signResult} />
               </>
             ) : (
               <>

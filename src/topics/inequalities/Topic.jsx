@@ -633,7 +633,9 @@ function Ch2A(){
 function genCh2B(){
   const sign=pick(SIGNS);
   const value=randInt(-10,10);
-  return {sign,value,closed:closedOfSign(sign),dir:dirOfSign(sign)};
+  // the given inequality comes both ways (x > 3 / 3 < x); only final answers are always < / ≤
+  const xFirst=Math.random()<0.5;
+  return {sign,value,xFirst,closed:closedOfSign(sign),dir:dirOfSign(sign)};
 }
 function Ch2B(){
   const [data,setData]=useState(genCh2B);
@@ -641,7 +643,7 @@ function Ch2B(){
   function reset(){ setData(genCh2B()); setDone(false); }
   return <div className="step-card">
     <div className="hint">סמנו על הציר את התחום המתאים לאי-השוויון</div>
-    <div className="formula-box" style={{direction:'ltr'}}>{ieqFinal(data.sign,data.value)}</div>
+    <div className="formula-box" style={{direction:'ltr'}}>{data.xFirst?`x ${data.sign} ${iqNum(data.value)}`:`${iqNum(data.value)} ${flipSign(data.sign)} x`}</div>
     {!done && <RayMarker expected={{value:data.value,closed:data.closed,dir:data.dir}} color="#7c3aed" onCorrect={()=>setDone(true)}/>}
     {done && <div className="banner">✅ כל הכבוד!
       <button className="btn bg" onClick={reset}>תרגיל חדש ↺</button>
