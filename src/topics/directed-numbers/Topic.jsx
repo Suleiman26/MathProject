@@ -1010,8 +1010,169 @@ function FrInput({ n, setN, d, setD, onCheck, disabled, clear }) {
         onChange={e => { setD(e.target.value); clear(); }} />} />
   );
 }
+/* ── part "מה זה שבר?" (fixes board #79): what a fraction is, numerator and denominator,
+   common denominator, negative fractions, and a small check question ── */
+/* a circle cut into d equal slices, n of them coloured */
+function FrPie({ n, d }) {
+  const c = 60, r = 52, parts = [];
+  for (let i = 0; i < d; i++) {
+    const a0 = -Math.PI / 2 + i * 2 * Math.PI / d, a1 = -Math.PI / 2 + (i + 1) * 2 * Math.PI / d;
+    const p = 'M' + c + ' ' + c + ' L' + (c + r * Math.cos(a0)).toFixed(2) + ' ' + (c + r * Math.sin(a0)).toFixed(2) +
+      ' A' + r + ' ' + r + ' 0 0 1 ' + (c + r * Math.cos(a1)).toFixed(2) + ' ' + (c + r * Math.sin(a1)).toFixed(2) + ' Z';
+    parts.push(<path key={i} d={p} fill={i < n ? '#2dd4bf' : '#ffffff'} stroke="#0f766e" strokeWidth="2" strokeLinejoin="round" />);
+  }
+  return <svg className="fr-pie" viewBox="0 0 120 120" role="img" aria-label={'עיגול שמחולק ל־' + d + ' חלקים שווים, חלק מהם צבועים'}>{parts}</svg>;
+}
+/* a bar cut into d equal cells, n of them coloured */
+function FrBar({ n, d, color }) {
+  const W = 240, H = 30, cells = [];
+  for (let i = 0; i < d; i++) cells.push(<rect key={i} x={1 + i * (W - 2) / d} y="1" width={(W - 2) / d} height={H - 2} fill={i < n ? color : '#ffffff'} stroke="#334155" strokeWidth="1.5" />);
+  return <svg className="fr-bar" viewBox={'0 0 ' + W + ' ' + H} role="img" aria-label={n + ' חלקים צבועים מתוך ' + d}>{cells}</svg>;
+}
+/* kind 'pie': write the coloured part as a fraction. kind 'exp': a/b = ?/(b·k), write the missing numerator */
+function genFrQ(kind) {
+  if (kind === 'pie') { const d = randInt(2, 8); return { kind, n: randInt(1, d - 1), d }; }
+  const b = randInt(2, 6);
+  return { kind, a: fNum(b), b, k: randInt(2, 4) };
+}
+/* 'ok' | 'nan' | 'zero' | 'swap' (numerator and denominator switched) | 'rest' (counted the white parts)
+   | 'same' (kept the old numerator) | 'err' */
+function checkFrQ(q, sn, sd) {
+  const n = fParse(sn);
+  if (q.kind === 'exp') {
+    if (isNaN(n)) return 'nan';
+    return n === q.a * q.k ? 'ok' : n === q.a ? 'same' : 'err';
+  }
+  const d = fParse(sd);
+  if (isNaN(n) || isNaN(d)) return 'nan';
+  if (d === 0) return 'zero';
+  if (n > 0 && d > 0 && n * q.d === q.n * d) return 'ok';
+  if (n === q.d && d === q.n) return 'swap';
+  if (d === q.d && n === q.d - q.n) return 'rest';
+  return 'err';
+}
+function frQMsg(kind, q) {
+  if (kind === 'nan') return q.kind === 'exp' ? 'כתבו מספר שלם במונה.' : 'כתבו מספר שלם במונה ומספר שלם במכנה.';
+  if (kind === 'zero') return 'המכנה לא יכול להיות 0.';
+  if (kind === 'swap') return 'התחלפו לכם המונה והמכנה. המונה (למעלה) הוא מספר החלקים הצבועים, והמכנה (למטה) הוא מספר כל החלקים.';
+  if (kind === 'rest') return 'ספרתם את החלקים הלבנים. המונה הוא מספר החלקים הצבועים.';
+  if (kind === 'same') return 'המכנה הוכפל ב־' + q.k + ', ולכן צריך לכפול גם את המונה ב־' + q.k + '.';
+  if (q.kind === 'exp') return 'לא נכון. בדקו בכמה הוכפל המכנה, וכפלו את המונה באותו מספר.';
+  return 'לא נכון. ספרו כמה חלקים צבועים (המונה), ולכמה חלקים שווים מחולק העיגול (המכנה).';
+}
+function FrIntro({ onNext }) {
+  const [q, setQ] = useState(() => genFrQ('pie'));
+  const [n, setN] = useState('');
+  const [d, setD] = useState('');
+  const [fb, setFb] = useState(null);
+  const done = fb === 'ok';
+  const ready = q.kind === 'exp' ? n.trim() : n.trim() && d.trim();
+  const check = () => setFb(checkFrQ(q, n, d));
+  const next = () => { setQ(genFrQ(q.kind === 'pie' ? 'exp' : 'pie')); setN(''); setD(''); setFb(null); };
+  const key = e => { if (e.key === 'Enter' && ready && !done) check(); };
+  return (
+    <div className="fr-intro">
+      <div className="card">
+        <div className="card-t">מה זה שבר?</div>
+        <p>שבר מתאר <b>חלק משלם</b>. מחלקים את השלם לחלקים שווים, ולוקחים כמה מהם.</p>
+        <div className="fr-show">
+          <FrPie n={3} d={4} />
+          <div className="fr-anat">
+            <div className="fr-anat-row fr-c-num"><span className="fr-anat-n">3</span><span className="fr-anat-l"><b>מונה</b>כמה חלקים לקחנו</span></div>
+            <div className="fr-anat-bar"></div>
+            <div className="fr-anat-row fr-c-den"><span className="fr-anat-n">4</span><span className="fr-anat-l"><b>מכנה</b>לכמה חלקים שווים חילקנו את השלם</span></div>
+          </div>
+        </div>
+        <p>חילקנו את העיגול ל־4 חלקים שווים וצבענו 3 מהם. החלק הצבוע הוא <span className="fr-row"><Frac n={3} d={4} /></span> מהעיגול.</p>
+        <p>קו השבר הוא גם סימן חילוק:</p>
+        <div className="fr-eq"><span className="fr-row"><Frac n={3} d={4} /><span>=</span><span>3 ÷ 4</span></span></div>
+      </div>
+
+      <div className="card">
+        <div className="card-t">מכנה משותף</div>
+        <p>לשני שברים יש <b>מכנה משותף</b> כשהמכנה שלהם זהה: שניהם מחולקים לאותו מספר חלקים שווים.</p>
+        <p>למשל, לשברים <span className="fr-row"><Frac n={2} d={7} /></span> ו־<span className="fr-row"><Frac n={5} d={7} /></span> יש מכנה משותף 7.</p>
+        <p>ומה עושים כשהמכנים שונים? <b>מרחיבים</b>: כופלים את המונה ואת המכנה באותו מספר. השבר נראה אחרת, אבל הערך שלו לא משתנה.</p>
+        <div className="fr-sub">דוגמה:</div>
+        <p>נביא את <span className="fr-row"><Frac n={1} d={2} /></span> ואת <span className="fr-row"><Frac n={1} d={3} /></span> למכנה משותף. מחפשים מספר שמתחלק גם ב־2 וגם ב־3. המספר הוא 6.</p>
+        <div className="fr-cd">
+          <div className="fr-cd-cap">כופלים מונה ומכנה ב־3:</div>
+          <div className="fr-eq"><span className="fr-row"><Frac n={1} d={2} /><span>=</span><Frac n="1 · 3" d="2 · 3" /><span>=</span><Frac n={3} d={6} /></span></div>
+          <div className="fr-cd-bars">
+            <Frac n={1} d={2} /><FrBar n={1} d={2} color="#5eead4" />
+            <Frac n={3} d={6} /><FrBar n={3} d={6} color="#5eead4" />
+          </div>
+        </div>
+        <div className="fr-cd">
+          <div className="fr-cd-cap">כופלים מונה ומכנה ב־2:</div>
+          <div className="fr-eq"><span className="fr-row"><Frac n={1} d={3} /><span>=</span><Frac n="1 · 2" d="3 · 2" /><span>=</span><Frac n={2} d={6} /></span></div>
+          <div className="fr-cd-bars">
+            <Frac n={1} d={3} /><FrBar n={1} d={3} color="#fcd34d" />
+            <Frac n={2} d={6} /><FrBar n={2} d={6} color="#fcd34d" />
+          </div>
+        </div>
+        <p>החלק הצבוע לא השתנה, רק מספר החלקים. עכשיו לשני השברים יש אותו מכנה, 6, ואפשר לחבר ולחסר אותם.</p>
+      </div>
+
+      <div className="card">
+        <div className="card-t">שבר שלילי</div>
+        <p>גם שבר יכול להיות שלילי. המינוס שייך <b>לכל השבר</b>, ולכן אפשר לכתוב אותו לפני השבר או במונה. זה אותו מספר:</p>
+        <div className="fr-eq"><span className="fr-row"><FrNum v={[-3,4]} mode="r" /><span>=</span><Frac n="−3" d={4} /></span></div>
+        <svg className="fr-line" viewBox="0 0 300 74" role="img" aria-label="ציר מספרים: מינוס שלושה רבעים משמאל לאפס, שלושה רבעים מימין לאפס">
+          <line x1="12" y1="46" x2="288" y2="46" stroke="#334155" strokeWidth="2" />
+          {[-1, 0, 1].map(v => <g key={v}>
+            <line x1={150 + v * 120} y1="40" x2={150 + v * 120} y2="52" stroke="#334155" strokeWidth="2" />
+            <text x={150 + v * 120} y="68" textAnchor="middle" fontSize="14" fill="#334155">{v < 0 ? '−1' : v}</text>
+          </g>)}
+          {[-1, 1].map(s => <g key={s} fill={s < 0 ? '#dc2626' : '#0f766e'} fontSize="14" fontWeight="700" textAnchor="middle">
+            <circle cx={150 + s * 90} cy="46" r="5.5" />
+            <text x={150 + s * 90} y="13">3</text>
+            <rect x={150 + s * 90 - 8} y="16.5" width="16" height="2" />
+            <text x={150 + s * 90} y="33">4</text>
+            {s < 0 && <text x={150 + s * 90 - 15} y="22">−</text>}
+          </g>)}
+        </svg>
+        <p>על ציר המספרים שני השברים נמצאים באותו מרחק מ־0: החיובי מימין, והשלילי משמאל.</p>
+      </div>
+
+      <div className="card">
+        <div className="card-t">בדקו את עצמכם</div>
+        {q.kind === 'pie' ? (<>
+          <p className="fr-q">איזה חלק מהעיגול צבוע? כתבו שבר.</p>
+          <div className="fr-show"><FrPie n={q.n} d={q.d} /></div>
+          <div className="ans-row fr-ans">
+            <Frac
+              n={<input aria-label="מונה" value={n} disabled={done} onKeyDown={key} onChange={e => { setN(e.target.value); setFb(null); }} />}
+              d={<input aria-label="מכנה" value={d} disabled={done} onKeyDown={key} onChange={e => { setD(e.target.value); setFb(null); }} />} />
+            <button className="btn bg" onClick={check} disabled={done || !ready}>{'✓'} בדוק</button>
+          </div>
+        </>) : (<>
+          <p className="fr-q">הרחיבו את השבר למכנה {q.b * q.k}. כתבו את המונה החסר.</p>
+          <div className="ans-row fr-ans">
+            <span className="fr-row"><Frac n={q.a} d={q.b} /><span>=</span></span>
+            <Frac
+              n={<input aria-label="מונה" value={n} disabled={done} onKeyDown={key} onChange={e => { setN(e.target.value); setFb(null); }} />}
+              d={q.b * q.k} />
+            <button className="btn bg" onClick={check} disabled={done || !ready}>{'✓'} בדוק</button>
+          </div>
+        </>)}
+        {done && <div className="fb ok">{'✓'} {q.kind === 'pie'
+          ? 'נכון! ' + (q.n === 1 ? 'חלק אחד צבוע' : q.n + ' חלקים צבועים') + ' מתוך ' + q.d + ' חלקים שווים.'
+          : 'נכון! כפלנו את המונה ואת המכנה ב־' + q.k + '.'}</div>}
+        {fb && !done && <div className="fb err">{'✗'} {frQMsg(fb, q)}</div>}
+        <div className="center" style={{marginTop:12}}>
+          <button className="btn bp" onClick={next}>שאלה חדשה {'↺'}</button>
+        </div>
+      </div>
+
+      <div className="center">
+        <button className="btn bg fr-next" onClick={onNext}>ממשיכים לחיבור וחיסור</button>
+      </div>
+    </div>
+  );
+}
 function Ch7() {
-  const [part, setPart] = useState(0);
+  const [part, setPart] = useState(-1); // -1 = the opening part "מה זה שבר?"
   const [ex, setEx] = useState(() => genFrEx(0));
   const [phase, setPhase] = useState(1); // 0 = division: turn it into a multiplication, 1 = solve, 2 = done
   const [f1, setF1] = useState('');
@@ -1025,7 +1186,7 @@ function Ch7() {
     setEx(genFrEx(p)); setPhase(p === 3 ? 0 : 1);
     setF1(''); setF2(''); setFfb(null); setN(''); setD(''); setFb(null);
   };
-  const switchPart = (p) => { setPart(p); load(p); };
+  const switchPart = (p) => { setPart(p); if (p >= 0) load(p); };
   const reset = () => load(part);
   const checkFlip = () => {
     const r = checkFrFlip(ex, f1, f2);
@@ -1043,14 +1204,17 @@ function Ch7() {
   return (
     <div className="content">
       <div className="sub-tabs">
+        <button className={`sub-tab-btn ${part<0?'active':''}`} onClick={() => switchPart(-1)}>מה זה שבר?</button>
         {FR_PARTS.map((l, i) => (
           <button key={i} className={`sub-tab-btn ${part===i?'active':''}`} onClick={() => switchPart(i)}>{l}</button>
         ))}
       </div>
 
-      <FrLesson part={part} />
+      {part < 0 && <FrIntro onNext={() => switchPart(0)} />}
 
-      {ex.part > 0 && (
+      {part >= 0 && <FrLesson part={part} />}
+
+      {part >= 0 && ex.part > 0 && (
         <div className="card">
           <p style={{textAlign:'center',fontSize:14,color:'#0d9488',fontWeight:600,marginBottom:6}}>חוקי הסימנים:</p>
           <div className="rules-grid">
@@ -1062,7 +1226,7 @@ function Ch7() {
         </div>
       )}
 
-      {isDiv && (
+      {part >= 0 && isDiv && (
         <div className="card">
           <div className="card-t">שלב א׳ — הופכים את החילוק לכפל</div>
           <div className="eq-box"><span className="fr-row"><FrExpr ex={ex} /><span>= ?</span></span></div>
@@ -1080,7 +1244,7 @@ function Ch7() {
         </div>
       )}
 
-      {phase >= 1 && (
+      {part >= 0 && phase >= 1 && (
         <div className="card">
           <div className="card-t">{isDiv ? 'שלב ב׳ — פותרים את הכפל' : FR_TITLES[ex.part]}</div>
           <div className="eq-box">
@@ -1101,7 +1265,7 @@ function Ch7() {
         </div>
       )}
 
-      {done && (
+      {part >= 0 && done && (
         <div className="banner">
           {'✅'} כל הכבוד!
           <div className="fr-sol"><span className="fr-row"><FrExpr ex={ex} /><FrSol ex={ex} /></span></div>
@@ -1110,7 +1274,7 @@ function Ch7() {
           </div>
         </div>
       )}
-      {!done && <div className="center" style={{marginTop:8}}>
+      {part >= 0 && !done && <div className="center" style={{marginTop:8}}>
         <button className="btn bp" onClick={reset}>תרגיל חדש {'↺'}</button>
       </div>}
     </div>
