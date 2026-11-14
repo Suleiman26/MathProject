@@ -137,9 +137,17 @@ function rqSideStr(terms){
 }
 function rqEqStr(eq){return`${rqSideStr(eq.left)} = ${rqSideStr(eq.right)}`;}
 function rqDoOperate(eq,opType,k,addType){
+  /* Fixes board #75: the inverse operation cancels its term right away on the side where it
+     meets its opposite (y − 2x + 2x → y); only the other side is left for the student to simplify. */
+  function addTerm(terms,num){
+    const i=terms.findIndex(t=>t.type===addType&&t.den===1&&t.num===-num);
+    if(i<0)return[...terms,rqMkTerm(addType,num)];
+    const rest=terms.filter((_,j)=>j!==i);
+    return rest.length?rest:[rqMkTerm('const',0)];
+  }
   function applySide(terms){
-    if(opType==='+')return[...terms,rqMkTerm(addType,k)];
-    if(opType==='−')return[...terms,rqMkTerm(addType,-k)];
+    if(opType==='+')return addTerm(terms,k);
+    if(opType==='−')return addTerm(terms,-k);
     if(opType==='×')return terms.map(t=>rqMkTerm(t.type,t.num*k,t.den));
     if(opType==='÷')return terms.map(t=>{const[n,d]=rqSimpFrac(t.num,t.den*Math.abs(k));return rqMkTerm(t.type,k<0?-n:n,d);});
     return terms;

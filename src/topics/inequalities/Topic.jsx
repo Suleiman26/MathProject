@@ -196,6 +196,18 @@ function iqTermLabel(t,first){
   const body=t.type==='x'?(abs===1?'x':abs+'x'):String(abs);
   return first?((t.coef<0?'−':'')+body):((t.coef<0?'− ':'+ ')+body);
 }
+// Add k to both sides. Where k meets its opposite number the pair cancels right away (board #75).
+function iqAddBoth(state,k){
+  let auto=null;
+  function side(terms,name){
+    const i=terms.findIndex(t=>t.type==='const'&&t.coef===-k);
+    if(i<0) return iqClean([...terms,ieqMkTerm('const',k)]);
+    auto=auto?'both':name;
+    return iqClean(terms.filter((_,j)=>j!==i));
+  }
+  const left=side(state.left,'left'), right=side(state.right,'right');
+  return {left,right,auto};
+}
 function IeqSolver({a,b,c,sign,onSolved}){
   const [state,setState]=useState(()=>({left:iqClean([ieqMkTerm('x',a),ieqMkTerm('const',b)]),right:[ieqMkTerm('const',c)],sign}));
   const [sel,setSel]=useState(()=>new Set());
@@ -206,6 +218,7 @@ function IeqSolver({a,b,c,sign,onSolved}){
   const [opNum,setOpNum]=useState('');
   const [err,setErr]=useState(null);
   const [note,setNote]=useState(null);
+  const [auto,setAuto]=useState(null);
   const [solvedInfo,setSolvedInfo]=useState(null);
   const [confirmed,setConfirmed]=useState(false);
 
@@ -220,12 +233,18 @@ function IeqSolver({a,b,c,sign,onSolved}){
     if((opSym==='*'||opSym==='/')&&n===0){ setErr(opSym==='/'?'אי אפשר לחלק ב-0':'כפל ב-0 מוחק את כל האי-שוויון'); return; }
     if((opSym==='+'||opSym==='-')&&n===0){ setErr('הוספה או חיסור של 0 לא משנים כלום'); return; }
     if(opSym==='/'&&[...state.left,...state.right].some(t=>t.coef%n!==0)){ setErr('לא כל האיברים מתחלקים ב-'+n+'. נסו פעולה אחרת קודם.'); return; }
-    setErr(null); setNote(null); setSel(new Set()); setSelErr('');
+    setErr(null); setNote(null); setAuto(null); setSel(new Set()); setSelErr('');
     if(opSym==='+'||opSym==='-'){
-      // the number is written on both sides; the student joins like terms himself
+      // the number is written on both sides. Fixes board #75: on a side where it cancels a number
+      // (x + 5 − 5) the computer simplifies by itself; the student joins like terms only on the other side
       const k=opSym==='+'?n:-n;
-      if(hist.length>0) setHist(h=>[...h,cur]);
-      setState({...state,left:iqClean([...state.left,ieqMkTerm('const',k)]),right:iqClean([...state.right,ieqMkTerm('const',k)])});
+      const res=iqAddBoth(state,k);
+      if(res.auto){
+        const written=`${iqTerms([...state.left,ieqMkTerm('const',k)])}  ${state.sign}  ${iqTerms([...state.right,ieqMkTerm('const',k)])}`;
+        setHist(h=>hist.length>0?[...h,cur,written]:[...h,written]);
+      } else if(hist.length>0) setHist(h=>[...h,cur]);
+      setAuto(res.auto?{side:res.auto,num:Math.abs(k),more:iqHasLike(res.left)||iqHasLike(res.right)}:null);
+      setState({...state,left:res.left,right:res.right});
       setOpNum('');
       return;
     }
@@ -249,7 +268,7 @@ function IeqSolver({a,b,c,sign,onSolved}){
       else if(!placed){ placed=true; if(sum!==0) out.push(ieqMkTerm(type,sum)); }
     });
     setHist(h=>[...h,cur]);
-    setState({...state,[side]:iqClean(out)}); setSel(new Set()); setSelErr(''); setNote(null);
+    setState({...state,[side]:iqClean(out)}); setSel(new Set()); setSelErr(''); setNote(null); setAuto(null);
   }
   function simplify(){
     const {o,n}=pending;
@@ -278,7 +297,8 @@ function IeqSolver({a,b,c,sign,onSolved}){
           : <div className="iq-line cur">{cur}</div>}
     </div>
     {note && <div className="iq-note">{note.verb} במספר שלילי, ולכן סימן אי-השוויון התהפך: במקום <span className="iq-m">{note.from}</span> כותבים <span className="iq-m">{note.to}</span></div>}
-    {canTap && hasLike && sel.size===0 && <div className="iq-like">לחצו על איברים מאותה משפחה באותו צד, ואז על ״פשט״</div>}
+    {auto && !pending && !confirmed && sel.size===0 && <div className="iq-like iq-auto">{auto.side==='both'?<>ה-<span className="iq-m">{auto.num}</span> התבטל בשני האגפים, והמחשב פישט לבד.</>:<>ב{auto.side==='left'?'אגף שמאל':'אגף ימין'} ה-<span className="iq-m">{auto.num}</span> התבטל, והמחשב פישט לבד.{auto.more?' נשאר לכם לפשט את האגף השני: לחצו על שני המספרים ואז על ״פשט״.':''}</>}</div>}
+    {canTap && hasLike && sel.size===0 && !auto && <div className="iq-like">לחצו על איברים מאותה משפחה באותו צד, ואז על ״פשט״</div>}
     {canTap && sel.size>0 && <div className="iq-like">{sel.size===1?'איבר אחד נבחר. בחרו עוד איבר מאותה משפחה':sel.size+' איברים נבחרו. לחצו ״פשט״ לאיחוד'}</div>}
     {canTap && sel.size>=2 && <div className="iq-act">
       <button className="btn bp" onClick={combineSel}>פשט ({sel.size})</button>
@@ -297,7 +317,7 @@ function IeqSolver({a,b,c,sign,onSolved}){
       <button className="btn" onClick={undo}>ביטול הפעולה</button>
     </div>}
     {err && <div className="ieq-div-err">{err}</div>}
-    {!solvedInfo && <div className="hint">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), והיא נכתבת על שני האגפים. אחר כך לוחצים על איברים מאותה משפחה (מספרים עם מספרים, x עם x) באותו צד, ורק אז מופיע ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}
+    {!solvedInfo && <div className="hint">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), והיא נכתבת על שני האגפים. בצד שבו הפעולה מבטלת מספר, המחשב מפשט לבד. בצד השני לוחצים על איברים מאותה משפחה (מספרים עם מספרים, x עם x), ורק אז מופיע ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}
     {solvedInfo && !confirmed && <SolvedConfirm sign={solvedInfo.sign} value={solvedInfo.value} onCorrect={()=>{setConfirmed(true); onSolved(solvedInfo.sign,solvedInfo.value);}}/>}
     {confirmed && solvedInfo && <div className="iq-done" dir="ltr">{ieqFinal(solvedInfo.sign,solvedInfo.value)} ✓</div>}
   </div>;
