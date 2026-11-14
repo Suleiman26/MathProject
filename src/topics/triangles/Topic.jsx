@@ -829,15 +829,7 @@ function ChRightExercise({forceSub}){
           <span>S =</span><Frac n={<>6×8</>} d={2}/><span>= 24</span>
         </div>
       </>:ex.sub==='pythagoras'?<>
-        <h3>📐 משפט פיתגורס</h3>
-        <div className="step-card" style={{marginTop:8}}>
-          <div className="step-label">מה זה a²?</div>
-          <p style={{margin:0}}>הסימון <strong>a²</strong> ("a בריבוע") פירושו a×a — המספר כפול את עצמו. <span dir="ltr">לדוגמה: 5² = 5×5 = 25.</span></p>
-        </div>
-        <div className="step-card">
-          <div className="step-label">מה זה √ (שורש)?</div>
-          <p style={{margin:0}}>השורש הריבועי הוא הפעולה <strong>ההפוכה</strong> לריבוע: אם a²=b, אז √b=a. <span dir="ltr">לדוגמה: √25 = 5</span>, כי <span dir="ltr">5² = 25</span>.</p>
-        </div>
+        <h3>📐 משפט פיתגורס — תזכורת</h3>
         <div className="formula-box">a² + b² = c²</div>
         <p style={{textAlign:'center',fontSize:12,color:'#64748b',marginTop:-6}}>a ו-b הם הניצבים, c הוא היתר</p>
         <p style={{textAlign:'center',fontWeight:600,marginTop:10}}>לדוגמה: ניצבים 3 ו-4</p>
@@ -853,6 +845,7 @@ function ChRightExercise({forceSub}){
         <div className="ans-row" style={{justifyContent:'center'}}>
           <span dir="ltr">c = √25 = 5</span>
         </div>
+        <a className="tri-py-link" href={'/topics/pythagoras?ch='+encodeURIComponent('פרק 1 — משולשים')}>לרענון החומר: פרק ״משפט פיתגורס״ ←</a>
       </>:<>
         <h3>📐 משולש ישר-זווית</h3>
         <p>במשולש ישר-זווית יש זווית אחת של 90°. שתי הצלעות היוצרות את הזווית הישרה נקראות <strong>ניצבים</strong>, והצלע השלישית — מול הזווית הישרה, והארוכה מבין השלוש — נקראת <strong>יתר</strong>.</p>

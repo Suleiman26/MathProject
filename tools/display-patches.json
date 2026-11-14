@@ -309,6 +309,18 @@
       "old": "        <text x={arc.midX} y={arc.midY} textAnchor={arc.anchor} dominantBaseline={arc.baseline}\n          fontSize={lblFontSize} fontWeight=\"700\" fill={highlight===('a'+i)?'#dc2626':'#7c3aed'}\n",
       "new": "        <text x={fit.x} y={fit.y} textAnchor=\"middle\" dominantBaseline=\"central\"\n          fontSize={fit.size} fontWeight=\"700\" fill={highlight===('a'+i)?'#dc2626':'#7c3aed'}\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #73: Pythagoras reminder only (example kept) + link to the Pythagoras topic",
+      "old": "        <h3>📐 משפט פיתגורס</h3>\n        <div className=\"step-card\" style={{marginTop:8}}>\n          <div className=\"step-label\">מה זה a²?</div>\n          <p style={{margin:0}}>הסימון <strong>a²</strong> (\"a בריבוע\") פירושו a×a — המספר כפול את עצמו. <span dir=\"ltr\">לדוגמה: 5² = 5×5 = 25.</span></p>\n        </div>\n        <div className=\"step-card\">\n          <div className=\"step-label\">מה זה √ (שורש)?</div>\n          <p style={{margin:0}}>השורש הריבועי הוא הפעולה <strong>ההפוכה</strong> לריבוע: אם a²=b, אז √b=a. <span dir=\"ltr\">לדוגמה: √25 = 5</span>, כי <span dir=\"ltr\">5² = 25</span>.</p>\n        </div>\n",
+      "new": "        <h3>📐 משפט פיתגורס — תזכורת</h3>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #73: Pythagoras reminder only (example kept) + link to the Pythagoras topic",
+      "old": "      </>:<>\n        <h3>📐 משולש ישר-זווית</h3>\n",
+      "new": "        <a className=\"tri-py-link\" href={'/topics/pythagoras?ch='+encodeURIComponent('פרק 1 — משולשים')}>לרענון החומר: פרק ״משפט פיתגורס״ ←</a>\n      </>:<>\n        <h3>📐 משולש ישר-זווית</h3>\n",
+      "count": 1
     }
   ],
   "powers-roots": [

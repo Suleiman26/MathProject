@@ -1024,3 +1024,7 @@ html[data-page="parabola-practice"] #root .card .pp-srow .pp-rv { width: 60px !i
   html[data-page="parabola-practice"] #root .card .pp-srow .pp-rv { width: 52px !important; }
   html[data-page="parabola-practice"] #root .card button.pp-shape { font-size: 14px; padding: 4px 10px; }
 }
+
+/* Fixes board #73: link from the Pythagoras reminder (triangles ch.3) to the Pythagoras topic */
+html[data-page="triangles"] #root .tri-py-link { display: block; margin: 14px 0 2px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--a-300); color: var(--a-800); font-weight: 700; text-align: center; text-decoration: none; }
+html[data-page="triangles"] #root .tri-py-link:hover { background: var(--a-50); }
