@@ -45,6 +45,9 @@ function kindOf(el, page) {
   if (/math-input/.test(cls) || /משוואה|=|צד|\bx\b|y/.test(ph)) mode = "math";
   if (/^(equations-advanced|intersection|parabola-practice|quadratic-solver)$/.test(page) && (ph === "" || ph === "-")) mode = "math";
   if (el.inputMode === "numeric" || /^(op-input|eqs-val|slv-opinput)$/.test(cls)) mode = "num";
+  // a box can ask for its keys itself: data-kp-mode="math", data-kp-extras="× ÷" (equation-solver, words → expression)
+  if (/^(num|math)$/.test(el.dataset.kpMode || "")) mode = el.dataset.kpMode;
+  (el.dataset.kpExtras || "").split(/\s+/).forEach((x) => { if (x && !extras.includes(x)) extras.push(x); });
   return { mode, extras };
 }
 

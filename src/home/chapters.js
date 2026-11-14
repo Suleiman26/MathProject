@@ -7,7 +7,7 @@ export const CHAPTERS = {
   "angles-parallel": ["1. קודקודיות", "2. צמודות", "3. מתחלפות", "4. מתאימות", "5. חד-צדדיות", "6. הכל יחד"],
   "circle": ["1. היכרות", "2. רדיאנים", "3. היקף", "4. שטח", "5. קשת", "6. הכל יחד"],
   "directed-numbers": ["1. חיבור", "2. חיסור", "3. כפל", "4. חילוק", "5. סדר פעולות", "6. תרגול מקיף", "7. שברים"],
-  "equation-solver": [],
+  "equation-solver": ["1. ביטוי אלגברי", "2. פתרון משוואות"],
   "equations-advanced": ["1 — לינארית עם מכנה", "2 — ריבועית עם מכנה", "3 — כפל מקוצר", "4 — הכל יחד"],
   "inequalities": ["1. אי-שוויון פשוט", "2. ציר מספרים", "3. מערכת אי-שוויונות"],
   "intersection": ["1. ישר–ישר", "2. ישר–פרבולה"],
@@ -26,6 +26,8 @@ export const CHAPTERS = {
 /* Old chapter names → today's, so earlier practice still counts after a
    chapter moves (circle, 2026-11-02: radians moved up to chapter 2). */
 const RENAMED = {
+  // 2026-11-14 (board #70): the topic got chapters; earlier practice (no chapter name) was all equation solving
+  "equation-solver": { "": "2. פתרון משוואות" },
   "circle": { "2. היקף": "3. היקף", "3. שטח": "4. שטח", "4. קשת": "5. קשת", "5. הכל יחד": "6. הכל יחד", "6. רדיאנים": "2. רדיאנים" },
   // 2026-11-13 (board #61): the four solving steps became one chapter per case; the old steps were the mixed practice
   "quadratic-solver": { "שלב 1: סידור": "5. סיכום ותרגול", "שלב 2: מקדמים": "5. סיכום ותרגול", "שלב 3: איזה מקרה?": "5. סיכום ותרגול", "שלב 4: פתרון": "5. סיכום ותרגול" },

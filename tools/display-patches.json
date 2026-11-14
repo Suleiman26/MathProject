@@ -181,6 +181,24 @@
       "old": "  function applySide(terms){\n    if(opType==='+')return[...terms,mkTerm(type,k)];\n    if(opType==='−')return[...terms,mkTerm(type,-k)];\n",
       "new": "  /* Fixes board #69: the inverse operation cancels its term right away on the side where it\n     meets its opposite (2x + 3 − 3 → 2x); only the other side is left for the student to simplify. */\n  function addTerm(terms,num){\n    const i=terms.findIndex(t=>t.type===type&&t.den===1&&t.num===-num);\n    if(i<0)return[...terms,mkTerm(type,num)];\n    const rest=terms.filter((_,j)=>j!==i);\n    return rest.length?rest:[mkTerm('const',0)];\n  }\n  function applySide(terms){\n    if(opType==='+')return addTerm(terms,k);\n    if(opType==='−')return addTerm(terms,-k);\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #70: chapter 1 (unknown, algebraic expression, stories) before solving; chapter buttons",
+      "old": "function App(){\n  const[done,setDone]=useState(loadDone);\n",
+      "new": "/* Fixes board #70: chapter 1 (the unknown, algebraic expressions, stories) comes before solving.\n   A student who already solved equations here comes back to the solver; the last chapter is remembered. */\nconst CH_KEY='mp-equation-solver-ch';\nfunction loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c===1||c===2)return c}catch(e){}return done>0?2:1}\nfunction App(){\n  const[done,setDone]=useState(loadDone);\n  const[ch,setChState]=useState(()=>loadCh(done));\n  function setCh(c){setChState(c);try{localStorage.setItem(CH_KEY,String(c))}catch(e){}}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #70: chapter 1 (unknown, algebraic expression, stories) before solving; chapter buttons",
+      "old": "      </div>\n      <div className=\"content\">\n",
+      "new": "        <div className=\"ch-nav\">\n          <button className={`ch-btn ${ch===1?'active':''}`} onClick={()=>setCh(1)}>1. ביטוי אלגברי</button>\n          <button className={`ch-btn ${ch===2?'active':''}`} onClick={()=>setCh(2)}>2. פתרון משוואות</button>\n        </div>\n      </div>\n      {ch===1&&<WordsChapter/>}\n      {ch===2&&<div className=\"content\">\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #70: chapter 1 (unknown, algebraic expression, stories) before solving; chapter buttons",
+      "old": "      </div>\n    </div>\n",
+      "new": "      </div>}\n    </div>\n",
+      "count": 1
     }
   ],
   "triangles": [
