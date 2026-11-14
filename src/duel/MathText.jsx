@@ -11,6 +11,7 @@
    .dmx-line.ask (words: what to do) · .eq (a formula row: what to work with, the hero) ·
    .target (the last short "b = ?" line: what to answer; its "?" sits in an accent chip).
    omitTarget: a typed question draws its answer slot in place of the target line. */
+import { Root } from "@/components/Root";
 import { splitProse, parseMath, mathToText, proseToText, isMathOnly, mathBreaks, promptLines, lineRole, tidyLines } from "./math-core";
 
 /* the "?" of the asked quantity: a small accent chip (only inside formula / target rows) */
@@ -21,7 +22,7 @@ function Txt({ v, chip }) {
 
 function Node({ n, chip }) {
   if (n.t === "sup") return <sup className="dmx-sup"><Nodes nodes={n.b} chip={chip} /></sup>;
-  if (n.t === "sqrt") return <span className="dmx-sqrt"><span className="dmx-rad" aria-hidden="true">√</span><span className="dmx-body"><Nodes nodes={n.b} chip={chip} /></span></span>;
+  if (n.t === "sqrt") return <Root className="dmx-sqrt"><Nodes nodes={n.b} chip={chip} /></Root>;   /* the shared root sign (board #65) */
   if (n.t === "frac") return <span className="dmx-frac"><span className="dmx-num"><Nodes nodes={n.n} chip={chip} /></span><span className="dmx-den"><Nodes nodes={n.d} chip={chip} /></span></span>;
   return null;
 }

@@ -363,6 +363,12 @@
       "old": "        AM ⊥ BC (גובה) &nbsp;|&nbsp; BM = MC (תיכון, בסימון אדום) &nbsp;|&nbsp; ∠BAM = ∠CAM (חוצה זווית, בסימון אדום)</p>\n",
       "new": "        <span dir=\"ltr\" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>AM ⊥ BC</span> (גובה) &nbsp;|&nbsp; <span dir=\"ltr\" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>BM = MC</span> (תיכון, בסימון אדום) &nbsp;|&nbsp; <span dir=\"ltr\" style={{unicodeBidi:'isolate',whiteSpace:'nowrap'}}>∠BAM = ∠CAM</span> (חוצה זווית, בסימון אדום)</p>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "          <span dir=\"ltr\">c = √25 = 5</span>\n",
+      "new": "          <span dir=\"ltr\">c = <Root>25</Root> = 5</span>\n",
+      "count": 1
     }
   ],
   "powers-roots": [
@@ -598,6 +604,78 @@
       "why": "Sulaiman's fix list (2026-10-30), approved by Abed: powers and roots. Longer explanation (power = shorthand for repeated multiplication), base/exponent mini-practice, powers shown with a raised exponent instead of '^', a fraction box for negative powers, a 'try to prove it' panel per law, varied letters (not only x and y), worked examples and the multiplication-table diagonal for roots, the root-of-a-product rule from law 4, and more question types in 'everything together'.",
       "old": "function Frac({n,d,style}){return <span className=\"frac\" style={style}><span className=\"frac-num\">{n}</span><span className=\"frac-den\">{d}</span></span>;}\n\n",
       "new": "function Frac({n,d,style}){return <span className=\"frac\" style={style}><span className=\"frac-num\">{n}</span><span className=\"frac-den\">{d}</span></span>;}\n// Shows a power the way it is written in a notebook (small raised exponent), never with \"^\".\n// \"x^12\" → x¹², \"2^(−3)\" → 2⁻³, \"x^2y^3\" → x²y³.\nfunction Mx({s}){\n  const out=[];let buf='',i=0,k=0;\n  const flush=()=>{if(buf){out.push(buf);buf='';}};\n  while(i<s.length){\n    if(s[i]!=='^'){buf+=s[i];i++;continue;}\n    let e='';i++;\n    if(s[i]==='('){let d=1;i++;while(i<s.length){if(s[i]==='(')d++;else if(s[i]===')'){d--;if(d===0){i++;break;}}e+=s[i];i++;}}\n    else if(/[0-9]/.test(s[i]||'')){while(i<s.length&&/[0-9]/.test(s[i])){e+=s[i];i++;}}\n    else{e=s[i]||'';i++;}\n    flush();out.push(<sup key={k++}>{e}</sup>);\n  }\n  flush();\n  return <span className=\"mx\">{out}</span>;\n}\n// Letters for the parametric exercises (not only x and y).\nconst VARS=['x','y','z','a','b','m','n','t'];\nfunction pickVars(){const v=pick(VARS);let w=pick(VARS);while(w===v)w=pick(VARS);return [v,w];}\n\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "function Mx({s}){\n  const out=[];let buf='',i=0,k=0;\n  const flush=()=>{if(buf){out.push(buf);buf='';}};\n  while(i<s.length){\n    if(s[i]!=='^'){buf+=s[i];i++;continue;}\n    let e='';i++;\n    if(s[i]==='('){let d=1;i++;while(i<s.length){if(s[i]==='(')d++;else if(s[i]===')'){d--;if(d===0){i++;break;}}e+=s[i];i++;}}\n    else if(/[0-9]/.test(s[i]||'')){while(i<s.length&&/[0-9]/.test(s[i])){e+=s[i];i++;}}\n    else{e=s[i]||'';i++;}\n    flush();out.push(<sup key={k++}>{e}</sup>);\n  }\n  flush();\n  return <span className=\"mx\">{out}</span>;\n",
+      "new": "// Roots get a real root sign whose bar covers everything under it: \"√(x^4)\", \"√12\" (board #65).\nfunction Mx({s}){\n  return <span className=\"mx\"><RootText s={s} pow flat/></span>;\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <p><b>דוגמה:</b> <span className=\"mx\">√49 = 7</span>, כי <span className=\"mx\">7<sup>2</sup> = 7·7 = 49</span>. שואלים: איזה מספר כפול עצמו נותן 49?</p>\n",
+      "new": "    <p><b>דוגמה:</b> <span className=\"mx\"><Root>49</Root> = 7</span>, כי <span className=\"mx\">7<sup>2</sup> = 7·7 = 49</span>. שואלים: איזה מספר כפול עצמו נותן 49?</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"sq-chips\" dir=\"ltr\">{n.map(k=><span key={k}>√{k*k} = {k}</span>)}</div>\n",
+      "new": "    <div className=\"sq-chips\" dir=\"ltr\">{n.map(k=><span key={k}><Root>{k*k}</Root> = {k}</span>)}</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <p><b>הכלל:</b> <span className=\"mx\">√(a·b) = √a · √b</span>. שורש של מכפלה שווה למכפלת השורשים (כש-a ו-b אינם שליליים).</p>\n    <p><b>למה?</b> לפי חוק 4 בחוקי חזקות (חזקה של מכפלה): <Mx s=\"(√a · √b)^2 = (√a)^2 · (√b)^2 = a·b\"/>. כלומר <span className=\"mx\">√a · √b</span> הוא המספר שבריבוע נותן <span className=\"mx\">a·b</span>, ולכן הוא <span className=\"mx\">√(a·b)</span>.</p>\n    <p><b>דוגמה:</b> <span className=\"mx\">√12 = √(4·3) = √4 · √3 = 2√3</span></p>\n",
+      "new": "    <p><b>הכלל:</b> <Mx s=\"√(a·b) = √a · √b\"/>. שורש של מכפלה שווה למכפלת השורשים (כש-a ו-b אינם שליליים).</p>\n    <p><b>למה?</b> לפי חוק 4 בחוקי חזקות (חזקה של מכפלה): <Mx s=\"(√a · √b)^2 = (√a)^2 · (√b)^2 = a·b\"/>. כלומר <Mx s=\"√a · √b\"/> הוא המספר שבריבוע נותן <span className=\"mx\">a·b</span>, ולכן הוא <Mx s=\"√(a·b)\"/>.</p>\n    <p><b>דוגמה:</b> <Mx s=\"√12 = √(4·3) = √4 · √3 = 2√3\"/></p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "      <b>שורש ריבועי</b> הוא הפעולה ההפוכה לחזקה שנייה: <span style={{direction:'ltr',display:'inline-block'}}>√n² = n</span>\n",
+      "new": "      <b>שורש ריבועי</b> הוא הפעולה ההפוכה לחזקה שנייה: <span style={{direction:'ltr',display:'inline-block'}}><Root>n²</Root> = n</span>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "        <div className=\"eq-box\">√{ex.val} = ?</div>\n",
+      "new": "        <div className=\"eq-box\"><Root>{ex.val}</Root> = ?</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "        <div className=\"eq-box\">{ex.q} = ?√?</div>\n        <div className={`step-card ${step>1?'done':''}`}>\n          <div className=\"step-label\">שלב 1 — פרק: √({ex.val}) = √(__ · __)</div>\n          {step===1?<><div className=\"ans-row\">\n            <span>√(</span>\n",
+      "new": "        <div className=\"eq-box\"><RootText s={ex.q} flat/> = ?<Root>?</Root></div>\n        <div className={`step-card ${step>1?'done':''}`}>\n          <div className=\"step-label\">שלב 1 — פרק: <span className=\"mx\"><Root>{ex.val}</Root> = <Root>__ · __</Root></span></div>\n          {step===1?<><div className=\"ans-row\">\n            <Root row>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "            <span>)</span>\n            <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n          </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ √({ex.a*ex.a}·{ex.b})</div>}\n",
+      "new": "            </Root>\n            <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n          </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}><span>✓ <Root>{ex.a*ex.a}·{ex.b}</Root></span></div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "            <span>√</span>\n            <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>\n            <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n          </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}>✓ {ex.a}√{ex.b}</div>}\n",
+      "new": "            <Root row><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/></Root>\n            <button className=\"btn bg\" onClick={check}>✓ בדוק</button>\n          </div><Fb fb={fb}/></>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700}}><span>✓ {ex.a}<Root>{ex.b}</Root></span></div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "        <div className=\"eq-box\">{ex.q} = ?</div>\n",
+      "new": "        <div className=\"eq-box\"><RootText s={ex.q} flat/> = ?</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "              <span>√</span>\n              <input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>\n            </>:ex.opType===2?<>\n              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"מקדם\" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>\n              <span>√{ex.base}</span>\n",
+      "new": "              <Root row><input value={a2} onChange={e=>{setA2(e.target.value);setFb(null);}} placeholder=\"?\" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/></Root>\n            </>:ex.opType===2?<>\n              <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} placeholder=\"מקדם\" style={{width:50}} onKeyDown={e=>e.key==='Enter'&&check()}/>\n              <Root>{ex.base}</Root>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "            {ex.opType===3?`✓ ${ex.coef}√${ex.base}`:ex.opType===2?`✓ ${ex.ans}√${ex.base}`:`✓ ${ex.ans}`}\n",
+      "new": "            {ex.opType===3?<span>✓ {ex.coef}<Root>{ex.base}</Root></span>:ex.opType===2?<span>✓ {ex.ans}<Root>{ex.base}</Root></span>:`✓ ${ex.ans}`}\n",
       "count": 1
     }
   ],
@@ -1166,6 +1244,12 @@
       "why": "Fixes board item #75: the side where an added/subtracted term cancels simplifies by itself",
       "old": "      const add=side=>[...side.filter(t=>!(t.type==='const'&&t.num===0)),mkTerm(fam,v)];\n",
       "new": "      // board #75: where the added term cancels one (x² + 5 − 5), the computer does it; the student simplifies only the other side\n      const add=side=>{const s=side.filter(t=>!(t.type==='const'&&t.num===0));const i=s.findIndex(t=>t.type===fam&&t.den===1&&t.num===-v);if(i<0)return[...s,mkTerm(fam,v)];const r=s.filter((_,j)=>j!==i);return r.length?r:[mkTerm('const',0)]};\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "function Root({children}){return <span className=\"qs-rad\"><svg className=\"qs-rad-s\" viewBox=\"0 0 14 30\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M1 17 L3.5 16 L7 27 L13 1\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinejoin=\"round\" strokeLinecap=\"round\" vectorEffect=\"non-scaling-stroke\"/></svg><span className=\"qs-rad-b\">{children}</span></span>}\n",
+      "new": "function Root({children}){return <MpRoot row>{children}</MpRoot>}\n",
       "count": 1
     }
   ],
@@ -1777,6 +1861,24 @@
       "old": "                {signResult==='err' && <div className=\"msg-error\">לא נכון — שים לב לכיוון הפרבולה</div>}\n",
       "new": "                <SignError res={signResult} />\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "            <span className=\"pp-num\">−({box('b1')}) ± √( ({box('b2')})² − 4·({box('a1')})·({box('c1')}) )</span>\n",
+      "new": "            <span className=\"pp-num\">−({box('b1')}) ± <Root row>({box('b2')})² − 4·({box('a1')})·({box('c1')})</Root></span>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "          <div>√Δ = √{disc} = {f2(Math.sqrt(disc))}</div>\n",
+      "new": "          <div><Root>Δ</Root> = <Root>{disc}</Root> = {f2(Math.sqrt(disc))}</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "          <bdi dir=\"ltr\">x = <Fr n=\"−b ± √(b²−4ac)\" d=\"2a\" /></bdi>\n",
+      "new": "          <bdi dir=\"ltr\">x = <Fr n={<>−b ± <Root>b²−4ac</Root></>} d=\"2a\" /></bdi>\n",
+      "count": 1
     }
   ],
   "intersection": [
@@ -2176,6 +2278,12 @@
       "why": "Fixes board #78 follow-up: math kept left-to-right in the question lines, '?' on the angle in chapter 5 find-the-angle",
       "old": "        <p className=\"hint\">r = {ex.r}, θ = {fmtFrac(ex.num,ex.den)} rad. חשב אורך קשת.</p>\n",
       "new": "        <p className=\"hint\"><bdi dir=\"ltr\">r = {ex.r}, θ = {fmtFrac(ex.num,ex.den)} rad</bdi>. חשב אורך קשת.</p>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "          <div className=\"eq-row\"><span>r = √{ex.rSquared} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}\n",
+      "new": "          <div className=\"eq-row\"><span>r = <Root>{ex.rSquared}</Root> =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}\n",
       "count": 1
     }
   ],
@@ -2673,6 +2781,12 @@
       "old": "    ? buildShape({ type: 'recttri', label: 'מלבן', P, outline: ['A','B','C','E','D'], lines: [], dash: ['A','E'],\n        labels: [['A','D'], ['D','E'], ['C','E'], ['A','B']], ra, validTriangles: [mkRT(P, 'A', 'D', 'E', 'AE')] })\n    : buildShape({ type: 'recttri', label: 'מלבן', P, outline: ['A','B','C','E','D'], lines: [], dash: ['B','E'],\n",
       "new": "    ? buildShape({ type: 'recttri', label: 'מלבן', P, outline: ['A','B','C','E','D'], lines: [], dash: ['A','E'], vdir: { E: [0.8, -1] },\n        labels: [['A','D'], ['D','E'], ['C','E'], ['A','B']], ra, validTriangles: [mkRT(P, 'A', 'D', 'E', 'AE')] })\n    : buildShape({ type: 'recttri', label: 'מלבן', P, outline: ['A','B','C','E','D'], lines: [], dash: ['B','E'], vdir: { E: [-0.8, -1] },\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "            <li><b>חישוב:</b> <bdi dir=\"ltr\">36 + 64 = c²</bdi>, כלומר <bdi dir=\"ltr\">c² = 100</bdi>, ולכן <bdi dir=\"ltr\">c = √100 = 10</bdi></li>\n",
+      "new": "            <li><b>חישוב:</b> <bdi dir=\"ltr\">36 + 64 = c²</bdi>, כלומר <bdi dir=\"ltr\">c² = 100</bdi>, ולכן <bdi dir=\"ltr\">c = <Root>100</Root> = 10</bdi></li>\n",
+      "count": 1
     }
   ],
   "similar-triangles": [
@@ -2730,6 +2844,102 @@
       "why": "Abed asked (2026-10-31): the shapes are shown in real 3D (turn with a finger or mouse). Each flat drawing hands over to the 3D view in one line; devices without WebGL keep the flat drawing. Display only: math and text unchanged.",
       "old": "  const n=40;\n  const bottom3=circlePts3D(r,0,n), mid3=circlePts3D(r,h1,n);\n",
       "new": "  if(has3D())return <Solid3D kind=\"composite\" r={r} h1={h1} h2={h2} activePart={activePart}/>;\n  const n=40;\n  const bottom3=circlePts3D(r,0,n), mid3=circlePts3D(r,h1,n);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "      <span style={{fontSize:'1.2rem',fontWeight:700,color:'#0f766e'}}>{suffix}</span>\n",
+      "new": "      <span style={{fontSize:'1.2rem',fontWeight:700,color:'#0f766e'}}>{rootTxt(suffix)}</span>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    {steps.slice(0,idx).map((s,i)=><div key={i} className=\"step-done\">✓ {s.hint}</div>)}\n    {!done && idx<steps.length && <div>\n      <div className=\"hint\">{steps[idx].hint}</div>\n",
+      "new": "    {steps.slice(0,idx).map((s,i)=><div key={i} className=\"step-done\">✓ {rootTxt(s.hint)}</div>)}\n    {!done && idx<steps.length && <div>\n      <div className=\"hint\">{rootTxt(steps[idx].hint)}</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"def-box\">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch1PartB(){\n",
+      "new": "    <div className=\"def-box\">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch1PartB(){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"formula-box\">d<sub>בסיס</sub> = a√2 &nbsp;,&nbsp; d = a√3<small>אלכסון פאה מתקבל מפיתגורס במישור; האלכסון המרחבי מתקבל מהפעלה נוספת של פיתגורס בין אלכסון הבסיס לגובה</small></div>\n",
+      "new": "    <div className=\"formula-box\">d<sub>בסיס</sub> = a<Root>2</Root> &nbsp;,&nbsp; d = a<Root>3</Root><small>אלכסון פאה מתקבל מפיתגורס במישור; האלכסון המרחבי מתקבל מהפעלה נוספת של פיתגורס בין אלכסון הבסיס לגובה</small></div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"given-box\">האלכסון המרחבי של הקובייה: d = {a}√3</div>\n",
+      "new": "    <div className=\"given-box\">האלכסון המרחבי של הקובייה: <span className=\"mp-mx\" dir=\"ltr\">d = {a}<Root>3</Root></span></div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"def-box\">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch2PartB(){\n",
+      "new": "    <div className=\"def-box\">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch2PartB(){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"formula-box\">d = √(l²+w²+h²)<small>האלכסון המרחבי מתקבל מהפעלת פיתגורס במרחב על שלוש המידות יחד</small></div>\n",
+      "new": "    <div className=\"formula-box\">d = <Root>l²+w²+h²</Root><small>האלכסון המרחבי מתקבל מהפעלת פיתגורס במרחב על שלוש המידות יחד</small></div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"def-box\">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch3PartB(){\n",
+      "new": "    <div className=\"def-box\">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch3PartB(){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"def-box\">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch4PartB(){\n",
+      "new": "    <div className=\"def-box\">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch4PartB(){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"formula-box\">l = √(r²+h²)<small>גובה אלכסוני מתקבל מפיתגורס במשולש שצלעותיו r, h ו-l</small></div>\n",
+      "new": "    <div className=\"formula-box\">l = <Root>r²+h²</Root><small>גובה אלכסוני מתקבל מפיתגורס במשולש שצלעותיו r, h ו-l</small></div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"def-box\">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch5PartB(){\n",
+      "new": "    <div className=\"def-box\">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n  </div>;\n}\nfunction Ch5PartB(){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"formula-box\">m = √(h² + (חצי-צלע)²)<small>אפותם (גובה הפאה הצדדית) מתקבל מפיתגורס בין הגובה לחצי צלע הבסיס</small></div>\n",
+      "new": "    <div className=\"formula-box\">m = <Root>h² + (חצי-צלע)²</Root><small>אפותם (גובה הפאה הצדדית) מתקבל מפיתגורס בין הגובה לחצי צלע הבסיס</small></div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"hint\">שטח הבסיס: <Frac num=\"√3\" den=\"4\"/>b² = {k}√3. חשבו את נפח הפירמידה (בצורת מקדם × √3)</div>\n",
+      "new": "    <div className=\"hint\">שטח הבסיס: <span className=\"mp-mx\" dir=\"ltr\"><Frac num={<Root>3</Root>} den=\"4\"/>b² = {k}<Root>3</Root></span>. חשבו את נפח הפירמידה (בצורת מקדם × <Root>3</Root>)</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"given-box\">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = {k}√3)</div>\n    <div className=\"hint\">חשבו את שטח הפנים הכולל (בצורה: מספר שלם + מקדם×√3)</div>\n",
+      "new": "    <div className=\"given-box\">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = <span className=\"mp-mx\" dir=\"ltr\">{k}<Root>3</Root></span>)</div>\n    <div className=\"hint\">חשבו את שטח הפנים הכולל (בצורה: מספר שלם + מקדם×<Root>3</Root>)</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"given-box\">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = {k}√3)</div>\n",
+      "new": "    <div className=\"given-box\">בסיס משולש שווה-צלעות: b = {b}, אפותם m = {m} (שטח הבסיס = <span className=\"mp-mx\" dir=\"ltr\">{k}<Root>3</Root></span>)</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
+      "old": "    <div className=\"def-box\">{part ? part.def : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n",
+      "new": "    <div className=\"def-box\">{part ? rootTxt(part.def) : 'לחצו על מרכיב כדי לראות הגדרה קצרה'}</div>\n",
       "count": 1
     }
   ],

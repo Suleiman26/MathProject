@@ -53,6 +53,8 @@ html[data-page="triangles"] .info-steps span { margin-inline-start: 6px; }
 html[data-page="powers-roots"] .mx { direction: ltr; unicode-bidi: isolate; display: inline-block; white-space: nowrap; font-variant-numeric: lining-nums; }
 html[data-page="powers-roots"] .mx sup, html[data-page="powers-roots"] .eq-box sup { font-size: .62em; line-height: 0; vertical-align: .9em; margin-inline-start: 1px; }
 html[data-page="powers-roots"] .eq-box .mx { white-space: normal; }
+/* a raised exponent under a root sign (board #65): the bar sits above the exponent, not through it */
+html[data-page="powers-roots"] .mp-rad-b:has(sup) { padding-top: .5em; }
 
 /* longer explanation boxes: read as text, not centered */
 html[data-page="powers-roots"] .pw-info { text-align: start; }
@@ -111,7 +113,7 @@ html[data-page="powers-roots"] .sq-table th { color: var(--a-700, #6d28d9); font
 html[data-page="powers-roots"] .sq-table td { background: var(--surface, #fff); color: var(--ink-3, #78716c); }
 html[data-page="powers-roots"] .sq-table td.d { background: var(--a-600, #7c3aed); color: #fff; font-weight: 800; }
 html[data-page="powers-roots"] .sq-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
-html[data-page="powers-roots"] .sq-chips span { padding: 4px 10px; border-radius: 999px; background: var(--surface, #fff); border: 1px solid var(--a-200, #ddd6fe); color: var(--a-800, #5b21b6); font-weight: 700; font-size: .95rem; white-space: nowrap; }
+html[data-page="powers-roots"] .sq-chips > span { padding: 4px 10px; border-radius: 999px; background: var(--surface, #fff); border: 1px solid var(--a-200, #ddd6fe); color: var(--a-800, #5b21b6); font-weight: 700; font-size: .95rem; white-space: nowrap; }
 @media (max-width: 420px) {
   html[data-page="powers-roots"] .sq-table th, html[data-page="powers-roots"] .sq-table td { width: 27px; height: 26px; font-size: 11.5px; border-radius: 5px; }
   html[data-page="powers-roots"] .be-b { font-size: 38px; }
@@ -856,8 +858,13 @@ html[data-page="parabola-practice"] #root sub { font-size: .9rem; }
 /* the roots formula with boxes ("x = (−[b] ± √…) / 2[a]"): boxes finger-sized; the row scrolls sideways if needed */
 @media (max-width: 560px) {
   html[data-page="parabola-practice"] #root .pp-template { font-size: 15px; gap: 4px; }
+  /* "x₁,₂ =" on its own line, so the whole root sign and all its boxes fit the phone without sideways scrolling (board #65) */
+  html[data-page="parabola-practice"] #root .pp-template { flex-wrap: wrap; justify-content: center; }
+  html[data-page="parabola-practice"] #root .pp-template .pp-x { flex: 0 0 100%; text-align: left; }
   html[data-page="parabola-practice"] #root .pp-slot { width: 40px; height: 44px; font-size: 1rem; }
 }
+/* the root sign over the boxes (board #65): no extra gaps, so the row stays as short as it was */
+html[data-page="parabola-practice"] #root .pp-template .mp-rad-b { gap: 1px; padding-inline: 2px 1px; }
 /* mp.css gives answer boxes 96px; inside this formula the slots keep their own small width */
 html[data-page="parabola-practice"] #root .pp-template .pp-slot { min-width: 0; min-height: 0; padding: 0; border-radius: 9px; }
 /* a = [ ] b = [ ] c = [ ] then the check button under them */
@@ -921,9 +928,7 @@ html[data-page="quadratic-solver"] #root .qs-gap { margin-inline: 2px 8px; }
 html[data-page="quadratic-solver"] #root .qs-fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; }
 html[data-page="quadratic-solver"] #root .qs-fr-n { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 6px 5px; white-space: nowrap; }
 html[data-page="quadratic-solver"] #root .qs-fr-d { display: flex; align-items: center; justify-content: center; gap: 4px; align-self: stretch; border-top: 2px solid currentColor; padding: 5px 6px 0; white-space: nowrap; }
-html[data-page="quadratic-solver"] #root .qs-rad { display: inline-flex; align-items: stretch; }
-html[data-page="quadratic-solver"] #root .qs-rad-s { flex: none; width: .62em; height: auto; min-height: 1.25em; align-self: stretch; margin-inline-end: -2px; overflow: visible; }
-html[data-page="quadratic-solver"] #root .qs-rad-b { display: inline-flex; align-items: center; gap: 4px; border-top: 2px solid currentColor; padding: 3px 3px 0 4px; }
+/* the root sign itself is the shared one: src/components/Root.jsx + src/styles/root.css (board #65) */
 html[data-page="quadratic-solver"] #root .card input.qs-slot { box-sizing: border-box; width: 52px; min-width: 0; height: 46px; min-height: 0; margin: 0; padding: 0 2px; text-align: center; direction: ltr; font-size: 1.15rem; font-weight: 700; color: var(--ink); border: 2px dashed var(--a-300); border-radius: 12px; background: var(--surface); opacity: 1; }
 html[data-page="quadratic-solver"] #root .card .qs-line input.qs-slot { width: 76px; height: 52px; font-size: 1.3rem; }
 html[data-page="quadratic-solver"] #root .card input.qs-slot:not(:placeholder-shown) { border-style: solid; border-color: var(--line-strong); }
@@ -964,8 +969,8 @@ html[data-page="quadratic-solver"] #root .qs-calc { background: var(--surface); 
 @media (max-width: 560px) {
   html[data-page="quadratic-solver"] #root .qs-template { font-size: .95rem; gap: 6px 3px; margin-inline: -10px; flex-wrap: wrap; }
   html[data-page="quadratic-solver"] #root .qs-template .qs-x { flex: 0 0 100%; text-align: left; padding-inline-start: 12px; font-size: 1.1rem; }
-  html[data-page="quadratic-solver"] #root .qs-template .qs-fr-n, html[data-page="quadratic-solver"] #root .qs-template .qs-fr-d, html[data-page="quadratic-solver"] #root .qs-template .qs-rad-b { gap: 1px; }
-  html[data-page="quadratic-solver"] #root .qs-template .qs-rad-b { padding-inline: 2px 1px; }
+  html[data-page="quadratic-solver"] #root .qs-template .qs-fr-n, html[data-page="quadratic-solver"] #root .qs-template .qs-fr-d, html[data-page="quadratic-solver"] #root .qs-template .mp-rad-b { gap: 1px; }
+  html[data-page="quadratic-solver"] #root .qs-template .mp-rad-b { padding-inline: 2px 1px; }
   html[data-page="quadratic-solver"] #root .qs-template .qs-fr-n { padding-inline: 2px; }
   html[data-page="quadratic-solver"] #root .card .qs-template input.qs-slot { width: 40px; height: 44px; font-size: .95rem; border-radius: 10px; padding: 0; }
   html[data-page="quadratic-solver"] #root .qs-formula { font-size: 1.2rem; }
@@ -1060,7 +1065,7 @@ html[data-page="quadratic-solver"] #root .qs-q-go:hover { background: var(--surf
   html[data-page="quadratic-solver"] #root .qs-q-ex { font-size: .88rem; }
   html[data-page="quadratic-solver"] #root .qs-q-fx { font-size: .74rem; gap: 2px; flex-wrap: wrap; justify-content: center; }
   html[data-page="quadratic-solver"] #root .qs-q-fx .qs-fr-n { padding-inline: 2px; gap: 2px; }
-  html[data-page="quadratic-solver"] #root .qs-q-fx .qs-rad-b { gap: 2px; padding-inline: 2px 1px; }
+  html[data-page="quadratic-solver"] #root .qs-q-fx .mp-rad-b { gap: 2px; padding-inline: 2px 1px; }
   html[data-page="quadratic-solver"] #root .qs-form { font-size: 1.2rem; }
 }
 /* very narrow phones: the 2 × 2 summary would get too small to read, so it stacks */

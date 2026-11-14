@@ -5,6 +5,8 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// The root sign that covers everything under it (fixes board #65).
+import { Root as MpRoot } from '@/components/Root';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useMemo, useRef, useEffect } = React;
@@ -426,7 +428,7 @@ function polyStr(a,b,c){
   return p.join('')||'0';
 }
 function Frac({n,d}){return <span className="qs-fr"><span className="qs-fr-n">{n}</span><span className="qs-fr-d">{d}</span></span>}
-function Root({children}){return <span className="qs-rad"><svg className="qs-rad-s" viewBox="0 0 14 30" preserveAspectRatio="none" aria-hidden="true"><path d="M1 17 L3.5 16 L7 27 L13 1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke"/></svg><span className="qs-rad-b">{children}</span></span>}
+function Root({children}){return <MpRoot row>{children}</MpRoot>}
 // a value n/d as a whole number, or as a stacked fraction
 function Val({n,d}){
   const[sn,sd]=simplify(n,d);

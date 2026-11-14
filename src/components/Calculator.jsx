@@ -12,6 +12,7 @@
    Which topics get it: src/lib/calc-topics.js. The maths: src/lib/calc-core.js (tested). Styles: src/styles/calculator.css. */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { evaluate, format, errorText, pressKey, closed, insertValue, menuPick, eqnStart, eqnPress, eqnText, EQN_NAMES } from "@/lib/calc-core";
+import { RootText } from "@/components/Root";   // "√(9+16)" is drawn as a real root sign over 9+16 (board #65); the keys still type "√("
 
 const KEYS = [
   "7", "8", "9", "÷", "(", ")",
@@ -178,8 +179,8 @@ export default function Calculator({ onClose, eqn }) {
     >
       <div className="calc-top">
         <div className="calc-screen" dir="ltr" role="status" aria-live="polite">
-          <div className={"calc-sub" + subKind} dir={subKind === " is-err" ? "rtl" : "ltr"}>{sub || " "}</div>
-          <div className={"calc-main" + mainKind + (mainLen > 14 ? " is-long" : "")} dir={mainDir} ref={line}>{main || "0"}</div>
+          <div className={"calc-sub" + subKind} dir={subKind === " is-err" ? "rtl" : "ltr"}>{sub ? (subKind === " is-err" ? sub : <RootText s={sub} flat />) : " "}</div>
+          <div className={"calc-main" + mainKind + (mainLen > 14 ? " is-long" : "")} dir={mainDir} ref={line}>{main ? (mainDir === "rtl" ? main : <RootText s={main} flat />) : "0"}</div>
         </div>
         <button type="button" className="calc-c" aria-label="ניקוי" onClick={() => press("C")}>C</button>
         <button type="button" className="calc-x" aria-label="סגירת המחשבון" onClick={onClose}>
@@ -211,7 +212,7 @@ export default function Calculator({ onClose, eqn }) {
             ? (!eqn && <span className="calc-hint" dir="rtl">התוצאות האחרונות יופיעו כאן</span>)
             : hist.map((h) => (
               <button key={h.e + "=" + h.r} type="button" className="calc-chip" aria-label={"שימוש בתוצאה " + format(h.r)} onClick={() => reuse(h)}>
-                <span className="calc-chip-e">{h.e}</span><span className="calc-chip-r">{format(h.r)}</span>
+                <span className="calc-chip-e"><RootText s={h.e} flat /></span><span className="calc-chip-r">{format(h.r)}</span>
               </button>
             ))}
         </>}

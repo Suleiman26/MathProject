@@ -1,0 +1,16 @@
+/* The square-root sign (fixes board #65). Component: src/components/Root.jsx.
+   .mp-rad = the whole root · .mp-rad-s = the drawn hook · .mp-rad-b = what is under the bar.
+   Sizes are in em, so it follows the text around it. */
+@layer mp {
+.mp-rad { --rad-w: max(1.5px, .078em); position: relative; display: inline-flex; align-items: stretch; vertical-align: baseline; direction: ltr; unicode-bidi: isolate; white-space: nowrap; padding-left: .64em; margin: 0 .05em; text-indent: 0; }
+.mp-rad-s { position: absolute; left: 0; top: calc(var(--rad-w) / 2); width: .64em; height: calc(100% - var(--rad-w) / 2); overflow: visible; pointer-events: none; }
+.mp-rad-s path { stroke-width: var(--rad-w); }
+.mp-rad-b { display: inline-block; border-top: var(--rad-w) solid currentColor; padding: .12em .14em 0 .12em; line-height: 1.2; min-width: .5em; text-align: center; }
+/* a row of boxes / signs under the bar (answer inputs) */
+.mp-rad--row > .mp-rad-b { display: inline-flex; align-items: center; gap: 4px; padding: 4px 4px 1px 5px; }
+/* the "√" character stays for screen readers and copy-paste, not for the eye */
+.mp-rad-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* a formula with a root inside right-to-left text */
+.mp-mx { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }   /* "m = √(…)" never splits at the "=" */
+.mp-nb { white-space: nowrap; }
+}

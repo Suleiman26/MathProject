@@ -5,6 +5,8 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// The root sign that covers everything under it (fixes board #65).
+import { Root } from '@/components/Root';
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useEffect,useCallback}=React;
@@ -700,7 +702,7 @@ function Ch5(){
           <div className="eq-row"><span>r² =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
         {phase>2&&<div className="step-card done"><div className="ans-row" style={{color:'#16a34a',fontWeight:700}}>✓ r = {ex.r}</div></div>}
         {phase===2&&<div className="step-card"><div className="step-label">שלב 3 — הוצא שורש</div>
-          <div className="eq-row"><span>r = √{ex.rSquared} =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
+          <div className="eq-row"><span>r = <Root>{ex.rSquared}</Root> =</span> <input value={a1} onChange={e=>{setA1(e.target.value);setFb(null);}} style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkStep()}/></div></div>}
       </>}
 
       {ex.sub==='annulus'&&<>
