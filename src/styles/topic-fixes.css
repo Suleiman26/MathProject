@@ -352,6 +352,66 @@ html[data-page="equation-solver"] #root .var-note b { display: block; font-size:
 html[data-page="equation-solver"] #root .var-line { text-align: center; font-size: .9rem; line-height: 1.55; color: var(--a-800, #115e59); background: color-mix(in srgb, var(--a-50, #f0fdfa) 70%, #fff); border-radius: 12px; padding: 8px 12px; margin-bottom: 10px; }
 html[data-page="equation-solver"] #root .var-letter { font-weight: 800; font-style: italic; color: var(--a-600, #0d9488); font-size: 1.1em; padding: 0 2px; }
 
+/* Chapter 1, "from words to an algebraic expression" (fixes board #70): src/topics/equation-solver/WordsChapter.jsx */
+html[data-page="equation-solver"] #root .wx .sub-tabs { margin-bottom: 16px; }
+html[data-page="equation-solver"] #root .wx-ex { display: inline-block; direction: ltr; unicode-bidi: isolate; white-space: nowrap; font-weight: 700; color: var(--a-900, #134e4a); font-variant-numeric: tabular-nums; }
+html[data-page="equation-solver"] #root .wx-x { font-style: italic; color: var(--a-600, #0d9488); padding-inline-end: .04em; }
+html[data-page="equation-solver"] #root .wx-op { display: inline-block; margin: 0 .3em; font-weight: 500; }
+html[data-page="equation-solver"] #root .wx-dot { display: inline-block; margin: 0 .16em; }
+html[data-page="equation-solver"] #root .wx-fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: .84em; line-height: 1.2; margin: 0 .1em; }
+html[data-page="equation-solver"] #root .wx-fr > span { padding: 0 .3em; }
+html[data-page="equation-solver"] #root .wx-fr > span:first-child { border-bottom: 2px solid currentColor; padding-bottom: 1px; }
+html[data-page="equation-solver"] #root .wx-fr > span:last-child { padding-top: 1px; }
+
+html[data-page="equation-solver"] #root .wx-lesson p { font-size: 1.02rem; line-height: 1.8; color: var(--ink-2); margin: 0; }
+html[data-page="equation-solver"] #root .wx-lesson p + :is(p, ul, div), html[data-page="equation-solver"] #root .wx-lesson :is(ul, ol, div) + p { margin-top: 12px; }
+html[data-page="equation-solver"] #root .wx-say { margin-top: 14px; padding: 12px 14px 14px; border-radius: 14px; background: color-mix(in srgb, var(--a-50, #f0fdfa) 75%, #fff); }
+html[data-page="equation-solver"] #root .wx-say-t { display: block; font-size: .82rem; font-weight: 700; color: var(--a-700, #0f766e); margin-bottom: 2px; }
+html[data-page="equation-solver"] #root .wx-say p { color: var(--ink); }
+html[data-page="equation-solver"] #root .wx-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+html[data-page="equation-solver"] #root :is(.wx-list, .wx-steps) li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 1.02rem; line-height: 1.6; color: var(--ink); }
+html[data-page="equation-solver"] #root :is(.wx-list, .wx-steps, .wx-pair, .wx-result, .wx-line) b { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 2px 12px; border-radius: 12px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1.5px var(--a-200, #99f6e4); font-size: 1.2rem; }
+html[data-page="equation-solver"] #root .wx-note { font-size: .92rem !important; color: var(--ink-2); margin-top: 14px !important; }
+html[data-page="equation-solver"] #root .wx-pairs { display: grid; }
+html[data-page="equation-solver"] #root .wx-pair { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 0; font-size: 1.02rem; line-height: 1.5; color: var(--ink); }
+html[data-page="equation-solver"] #root .wx-pair + .wx-pair { border-top: 1px solid var(--line, #e7e5e0); }
+html[data-page="equation-solver"] #root .wx-pair b { flex: 0 0 auto; min-width: 92px; }
+html[data-page="equation-solver"] #root .wx-steps { list-style: none; counter-reset: wx; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
+html[data-page="equation-solver"] #root .wx-steps li { counter-increment: wx; position: relative; padding-inline-start: 38px; min-height: 28px; }
+html[data-page="equation-solver"] #root .wx-steps li::before { content: counter(wx); position: absolute; inset-inline-start: 0; top: 4px; width: 26px; height: 26px; border-radius: 50%; background: var(--a-100, #ccfbf1); color: var(--a-800, #115e59); font-size: .85rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+html[data-page="equation-solver"] #root :is(.wx-result, .wx-answer) { margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--a-50, #f0fdfa) 75%, #fff); display: grid; gap: 8px; }
+html[data-page="equation-solver"] #root :is(.wx-result > div, .wx-line) { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 1rem; font-weight: 600; color: var(--ink); text-align: start; }
+html[data-page="equation-solver"] #root .wx-go { display: flex; justify-content: center; margin: 4px 0 28px; }
+html[data-page="equation-solver"] #root .wx-go .btn { min-height: 52px; width: min(100%, 340px); font-size: 1.02rem; }
+
+html[data-page="equation-solver"] #root .wx-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+html[data-page="equation-solver"] #root .wx-tag { margin: 0; padding: 5px 12px; border-radius: var(--r-pill, 999px); background: var(--a-50, #f0fdfa); color: var(--a-800, #115e59); font-size: .85rem; font-weight: 700; line-height: 1.3; }
+html[data-page="equation-solver"] #root .wx-count { font-size: .82rem; color: var(--ink-3); }
+html[data-page="equation-solver"] #root .wx-story { font-size: var(--q-ask, 1.15rem); line-height: 1.85; color: var(--ink); font-weight: 500; margin: 0; }
+html[data-page="equation-solver"] #root .wx-ask { font-size: 1.02rem; line-height: 1.8; color: var(--a-900, #134e4a); font-weight: 600; margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--a-50, #f0fdfa) 75%, #fff); }
+html[data-page="equation-solver"] #root .wx-card .wx-ask:first-of-type:nth-child(2) { margin-top: 0; }
+html[data-page="equation-solver"] #root .wx-parts { display: grid; gap: 14px; margin-top: 18px; }
+html[data-page="equation-solver"] #root .wx-part { display: grid; gap: 6px; }
+html[data-page="equation-solver"] #root .wx-lbl { font-size: .95rem; font-weight: 700; color: var(--ink); }
+html[data-page="equation-solver"] #root .wx-in { width: 100%; }
+html[data-page="equation-solver"] #root .wx-in.ok { border-color: var(--ok-500, #22c55e); background: var(--ok-50, #f0fdf4); color: var(--ok-800, #166534); }
+html[data-page="equation-solver"] #root .wx-card :is(.fb, .wx-warn) { margin-top: 14px; }
+html[data-page="equation-solver"] #root .wx-warn { text-align: center; border-radius: 14px; font-weight: 600; line-height: 1.5; }
+html[data-page="equation-solver"] #root .wx-card .fb .wx-ex { color: inherit; }
+html[data-page="equation-solver"] #root .wx-card .fb .wx-x { color: inherit; }
+html[data-page="equation-solver"] #root .wx-actions { flex-wrap: wrap; }
+html[data-page="equation-solver"] #root .wx-actions .btn { min-height: 52px; }
+html[data-page="equation-solver"] #root .wx-actions .mp-check { flex: 1 1 200px; max-width: 340px; }
+html[data-page="equation-solver"] #root .wx-answer-t { font-size: .82rem; font-weight: 700; color: var(--a-700, #0f766e); }
+html[data-page="equation-solver"] #root .wx-answer p { margin: 4px 0 0; font-size: .95rem; line-height: 1.7; color: var(--ink-2); }
+html[data-page="equation-solver"] #root .wx-skip { display: flex; justify-content: center; margin: -4px 0 24px; }
+html[data-page="equation-solver"] #root .wx-other { min-height: 44px; padding: 8px 16px; border: 0; background: transparent; box-shadow: none; color: var(--ink-3); font-size: .9rem; font-weight: 500; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line-strong, #d6d3cc); }
+html[data-page="equation-solver"] #root .wx-banner .wx-lines { display: grid; gap: 8px; margin: 14px auto 2px; max-width: 420px; }
+html[data-page="equation-solver"] #root .wx-banner .wx-line { padding: 6px 14px; padding-inline-end: 6px; border-radius: 14px; background: rgb(255 255 255 / .7); color: var(--ok-900, #14532d); }
+html[data-page="equation-solver"] #root .wx-banner .btn { margin-top: 16px; min-height: 48px; min-width: 160px; }
+html[data-page="equation-solver"] #root .wx-banner .wx-line b { box-shadow: none; background: transparent; }
+html[data-page="equation-solver"] #root .wx-banner :is(.wx-ex, .wx-x) { color: var(--ok-800, #166534); }
+
 /* Parabola: its unnamed toggle buttons were 35px; finger-sized like the rest
    (44px; the check button keeps its own 56px from mp.css) */
 html[data-page="parabola-practice"] #root .card button:not(.mp-check) { min-height: 44px; }

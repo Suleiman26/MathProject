@@ -5,6 +5,8 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// Chapter 1, "from words to an algebraic expression" (fixes board #70), lives in ./WordsChapter.jsx + ./words.js.
+import WordsChapter from './WordsChapter';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useMemo, useEffect, useRef } = React;
@@ -183,8 +185,14 @@ function OpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX,v='x'}){
 }
 
 /* ── App ──────────────────────────────────────────────────────────────────── */
+/* Fixes board #70: chapter 1 (the unknown, algebraic expressions, stories) comes before solving.
+   A student who already solved equations here comes back to the solver; the last chapter is remembered. */
+const CH_KEY='mp-equation-solver-ch';
+function loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c===1||c===2)return c}catch(e){}return done>0?2:1}
 function App(){
   const[done,setDone]=useState(loadDone);
+  const[ch,setChState]=useState(()=>loadCh(done));
+  function setCh(c){setChState(c);try{localStorage.setItem(CH_KEY,String(c))}catch(e){}}
   const introSeen=useRef(done>=X_ROUNDS);
   const[app,setApp]=useState(()=>{const eq=genEq();return{initial:eq,current:eq,history:[],v:pickLetter(done,null),counted:false,intro:false}});
   const[opType,setOpType]=useState('+');
@@ -260,8 +268,13 @@ function App(){
       <div className="hdr">
         <h1>פתרון משוואות בנעלם אחד</h1>
         <span className="hdr-sub">כיתה ז׳</span>
+        <div className="ch-nav">
+          <button className={`ch-btn ${ch===1?'active':''}`} onClick={()=>setCh(1)}>1. ביטוי אלגברי</button>
+          <button className={`ch-btn ${ch===2?'active':''}`} onClick={()=>setCh(2)}>2. פתרון משוואות</button>
+        </div>
       </div>
-      <div className="content">
+      {ch===1&&<WordsChapter/>}
+      {ch===2&&<div className="content">
 
         {solved!==null&&(
           <div className="banner">
@@ -326,7 +339,7 @@ function App(){
           <button className="btn bp" onClick={newEq}>משוואה חדשה 🎲</button>
           <button className="btn" onClick={resetEq}>התחל מחדש ↺</button>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
