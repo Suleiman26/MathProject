@@ -980,6 +980,100 @@ html[data-page="quadratic-solver"] #root .qs-q-go:hover { background: var(--surf
 
 /* ── quadrilaterals ─────────────────────────────────────────────────────── */
 html[data-page="quadrilaterals"] #root .prop-btn { font-size: .95rem; min-height: 44px; padding: 8px 12px; line-height: 1.25; }
+/* Part B as sub-chapters (fixes board #77): tabs per exercise type, then
+   1 explanation → 2 solved example → 3 practice, and a formulas poster last. */
+html[data-page="quadrilaterals"] #root .sc-card { scroll-margin-top: 84px; }
+html[data-page="quadrilaterals"] #root .sc-card bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+html[data-page="quadrilaterals"] #root .sc-ltr { display: inline-block; direction: ltr; unicode-bidi: isolate; }
+html[data-page="quadrilaterals"] #root .sc-ltr { white-space: nowrap; }
+html[data-page="quadrilaterals"] #root .formula-box .sc-ltr { font-size: min(1em, 4.5vw); }
+html[data-page="quadrilaterals"] #root .sc-tabs {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0 0 18px; counter-reset: sc;
+}
+html[data-page="quadrilaterals"] #root .sc-tabs .sub-tab { min-height: 44px; padding: 8px 14px; font-size: .95rem; display: inline-flex; align-items: center; gap: 7px; }
+html[data-page="quadrilaterals"] #root .sc-tabs .sub-tab:not(.sc-tab-poster)::before {
+  counter-increment: sc; content: counter(sc);
+  width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
+  background: var(--surface-3, #f2f1ee); color: var(--ink-2, #4f4d48); font-size: .8rem; font-weight: 700; line-height: 1;
+}
+html[data-page="quadrilaterals"] #root .sc-tabs .sub-tab.active { background: var(--a-600); border-color: var(--a-600); color: #fff; }
+html[data-page="quadrilaterals"] #root .sc-tabs .sub-tab.active::before { background: #fff; color: var(--a-700); }
+html[data-page="quadrilaterals"] #root .sc-tabs .sc-tab-poster { border-style: dashed; border-color: var(--a-300); color: var(--a-800); }
+html[data-page="quadrilaterals"] #root .sc-tabs .sc-tab-poster.active { border-style: solid; }
+html[data-page="quadrilaterals"] #root .sc-body { animation: sc-in .28s ease both; }
+@keyframes sc-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { html[data-page="quadrilaterals"] #root :is(.sc-body, .sc-poster) { animation: none; } }
+html[data-page="quadrilaterals"] #root .sc-sec + .sc-sec { margin-top: 26px; }
+html[data-page="quadrilaterals"] #root .sc-h {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 12px;
+  font-size: 1.05rem; font-weight: 700; color: var(--ink, #1c1b19); text-align: start;
+}
+html[data-page="quadrilaterals"] #root .sc-h::after { content: ""; flex: 1; height: 1px; background: var(--line, #e7e5e0); }
+html[data-page="quadrilaterals"] #root .sc-n {
+  width: 28px; height: 28px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
+  background: var(--a-600); color: #fff; font-size: .95rem; font-weight: 700; line-height: 1;
+}
+html[data-page="quadrilaterals"] #root .sc-explain { margin: 0; padding: 14px 16px; border-radius: var(--r-lg, 16px); background: color-mix(in srgb, var(--a-50) 60%, #fff); text-align: start; font-size: 1rem; line-height: 1.75; color: var(--ink-2, #4f4d48); }
+html[data-page="quadrilaterals"] #root .sc-explain b { color: var(--a-800); }
+html[data-page="quadrilaterals"] #root .sc-sec > .formula-box { margin: 10px 0 0; }
+html[data-page="quadrilaterals"] #root .sc-example {
+  padding: 14px 14px 16px; border-radius: var(--r-lg, 16px);
+  background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--line, #e7e5e0);
+}
+html[data-page="quadrilaterals"] #root .sc-example .given-box { text-align: start; padding: 10px 14px; font-weight: 500; line-height: 1.65; }
+html[data-page="quadrilaterals"] #root .sc-sec > .step-card { margin-top: 0; }
+/* the kite "where the formula comes from" card sits inside the area explanation: flat, no second shadow */
+html[data-page="quadrilaterals"] #root .sc-sec > .card {
+  margin: 12px 0 0; padding: 14px 14px 16px; box-shadow: inset 0 0 0 1px var(--line, #e7e5e0); border-radius: var(--r-lg, 16px);
+}
+html[data-page="quadrilaterals"] #root .sc-sec > .card .card-t { font-size: 1rem; text-align: start; }
+html[data-page="quadrilaterals"] #root .sc-next { display: flex; justify-content: center; margin-top: 22px; }
+html[data-page="quadrilaterals"] #root .sc-next-btn {
+  min-height: 48px; padding: 10px 22px; border: 0; border-radius: var(--r-pill, 999px); cursor: pointer;
+  background: var(--a-50); color: var(--a-800); font: inherit; font-size: 1rem; font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--a-200);
+  transition: background-color .2s ease, transform .15s ease;
+}
+html[data-page="quadrilaterals"] #root .sc-next-btn:active { transform: scale(.98); }
+@media (hover: hover) and (pointer: fine) { html[data-page="quadrilaterals"] #root .sc-next-btn:hover { background: var(--a-100); } }
+/* the poster: one calm summary card with every formula of the shape */
+html[data-page="quadrilaterals"] #root .sc-poster {
+  position: relative; overflow: hidden; padding: 18px 16px 16px; border-radius: 22px;
+  background: linear-gradient(180deg, var(--a-50) 0%, #fff 62%);
+  box-shadow: inset 0 0 0 1px var(--a-200), 0 14px 30px -22px var(--a-700);
+  animation: sc-in .32s ease both;
+}
+html[data-page="quadrilaterals"] #root .sc-poster-head { text-align: center; }
+html[data-page="quadrilaterals"] #root .sc-poster-kicker { font-size: .85rem; font-weight: 600; color: var(--a-700); }
+html[data-page="quadrilaterals"] #root .sc-poster-name { font-size: clamp(1.7rem, 7.5vw, 2.2rem); font-weight: 800; line-height: 1.15; color: var(--a-900); }
+html[data-page="quadrilaterals"] #root .sc-poster-fig { margin: 2px 0 6px; }
+html[data-page="quadrilaterals"] #root .sc-poster-fig::before { display: none; }
+html[data-page="quadrilaterals"] #root .sc-poster-fig svg { max-width: 180px !important; pointer-events: none; }
+html[data-page="quadrilaterals"] #root .sc-ptiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+html[data-page="quadrilaterals"] #root .sc-ptile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 10px 8px 12px; border-radius: 16px; background: #fff; text-align: center;
+  box-shadow: inset 0 0 0 1px var(--line, #e7e5e0);
+}
+html[data-page="quadrilaterals"] #root .sc-ptile.wide { grid-column: 1 / -1; }
+html[data-page="quadrilaterals"] #root .sc-ptile-l { font-size: .85rem; font-weight: 600; color: var(--ink-3, #7a776f); line-height: 1.3; }
+html[data-page="quadrilaterals"] #root .sc-ptile-f {
+  direction: ltr; unicode-bidi: isolate; font-size: clamp(1.05rem, 4.6vw, 1.3rem); font-weight: 700; line-height: 1.3;
+  color: var(--ink, #1c1b19); font-variant-numeric: tabular-nums;
+}
+html[data-page="quadrilaterals"] #root .sc-ptile-n { font-size: .8rem; color: var(--ink-3, #7a776f); line-height: 1.35; }
+html[data-page="quadrilaterals"] #root .sc-pfacts { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+html[data-page="quadrilaterals"] #root .sc-pfacts li {
+  position: relative; padding-inline-start: 22px; text-align: start;
+  font-size: .95rem; font-weight: 500; line-height: 1.5; color: var(--ink-2, #4f4d48);
+}
+html[data-page="quadrilaterals"] #root .sc-pfacts li::before {
+  content: ""; position: absolute; inset-inline-start: 4px; top: .55em; width: 8px; height: 8px; border-radius: 50%; background: var(--a-500);
+}
+@media (min-width: 700px) {
+  html[data-page="quadrilaterals"] #root .sc-poster { padding: 26px 28px 24px; max-width: 560px; margin-inline: auto; }
+  html[data-page="quadrilaterals"] #root .sc-example, html[data-page="quadrilaterals"] #root .sc-sec > .step-card { max-width: 560px; margin-inline: auto; }
+}
 
 /* ── ratio & percent ────────────────────────────────────────────────────── */
 html[data-page="ratio-percent"] #root .ans-row .frac input { min-width: 64px; width: 64px !important; height: 48px; font-size: 1.2rem !important; font-weight: 700; }
