@@ -13,7 +13,10 @@ export default function App() {
   const row = useRef(null);
   useEffect(() => {
     const el = row.current && row.current.querySelector('.ch-btn.active');
-    if (el && row.current.scrollWidth > row.current.clientWidth) row.current.scrollTo({ left: el.offsetLeft - (row.current.clientWidth - el.offsetWidth) / 2, behavior: 'smooth' });
+    if (!el || row.current.scrollWidth <= row.current.clientWidth) return;
+    // measured on screen, so it is right in a right-to-left row too
+    const a = el.getBoundingClientRect(), b = row.current.getBoundingClientRect();
+    row.current.scrollBy({ left: (a.left + a.width / 2) - (b.left + b.width / 2), behavior: 'smooth' });
   }, [ch]);
   return (
     <div>
