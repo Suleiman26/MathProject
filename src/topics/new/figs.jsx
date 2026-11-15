@@ -72,8 +72,8 @@ function Grid({ fig }) {
       {ys.map((v) => <line key={'y' + v} x1={X(x0)} x2={X(x1)} y1={Y(v)} y2={Y(v)} stroke={LINE} strokeWidth="1" />)}
       {y0 <= 0 && y1 >= 0 && <line x1={X(x0)} x2={X(x1)} y1={Y(0)} y2={Y(0)} stroke={INK} strokeWidth="1.5" />}
       {x0 <= 0 && x1 >= 0 && <line x1={X(0)} x2={X(0)} y1={Y(y0)} y2={Y(y1)} stroke={INK} strokeWidth="1.5" />}
-      {!fig.noNumbers && xs.filter((v) => v !== 0 && v % every === 0).map((v) => <text key={'tx' + v} x={X(v)} y={Y(Math.max(y0, Math.min(0, y1))) + 12} textAnchor="middle" fontSize="9" fill={MUTED}>{v}</text>)}
-      {!fig.noNumbers && ys.filter((v) => v !== 0 && v % every === 0).map((v) => <text key={'ty' + v} x={X(Math.max(x0, Math.min(0, x1))) - 4} y={Y(v) + 3} textAnchor="end" fontSize="9" fill={MUTED}>{v}</text>)}
+      {!fig.noNumbers && xs.filter((v) => v !== 0 && v % every === 0).map((v) => <text key={'tx' + v} x={X(v)} y={Y(Math.max(y0, Math.min(0, y1))) + 12} textAnchor="middle" fontSize="10" fill={MUTED}>{v}</text>)}
+      {!fig.noNumbers && ys.filter((v) => v !== 0 && v % every === 0).map((v) => <text key={'ty' + v} x={X(Math.max(x0, Math.min(0, x1))) - 4} y={Y(v) + 3} textAnchor="end" fontSize="10" fill={MUTED}>{v}</text>)}
       {x0 <= 0 && x1 >= 0 && <text x={X(0) + 7} y={Y(y1) + 2} fontSize="11" fontStyle="italic" fill={INK}>y</text>}
       {y0 <= 0 && y1 >= 0 && <text x={X(x1) + 3} y={Y(0) - 6} fontSize="11" fontStyle="italic" fill={INK}>x</text>}
       {(fig.polys || []).map((p, i) => <path key={'p' + i} d={path(p.pts, true)} fill={col(p.color)} fillOpacity={p.dashed ? 0.06 : 0.16} stroke={col(p.color)} strokeWidth="2" strokeDasharray={p.dashed ? '5 4' : undefined} strokeLinejoin="round" />)}

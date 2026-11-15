@@ -14,6 +14,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2ff;color:#1e293b;mi
 .center{text-align:center}
 .banner{padding:20px;margin-bottom:14px;text-align:center;font-size:1.2rem;font-weight:700}
 .choice-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.ch-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px}
 }
 
 /* ── math ── */
@@ -36,7 +37,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2ff;color:#1e293b;mi
 #root .nw-lesson .nw-p{font-size:1.02rem;line-height:1.8;color:var(--ink-2);margin:0}
 #root .nw-lesson>*+*{margin-top:12px}
 #root .nw-lesson>.card-t{margin-bottom:0}
-#root .nw-formula{direction:ltr;text-align:center;padding:14px 10px;border-radius:14px;background:color-mix(in srgb,var(--a-50) 75%,#fff);font-size:clamp(1.15rem,5vw,1.45rem);overflow-x:auto}
+#root .nw-formula{direction:ltr;text-align:center;padding:14px 10px;border-radius:14px;background:color-mix(in srgb,var(--a-50) 75%,#fff);font-size:clamp(1.1rem,4.6vw,1.45rem);overflow-x:auto}
+#root .nw-formula .nw-m{white-space:normal;line-height:1.9}
 #root .nw-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 #root .nw-list li{position:relative;padding-inline-start:18px;font-size:1.02rem;line-height:1.7;color:var(--ink)}
 #root .nw-list li::before{content:"";position:absolute;inset-inline-start:2px;top:.72em;width:7px;height:7px;border-radius:50%;background:var(--a-500)}
@@ -89,7 +91,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2ff;color:#1e293b;mi
 
 /* ── drawings ── */
 #root .nw-figbox{margin:14px auto 0;display:grid;justify-items:center;gap:6px;max-width:100%}
-#root .nw-fig{display:block;width:100%;max-width:380px;height:auto;font-family:var(--font)}
+#root .nw-fig{direction:ltr;display:block;width:100%;max-width:380px;height:auto;font-family:var(--font)}
 #root .nw-cap{font-size:.85rem;color:var(--ink-3);text-align:center}
 #root .nw-tablewrap{max-width:100%;overflow-x:auto}
 #root .nw-table{border-collapse:separate;border-spacing:0;font-size:1rem;margin:0 auto;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
