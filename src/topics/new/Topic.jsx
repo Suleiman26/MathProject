@@ -14,7 +14,7 @@ export default function App() {
   useEffect(() => {
     const el = row.current && row.current.querySelector('.ch-btn.active');
     if (!el || row.current.scrollWidth <= row.current.clientWidth) return;
-    try { el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (e) {}
+    try { el.scrollIntoView({ behavior: 'instant', inline: 'center', block: 'nearest' }); } catch (e) {}
   }, [ch]);
   return (
     <div>
