@@ -14,9 +14,7 @@ export default function App() {
   useEffect(() => {
     const el = row.current && row.current.querySelector('.ch-btn.active');
     if (!el || row.current.scrollWidth <= row.current.clientWidth) return;
-    // measured on screen, so it is right in a right-to-left row too
-    const a = el.getBoundingClientRect(), b = row.current.getBoundingClientRect();
-    row.current.scrollBy({ left: (a.left + a.width / 2) - (b.left + b.width / 2), behavior: 'smooth' });
+    try { el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (e) {}
   }, [ch]);
   return (
     <div>
