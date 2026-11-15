@@ -24,6 +24,8 @@ export const CALC_TOPICS = {
   "parabola-practice": true,
   "intersection": true,
   "linear-function": true,
+  // the "חדש" module (board #84): where numbers are computed; not in the algebra-technique chapters
+  "new": { only: ["3. שאלות מילוליות", "5. מנסרה משולשת", "6. שכיחות ושכיחות יחסית", "7. הסתברות", "8. קנה מידה", "9. מבוא לפונקציות", "11. ממוצע, חציון, שכיח וטווח", "12. זווית חיצונית למשולש", "13. צלעות וזוויות במשולש", "20. משולש 30°-60°-90° ותיכון ליתר", "21. יחס שטחים במשולשים דומים", "22. הסתברות: מאורע משלים ודו-שלבי"] },
 
   // no calculator: the exercise is "compute this" / the algebra steps themselves
   "directed-numbers": false,
