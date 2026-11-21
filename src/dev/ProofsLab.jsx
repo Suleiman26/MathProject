@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import css from '@/topics/proofs/styles';
 import ProofFigure from '@/topics/proofs/ProofFigure';
 import { St } from '@/topics/proofs/signs';
-import { typeById } from '@/topics/proofs/types/index';
+import { typeById, TYPES } from '@/topics/proofs/types/index';
 import { partId } from '@/topics/proofs/figure-core';
 import { partsOf, present } from '@/topics/proofs/core';
 import ProofScreen from '@/topics/proofs/ProofScreen';
@@ -17,7 +17,9 @@ import { seeded, makeR } from '@/topics/new/core';
 import { start, act, ready } from '@/topics/proofs/session';
 
 const T3 = typeById('prove-congruence');
-export const problemOf = (tpl, seed = 7, level = 2, variant = 'B', words = false) => T3.remake({ template: tpl, seed, level, variant, meta: { words } });
+/* the type of a template id: '1-a' → type 1, '2-d' → type 2, '3-X-SAS' → type 3, '4-K-SAS-2' → type 4 */
+export const typeOfTpl = (tpl) => TYPES.find((t) => t.templates.some((x) => x.id === tpl)) || T3;
+export const problemOf = (tpl, seed = 7, level = 2, variant = 'B', words = false) => typeOfTpl(tpl).remake({ template: tpl, seed, level, variant, meta: { words } });
 
 function Figures() {
   const [end, setEnd] = useState({});
@@ -52,14 +54,14 @@ function Figures() {
 function Proof({ q }) {
   const level = +(q.get('l') || 1), variant = q.get('v') || 'B', seed = +(q.get('seed') || 7);
   const [made] = useState(() => {
-    const problem = problemOf(q.get('tpl') || '3-X-SAS', seed, level, variant, q.get('words') ? true : false);
-    return { problem, view: present(problem, level, variant, { counted: +(q.get('c') || 0), R: makeR(seeded(seed)) }) };
+    const tpl = q.get('tpl') || '3-X-SAS', problem = problemOf(tpl, seed, level, variant, q.get('words') ? true : false);
+    return { type: typeOfTpl(tpl), problem, view: present(problem, level, variant, { counted: +(q.get('c') || 0), R: makeR(seeded(seed)) }) };
   });
   const [end, setEnd] = useState(null);
   return (
     <div className="pf">
-      <ProofScreen type={T3} problem={made.problem} view={made.view} level={level} levelName={`רמה ${level}`} dots={[true, true, false, null]}
-        onEnd={(r) => setEnd({ clean: r.clean, dots: [true, true, false, r.clean], done: 4, typeName: T3.name, levelName: `רמה ${level}`, onMore: () => window.location.reload(), onFinish: () => {} })}
+      <ProofScreen type={made.type} problem={made.problem} view={made.view} level={level} levelName={`רמה ${level}`} dots={[true, true, false, null]}
+        onEnd={(r) => setEnd({ clean: r.clean, dots: [true, true, false, r.clean], done: 4, typeName: made.type.name, levelName: `רמה ${level}`, onMore: () => window.location.reload(), onFinish: () => {} })}
         onLeave={() => {}} onSwap={() => window.location.reload()} end={end} />
     </div>
   );
@@ -86,9 +88,9 @@ function End({ q }) {
     return { problem, view, s: solved(problem, view, state === 'helped') };
   });
   const clean = state !== 'helped';
-  const end = { clean, dots: clean ? [true, false, true, true] : [true, true, false, false], done: 7, typeName: T3.name, levelName: 'רמה 2', lessHelp: state === 'clean', round: state === 'round',
+  const end = { clean, dots: clean ? [true, false, true, true] : [true, true, false, false], done: 7, typeName: typeOfTpl(q.get('tpl') || '3-X-SAS').name, levelName: 'רמה 2', lessHelp: state === 'clean', round: state === 'round',
     event: state === 'levelup' ? 'level-up' : state === 'typedone' ? 'type-done' : null, newLevel: 3, onMore: () => {}, onFinish: () => {} };
-  return <div className="pf"><ProofScreen type={T3} problem={made.problem} view={made.view} level={2} levelName="רמה 2" dots={end.dots} restored={made.s} end={end} onEnd={() => {}} onLeave={() => {}} /></div>;
+  return <div className="pf"><ProofScreen type={typeOfTpl(q.get('tpl') || '3-X-SAS')} problem={made.problem} view={made.view} level={2} levelName="רמה 2" dots={end.dots} restored={made.s} end={end} onEnd={() => {}} onLeave={() => {}} /></div>;
 }
 
 /* sample progress for ?view=topic&s=new|mid|pro (written to this device's guest progress before the topic mounts) */

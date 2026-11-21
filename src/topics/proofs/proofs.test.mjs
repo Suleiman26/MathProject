@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { seeded, makeR } from '../new/core.js';
 import { TYPES, TABS, tabOf, typeById } from './types/index.js';
 import { lies } from './families/kit.js';
-import { present, classify, checkReason, isDone, canonRows, required } from './core.js';
+import { present, classify, checkReason, isDone, canonRows, required, decisionsOf, show, norm } from './core.js';
 import { start, act, restore, snapshot } from './session.js';
 
 const RUNS = Number(process.env.RUNS || 3000);
@@ -84,20 +84,86 @@ test('remake: the same template + seed + words gives the same problem (for an op
   const back = restore(snapshot(s), (meta) => t.remake(meta));
   assert.ok(back); assert.equal(back.pending.fact, p.canon[0]);
 });
-test('a whole type-3 proof plays through the session at every level', () => {
-  const t = typeById('prove-congruence'), R = makeR(seeded(31));
+/* one whole proof through the session, the student always answering the canon way */
+function playThrough(p, view) {
+  let s = start(p, view);
+  for (let guard = 0; guard < 60 && !s.ended; guard++) {
+    let a;
+    if (s.cur && s.cur.kind === 'reason') a = { t: 'reason', id: p.just[s.cur.fact][0].reasons[0] };
+    else if (s.cur) { const f = s.cur.fact || s.cur.expect; a = { t: 'statement', st: p.facts[f] }; }
+    else if (view.mode === 'walk' && s.stepI < view.steps.length) a = { t: 'next' };
+    else a = { t: 'qed' };
+    const o = act(s, a); assert.notEqual(o.s, s, `${p.id} L${p.level}${p.variant} stuck on ${JSON.stringify(a)}`); s = o.s;
+  }
+  return s;
+}
+for (const type of TYPES) test(`a whole ${type.id} proof plays through the session at every level`, () => {
+  const R = makeR(seeded(31));
   for (const [level, variant] of [[1, 'A'], [1, 'B'], [2, 'A'], [2, 'B'], [3, 'A'], [3, 'B']]) for (let i = 0; i < 20; i++) {
-    const p = t.make(R, level, variant, { recent: [], last: null }, { counted: 2 }), view = present(p, level, variant, { counted: 2, R });
-    let s = start(p, view);
-    for (let guard = 0; guard < 40 && !s.ended; guard++) {
-      let a;
-      if (s.cur && s.cur.kind === 'reason') a = { t: 'reason', id: p.just[s.cur.fact][0].reasons[0] };
-      else if (s.cur) { const f = s.cur.fact || s.cur.expect; a = { t: 'statement', st: p.facts[f] }; }
-      else if (view.mode === 'walk' && s.stepI < view.steps.length) a = { t: 'next' };
-      else a = { t: 'qed' };
-      const o = act(s, a); assert.notEqual(o.s, s, `${p.id} L${level}${variant} stuck on ${JSON.stringify(a)}`); s = o.s;
-    }
+    const p = type.make(R, level, variant, { recent: [], last: null }, { counted: 2 }), view = present(p, level, variant, { counted: 2, R });
+    const s = playThrough(p, view);
     assert.equal(s.ended, true, `${p.id} L${level}${variant} did not end`);
     assert.ok(s.decisions.every((d) => d.state === 'solo'));
+    assert.equal(s.decisions.length, decisionsOf(view), `${p.id} L${level}${variant}: decisions`);
   }
+});
+
+/* ── Task 16: type 4 ── */
+test('type 4: 33 templates = 11 variants × 3 goals, exactly the goals of §6.5', () => {
+  const t = typeById('then-conclusion'); assert.equal(t.templates.length, 33); assert.equal(t.button, '4. חפיפה ואז מסקנה');
+  assert.deepEqual(t.warm, ['W2', 'W4', 'W5', 'W6']); assert.equal(t.n, 4);
+  assert.ok(!t.templates.some((x) => x.family === '2'));
+  const R = makeR(seeded(4)), goals = {};
+  for (const tpl of t.templates) { const p = t.make(R, 2, 'B', { recent: [], last: null }, { only: tpl.id }); assert.equal(p.template, tpl.id); (goals[tpl.variant] ||= []).push(p.facts[p.target].kind); assert.equal(classify(p, [...p.given, ...canonRows(p).slice(0, 3).map((r) => r.fact), 'cong'], p.facts[p.target]).c, 'ok'); }
+  assert.deepEqual(goals['X-SAS'], ['seg', 'ang', 'ang']); assert.deepEqual(goals['X-ASA'], ['seg', 'seg', 'ang']);
+  assert.deepEqual(goals['K-SSS'], ['ang', 'ang', 'ang']); assert.deepEqual(goals['T-ASA'], ['seg', 'seg', 'ang']);
+});
+test('type 4: the goals are the very statements of the §6.5 table (role letters)', () => {
+  const t = typeById('then-conclusion'), R = makeR(seeded(41));
+  const want = {
+    'X-SAS': ['AC = BD', '∢OAC = ∢OBD', '∢OCA = ∢ODB'], 'X-ASA': ['CO = OD', 'AC = BD', '∢OCA = ∢ODB'],
+    'K-SSS': ['∢BAC = ∢DAC', '∢BCA = ∢DCA', '∢ABC = ∢ADC'], 'K-SAS': ['CB = CD', '∢BCA = ∢DCA', '∢ABC = ∢ADC'], 'K-ASA': ['AB = AD', 'CB = CD', '∢ABC = ∢ADC'],
+    'Z-SSS': ['∢BAC = ∢DCA', '∢BCA = ∢DAC', '∢ABC = ∢CDA'], 'Z-SAS': ['BC = DA', '∢BCA = ∢DAC', '∢ABC = ∢CDA'], 'Z-ASA': ['AB = CD', 'BC = DA', '∢ABC = ∢CDA'],
+    'T-SSS': ['∢ABD = ∢ACD', '∢BAD = ∢CAD', '∢ADB = ∢ADC'], 'T-SAS': ['BD = DC', '∢ABD = ∢ACD', '∢ADB = ∢ADC'], 'T-ASA': ['AB = AC', 'BD = DC', '∢ABD = ∢ACD'],
+  };
+  for (const tpl of t.templates) {
+    const names = tpl.family === 'X' ? ['A', 'B', 'C', 'D', 'O'] : ['A', 'B', 'C', 'D'];
+    const p = t.make(R, 2, 'B', { recent: [], last: null }, { only: tpl.id, names });
+    assert.equal(show(p.facts[p.target]), want[tpl.variant][tpl.goal - 1], tpl.id);
+    assert.equal(p.just[p.target][0].reasons[0], p.facts[p.target].kind === 'seg' ? 'cp-sides' : 'cp-angles');
+    assert.deepEqual(p.just[p.target][0].needs, ['cong']); assert.equal(p.roles[p.target], 'conclusion');
+    assert.deepEqual(p.canon, [...p.canon.slice(0, 3), 'cong', p.target]);
+  }
+});
+test('type 4: the unused consequences are "true but not needed"; the goal before the congruence is goal-as-known', () => {
+  const p = typeById('then-conclusion').make(makeR(seeded(6)), 3, 'B', { recent: [], last: null }, {});
+  const all = canonRows(p).map((r) => r.fact), other = Object.keys(p.facts).find((f) => !all.includes(f));
+  assert.equal(classify(p, all.slice(0, 4), p.facts[other]).textKey, 'st.notNeeded');
+  assert.equal(classify(p, all.slice(0, 3), p.facts[p.target]).kind, 'goal-as-known');
+});
+test('type 4: a conclusion is never claimed as a right angle (only the equality follows from the congruence)', () => {
+  const t = typeById('then-conclusion'), R = makeR(seeded(42));
+  for (const id of ['4-T-SSS-3', '4-T-SAS-3']) for (let i = 0; i < 30; i++) {
+    const p = t.make(R, 2, 'B', { recent: [], last: null }, { only: id });
+    assert.ok(!p.facts[p.target].right, id); assert.ok(!(p.facts[p.target].mark || {}).right, id);
+    assert.doesNotMatch(show(p.facts[p.target]), /90/);
+    for (const f of Object.keys(p.facts)) if (!p.canon.slice(0, 3).includes(f)) assert.ok(!p.facts[f].right, `${id} ${f}`);
+  }
+});
+test('type 4: the first Level-1 proof re-uses a variant already proved in type 3', () => {
+  const p = typeById('then-conclusion').make(makeR(seeded(9)), 1, 'B', { recent: [], last: null }, { prefer: '3-K-SAS' }); assert.equal(p.template.slice(0, 7), '4-K-SAS');
+  const q = typeById('then-conclusion').make(makeR(seeded(9)), 1, 'B', { recent: [], last: null }, { prefer: '3-2-SAS' }); assert.ok(q.template.startsWith('4-'));
+});
+test('type 4: wrong tiles are one unused consequence and one letter-swap; the goal is a real tile', () => {
+  const t = typeById('then-conclusion'), R = makeR(seeded(43));
+  for (let i = 0; i < 200; i++) {
+    const p = t.make(R, 2, 'B', { recent: [], last: null }, {});
+    assert.deepEqual(p.tiles.wrong.map((w) => w.why), ['consequence', 'letter-swap']);
+    assert.notEqual(norm(p.figure, p.tiles.wrong[0].st), norm(p.figure, p.facts[p.target]));
+    const v = present(p, 2, 'B', { R }); assert.ok(v.tiles.some((x) => x.fact === p.target));
+  }
+});
+test('type 4: remake rebuilds the same problem', () => {
+  const t = typeById('then-conclusion'), R = makeR(seeded(44));
+  for (let i = 0; i < 20; i++) { const p = t.make(R, 2, 'B', { recent: [], last: null }, { words: ['midpoint', 'bisector'] }), q = t.remake(p); assert.equal(q.id, p.id); assert.deepEqual(q.facts, p.facts); assert.deepEqual(q.tiles, p.tiles); assert.deepEqual(q.figure, p.figure); }
 });

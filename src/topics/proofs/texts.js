@@ -217,6 +217,7 @@ export const T = {
   'lbl.sample': 'כך נראית הוכחה',
   'ui.teamNote': 'העמוד מוסתר מתלמידים. המתמטיקה והניסוחים מחכים לאישור.',
   'ui.rescue2Btn': 'נעבור יחד',
+  'ui.planOk': 'נכון: החלקים האלה נמצאים במשולשים {t1}, {t2}. נוכיח קודם שהמשולשים חופפים.',
 
   /* ── one line per type on its landing ── */
   'about.read-given': 'מהמשפט שבנתון אל השוויון שהוא נותן, עם הנימוק הנכון.',
@@ -237,6 +238,7 @@ export const NEW_DRAFTS = [
   'lbl.title', 'lbl.whatClaim', 'lbl.pickTile', 'lbl.tapTwo', 'lbl.tapSecond', 'lbl.matchOrder', 'lbl.chooser', 'lbl.goalCong', 'lbl.sameSeg', 'lbl.walkIntro',
   'lbl.proofDone', 'lbl.cleanN', 'lbl.cleanAria', 'lbl.figure', 'lbl.leanGiven', 'lbl.leanSeen', 'lbl.leanRows', 'lbl.here',
   'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn',
+  'ui.planOk',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

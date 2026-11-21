@@ -5,7 +5,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { start, act, ready, summary } from './session.js';
-import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, congOf, acceptedReasons } from './core.js';
+import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, congOf, acceptedReasons, showPart } from './core.js';
 import { partId } from './figure-core.js';
 import { REASONS } from './reasons.js';
 import { RULES } from './mastery.js';
@@ -15,7 +15,7 @@ import ProofRows from './ProofRows.jsx';
 import Tray from './Tray.jsx';
 import EndCard from './EndCard.jsx';
 import { useSelection, TapStatement, GroupPick } from './TapBuild.jsx';
-import { St, Tx, IcBack, IcCheck, IcLock, IcSwap, IcHand } from './signs.jsx';
+import { St, Tx, Mx, IcBack, IcCheck, IcLock, IcSwap, IcHand } from './signs.jsx';
 
 const PAIR = { 1: 'var(--pf-p1)', 2: 'var(--pf-p2)', 3: 'var(--pf-p3)' };
 const ids = (problem, fact) => (problem.facts[fact] ? partsOf(problem.facts[fact]).map((x) => partId(x, problem.figure)) : []);
@@ -40,6 +40,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const [ending, setEnding] = useState(restored && restored.ended ? 'tint' : null);
   const [cardOn, setCardOn] = useState(false);
   const [live, setLive] = useState('');
+  // type 4: the unscored plan question "באילו שני משולשים נמצאים …?" before the first row (not a decision, no row)
+  const [planQ, setPlanQ] = useState(() => (!restored && view.plan === 'tris' && (problem.figure.tris || []).length === 2 ? { picked: [] } : null));
   const n = useRef(0), timers = useRef({}), rowsEl = useRef(null), qedDone = useRef(false), intro = useRef(!restored);
   const reduce = useReducedMotion();
   const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]));
@@ -120,6 +122,18 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     rowsSeen.current = s.rows.length;
   }, [s.rows.length]);
 
+  /* type 4's plan question: tap the two triangles (in the drawing or as chips); the reply is a private note */
+  function pickPlan(id) {
+    if (!planQ || planQ.picked.includes(id) || planQ.picked.length >= 2) return;
+    const picked = [...planQ.picked, id];
+    setPlanQ({ picked });
+    if (picked.length === 2) {
+      const [t1, t2] = tris.map((t) => `△${t.join('')}`);
+      setFbs([{ id: ++n.current, cls: 'note', key: 'ui.planOk', vars: { t1, t2 }, label: '', look: 'ok' }]);
+      setLive(fill('ui.planOk', { t1, t2 }));
+    }
+  }
+
   /* ── what the drawing shows ── */
   const marks = useMemo(() => {
     const out = [], pre = s.view.pre || [];
@@ -148,7 +162,20 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const colorOf = (fact) => (level === 1 && p.facts[fact].mark ? PAIR[p.facts[fact].mark.color] : undefined);
   let head = null, body = null, label = cur ? cur.label : '', hint = null, onCancel = null, onPick = () => {};
 
-  if (leans) {
+  const tris = p.figure.tris || [];
+  if (planQ) {
+    const gp = partsOf(p.facts[targets(p)[0]]).map(showPart), both = planQ.picked.length === 2;
+    head = { ask: <Tx k="lbl.planTris" vars={{ x: gp[0], y: gp[1] }} /> };
+    label = '';
+    body = { t: 'node', node: (
+      <>
+        <div className="pf-chips pf-cols-2">
+          {tris.map((t) => { const id = partId(t), on = planQ.picked.includes(id); return <button type="button" key={id} className={`pf-chip pf-partc${on ? ' is-on' : ''}`} aria-pressed={on} onClick={() => pickPlan(id)}><Mx s={`△${t.join('')}`} /></button>; })}
+        </div>
+        {both && <div className="pf-go-row"><button type="button" className="pf-go" onClick={() => setPlanQ(null)}>{T['btn.start']}</button></div>}
+      </>
+    ) };
+  } else if (leans) {
     const role = roleOf(p, leans.fact);
     const answer = role === 'vertical' || role === 'common' ? 'seen' : role === 'congruence' || role === 'conclusion' || role === 'partner' ? 'rows' : 'given';
     const done = !!leans.picked;
@@ -228,11 +255,11 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       ) };
     }
   }
-  if (cur && !leans && !isDone && !(mode === 'walk' && body && body.t === 'action')) {
+  if (cur && !planQ && !leans && !isDone && !(mode === 'walk' && body && body.t === 'action')) {
     hint = { rung: cur.rung, nudge, wait: cur.rung === 2 && showKey !== cur.key, waitMs: RULES.HINT3_WAIT_MS };
   }
 
-  const tapping = mode === 'tap' && !end && !!cur && cur.kind === 'statement' && !leans && !isDone;
+  const tapping = mode === 'tap' && !end && !planQ && !!cur && cur.kind === 'statement' && !leans && !isDone;
   const leave = () => onLeave && onLeave({ nonSolo: s.nonSolo, decisions: s.decisions, ended: s.ended });
   const given = p.givenText || [];
 
@@ -249,8 +276,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       </div>
       <div className="pf-figcol">
         <div className="pf-stage">
-          <ProofFigure problem={p} marks={marks} focus={end ? [] : focus} selected={tapping ? sel.selected : []} pulse={pulse} question={question}
-            tappable={tapping ? ['seg', 'ang', 'tri'] : false} onPart={sel.tap} ending={ending} />
+          <ProofFigure problem={p} marks={marks} focus={end || planQ ? [] : focus} selected={planQ ? planQ.picked : tapping ? sel.selected : []} pulse={pulse} question={question}
+            tappable={planQ ? ['tri'] : tapping ? ['seg', 'ang', 'tri'] : false} onPart={planQ ? (id) => pickPlan(id) : sel.tap} ending={ending} />
         </div>
       </div>
       <div className="pf-work">

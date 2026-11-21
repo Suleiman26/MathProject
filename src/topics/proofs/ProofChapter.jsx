@@ -5,7 +5,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { useAccount, accountApi } from '@/lib/account';
-import { present, decisionsOf } from './core.js';
+import { present, decisionsOf, targets } from './core.js';
 import { snapshot, restore } from './session.js';
 import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, useForce as clearForce, dots, lessHelp, leftRecord } from './mastery.js';
 import { TYPES, TABS } from './types/index.js';
@@ -79,7 +79,10 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
     let lv = level;
     if (opts.walk) { variant = 'A'; counted = false; lv = 1; }
     const seed = newSeed(), R = makeR(seeded(seed));
-    const problem = type.make(R, lv, variant, { recent: t.recent, last: last.current }, { counted: t.count[lv], want: t.retry, words: [] });
+    // type 4: the first Level-1 proof re-uses a variant the student already proved in type 3 (§6.5)
+    const t3 = typeState(stateRef.current, 'prove-congruence'), proved = [1, 2, 3].flatMap((l) => t3.hist[l]).map((r) => r.tpl).filter((x) => /^3-[XKZT]-/.test(x));
+    const prefer = type.id === 'then-conclusion' && lv === 1 && !t.count[1] && proved.length ? proved[proved.length - 1] : undefined;
+    const problem = type.make(R, lv, variant, { recent: t.recent, last: last.current }, { counted: t.count[lv], want: t.retry, words: [], prefer });
     let view = present(problem, lv, variant, { counted: t.count[lv], R });
     if (opts.walk) view = { ...view, ties: false, steps: view.steps.map((s) => ({ ...s, ask: [] })) };   // a fully worked example
     if (t.force === 'A' && !opts.walk) putType(clearForce(t));
@@ -148,7 +151,7 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
   /* ── what is on screen ── */
   const level = Math.min(3, ts.level), passed = ts.level >= 4;
   const sample = useMemo(() => { try { return type.remake({ template: type.templates[0].id, seed: 20261121, level: 1, variant: 'A', meta: null }); } catch { return null; } }, [type]);
-  const sampleMarks = useMemo(() => (sample ? [...sample.canon.filter((f) => f !== 'cong').map((fact, i) => ({ fact, style: 'on', delay: 500 + i * 420 })), { fact: 'cong', style: 'goal' }] : []), [sample]);
+  const sampleMarks = useMemo(() => (sample ? [...sample.canon.filter((f) => f !== 'cong' && !targets(sample).includes(f)).map((fact, i) => ({ fact, style: 'on', delay: 500 + i * 420 })), ...targets(sample).map((fact) => ({ fact, style: 'goal' }))] : []), [sample]);
   const began = ts.done > 0 || ts.walked;
   const lockedNext = level < 3 ? level + 1 : null;
   const idx = TYPES.findIndex((x) => x.id === type.id), prev = idx > 0 ? TYPES[idx - 1] : null;

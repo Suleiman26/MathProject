@@ -81,7 +81,10 @@ function liesOf(base, quick) {
   const out = { push: (...m) => { found.push(...m); if (quick && found.length) throw STOP; } };
   // 1. every listed fact is true in the coordinates
   for (const [id, f] of Object.entries(facts)) if (!holds(fig, f, 1e-6)) out.push(`fact ${id} is false`);
-  const right = new Set(Object.values(facts).filter((f) => f.kind === 'ang' && f.right).flatMap((f) => [angKey(fig, f.x), angKey(fig, f.y)]));
+  // angles known to be right: a right-angle fact, or an angle equality that is exactly 90° in the
+  // coordinates (type 4 states ∢ADB = ∢ADC without "= 90°": only the equality follows from the congruence)
+  const is90 = (a) => Math.abs(measure(fig, a) - 90) < 1e-6;
+  const right = new Set(Object.values(facts).filter((f) => f.kind === 'ang' && (f.right || (is90(f.x) && is90(f.y)))).flatMap((f) => [angKey(fig, f.x), angKey(fig, f.y)]));
   // 2. same-kind tappable parts that are not a fact look clearly different (a pair that is exactly
   //    equal is not a lie: it is true, and the checker answers it as "true, no reason in our list")
   const keys = new Set(Object.values(facts).map((f) => norm(fig, f)));
