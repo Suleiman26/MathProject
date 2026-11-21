@@ -9,7 +9,7 @@
    says so, so the screen can tell the truth ("נשמר רק במכשיר הזה"). Any other error is shown, never hidden.
 
    `run` = useAdmin().run (adds the PIN session; an expired one signs out). */
-import { contentChecks } from "../api";
+import { contentChecks, topicStatus } from "../api";
 export { takeSnapshot, buildRequest, readPlace, deviceLine, questionLink, QUESTION_PLACE } from "./snapshot";
 export { siteVersion } from "./version";
 
@@ -75,5 +75,29 @@ export async function unmarkChecked(run, { topic, section }) {
     catch (e) { if (!missingFn(e)) throw e; checksShared = false; }
   }
   writeLocal(readLocal().filter((c) => !(c.topic === topic && c.section === section)));
+  return { ok: true };
+}
+
+/* status per topic ("ready" | "missing", Abed 2026-11-21). Same fallback as the ✓ marks: until the migration
+   is on the database, it stays in this browser and `statusShared` says so. */
+const LOCAL_ST = "mp:cpl-topic-status";
+export let statusShared = true;
+const readLocalSt = () => { try { return JSON.parse(localStorage.getItem(LOCAL_ST)) || []; } catch { return []; } };
+
+/** → [{ topic, status, author, updated_at }] */
+export async function listTopicStatus(run) {
+  try { const r = await topicStatus.list(run); statusShared = true; return Array.isArray(r) ? r : []; }
+  catch (e) { if (!missingFn(e)) throw e; statusShared = false; return readLocalSt(); }
+}
+
+/** status "ready" | "missing" | null (clear) */
+export async function setTopicStatus(run, { topic, status, author }) {
+  if (statusShared) {
+    try { const r = await topicStatus.set(run, { topic, status, author }); if (r && r.error) throw new Error(r.error); return r; }
+    catch (e) { if (!missingFn(e)) throw e; statusShared = false; }
+  }
+  const rows = readLocalSt().filter((r) => r.topic !== topic);
+  if (status) rows.push({ topic, status, author, updated_at: new Date().toISOString() });
+  try { localStorage.setItem(LOCAL_ST, JSON.stringify(rows)); } catch {}
   return { ok: true };
 }

@@ -58,6 +58,7 @@ const CH = ["פרק א׳", "פרק ב׳", "פרק ג׳", "פרק ד׳"];
 const LS = "mp:demo-catalog";
 const LSF = "mp:demo-fixes";
 const LSC = "mp:demo-checks";
+const LST = "mp:demo-topic-status";
 const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const listOf = { grade: "grades", category: "categories", topic: "topics", plan: "plans" };
@@ -252,6 +253,18 @@ const demo = {
     save(LSC, [...rows, r]);
     return r;
   },
+  // content review topic status (preview): kept in this browser, same answers as the database functions
+  admin_topic_statuses() { return (load(LST) || []).slice().sort((a, b) => a.topic.localeCompare(b.topic)); },
+  admin_topic_status_set({ topic, status, author }) {
+    const t = String(topic || "").trim(), s = String(status || "").trim();
+    if (!t) return { error: "empty" };
+    const rows = (load(LST) || []).filter((r) => r.topic !== t);
+    if (!s) { save(LST, rows); return { ok: true, cleared: true }; }
+    if (s !== "ready" && s !== "missing") return { error: "status" };
+    const r = { topic: t, status: s, author: String(author || "").trim().slice(0, 40) || "צוות", updated_at: new Date().toISOString() };
+    save(LST, [...rows, r]);
+    return r;
+  },
   admin_content_uncheck({ topic, section }) {
     const rows = load(LSC) || [], t = String(topic || "").trim(), s = String(section || "").trim();
     const keep = rows.filter((r) => !(r.topic === t && r.section === s));
@@ -284,6 +297,14 @@ export const contentChecks = {
   check: (run, { topic, section, author }) => run("admin_content_check", { topic, section, author }),
   /** → { ok: true, deleted } */
   uncheck: (run, { topic, section }) => run("admin_content_uncheck", { topic, section }),
+};
+
+/* content review: a status per topic, "ready" | "missing" (topic_status, 20261121190000_topic_status.sql) */
+export const topicStatus = {
+  /** → [{ topic, status, author, updated_at }] */
+  list: (run) => run("admin_topic_statuses", {}),
+  /** status "ready" | "missing", or null to clear → the row, or { ok, cleared } */
+  set: (run, { topic, status, author }) => run("admin_topic_status_set", { topic, status: status || null, author }),
 };
 
 /* site-wide switches (e.g. the math keypad); everyone may read them */

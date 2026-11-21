@@ -55,7 +55,14 @@ export function TreeControls({ ctx, hint, onHint, onNext, q, setQ, onSearchEnter
   );
 }
 
-export function Tree({ ctx, grades, names, colors, sel, onSelect, open, onToggle, q, onlyOpen, onlyNew, loading }) {
+/** the topic's status chip (Abed 2026-11-21): מוכן / חסר עוד; nothing while not marked */
+export const ST = { ready: { label: "מוכן", cls: "rd" }, missing: { label: "חסר עוד", cls: "ms" } };
+export function StatusChip({ st }) {
+  if (!st || !ST[st.status]) return null;
+  return <span className={"cpl-st " + ST[st.status].cls} title={ST[st.status].label + " · " + st.author}>{ST[st.status].label}</span>;
+}
+
+export function Tree({ ctx, grades, names, colors, sel, onSelect, open, onToggle, q, onlyOpen, onlyNew, loading, statusOf = () => null }) {
   if (loading || !ctx) {
     return <div className="cpl-tree-sk" aria-label="טוען">{[70, 52, 64, 48, 58, 44, 66, 50].map((w, i) => <span key={i} style={{ width: w + "%", marginInlineStart: (i % 3) * 14 }} />)}</div>;
   }
@@ -109,6 +116,7 @@ export function Tree({ ctx, grades, names, colors, sel, onSelect, open, onToggle
         inner: <>{car(tk, tOpen)}<span className="cpl-tdot" data-c={colors(t)} /><span className="cpl-tr-n">{hl(names(t), query)}</span><span className="cpl-tr-c">
           {tc.r ? <span className="cpl-rv" title="תוקן, מחכה לאישור שלך"><ArrowCounterClockwise weight="bold" />{tc.r}</span> : null}
           {tc.o ? <span className="cpl-mk open">{tc.o}</span> : null}
+          <StatusChip st={statusOf(t)} />
           <span className="num">{tp.ok}/{tp.n}</span>
         </span></> }));
       if (!tOpen) return;
@@ -132,6 +140,7 @@ export function Tree({ ctx, grades, names, colors, sel, onSelect, open, onToggle
         <span><Mark small m={{ kind: "ok" }} />נבדק</span>
         <span><Mark small m={{ kind: "open", o: 2 }} />בקשות פתוחות</span>
         <span><Mark small m={{ kind: "chg" }} />תוקן, מחכה לאישור שלך</span>
+        <span><span className="cpl-st rd sm">מוכן</span><span className="cpl-st ms sm">חסר עוד</span>מצב הנושא</span>
       </div>
     </>
   );

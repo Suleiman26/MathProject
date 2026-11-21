@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check, Flag, ArrowCounterClockwise, Info, X, ArrowSquareOut } from "@phosphor-icons/react";
 import { Item, STATUS } from "../Fixes";
 import { ago } from "../../ui";
+import { ST } from "./Tree";
 import { inNode, aboveNode, whereRel, chapterMark, topicProg, gradeProg, gradesOf, isOpen } from "./model";
 
 const LVL = { site: "כל האתר", grade: "כיתה", topic: "נושא", chapter: "פרק" };
@@ -13,7 +14,7 @@ export const LVL_ON = { site: "על כל האתר", grade: "על הכיתה", to
 const ORDER = { review: 0, reopened: 1, new: 2, working: 3, later: 4, done: 5 };
 const ord = (l) => l.slice().sort((a, b) => (ORDER[a.it.status] ?? 9) - (ORDER[b.it.status] ?? 9) || b.it.id - a.it.id);
 
-export function Inspector({ sel, ctx, grades, names, seen, onCheck, onReport, onGoto, onClose, flash, itemProps, busyCheck }) {
+export function Inspector({ sel, ctx, grades, names, seen, onCheck, onReport, onGoto, onClose, flash, itemProps, busyCheck, statusOf = () => null, onStatus, busyStatus }) {
   const n = sel;
   const g = n.gradeId ? grades.find((x) => x.id === n.gradeId) : null;
   const title = n.lvl === "site" ? "כל האתר" : n.lvl === "grade" ? (g ? g.name : "") : n.lvl === "topic" ? names(n.slug) : n.chapter;
@@ -39,9 +40,27 @@ export function Inspector({ sel, ctx, grades, names, seen, onCheck, onReport, on
   } else if (ctx) {
     let pr = null;
     if (n.lvl === "topic") { const p = topicProg(n.slug, ctx); pr = <div className={"cpl-ck" + (p.n && p.ok === p.n ? " ok" : "")}><span className="cpl-mini w"><i style={{ width: (p.n ? (p.ok / p.n) * 100 : 0) + "%" }} /></span><span>{p.ok} מתוך {p.n} פרקים נבדקו<small>מסמנים ✓ בכל פרק בנפרד</small></span></div>; }
-    if (n.lvl === "grade" && g && !g.hidden) { const p = gradeProg(g, ctx); pr = <div className="cpl-ck"><span className="cpl-mini w"><i style={{ width: (p.n ? (p.ok / p.n) * 100 : 0) + "%" }} /></span><span>{p.ok} מתוך {p.n} פרקים נבדקו בכיתה</span></div>; }
+    if (n.lvl === "grade" && g && !g.hidden) {
+      const p = gradeProg(g, ctx), rd = g.topics.filter((t) => (statusOf(t) || {}).status === "ready").length, ms = g.topics.filter((t) => (statusOf(t) || {}).status === "missing").length;
+      pr = <div className="cpl-ck"><span className="cpl-mini w"><i style={{ width: (p.n ? (p.ok / p.n) * 100 : 0) + "%" }} /></span><span>{p.ok} מתוך {p.n} פרקים נבדקו בכיתה<small>{rd} מתוך {g.topics.length} נושאים מוכנים{ms ? " · " + ms + " חסר עוד" : ""}</small></span></div>;
+    }
     if (n.lvl === "grade" && g && g.hidden) pr = <div className="cpl-ck"><Info /><span>נושאים שעוד לא מופיעים לתלמידים<small>סולימאן משבץ כל פרק בנושא אמיתי</small></span></div>;
-    head = <>{pr}<div className="cpl-acts">
+    let stRow = null;
+    if (n.lvl === "topic") {
+      const st = statusOf(n.slug);
+      stRow = <div className="cpl-stset">
+        <div className="cpl-stset-h"><b>מצב הנושא</b><small>{st ? ST[st.status].label + " · " + st.author + " · " + ago(st.updated_at) : "עוד לא סומן"}</small></div>
+        <div className="cpl-seg" role="group" aria-label="מצב הנושא">
+          {["ready", "missing"].map((k) => (
+            <button key={k} type="button" className={ST[k].cls} aria-pressed={!!st && st.status === k} disabled={busyStatus} onClick={() => onStatus && onStatus(n.slug, k)}>
+              {k === "ready" ? <Check weight="bold" /> : <span className="cpl-seg-dot" />}{ST[k].label}
+            </button>
+          ))}
+        </div>
+        {st && st.status === "missing" ? <small className="cpl-stset-tip">מה חסר? ״דווח על הנושא״ ומשפט אחד, וזה יגיע ללוח התיקונים.</small> : null}
+      </div>;
+    }
+    head = <>{pr}{stRow}<div className="cpl-acts">
       <button type="button" className="cpl-b pri" onClick={() => onReport(n.lvl)}><Flag weight="fill" />דווח {LVL_ON[n.lvl]}</button>
       {n.slug ? <a className="cpl-b" href={"/topics/" + n.slug} target="_blank" rel="noopener"><ArrowSquareOut />פתיחה באתר</a> : null}
     </div></>;

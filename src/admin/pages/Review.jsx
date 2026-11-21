@@ -24,7 +24,7 @@ import { useFrame, topicUrl } from "./review/frame";
 import {
   buildGrades, buildIndex, topicName as nameOf, chaptersOf, chapterMark, countsIn, nextInQueue, WHY, isOpen, HIDDEN_ID, ckKey,
 } from "./review/model";
-import { listFixes, addFix, commentFix, listChecks, markChecked, unmarkChecked, takeSnapshot, readPlace, checksShared } from "@/admin/review/data";
+import { listFixes, addFix, commentFix, listChecks, markChecked, unmarkChecked, takeSnapshot, readPlace, checksShared, listTopicStatus, setTopicStatus, statusShared } from "@/admin/review/data";
 
 const LS_SEL = "mp:cpl-sel", LS_HINT = "mp:cpl-hint", LS_DEV = "mp:cpl-dev";
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -45,6 +45,8 @@ export default function Review() {
   const [items, setItems] = useState(null);
   const [checks, setChecks] = useState(null);
   const [localChecks, setLocalChecks] = useState(false);
+  const [statuses, setStatuses] = useState(null);   // topic → { status: "ready" | "missing", author, updated_at }
+  const [busyStatus, setBusyStatus] = useState(false);
   const [name, setName] = useName();
   const phone = useMedia("(max-width: 1099px)");
   const [sel, setSel] = useState({ lvl: "site", n: 0 });
@@ -101,7 +103,12 @@ export default function Review() {
     try { const l = await listChecks(a.run); setChecks(l); setLocalChecks(!checksShared); }
     catch (e) { setChecks((x) => x || []); say("הסימונים לא נטענו: " + e.message, null, true); }
   }, [a.run, say]);
-  useEffect(() => { reloadItems(); reloadChecks(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const reloadStatuses = useCallback(async () => {
+    try { const l = await listTopicStatus(a.run); setStatuses(new Map(l.map((r) => [r.topic, r]))); }
+    catch (e) { setStatuses((x) => x || new Map()); say("מצב הנושאים לא נטען: " + e.message, null, true); }
+  }, [a.run, say]);
+  useEffect(() => { reloadItems(); reloadChecks(); reloadStatuses(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const statusOf = useCallback((slug) => (statuses && statuses.get(slug)) || null, [statuses]);
 
   /* ── remembered on this device: the last place and the dismissed hint ── */
   const restored = useRef(false);
@@ -268,6 +275,22 @@ export default function Review() {
     finally { setBusy(false); }
   }
 
+  /* the topic's status: "ready" | "missing"; choosing the current one again clears it */
+  async function changeStatus(slug, status) {
+    if (!slug) return;
+    if (!name) { say("קודם בחרו מי אתם (למעלה)", null, true); return; }
+    const cur = statusOf(slug), next = cur && cur.status === status ? null : status;
+    setBusyStatus(true);
+    try {
+      await setTopicStatus(a.run, { topic: slug, status: next, author: name });
+      await reloadStatuses();
+      say(next === "ready" ? "✓ " + names(slug) + " מסומן כמוכן" : next === "missing" ? names(slug) + " מסומן: חסר עוד" : "הסימון של הנושא בוטל",
+        next === "missing" ? { label: "לכתוב מה חסר ›", fn: () => openReport("topic") } : null);
+      if (!statusShared) say("מצב הנושא נשמר כרגע רק במכשיר הזה", null, true);
+    } catch (e) { say("לא נשמר: " + e.message, null, true); }
+    finally { setBusyStatus(false); }
+  }
+
   async function toggleCheck() {
     if (!sel.slug || !sel.chapter) return;
     if (!name) { say("קודם בחרו מי אתם (למעלה)", null, true); return; }
@@ -397,7 +420,7 @@ export default function Review() {
           q={q} setQ={setQ} onSearchEnter={searchEnter} onlyOpen={onlyOpen} setOnlyOpen={setOnlyOpen} onlyNew={onlyNew} setOnlyNew={setOnlyNew} localChecks={localChecks} />
         <Tree ctx={ctx} grades={grades || []} names={names} colors={colors} sel={sel} loading={loading}
           onSelect={(n) => choose(n)} open={open} onToggle={(key) => setOpen((o) => { const s = new Set(o); s.has(key) ? s.delete(key) : s.add(key); return s; })}
-          q={q} onlyOpen={onlyOpen} onlyNew={onlyNew} />
+          q={q} onlyOpen={onlyOpen} onlyNew={onlyNew} statusOf={statusOf} />
       </section>
 
       <Stage frame={frame} sel={sel} grades={grades || []} names={names} colors={colors} ctx={ctx} crumbs={crumbs} seen={seenHere}
@@ -406,6 +429,7 @@ export default function Review() {
 
       <aside className="cpl-insp" aria-label="בקשות והערות">
         <Inspector sel={node} ctx={ctx} grades={grades || []} names={names} seen={seenHere} flash={flash} busyCheck={busyCheck}
+          statusOf={statusOf} onStatus={changeStatus} busyStatus={busyStatus}
           onCheck={toggleCheck} onReport={(lvl) => openReport(lvl)} onGoto={goto} onClose={() => setSheet(false)}
           itemProps={{ busy, onAct: act, urls, onView: (list, index) => setView({ list, index }), preview: a.preview,
             onDeleteFile: async (f) => { if (!confirm(f.kind === "link" ? "למחוק את הקישור?" : "למחוק את הקובץ?")) return; try { await deleteFile(a.tok, f); setView(null); await reloadItems(); say("נמחק"); } catch (e) { say("לא נמחק: " + e.message, null, true); } } }} />

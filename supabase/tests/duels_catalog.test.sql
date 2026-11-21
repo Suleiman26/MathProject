@@ -42,6 +42,8 @@ insert into t_allow values
   ('admin_content_check(tok uuid, topic text, section text, author text)'),
   ('admin_content_checks(tok uuid)'),
   ('admin_content_uncheck(tok uuid, topic text, section text)'),
+  ('admin_topic_status_set(tok uuid, topic text, status text, author text)'),
+  ('admin_topic_statuses(tok uuid)'),
   ('admin_fix_comment(tok uuid, item_id bigint, author text, body text, new_status text, has_files boolean)'),
   ('admin_fix_delete(tok uuid, item_id bigint)'),
   ('admin_fix_edit(tok uuid, item_id bigint, topic text, section text, body text)'),
