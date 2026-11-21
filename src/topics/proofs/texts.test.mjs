@@ -54,3 +54,15 @@ test('every undrafted text is declared', () => {
   for (const k of NEW_DRAFTS) assert.ok(k in T, k);
   for (const k of ['w.W1.why','w.W7.why','skill.W4','about.prove-congruence']) assert.ok(NEW_DRAFTS.includes(k), k);
 });
+test('Hebrew consistency (review M7): gershayim in abbreviations, one form of מ.ש.ל., one wording for a midpoint, W2 in the masculine', () => {
+  for (const [k, v] of Object.entries(T)) {
+    assert.ok(!/[א-ת]"[א-ת]/.test(v), `ASCII quote in an abbreviation: ${k}`);
+    if (v.includes('מ.ש.ל')) assert.ok(!/מ\.ש\.ל(?!\.)/.test(v), `מ.ש.ל without its final dot: ${k}`);
+    if (/אמצע/.test(v) && k.startsWith('gv.')) assert.match(v, /אמצע (הצלע|הקטע) /, k);
+  }
+  assert.equal(T['lbl.toProve'], 'צ״ל:'); assert.equal(T['btn.qed'], 'מ.ש.ל.');
+  assert.ok(!('gv.mid' in T));
+  assert.equal(T['w.W2'], 'ידוע, או רק נראה כך?'); assert.deepEqual([T['w.W2.known'], T['w.W2.looks']], ['ידוע', 'רק נראה כך']);
+  for (const k of ['w.W2', 'w.W3', 'st.partner']) assert.ok(NEW_DRAFTS.includes(k), `${k} differs from the spec draft`);
+  assert.equal(fill('st.partner', { p: 'A', q: 'E', place: T['lbl.place1'] }), 'האות A כתובה במקום הראשון במשולש הראשון, והאות E באותו מקום במשולש השני. לכן הקודקוד A מתאים לקודקוד E.');
+});

@@ -272,7 +272,7 @@ export function summary(s) {
 export const endClean = (s) => isClean(summary(s));
 /** "הוכחה אחרת" is free only before the first non-solo decision. */
 export const canSwapFree = (s) => s.nonSolo === 0;
-/** Is the proof ready for "מ.ש.ל"? */
+/** Is the proof ready for "מ.ש.ל."? */
 export const ready = (s) => !s.ended && !s.pending && isDone(s.problem, s.done);
 
 /* ── the open proof survives a refresh (sessionStorage, spec §8) ── */

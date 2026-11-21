@@ -22,7 +22,7 @@ function wordsFor(variant, opts, R) {
   if (variant === 'T-SSS') {
     const forms = [];
     if (ok('median')) forms.push({ facts: ['sBD'], word: 'median', key: 'gv.median', vars: { l: 'AD', s: 'BC' } });
-    if (ok('midpoint')) forms.push({ facts: ['sBD'], word: 'midpoint', key: 'gv.mid', vars: { p: 'D', s: 'BC' } });
+    if (ok('midpoint')) forms.push({ facts: ['sBD'], word: 'midpoint', key: 'gv.midSide', vars: { p: 'D', s: 'BC' } });
     return forms.length ? [R.pick(forms)] : null;
   }
   const out = [];

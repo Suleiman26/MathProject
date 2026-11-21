@@ -60,7 +60,7 @@ export const T = {
   'st.word.median': 'תיכון מגיע לאמצע הצלע. הוא לא אומר שום דבר על הזוויות.',
   'st.word.bisector': 'חוצה זווית מחלק את הזווית לשתי זוויות שוות. הוא לא אומר שהקטעים שווים.',
   'st.word.altitude': 'גובה יוצר זווית ישרה עם הצלע. הוא לא בהכרח מגיע לאמצע שלה.',
-  'st.partner': 'בכתיבת החפיפה {p} כתובה במקום {{place}}, וגם {q}. לכן הקודקוד {p} מתאים לקודקוד {q}.',
+  'st.partner': 'האות {p} כתובה במקום {{place}} במשולש הראשון, והאות {q} באותו מקום במשולש השני. לכן הקודקוד {p} מתאים לקודקוד {q}.',
   'st.notAsked': 'נכון, אבל לא על זה שאלו.',
   'st.matchingAng': 'בדקו את הסדר. ידוע כבר: {st}. לכן הקודקוד {p} מתאים לקודקוד {q}.',
   'st.matchingTwo': 'בדקו את הסדר. ידוע כבר: {st1}, {st2}. הקודקוד {p} נמצא על שתי הצלעות האלה, ולכן הוא מתאים לקודקוד {q}.',
@@ -113,7 +113,7 @@ export const T = {
   /* ── buttons (never a check word or ✓: the tracker would treat them as check buttons) ── */
   'btn.hint': 'רמז', 'btn.hint2': 'עוד רמז', 'btn.show': 'הראו לי', 'btn.add': 'להוסיף שורה',
   'btn.parts': 'רשימת חלקים', 'btn.cancel': 'ביטול', 'btn.back': 'חזרה', 'btn.next': 'הבא',
-  'btn.go': 'קדימה', 'btn.qed': 'מ.ש.ל', 'btn.more': 'הוכחה נוספת', 'btn.finish': 'סיום',
+  'btn.go': 'קדימה', 'btn.qed': 'מ.ש.ל.', 'btn.more': 'הוכחה נוספת', 'btn.finish': 'סיום',
   'btn.swap': 'הוכחה אחרת', 'btn.start': 'מתחילים', 'btn.continue': 'ממשיכים',
 
   /* ── labels ── */
@@ -122,7 +122,7 @@ export const T = {
   'lbl.leans': 'על אילו שורות זה נשען?',
   'lbl.notebook': 'כך כותבים את זה במחברת',
   'lbl.given': 'נתון:',
-  'lbl.toProve': 'צ"ל:',
+  'lbl.toProve': 'צ״ל:',
   'lbl.goal': 'צריך להוכיח',
   'lbl.claim': 'טענה',
   'lbl.reason': 'נימוק',
@@ -156,7 +156,6 @@ export const T = {
 
   /* ── given sentences in words (§6.4, §6.5) ── */
   'gv.midpoint': '{p} אמצע הקטע {s}',
-  'gv.mid': '{p} אמצע {s}',
   'gv.midSide': '{p} אמצע הצלע {s}',
   'gv.bisect2': 'הקטעים {s1}, {s2} חוצים זה את זה בנקודה {p}',
   'gv.bisector': '{l} חוצה את {a}',
@@ -173,10 +172,10 @@ export const T = {
 
   /* ── warm-up (§7.1) ── */
   'w.W1': 'נתון: {st}. געו בציור בשני הקטעים האלה.',
-  'w.W2': 'ידועה, או רק נראית כך?',
-  'w.W2.known': 'ידועה',
-  'w.W2.looks': 'רק נראית כך',
-  'w.W3': 'איזה שוויון רואים בציור בלי שהוא נתון?',
+  'w.W2': 'ידוע, או רק נראה כך?',
+  'w.W2.known': 'ידוע',
+  'w.W2.looks': 'רק נראה כך',
+  'w.W3': 'איזה שוויון ידוע מהציור עצמו, בלי נתון?',
   'w.W4': 'איזה משפט חפיפה מתאים לסימונים?',
   'w.W5': '{cong}. איזה קודקוד מתאים לקודקוד {p}?',
   'w.W5side': '{cong}. איזו צלע מתאימה לצלע {s}?',
@@ -253,6 +252,7 @@ export const NEW_DRAFTS = [
   'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn', 'lbl.nextUp', 'btn.these',
   'ui.planOk', 'say.ask',
   'ui.endSlips', 'st.isoLater', 'st.matchingAng', 'st.matchingTwo', 'st.matchingSide', 'st.matchingPlain',
+  'w.W2', 'w.W3', 'st.partner',                       // reworded after the review (the spec drafts read less clearly)
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;
