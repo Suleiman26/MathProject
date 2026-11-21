@@ -3,7 +3,7 @@
    A/B variants, the four dots, and device storage that never throws (Review Focus 1, 4). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RULES, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY } from './mastery.js';
+import { RULES, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord } from './mastery.js';
 
 const rec = (n, solo, o = {}) => ({ n, solo, helped: 0, missed: n - solo - (o.filled || 0), filled: o.filled || 0, variant: 'B', tpl: o.tpl || '3-X-SAS', day: 1 });
 const run = (ts, level, recs, opt) => { let out; for (const r of recs) { out = record(ts, level, r, opt); ts = out.ts; } return out; };
@@ -112,4 +112,10 @@ test('server seed: highest "רמה N" row wins, never lowers, ignores rows that 
   assert.equal(st.types['prove-congruence'].level, 3);
   assert.deepEqual(seedFromServer({ v: 1, types: {} }, null, TYPES), { v: 1, types: {} });
   assert.deepEqual(seedFromServer({ v: 1, types: {} }, [null, 7, { page: 'proofs.html', chapter: 5 }], TYPES), { v: 1, types: {} });
+});
+
+test('left in the middle: counts as not clean after a non-solo decision, not at all before one', () => {
+  assert.equal(leftRecord({ n: 8, decided: [{ state: 'solo' }, { state: 'solo' }] }), null);
+  assert.deepEqual(leftRecord({ n: 8, decided: [{ state: 'solo' }, { state: 'missed' }], variant: 'B', tpl: '3-K-SAS', day: 3 }), { n: 8, solo: 1, helped: 0, missed: 7, filled: 0, variant: 'B', tpl: '3-K-SAS', day: 3 });
+  assert.equal(isClean(leftRecord({ n: 10, decided: [{ state: 'helped' }] , variant: 'B', tpl: 'x', day: 1 })), false);
 });

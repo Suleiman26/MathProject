@@ -192,3 +192,15 @@ export function seedFromServer(state, rows, TYPES) {
   }
   return types ? { ...state, types } : state;
 }
+
+/** A proof left in the middle (§8): after a non-solo decision it counts as not clean (the decisions
+    still open count as missed); with none it does not count (null).
+    open = { n (decisions the proof asks for), decided:[{ state }], variant, tpl, day } */
+export function leftRecord(open) {
+  const d = (open && open.decided) || [];
+  if (!d.some((x) => x.state !== 'solo')) return null;
+  const c = { solo: 0, helped: 0, missed: 0, filled: 0 };
+  for (const x of d) if (x.state in c) c[x.state] += 1;
+  const n = Math.max(open.n || 0, d.length);
+  return { n, solo: c.solo, helped: c.helped, missed: n - c.solo - c.helped - c.filled, filled: c.filled, variant: open.variant, tpl: open.tpl, day: open.day };
+}
