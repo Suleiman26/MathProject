@@ -233,6 +233,60 @@ const RP_ICON={
     <path d="M13 27 Q10 33 13.5 36 Q16 39 13 42" stroke="#94a3b8" strokeWidth={1.2} fill="none"/>
     <polygon points="10.8,28 15.2,28 13,24.5" fill={c}/><ellipse cx={13} cy={13.5} rx={9.5} ry={11.5} fill={c}/>
     <ellipse cx={9.5} cy={9} rx={2.2} ry={3.6} fill="#fff" opacity={.5} transform="rotate(20 9.5 9)"/></>},
+  // round 2 (#88: 25 contexts)
+  book:{w:18,h:40,draw:(k,c)=><>
+    <rect x={2} y={2} width={14} height={36} rx={2} fill={c}/><rect x={2} y={2} width={3.2} height={36} rx={1.5} fill="#000" opacity={.14}/>
+    {k===1?<><rect x={6.5} y={9} width={7.5} height={8} rx={1.2} fill="#fff" opacity={.9}/><rect x={6.5} y={31} width={7.5} height={2.5} rx={1} fill="#fff" opacity={.55}/></>
+      :<g fill="#fde68a"><rect x={5} y={7} width={11} height={2.2}/><rect x={5} y={11} width={11} height={1.2}/><rect x={5} y={28} width={11} height={1.2}/><rect x={5} y={31} width={11} height={2.2}/></g>}</>},
+  egg:{w:24,h:30,draw:(k,c)=><>
+    <path d="M12 2.5 C5.5 2.5 3 13 3 18.5 C3 24.5 7 28.5 12 28.5 C17 28.5 21 24.5 21 18.5 C21 13 18.5 2.5 12 2.5 Z" fill={c} stroke={k===1?'#cbd5e1':'#9a5b2c'} strokeWidth={1.2}/>
+    <ellipse cx={8.5} cy={12} rx={2} ry={3.6} fill="#fff" opacity={k===1?.9:.35} transform="rotate(18 8.5 12)"/></>},
+  boat:{w:34,h:34,draw:(k,c)=>k===1?<>
+    <line x1={16} y1={3} x2={16} y2={25} stroke="#475569" strokeWidth={1.6}/>
+    <polygon points="17.5,4 17.5,23 30,23" fill={c}/><polygon points="14.5,8 14.5,23 5,23" fill={c} opacity={.75}/>
+    <path d="M3 25 H31 L27 31 H7 Z" fill="#7c2d12"/></>
+    :<><rect x={10} y={15} width={13} height={9} rx={2} fill="#fff" stroke="#cbd5e1" strokeWidth={1}/>
+    <rect x={12.5} y={17.5} width={3.5} height={3.5} rx={.8} fill="#38bdf8"/><rect x={18} y={17.5} width={3.5} height={3.5} rx={.8} fill="#38bdf8"/>
+    <path d="M2 24 H32 L28 31 H6 Z" fill={c}/><rect x={2} y={24} width={30} height={2} fill="#fff" opacity={.35}/></>},
+  shape:{w:28,h:28,draw:(k,c)=>k===1
+    ?<polygon points="14,3 26,24.5 2,24.5" fill={c} stroke="#fff" strokeWidth={1.4} strokeLinejoin="round"/>
+    :<rect x={4} y={4} width={20} height={20} rx={2} fill={c} stroke="#fff" strokeWidth={1.4}/>},
+  pet:{w:30,h:28,draw:(k,c)=>k===1?<>
+    <ellipse cx={6} cy={12} rx={4.2} ry={8} fill="#78350f" transform="rotate(14 6 12)"/><ellipse cx={24} cy={12} rx={4.2} ry={8} fill="#78350f" transform="rotate(-14 24 12)"/>
+    <circle cx={15} cy={15} r={10} fill={c}/><ellipse cx={15} cy={20} rx={5.5} ry={4} fill="#fde7c7"/>
+    <circle cx={11.3} cy={13} r={1.6} fill="#0f172a"/><circle cx={18.7} cy={13} r={1.6} fill="#0f172a"/><ellipse cx={15} cy={18.2} rx={2.2} ry={1.6} fill="#0f172a"/></>
+    :<><polygon points="5.5,4 13,9 6.5,14" fill={c}/><polygon points="24.5,4 17,9 23.5,14" fill={c}/>
+    <circle cx={15} cy={16} r={10} fill={c}/><polygon points="7,6.5 10.5,9.5 7.5,11.5" fill="#fda4af"/><polygon points="23,6.5 19.5,9.5 22.5,11.5" fill="#fda4af"/>
+    <ellipse cx={11.3} cy={14.5} rx={1.5} ry={2.2} fill="#14532d"/><ellipse cx={18.7} cy={14.5} rx={1.5} ry={2.2} fill="#14532d"/><polygon points="13.6,18.5 16.4,18.5 15,20" fill="#e11d48"/>
+    <g stroke="#fff" strokeWidth={.9} opacity={.85}><line x1={3} y1={18} x2={10} y2={19.5}/><line x1={3} y1={22} x2={10} y2={21}/><line x1={27} y1={18} x2={20} y2={19.5}/><line x1={27} y1={22} x2={20} y2={21}/></g></>},
+  shirt:{w:30,h:28,draw:(k,c)=><>
+    <path d="M9.5 3 L2.5 8 L6 14 L9.5 12 L9.5 26.5 L20.5 26.5 L20.5 12 L24 14 L27.5 8 L20.5 3 Q15 7.5 9.5 3 Z" fill={c} stroke="#000" strokeOpacity={.12} strokeWidth={1}/>
+    <path d="M11.5 3.8 Q15 6.2 18.5 3.8" stroke="#000" strokeOpacity={.25} strokeWidth={1.2} fill="none"/>
+    <rect x={13.2} y={13} width={3.6} height={6} rx={1} fill="#fff" opacity={.55}/></>},
+  medal:{w:26,h:38,draw:(k,c)=><>
+    <polygon points="5,2 11,2 15,17 9,17" fill={k===1?'#2563eb':'#7c3aed'}/><polygon points="21,2 15,2 11,17 17,17" fill={k===1?'#dc2626':'#0d9488'}/>
+    <circle cx={13} cy={26} r={10} fill={c} stroke={k===1?'#ca8a04':'#94a3b8'} strokeWidth={1.6}/>
+    <circle cx={13} cy={26} r={6.5} fill="none" stroke={k===1?'#ca8a04':'#94a3b8'} strokeWidth={1}/>
+    <ellipse cx={9.5} cy={22.5} rx={1.8} ry={2.8} fill="#fff" opacity={.6} transform="rotate(35 9.5 22.5)"/></>},
+  window:{w:22,h:26,draw:(k,c)=><>
+    {k===1&&<rect x={0} y={0} width={22} height={26} rx={4} fill="#fde047" opacity={.25}/>}
+    <rect x={2.5} y={2.5} width={17} height={21} rx={1.5} fill={c} stroke="#94a3b8" strokeWidth={1.5}/>
+    <g stroke="#94a3b8" strokeWidth={1.3}><line x1={11} y1={3} x2={11} y2={23}/><line x1={3} y1={12} x2={19} y2={12}/></g></>},
+  thumb:{w:28,h:30,draw:(k,c)=><g transform={k===2?'rotate(180 14 15)':undefined}>
+    <rect x={3} y={13.5} width={4.5} height={12.5} rx={1.5} fill="#334155"/>
+    <rect x={8.5} y={2.5} width={7} height={15} rx={3.5} fill={c}/>
+    <rect x={7.5} y={12.5} width={15.5} height={14.5} rx={4} fill={c}/>
+    <g stroke="#fff" strokeWidth={1.2} opacity={.5} strokeLinecap="round"><line x1={15} y1={16.6} x2={22} y2={16.6}/><line x1={15} y1={20} x2={22} y2={20}/><line x1={15} y1={23.4} x2={22} y2={23.4}/></g></g>},
+  bug:{w:30,h:28,draw:(k,c)=>k===1?<>
+    <ellipse cx={8.5} cy={9.5} rx={6.5} ry={6} fill={c}/><ellipse cx={21.5} cy={9.5} rx={6.5} ry={6} fill={c}/>
+    <ellipse cx={9.5} cy={19.5} rx={5} ry={4.5} fill={c} opacity={.8}/><ellipse cx={20.5} cy={19.5} rx={5} ry={4.5} fill={c} opacity={.8}/>
+    <circle cx={8.5} cy={9.5} r={2.2} fill="#fff" opacity={.6}/><circle cx={21.5} cy={9.5} r={2.2} fill="#fff" opacity={.6}/>
+    <rect x={13.6} y={5} width={2.8} height={19} rx={1.4} fill="#1e293b"/>
+    <path d="M14.3 5.5 Q12 2 10 1.5 M15.7 5.5 Q18 2 20 1.5" stroke="#1e293b" strokeWidth={1} fill="none"/></>
+    :<><circle cx={15} cy={6.5} r={4.5} fill="#1e293b"/><circle cx={15} cy={16} r={10} fill={c}/>
+    <line x1={15} y1={6.5} x2={15} y2={26} stroke="#1e293b" strokeWidth={1.4}/>
+    <g fill="#1e293b"><circle cx={10} cy={12.5} r={2}/><circle cx={20} cy={12.5} r={2}/><circle cx={9.5} cy={19.5} r={1.8}/><circle cx={20.5} cy={19.5} r={1.8}/></g>
+    <circle cx={11} cy={9.5} r={1.3} fill="#fff" opacity={.55}/></>},
 };
 function RatioIcon({icon,k,c,h=20}){
   const I=RP_ICON[icon];
@@ -259,6 +313,19 @@ function RatioVis({ctx,total,filled}){
     :ctx.scene==='grass'?<>{Array.from({length:rows},(_,r)=><rect key={r} x={0} y={pad+r*gy+I.h-4} width={W} height={6} rx={3} fill="#bbf7d0"/>)}</>
     :ctx.scene==='sheet'?<rect x={1} y={1} width={W-2} height={H-2} rx={10} fill="#fff" stroke="#cbd5e1" strokeWidth={1.5} strokeDasharray="5 4"/>
     :ctx.scene==='jar'?<rect x={1} y={1} width={W-2} height={H-2} rx={16} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth={2}/>
+    // round 2 scenes (#88): bookshelf, egg tray, sea, chalkboard, clothesline, building at night, garden
+    :ctx.scene==='shelf'?<><rect x={0} y={0} width={W} height={H} rx={10} fill="#fef3c7"/>
+      {Array.from({length:rows},(_,r)=><rect key={r} x={2} y={pad+r*gy+I.h} width={W-4} height={5} rx={2} fill="#b45309"/>)}</>
+    :ctx.scene==='tray'?<><rect x={0} y={0} width={W} height={H} rx={10} fill="#e7c9a0"/>
+      {Array.from({length:total},(_,i)=>{const[x,y]=at(i);return<ellipse key={i} cx={x+I.w/2} cy={y+I.h-6} rx={I.w/2+1} ry={7} fill="#c9a06b"/>;})}</>
+    :ctx.scene==='sea'?<><rect x={0} y={0} width={W} height={H} rx={12} fill="#e0f2fe"/>
+      {Array.from({length:rows},(_,r)=><path key={r} d={`M2 ${pad+r*gy+I.h-2}`+Array.from({length:per*2},()=>` q${gx/4} -3.5 ${gx/2} 0`).join('')} stroke="#38bdf8" strokeWidth={2} fill="none" strokeLinecap="round"/>)}</>
+    :ctx.scene==='board'?<><rect x={1.5} y={1.5} width={W-3} height={H-3} rx={6} fill="#14532d" stroke="#a16207" strokeWidth={3}/>
+      <rect x={W*0.62} y={H-5} width={W*0.2} height={3} rx={1.5} fill="#e2e8f0" opacity={.8}/></>
+    :ctx.scene==='line'?<>{Array.from({length:rows},(_,r)=><path key={r} d={`M1 ${pad+r*gy+3} Q${W/2} ${pad+r*gy+6} ${W-1} ${pad+r*gy+3}`} stroke="#64748b" strokeWidth={1.3} fill="none"/>)}
+      {Array.from({length:total},(_,i)=>{const[x,y]=at(i);return<g key={i} fill="#a16207"><rect x={x+8} y={y} width={2.5} height={6} rx={1}/><rect x={x+19.5} y={y} width={2.5} height={6} rx={1}/></g>;})}</>
+    :ctx.scene==='building'?<><rect x={0} y={0} width={W} height={H} rx={6} fill="#475569"/><rect x={0} y={0} width={W} height={5} rx={2} fill="#334155"/></>
+    :ctx.scene==='garden'?<rect x={1} y={1} width={W-2} height={H-2} rx={14} fill="#dcfce7" stroke="#86efac" strokeWidth={1.5}/>
     :null;
   return<div className="rp-vis">
     <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',maxWidth:Math.min(Math.round(W*1.4),320),'--rp-w':W+'px',height:'auto',display:'block',margin:'0 auto'}}
@@ -346,8 +413,8 @@ function Fb({fb}){
 }
 
 /* ═══════ Chapter 1: Ratio ═══════ */
-/* 15 contexts, each with its own picture (Sulaiman, fixes board #88: more variety; chocolate/vanilla and
-   boys/girls stay, the fruit pairs are gone). q = the question sentence; T = the total, A/B = the two amounts.
+/* 25 contexts, each with its own picture (Sulaiman, fixes board #88: more variety; chocolate/vanilla and
+   boys/girls stay, the fruit pairs are gone; round 2: 10 more, from books to ladybugs). q = the question sentence; T = the total, A/B = the two amounts.
    t1/t2 = text colour when the drawing colour is too light to read. */
 const RATIO_CTXS = [
   {type:'pie',label1:'שוקולד',label2:'וניל',color1:'#92400e',color2:'#fef3c7'},
@@ -378,16 +445,46 @@ const RATIO_CTXS = [
     q:(T,A,B)=><>בפארק יש {T} עצים: {A} ו-{B}.</>},
   {type:'icons',icon:'balloon',label1:'בלונים אדומים',label2:'בלונים צהובים',color1:'#ef4444',color2:'#facc15',t2:'#a16207',
     q:(T,A,B)=><>במסיבה יש {T} בלונים: {A} ו-{B}.</>},
+  // round 2 (#88)
+  {type:'icons',icon:'book',scene:'shelf',rowGap:9,label1:'ספרי קריאה',label2:'ספרי לימוד',color1:'#0d9488',color2:'#7c3aed',
+    q:(T,A,B)=><>על המדף בספרייה יש {T} ספרים: {A} ו-{B}.</>},
+  {type:'icons',icon:'egg',scene:'tray',label1:'ביצים לבנות',label2:'ביצים חומות',color1:'#ffffff',color2:'#c47a43',t1:'#64748b',t2:'#9a5b2c',
+    q:(T,A,B)=><>בתבנית יש {T} ביצים: {A} ו-{B}.</>},
+  {type:'icons',icon:'boat',scene:'sea',label1:'סירות מפרש',label2:'סירות מנוע',color1:'#ef4444',color2:'#1e3a8a',t1:'#dc2626',
+    q:(T,A,B)=><>במעגן יש {T} סירות: {A} ו-{B}.</>},
+  {type:'icons',icon:'shape',scene:'board',label1:'משולשים',label2:'ריבועים',color1:'#facc15',color2:'#38bdf8',t1:'#a16207',t2:'#0369a1',
+    q:(T,A,B)=><>על הלוח ציירה המורה {T} צורות: {A} ו-{B}.</>},
+  {type:'icons',icon:'pet',label1:'כלבים',label2:'חתולים',color1:'#d97706',color2:'#64748b',t1:'#b45309',t2:'#475569',
+    q:(T,A,B)=><>בפנסיון לבעלי חיים יש {T} חיות: {A} ו-{B}.</>},
+  {type:'icons',icon:'shirt',scene:'line',rowGap:8,label1:'חולצות צהובות',label2:'חולצות ירוקות',color1:'#facc15',color2:'#16a34a',t1:'#a16207',
+    q:(T,A,B)=><>על חבל הכביסה תלויות {T} חולצות: {A} ו-{B}.</>},
+  {type:'icons',icon:'medal',label1:'מדליות זהב',label2:'מדליות כסף',color1:'#facc15',color2:'#e2e8f0',t1:'#a16207',t2:'#64748b',
+    q:(T,A,B)=><>ביום הספורט חילקו {T} מדליות: {A} ו-{B}.</>},
+  {type:'icons',icon:'window',scene:'building',label1:'חלונות מוארים',label2:'חלונות חשוכים',color1:'#fde047',color2:'#1e293b',t1:'#a16207',t2:'#334155',
+    q:(T,A,B)=><>בערב, בבניין יש {T} חלונות: {A} ו-{B}.</>},
+  {type:'icons',icon:'thumb',label1:'הצבעות בעד',label2:'הצבעות נגד',color1:'#16a34a',color2:'#e11d48',
+    q:(T,A,B)=><>בהצבעה בכיתה היו {T} הצבעות: {A} ו-{B}.</>},
+  {type:'icons',icon:'bug',scene:'garden',label1:'פרפרים',label2:'פרות משה רבנו',color1:'#a855f7',color2:'#dc2626',t1:'#9333ea',
+    q:(T,A,B)=><>בגינה ספרו הילדים {T} חרקים: {A} ו-{B}.</>},
 ];
-function genRatio(prev){
-  // a new exercise never repeats the context just seen
-  let ctx = pick(RATIO_CTXS);
-  while(prev&&ctx===prev) ctx = pick(RATIO_CTXS);
-  // generate ratio that can be simplified
-  const simpleRatios = [[2,3],[3,4],[1,2],[1,3],[2,5],[3,5],[1,4],[3,7],[2,7],[4,5]];
-  const [sa,sb] = pick(simpleRatios);
-  const mult = randInt(2,4);
-  const a = sa*mult, b = sb*mult;
+/* Fixes board #88 round 2 (Sulaiman: "the first 25 should all be different, and the numbers too"):
+   a shuffle bag. Every 25 exercises in a row show all 25 contexts in a random order, then a new round
+   starts (never the same context twice in a row). Numbers: no number pair twice in a round, at most 3
+   pairs from the same reduced ratio, and never the same numbers, total or reduced ratio as the
+   exercise just before. hist = the exercises so far. */
+const RATIO_BASE=[[2,3],[3,4],[1,2],[1,3],[2,5],[3,5],[1,4],[3,7],[2,7],[4,5]];
+const RATIO_PAIRS=(()=>{const out=[];
+  for(const[x,y]of RATIO_BASE)for(const[sa,sb]of[[x,y],[y,x]])for(let m=2;m<=5&&(sa+sb)*m<=40;m++)out.push({sa,sb,a:sa*m,b:sb*m});
+  return out;})();
+function genRatio(hist=[]){
+  const n=RATIO_CTXS.length, round=hist.slice(hist.length-hist.length%n), last=hist[hist.length-1];
+  const ctx=pick(RATIO_CTXS.filter(c=>c!==(last&&last.ctx)&&!round.some(e=>e.ctx===c)));
+  const two=(x,y)=>Math.min(x,y)+':'+Math.max(x,y);
+  const used=new Set(round.map(e=>two(e.a,e.b)));
+  const fresh=RATIO_PAIRS.filter(p=>!used.has(two(p.a,p.b)));
+  const apart=p=>!last||(![last.a,last.b].includes(p.a)&&![last.a,last.b].includes(p.b)&&p.a+p.b!==last.total&&two(p.sa,p.sb)!==two(last.simA,last.simB));
+  const few=p=>round.filter(e=>two(e.simA,e.simB)===two(p.sa,p.sb)).length<3;
+  const {sa,sb,a,b}=pick([fresh.filter(p=>apart(p)&&few(p)),fresh.filter(apart),fresh,RATIO_PAIRS].find(l=>l.length));
   const total = a+b;
   // step 3: scaled question
   const scaleMult = pick([2,3,4,5,6]);
@@ -395,6 +492,10 @@ function genRatio(prev){
   const scaledA = a * scaleMult;
   return {ctx, a, b, total, simA:sa, simB:sb, scaledTotal, scaledA, g:gcd(a,b)};
 }
+// the exercise list of this visit, built as needed: RATIO_SEQ(i) is exercise number i (the same every time)
+function makeRatioSeq(){const list=[];return i=>{while(list.length<=i)list.push(genRatio(list));return list[i];};}
+const RATIO_SEQ=makeRatioSeq();
+let ratioAt=0;   // the exercise shown now; kept when the student switches chapters and comes back
 
 /* Chapter 1 has two sub-chapters (Sulaiman, fixes board #46):
    א — ratio and reducing it (step by step, #45), ב — from a ratio to amounts. */
@@ -412,7 +513,8 @@ function Ch1(){
 }
 
 function Ch1Ratio(){
-  const [ex, setEx] = useState(()=>genRatio());
+  const [at, setAt] = useState(()=>ratioAt);
+  const ex = RATIO_SEQ(at);
   const [step, setStep] = useState(1);
   const [r1,setR1]=useState('');const [r2,setR2]=useState('');
   const [s1,setS1]=useState('');const [s2,setS2]=useState('');
@@ -434,7 +536,7 @@ function Ch1Ratio(){
       else{setChain([...chain,[v1,v2]]);setS1('');setS2('');setFb('more');}
     } else setFb(same?'same':'err');
   };
-  const reset=()=>{const e=genRatio(ex.ctx);setEx(e);setStep(1);setR1('');setR2('');setS1('');setS2('');setChain([]);setFb(null);};
+  const reset=()=>{ratioAt=at+1;setAt(at+1);setStep(1);setR1('');setR2('');setS1('');setS2('');setChain([]);setFb(null);};
 
   const vis = ex.ctx.type==='pie'?<PieVis total={ex.total} filled={ex.a} color1={ex.ctx.color1} color2={ex.ctx.color2}/>
     :ex.ctx.type==='icons'?<RatioVis ctx={ex.ctx} total={ex.total} filled={ex.a}/>
