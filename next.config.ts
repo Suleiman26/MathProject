@@ -22,7 +22,12 @@ const nextConfig: NextConfig = {
     ];
   },
   async headers() {
-    return [{ source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }];
+    return [
+      { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      // Only our own pages may frame the site: the admin's content-review panel shows topic pages in a
+      // same-origin iframe; every other site is refused (clickjacking). Nothing else frames the site today.
+      { source: "/:path*", headers: [{ key: "Content-Security-Policy", value: "frame-ancestors 'self'" }] },
+    ];
   },
 };
 

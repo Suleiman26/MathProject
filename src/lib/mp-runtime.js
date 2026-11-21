@@ -15,6 +15,7 @@
    state, text or numbers. See DESIGN.md ("Question anatomy").
    ========================================================================== */
 import { mpData } from "./mp-data";
+import { isAdminFrame, anonStatsOff } from "./admin-frame";
 
 let started = false;
 
@@ -206,9 +207,13 @@ export function initRuntime() {
     var label = box ? textOf(".step-label, .card-t, .phase-title, .section-title, .task-title, .card-title", box) : "";
     return clean(label, 190);
   }
+  // let the page mark the chapter as solved right away (✓ on its tab) — also in the admin frame
+  function winEvent() { try { window.dispatchEvent(new CustomEvent("mp:win", { detail: { chapter: chapterOf() } })); } catch (e) {} }
   var track = (function () {
     var D = mpData;
     if (!D || !D.ready) return function () {};
+    // the content-review panel's frame (src/lib/admin-frame.js): nothing is queued or sent, no device id is made
+    if (isAdminFrame()) return function (kind) { if (kind === "win") winEvent(); };
     var dev = null;
     try { dev = localStorage.getItem("mp:device"); } catch (e) {}
     if (!dev || dev.length < 8) {
@@ -222,18 +227,21 @@ export function initRuntime() {
       clearTimeout(timer); timer = null;
       if (!queue.length) return;
       var rows = queue.splice(0);
-      // signed in: the answers go to the student's own progress; otherwise anonymous
+      if (isAdminFrame()) return;   // the page was framed by the review panel after it started (in-frame navigation)
+      // signed in: the answers go to the student's own progress; otherwise anonymous —
+      // but never anonymous from a browser that holds an admin session (Abed, 2026-11-21)
       var tok = null;
       try { var s = JSON.parse(localStorage.getItem("mp:account")); tok = s && s.tok; } catch (e) {}
-      if (tok) D.rpc("account_track", { tok: tok, rows: rows }, { keepalive: !!leaving }).catch(function () { D.insert("events", rows, { keepalive: !!leaving }); });
-      else D.insert("events", rows, { keepalive: !!leaving });
+      var anon = function () { if (!anonStatsOff()) D.insert("events", rows, { keepalive: !!leaving }); };
+      if (tok) D.rpc("account_track", { tok: tok, rows: rows }, { keepalive: !!leaving }).catch(anon);
+      else anon();
     }
     window.addEventListener("pagehide", function () { flush(true); });
     doc.addEventListener("visibilitychange", function () { if (doc.visibilityState === "hidden") flush(true); });
     return function (kind, el) {
+      if (kind === "win") winEvent();
+      if (isAdminFrame()) return;
       queue.push({ device: dev, page: pageKey(), chapter: chapterOf(), step: kind === "view" ? null : stepOf(el), kind: kind, mobile: mobile });
-      // let the page mark the chapter as solved right away (✓ on its tab)
-      if (kind === "win") { try { window.dispatchEvent(new CustomEvent("mp:win", { detail: { chapter: chapterOf() } })); } catch (e) {} }
       if (queue.length >= 20) flush(false);
       else if (!timer) timer = setTimeout(function () { flush(false); }, 2500);
     };
@@ -660,6 +668,8 @@ export function initRuntime() {
   // (MP.log lists the sounds played — handy for testing)
   window.MP = {
     sound: play, last: null, log: [],
+    // read by the content-review panel: its green "not counted" pill shows only when this is true
+    get adminFrame() { return isAdminFrame(); },
     view: function () { track("view"); },
     isSoundOn: function () { return soundOn; },
     setSound: function (on) { soundOn = !!on; try { localStorage.setItem(KEY, soundOn ? "on" : "off"); } catch (e) {} if (soundOn) play("select"); }
