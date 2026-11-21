@@ -3,7 +3,7 @@
    chooser for near taps, and the ending motion. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { layout, labelErrors, markGeom, partsNear, partId, partName, motionMatrix } from './figure-core.js';
+import { layout, labelErrors, markGeom, partsNear, partId, partName, motionMatrix, motionFrames } from './figure-core.js';
 import { xsas, over } from './fixtures.mjs';
 
 const P = xsas(), L = layout(P.figure);
@@ -45,4 +45,15 @@ test('ending motion carries triangle 1 onto triangle 2 along the matching', () =
     for (const [u, v] of pr.facts.cong.map) { const q = ap(Lp.pts[u]); assert.ok(Math.hypot(q[0] - Lp.pts[v][0], q[1] - Lp.pts[v][1]) < 0.5, `${u}→${v}`); }
     assert.ok(Math.abs(Math.abs(m[0] * m[3] - m[1] * m[2]) - 1) < 1e-6, 'rigid');
   }
+});
+test('motion frames: start where the triangle is, end on the matching, rigid all the way for a turn', () => {
+  const close = (m, q) => m.every((v, i) => Math.abs(v - q[i]) < 1e-6);
+  for (const pr of [P, over()]) {
+    const m = motionMatrix(layout(pr.figure), pr), fr = motionFrames(m, 12);
+    assert.equal(fr.length, 13); assert.ok(close(fr[0], [1, 0, 0, 1, 0, 0])); assert.ok(close(fr[12], m));
+    if (m[0] * m[3] - m[1] * m[2] > 0) for (const f of fr) assert.ok(Math.abs(f[0] * f[3] - f[1] * f[2] - 1) < 1e-6);
+  }
+  const flip = [1, 0, 0, -1, 0, 40], ff = motionFrames(flip, 4);          // a flip over the line y = 20
+  assert.ok(close(ff[4], flip)); assert.ok(close(ff[2], [1, 0, 0, 0, 0, 20]));
+  assert.ok(close(motionFrames([1, 0, 0, 1, 30, -10], 2)[1], [1, 0, 0, 1, 15, -5]));
 });

@@ -189,3 +189,28 @@ export function motionMatrix(L, problem) {
   const [a, c, e] = solve(D.map((q) => q[0])), [b, d, f] = solve(D.map((q) => q[1]));
   return [a, b, c, d, e, f];
 }
+
+/** A rigid motion M as n + 1 frames from "where it is" to M: a turn about its centre, a slide, or a
+    flip over its axis (with its glide). Each frame is an SVG matrix [a,b,c,d,e,f]. */
+export function motionFrames(M, n = 24) {
+  const [a, b, c, d, e, f] = M, det = a * d - b * c, out = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    if (det > 0) {
+      const th = Math.atan2(b, a);
+      if (Math.abs(th) < 1e-6) { out.push([1, 0, 0, 1, e * t, f * t]); continue; }
+      const k = (1 - a) * (1 - d) - b * c;                       // the centre: (I − R) c = t
+      const cx = ((1 - d) * e + c * f) / k, cy = (b * e + (1 - a) * f) / k;
+      const co = Math.cos(th * t), si = Math.sin(th * t);
+      out.push([co, si, -si, co, cx - co * cx + si * cy, cy - si * cx - co * cy]);
+    } else {
+      const ph = Math.atan2(b, a) / 2, u = [Math.cos(ph), Math.sin(ph)], nn = [-u[1], u[0]];
+      const g = e * u[0] + f * u[1], h = e * nn[0] + f * nn[1];  // glide along the axis; the axis is h/2 off the origin
+      const p0 = [nn[0] * h / 2, nn[1] * h / 2], k = Math.cos(Math.PI * t);
+      const A = u[0] * u[0] + k * nn[0] * nn[0], B = u[1] * u[0] + k * nn[1] * nn[0];
+      const C = u[0] * u[1] + k * nn[0] * nn[1], D = u[1] * u[1] + k * nn[1] * nn[1];
+      out.push([A, B, C, D, p0[0] - (A * p0[0] + C * p0[1]) + g * t * u[0], p0[1] - (B * p0[0] + D * p0[1]) + g * t * u[1]]);
+    }
+  }
+  return out;
+}
