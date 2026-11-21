@@ -791,6 +791,9 @@ html[data-page="directed-numbers"] #root .fr-cd-cap { text-align: center; font-s
 html[data-page="directed-numbers"] #root .fr-cd-bars { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px 12px; max-width: 340px; margin: 0 auto; direction: ltr; font-weight: 700; color: var(--ink); }
 html[data-page="directed-numbers"] #root .fr-bar { display: block; width: 100%; height: auto; }
 html[data-page="directed-numbers"] #root .fr-line { display: block; width: 100%; max-width: 340px; margin: 4px auto 10px; direction: ltr; }
+/* chapter "3. המרות" (moved here from ratio-percent, board #85): the bits of ratio-percent's own CSS it needs */
+html[data-page="directed-numbers"] #root .vis-wrap { display: flex; justify-content: center; margin: 14px 0; }
+html[data-page="directed-numbers"] #root .step-card .ans-row { flex-wrap: wrap; gap: 8px; }
 html[data-page="directed-numbers"] #root .fr-q { text-align: center; font-weight: 600; }
 html[data-page="directed-numbers"] #root .fr-intro .card .fr-show:has(+ .fr-ans) { margin-bottom: 0; }
 html[data-page="directed-numbers"] #root .fr-next { min-height: 48px; padding: 10px 28px; font-size: 1.05rem; }

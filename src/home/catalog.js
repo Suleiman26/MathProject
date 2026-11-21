@@ -29,7 +29,7 @@ export const TOPICS = [
   { cat: "fn", slug: "linear-function", name: "פונקציה לינארית", grades: "כיתה ח׳–ט׳", g: ["8", "9"], icon: "line", color: "teal" },
   { cat: "fn", slug: "parabola-practice", name: "פרבולה", grades: "כיתה ט׳", g: ["9"], icon: "parabola", color: "indigo" },
   { cat: "fn", slug: "intersection", name: "נקודות חיתוך", grades: "כיתה ט׳", g: ["9"], icon: "intersection", color: "blue" },
-  { cat: "num", slug: "directed-numbers", name: "מספרים מכוונים", grades: "כיתה ז׳", g: ["7"], icon: "numberline", color: "teal" },
+  { cat: "num", slug: "directed-numbers", name: "יסודות החשבון", grades: "כיתה ז׳", g: ["7"], icon: "numberline", color: "teal" },
   { cat: "num", slug: "ratio-percent", name: "יחס ואחוזים", grades: "כיתה ז׳", g: ["7"], icon: "percent", color: "teal" },
   { cat: "num", slug: "powers-roots", name: "חזקות ושורשים", grades: "כיתה ח׳–ט׳", g: ["8", "9"], icon: "root", color: "violet" },
   { cat: "geo", slug: "angles-parallel", name: "זוויות ומקבילים", grades: "כיתה ז׳", g: ["7"], icon: "parallel", color: "teal" },

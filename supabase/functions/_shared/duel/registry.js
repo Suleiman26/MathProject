@@ -55,11 +55,11 @@ const TOPICS = {
 };
 
 const LIST = [
-  ['dn.add', 'directed-numbers', '1. חיבור', BOTH, dn.add],
-  ['dn.sub', 'directed-numbers', '2. חיסור', BOTH, dn.sub],
-  ['dn.mul', 'directed-numbers', '3. כפל', BOTH, dn.mul],
-  ['dn.div', 'directed-numbers', '4. חילוק', BOTH, dn.div],
-  ['dn.combo', 'directed-numbers', '6. תרגול מקיף', BOTH, dn.combo],
+  ['dn.add', 'directed-numbers', '1. מספרים מכוונים', BOTH, dn.add],
+  ['dn.sub', 'directed-numbers', '1. מספרים מכוונים', BOTH, dn.sub],
+  ['dn.mul', 'directed-numbers', '1. מספרים מכוונים', BOTH, dn.mul],
+  ['dn.div', 'directed-numbers', '1. מספרים מכוונים', BOTH, dn.div],
+  ['dn.combo', 'directed-numbers', '4. תרגול מקיף', BOTH, dn.combo],
   ['eq.linear', 'equation-solver', '2. פתרון משוואות', BOTH, eq.linear],   // the topic has chapter buttons since 2026-11-14
   ['pr.powers', 'powers-roots', '1. הבנת חזקות', TYPED, pr.powers],
   ['pr.laws', 'powers-roots', '2. חוקי חזקות', BOTH, pr.laws],
@@ -68,9 +68,9 @@ const LIST = [
   ['pr.mixed', 'powers-roots', '5. הכל יחד', TYPED, pr.mixed],
   ['rp.ratio', 'ratio-percent', '1. יחס', BOTH, rp.ratio],
   ['rp.proportion', 'ratio-percent', '2. פרופורציה', BOTH, rp.proportion],
-  ['rp.convert', 'ratio-percent', '3. המרות', BOTH, rp.convert],
-  ['rp.pct', 'ratio-percent', '4. חישובי %', BOTH, rp.pct],
-  ['rp.change', 'ratio-percent', '5. עלייה/ירידה', BOTH, rp.change],
+  ['rp.convert', 'directed-numbers', '3. המרות', BOTH, rp.convert],   // conversions moved to directed-numbers (board #85, 2026-11-21); id kept
+  ['rp.pct', 'ratio-percent', '2. פרופורציה', BOTH, rp.pct],
+  ['rp.change', 'ratio-percent', '3. עלייה/ירידה', BOTH, rp.change],
   // Task 2b: the rest of the zero-drawing topics
   ['qd.square', 'quadrilaterals', '1. ריבוע', BOTH, qd.square],
   ['qd.rect', 'quadrilaterals', '2. מלבן', BOTH, qd.rectangle],
