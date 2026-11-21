@@ -9,7 +9,7 @@ import { ToastHost } from "./ui";
 
 export const NAV = [
   { href: "/admin", label: "לוח בקרה", short: "לוח", Icon: SquaresFour, sub: "תמונת מצב של הפלטפורמה" },
-  { href: "/admin/fixes", label: "תיקונים", short: "תיקונים", Icon: ListChecks, sub: "מה לתקן בכל נושא, מה תוקן ומחכה לבדיקה, ומה אושר" },
+  { href: "/admin/fixes", also: ["/admin/review"], label: "תיקונים", short: "תיקונים", Icon: ListChecks, sub: "מה לתקן בכל נושא, מה תוקן ומחכה לבדיקה, ומה אושר" },
   { href: "/admin/content", label: "תוכן", short: "תוכן", Icon: Stack, sub: "כיתות, קטגוריות ונושאים. גררו כדי לשנות סדר." },
   { href: "/admin/analytics", label: "ניתוח", short: "ניתוח", Icon: ChartBar, sub: "איפה התלמידים מצליחים ואיפה נתקעים" },
   { href: "/admin/students", label: "תלמידים", short: "תלמידים", Icon: Users, sub: "פעילות התלמידים (אנונימית עד שתהיה הרשמה)" },
@@ -88,16 +88,18 @@ export default function AdminShell({ children }) {
   if (session === undefined) return <div className="mp-boot" style={{ minHeight: "100vh" }}><span /></div>;
   if (!session || !session.tok) return <ToastHost><Pin preview={preview} expired={session && session.expired} onIn={(s) => { cache.current = {}; setSession(s); }} /></ToastHost>;
 
-  const active = NAV.find((n) => (n.href === "/admin" ? path === "/admin" : path.startsWith(n.href))) || NAV[0];
+  const active = NAV.find((n) => (n.href === "/admin" ? path === "/admin" : [n.href, ...(n.also || [])].some((h) => path.startsWith(h)))) || NAV[0];
+  // בקרת תוכן (admin → תיקונים) needs the whole width: the side nav folds to an icon rail, phones lose the admin bars
+  const focus = path.startsWith("/admin/review");
   const ctx = { tok: session.tok, preview, days, setDays, cache, load, refresh, version, run, error, signOut, page: active };
   return (
     <Ctx.Provider value={ctx}>
       <ToastHost>
-        <div className="shell">
+        <div className={"shell" + (focus ? " cpl-focus" : "")}>
           <aside className="side">
             <div className="brand"><Mark /><div><b>מתמטיקה חט״ב</b><small>ניהול</small></div></div>
             <nav className="snav" aria-label="ניווט ראשי">
-              {NAV.map((n) => <Link key={n.href} href={n.href} aria-current={n === active ? "page" : undefined}><n.Icon size={19} weight={n === active ? "fill" : "regular"} /><span>{n.label}</span></Link>)}
+              {NAV.map((n) => <Link key={n.href} href={n.href} title={focus ? n.label : undefined} aria-current={n === active ? "page" : undefined}><n.Icon size={19} weight={n === active ? "fill" : "regular"} /><span>{n.label}</span></Link>)}
             </nav>
             <div className="side-foot">
               <div className={"status-pill" + (preview ? " demo" : "")}><i /><span>{preview ? "מצב תצוגה · נתוני דוגמה" : "מחובר למסד הנתונים"}</span></div>

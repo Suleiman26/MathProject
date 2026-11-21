@@ -1,0 +1,2 @@
+# git archive writes the commit hash into this file (the version line of content-review requests)
+src/admin/review/version.js export-subst

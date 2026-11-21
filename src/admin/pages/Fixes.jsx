@@ -9,6 +9,8 @@ import { Sheet, Empty, useToast, ago } from "../ui";
 import { TOPICS } from "@/topics/registry";
 import { viewUrls, deleteFile, deleteItemFiles } from "../files";
 import { AttachBar, Attachments, Viewer, Linked, usePending, sendPending, useDropPaste, ATTACH_NOTE } from "./FixAttach";
+import { PEOPLE, useName } from "../people";
+import { FixTabs } from "./review/FixTabs";
 
 export const STATUS = {
   new: { label: "חדש", tone: "st-new" },
@@ -25,16 +27,13 @@ const FILTERS = [
   { id: "done", label: "אושר", has: (s) => s === "done" },
   { id: "all", label: "הכל", has: () => true },
 ];
-const PEOPLE = ["סולימאן", "עבד"];
+/* one line per paragraph, each with its own direction: a maths line ("2⁴ · 2³ = 2^?") stays left-to-right */
+const HEB = /[\u0590-\u05FF]/;
+function Body({ text }) {
+  return String(text || "").split("\n").map((l, i) => <span key={i} className="fx-ln" dir={HEB.test(l) ? "rtl" : "ltr"}>{l ? <Linked text={l} /> : "\u00a0"}</span>);
+}
 const topicName = (slug) => (slug === "general" ? "כללי · כל האתר" : ((TOPICS[slug] && TOPICS[slug].title) || slug).split(" — ")[0]);
 const TOPIC_OPTIONS = ["general", ...Object.keys(TOPICS).sort((a, b) => topicName(a).localeCompare(topicName(b), "he"))];
-
-function useName() {
-  const [name, setName] = useState(null);
-  useEffect(() => { try { setName(localStorage.getItem("mp:fix-name") || ""); } catch { setName(""); } }, []);
-  const set = (n) => { setName(n); try { localStorage.setItem("mp:fix-name", n); } catch {} };
-  return [name, set];
-}
 
 export default function Fixes() {
   const a = useAdmin();
@@ -153,6 +152,7 @@ export default function Fixes() {
   return (
     <>
       <PageHead tools={<button type="button" className="abtn pri" onClick={() => setEdit({ topic: topic || "general", section: "", body: "" })}><Plus size={17} weight="bold" />תיקון חדש</button>} />
+      <FixTabs open={(counts.open || 0) + (counts.review || 0)} />
 
       {name === "" && (
         <div className="fx-who card-in">
@@ -223,10 +223,13 @@ export default function Fixes() {
   );
 }
 
-function Item({ it, busy, onAct, onEdit, urls, onView, onDeleteFile, preview }) {
+/** One board item (also used by בקרת תוכן: `where` replaces the section chip, `head` adds to the top row,
+    `clamp` folds a long body to a few lines until tapped, no `onEdit` = no edit button) */
+export function Item({ it, busy, onAct, onEdit, urls, onView, onDeleteFile, preview, where, head, clamp, className = "" }) {
   const [mode, setMode] = useState(null); // null | "comment" | "reopen"
   const [text, setText] = useState("");
   const [all, setAll] = useState(false);
+  const [unfold, setUnfold] = useState(false);
   const ta = useRef(null);
   const box = useRef(null);
   const pending = usePending();
@@ -249,14 +252,15 @@ function Item({ it, busy, onAct, onEdit, urls, onView, onDeleteFile, preview }) 
   const cancel = () => { setMode(null); setText(""); pending.clear(); };
 
   return (
-    <li className={"fx-item " + st.tone}>
+    <li className={"fx-item " + st.tone + (className ? " " + className : "")} data-id={it.id}>
       <div className="fx-ih">
         <span className={"fx-st " + st.tone}>{st.label}</span>
-        {it.section && <span className="fx-sec">{it.section}</span>}
+        {head}
+        {(where || it.section) && <span className="fx-sec">{where || it.section}</span>}
         <span className="grow" />
-        <button type="button" className="ibtn fx-edit" onClick={onEdit} aria-label="עריכה"><PencilSimple size={16} /></button>
+        {onEdit && <button type="button" className="ibtn fx-edit" onClick={onEdit} aria-label="עריכה"><PencilSimple size={16} /></button>}
       </div>
-      <p className="fx-body"><Linked text={it.body} /></p>
+      <p className={"fx-body" + (clamp && !unfold ? " fx-clamp" : "")} onClick={clamp && !unfold ? () => setUnfold(true) : undefined}><Body text={it.body} /></p>
       <Attachments files={filesOf(null)} urls={urls} onView={onView} onDelete={onDeleteFile} />
       <div className="fx-meta">{it.author} · {ago(it.created_at)}</div>
 

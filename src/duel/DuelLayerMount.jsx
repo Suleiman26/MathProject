@@ -9,12 +9,14 @@
    (one light presence_ping at idle, then every 5 minutes while the tab is visible). When it
    answers "open", DuelLayer loads in its own chunk and takes over the heartbeat; when the
    heartbeat later says "off", DuelLayer goes away again. Duel pages load the duel code
-   anyway, so there the layer mounts at once. */
+   anyway, so there the layer mounts at once. Inside the admin's content-review frame
+   (src/lib/admin-frame.js) it renders nothing and asks nothing. */
 import { lazy, Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAccount } from "@/lib/account";
 import { useDuelOpen } from "./gate-hook";
 import { gatePing } from "./gate-ping";
+import { isAdminFrame } from "@/lib/admin-frame";
 
 const DuelLayer = lazy(() => import("./DuelLayer"));
 const SKIP = /^\/(admin|classic|dev)(\/|$)/;
@@ -28,7 +30,10 @@ export default function DuelLayerMount() {
   const uid = account && account.id;
   const open = useDuelOpen(uid);
   const onDuelPage = /^\/duel(\/|$)/.test(path);
-  const skip = SKIP.test(path);
+  // never inside the content-review panel's frame: no second presence poll, no invite popping up in the preview.
+  // Read once (the frame's top page can't change under it). Safe for hydration: the first render is null anyway (idle is false).
+  const [framed] = useState(() => typeof window !== "undefined" && isAdminFrame());
+  const skip = SKIP.test(path) || framed;
 
   useEffect(() => {
     if (!signedIn || idle) return;

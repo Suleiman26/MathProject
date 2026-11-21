@@ -9,6 +9,7 @@ import Keypad from "./Keypad";
 import { accountApi, useAccount } from "@/lib/account";
 import { chapterStats } from "@/home/chapters";
 import { calcAllowed, eqnAllowed } from "@/lib/calc-topics";
+import { isAdminFrame } from "@/lib/admin-frame";
 
 // the side calculator: its code is fetched only when a student opens it
 const Calculator = lazy(() => import("./Calculator"));
@@ -28,8 +29,8 @@ export default function TopicView({ slug }) {
       if (alive) setLoaded({ Topic: m.default, css: s.default });
     });
     const t = setTimeout(() => window.MP && window.MP.view(), 1800);
-    // remembered on this device, for the home page's "continue" button
-    try { localStorage.setItem("mp:last", JSON.stringify({ slug, at: Date.now() })); } catch (e) {}
+    // remembered on this device, for the home page's "continue" button (not from the content-review panel's frame)
+    if (!isAdminFrame()) { try { localStorage.setItem("mp:last", JSON.stringify({ slug, at: Date.now() })); } catch (e) {} }
     return () => { alive = false; clearTimeout(t); delete html.dataset.topic; delete html.dataset.page; };
   }, [slug, meta.topic]);
 
@@ -54,27 +55,38 @@ export default function TopicView({ slug }) {
     return () => { alive = false; window.removeEventListener("mp:win", onWin); mo.disconnect(); };
   }, [loaded, account && account.id, slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ?ch=<chapter name> (from the railway or the topic sheet): open that chapter
+  // ?ch=<chapter name> (from the railway or the topic sheet): open that chapter.
+  // &sub=<sub-tab text> (the content-review panel's links): then open that sub-tab inside it;
+  // nested tabs as a path "a › b" (each one is opened in turn, after the one before it stays open).
   useEffect(() => {
     if (!loaded) return;
-    const want = new URLSearchParams(window.location.search).get("ch");
-    if (!want) return;
+    const q = new URLSearchParams(window.location.search);
     const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
+    const want = [];
+    if (q.get("ch")) want.push({ sel: "#root :is(.ch-btn, .nav-btn, .ph)", text: norm(q.get("ch")) });
+    norm(q.get("sub")).split(" › ").filter(Boolean)
+      .forEach((t) => want.push({ sel: "#root :is(.sub-tab, .sub-tab-btn, .sub-btn, .tab)", text: norm(t) }));
+    if (!want.length) return;
     // The topic's first render can be replaced right after it appears (a click on it then gets lost and
-    // chapter 1 stays open), so: click until that chapter is open and STAYS open for 3 checks in a row.
-    let tries = 0, stable = 0;
+    // chapter 1 stays open), so: click until that button is open and STAYS open for 3 checks in a row.
+    let at = 0, tries = 0, stable = 0;
     const done = () => {
       clearInterval(iv);
       // keep the address clean, so a refresh does not jump again
-      const u = new URL(window.location.href); u.searchParams.delete("ch"); window.history.replaceState(null, "", u.pathname + u.search + u.hash);
+      const u = new URL(window.location.href); u.searchParams.delete("ch"); u.searchParams.delete("sub");
+      window.history.replaceState(null, "", u.pathname + u.search + u.hash);
     };
     const iv = setInterval(() => {
       tries++;
-      const btn = [...document.querySelectorAll("#root :is(.ch-btn, .nav-btn, .ph)")].find((b) => norm(b.textContent) === norm(want));
-      if (btn && btn.classList.contains("active")) { if (++stable >= 3) done(); return; }
+      const w = want[at];
+      const btn = [...document.querySelectorAll(w.sel)].find((b) => norm(b.textContent) === w.text);
+      if (btn && btn.classList.contains("active")) {
+        if (++stable >= 3) { stable = 0; tries = 0; if (++at >= want.length) done(); }
+        return;
+      }
       stable = 0;
-      if (btn) btn.click();
-      if (tries > 40) done();
+      if (btn && !btn.disabled) btn.click();
+      if (tries > 40) done();   // not found (renamed, or a locked level): stay where the page is
     }, 100);
     return () => clearInterval(iv);
   }, [loaded]);

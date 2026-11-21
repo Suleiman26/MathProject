@@ -15,14 +15,29 @@ import { T, fill } from './texts.js';
 import ProofScreen from './ProofScreen.jsx';
 import Warmup from './Warmup.jsx';
 import { IcLock, IcCheck } from './signs.jsx';
+import { isAdminFrame } from '@/lib/admin-frame';
 
-const store = () => { try { return window.localStorage; } catch { return null; } };
+/* Inside the admin's content-review frame (src/lib/admin-frame.js) the device's progress is READ as usual but
+   never written: every write goes to a copy in memory that is gone when the frame closes. */
+const shadow = (real) => {
+  const m = new Map();
+  return { getItem: (k) => (m.has(k) ? m.get(k) : real ? real.getItem(k) : null), setItem: (k, v) => { m.set(k, String(v)); }, removeItem: (k) => { m.set(k, null); } };
+};
+let framed;
+const inFrame = () => {
+  if (framed === undefined) {
+    framed = isAdminFrame() ? { l: shadow((() => { try { return window.localStorage; } catch { return null; } })()), s: shadow((() => { try { return window.sessionStorage; } catch { return null; } })()) } : null;
+  }
+  return framed;
+};
+const store = () => { const f = inFrame(); if (f) return f.l; try { return window.localStorage; } catch { return null; } };
+const sess = () => { const f = inFrame(); if (f) return f.s; return window.sessionStorage; };
 const today = () => Math.floor(Date.now() / 86400000);
 const newSeed = () => { try { const a = new Uint32Array(1); window.crypto.getRandomValues(a); return (a[0] % 2147483646) + 1; } catch { return Math.floor(Math.random() * 2147483646) + 1; } };
-const firstWho = () => { try { const s = JSON.parse(window.localStorage.getItem('mp:account')); return whoKey(s && s.tok ? s.account : null); } catch { return 'g'; } };
+const firstWho = () => { try { const s = JSON.parse(store().getItem('mp:account')); return whoKey(s && s.tok ? s.account : null); } catch { return 'g'; } };
 /** The open proof saved for a refresh: { who, type, level, counted, walk, snap } or null. */
-export function readOpen() { try { const o = JSON.parse(window.sessionStorage.getItem(OPEN_KEY)); return o && typeof o === 'object' && typeof o.snap === 'string' ? o : null; } catch { return null; } }
-const dropOpen = () => { try { window.sessionStorage.removeItem(OPEN_KEY); } catch { /* private mode */ } };
+export function readOpen() { try { const o = JSON.parse(sess().getItem(OPEN_KEY)); return o && typeof o === 'object' && typeof o.snap === 'string' ? o : null; } catch { return null; } }
+const dropOpen = () => { try { sess().removeItem(OPEN_KEY); } catch { /* private mode */ } };
 
 export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, devWarm }) {
   const { ready, account } = useAccount();
@@ -123,7 +138,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     const o = openRef.current;
     if (!o) return;
     live.current = { s, o };
-    try { window.sessionStorage.setItem(OPEN_KEY, JSON.stringify({ who: whoRef.current, type: type.id, level: o.level, counted: o.counted, walk: o.walk, snap: snapshot(s) })); } catch { /* private mode */ }
+    try { sess().setItem(OPEN_KEY, JSON.stringify({ who: whoRef.current, type: type.id, level: o.level, counted: o.counted, walk: o.walk, snap: snapshot(s) })); } catch { /* private mode */ }
   }
   const openRef = useRef(null);
   openRef.current = open;
