@@ -135,45 +135,45 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
   const hits = Array.isArray(tappable) ? [...L.hits].filter((h) => tappable.includes(h.kind)).sort((a, b) => (a.kind === 'tri' ? 0 : a.kind === 'seg' ? 1 : 2) - (b.kind === 'tri' ? 0 : b.kind === 'seg' ? 1 : 2)) : [];
 
   return (
-    <svg ref={svg} className={`pf-fig${end ? ` is-end-${end}` : ''}${tappable ? ' is-tap' : ''}`} viewBox={`0 0 ${L.W} ${L.H}`} role={tappable ? 'group' : 'img'} aria-label={label || T['lbl.figure']} focusable="false">
+    <svg ref={svg} className={`prf-fig${end ? ` is-end-${end}` : ''}${tappable ? ' is-tap' : ''}`} viewBox={`0 0 ${L.W} ${L.H}`} role={tappable ? 'group' : 'img'} aria-label={label || T['lbl.figure']} focusable="false">
       {L.tris.map((t) => {
         const st = paint.tri[t.id];
         return (
           <g key={t.id}>
-            <polygon className={`pf-tri${st === 'on' ? ' is-on' : ''}${sel(t.id)}`} points={pts(t.pts)} />
-            {st === 'goal' && <polygon className="pf-tri-goal" points={pts(t.pts)} />}
-            {st === 'goal' && !selected.includes(t.id) && triEcho(t.pts) && <polygon className="pf-tri-echo" points={pts(triEcho(t.pts))} />}
+            <polygon className={`prf-tri${st === 'on' ? ' is-on' : ''}${sel(t.id)}`} points={pts(t.pts)} />
+            {st === 'goal' && <polygon className="prf-tri-goal" points={pts(t.pts)} />}
+            {st === 'goal' && !selected.includes(t.id) && triEcho(t.pts) && <polygon className="prf-tri-echo" points={pts(triEcho(t.pts))} />}
           </g>
         );
       })}
       {L.segs.map((g) => {
         const p = paint.seg[g.id];
-        const cls = p ? (p.style === 'goal' ? ' is-goal' : ` pf-c${p.mark.color || 1}`) : '';
-        return <line key={g.id} className={`pf-sg${cls}${dim(g.id, !!p)}${sel(g.id)}`} x1={r1(g.a[0])} y1={r1(g.a[1])} x2={r1(g.b[0])} y2={r1(g.b[1])} />;
+        const cls = p ? (p.style === 'goal' ? ' is-goal' : ` prf-c${p.mark.color || 1}`) : '';
+        return <line key={g.id} className={`prf-sg${cls}${dim(g.id, !!p)}${sel(g.id)}`} x1={r1(g.a[0])} y1={r1(g.a[1])} x2={r1(g.b[0])} y2={r1(g.b[1])} />;
       })}
-      {showAngles && L.angles.map((a) => (paint.ang[a.id] ? null : <path key={`q${a.id}`} className={`pf-arc is-quiet${sel(a.id)}`} d={a.d} />))}
+      {showAngles && L.angles.map((a) => (paint.ang[a.id] ? null : <path key={`q${a.id}`} className={`prf-arc is-quiet${sel(a.id)}`} d={a.d} />))}
       {Object.entries(paint.seg).map(([id, p]) => (p.style !== 'on' ? null : (
-        <g key={`m${id}`} className={`pf-mk pf-c${p.mark.color || 1}${dim(id, true)}`} style={p.delay ? { animationDelay: `${p.delay}ms` } : undefined}>
+        <g key={`m${id}`} className={`prf-mk prf-c${p.mark.color || 1}${dim(id, true)}`} style={p.delay ? { animationDelay: `${p.delay}ms` } : undefined}>
           {markGeom(L, p.part, p.mark).lines.map((q, i) => <line key={i} x1={r1(q[0])} y1={r1(q[1])} x2={r1(q[2])} y2={r1(q[3])} />)}
         </g>
       )))}
       {Object.entries(paint.ang).map(([id, p]) => {
         const g = markGeom(L, p.part, p.style === 'goal' ? { arcs: 1, right: p.mark.right } : p.mark);
         return (
-          <g key={`m${id}`} className={`pf-mk ${p.style === 'goal' ? 'is-goal' : `pf-c${p.mark.color || 1}`}${dim(id, true)}${sel(id)}`} style={p.delay ? { animationDelay: `${p.delay}ms` } : undefined}>
+          <g key={`m${id}`} className={`prf-mk ${p.style === 'goal' ? 'is-goal' : `prf-c${p.mark.color || 1}`}${dim(id, true)}${sel(id)}`} style={p.delay ? { animationDelay: `${p.delay}ms` } : undefined}>
             {g.arcs.map((d, i) => <path key={i} d={d} />)}
             {g.square && <path d={g.square} />}
           </g>
         );
       })}
-      {selected.map((id) => (index[id] && index[id].kind === 'ang' ? halo(id, 'pf-selw', `s${id}`) : null))}
-      {[...new Set(pulse)].map((id) => halo(id, 'pf-pulse', `p${id}`))}
-      {end && tri1 && <polygon ref={mover} className="pf-mover" points={pts(tri1)} />}
-      {L.labels.map((l) => <text key={l.p} className="pf-lb" x={r1(l.x)} y={r1(l.y)} dy=".36em">{l.p}</text>)}
+      {selected.map((id) => (index[id] && index[id].kind === 'ang' ? halo(id, 'prf-selw', `s${id}`) : null))}
+      {[...new Set(pulse)].map((id) => halo(id, 'prf-pulse', `p${id}`))}
+      {end && tri1 && <polygon ref={mover} className="prf-mover" points={pts(tri1)} />}
+      {L.labels.map((l) => <text key={l.p} className="prf-lb" x={r1(l.x)} y={r1(l.y)} dy=".36em">{l.p}</text>)}
       {[...new Set(question)].map((id) => {
         const c = badgeAt(id);
         return c && (
-          <g key={`b${id}`} className="pf-qm" transform={`translate(${r1(c[0])} ${r1(c[1])})`}>
+          <g key={`b${id}`} className="prf-qm" transform={`translate(${r1(c[0])} ${r1(c[1])})`}>
             <circle r="8.5" /><text dy=".36em">?</text>
           </g>
         );
@@ -181,7 +181,7 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
       {hits.map((h) => {
         const x = index[h.id];
         if (!x) return null;
-        const common = { className: `pf-hit pf-hit-${h.kind}`, role: 'button', tabIndex: 0, 'aria-label': x.he, 'aria-pressed': selected.includes(h.id), onClick: (e) => tap(e, h.id), onKeyDown: onKey(h.id), 'data-part': h.id };
+        const common = { className: `prf-hit prf-hit-${h.kind}`, role: 'button', tabIndex: 0, 'aria-label': x.he, 'aria-pressed': selected.includes(h.id), onClick: (e) => tap(e, h.id), onKeyDown: onKey(h.id), 'data-part': h.id };
         if (h.shape === 'line') return <line key={h.id} {...common} x1={h.x1} y1={h.y1} x2={h.x2} y2={h.y2} strokeWidth={h.w} />;
         if (h.shape === 'wedge') return <path key={h.id} {...common} d={h.d} />;
         return <polygon key={h.id} {...common} points={pts(h.pts)} />;

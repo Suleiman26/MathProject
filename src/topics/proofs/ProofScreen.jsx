@@ -17,7 +17,7 @@ import EndCard from './EndCard.jsx';
 import { useSelection, TapStatement, GroupPick } from './TapBuild.jsx';
 import { St, Tx, Mx, Ask, CongSt, IcBack, IcCheck, IcLock, IcSwap, IcHand } from './signs.jsx';
 
-const PAIR = { 1: 'var(--pf-p1)', 2: 'var(--pf-p2)', 3: 'var(--pf-p3)' };
+const PAIR = { 1: 'var(--prf-p1)', 2: 'var(--prf-p2)', 3: 'var(--prf-p3)' };
 const ids = (problem, fact) => (problem.facts[fact] ? partsOf(problem.facts[fact]).map((x) => partId(x, problem.figure)) : []);
 const hash = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) % 2147483646 + 1; };
 
@@ -180,10 +180,10 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     label = '';
     body = { t: 'node', node: (
       <>
-        <div className="pf-chips pf-cols-2">
-          {tris.map((t) => { const id = partId(t), on = planQ.picked.includes(id); return <button type="button" key={id} className={`pf-chip pf-partc${on ? ' is-on' : ''}`} aria-pressed={on} onClick={() => pickPlan(id)}><Mx s={`△${t.join('')}`} /></button>; })}
+        <div className="prf-chips prf-cols-2">
+          {tris.map((t) => { const id = partId(t), on = planQ.picked.includes(id); return <button type="button" key={id} className={`prf-chip prf-partc${on ? ' is-on' : ''}`} aria-pressed={on} onClick={() => pickPlan(id)}><Mx s={`△${t.join('')}`} /></button>; })}
         </div>
-        {both && <div className="pf-go-row"><button type="button" className="pf-go" onClick={() => setPlanQ(null)}>{T['btn.start']}</button></div>}
+        {both && <div className="prf-go-row"><button type="button" className="prf-go" onClick={() => setPlanQ(null)}>{T['btn.start']}</button></div>}
       </>
     ) };
   } else if (leans) {
@@ -201,10 +201,10 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     } else {
       body = { t: 'node', node: (
         <>
-          <div className="pf-chips pf-cols-3">
-            {[['given', T['lbl.leanGiven']], ['seen', T['lbl.leanSeen']], ['rows', T['lbl.leanRows']]].map(([id, lb]) => <button type="button" key={id} className={`pf-chip${id === leans.answer ? ' is-yes' : ' is-dim'}`} disabled>{lb}</button>)}
+          <div className="prf-chips prf-cols-3">
+            {[['given', T['lbl.leanGiven']], ['seen', T['lbl.leanSeen']], ['rows', T['lbl.leanRows']]].map(([id, lb]) => <button type="button" key={id} className={`prf-chip${id === leans.answer ? ' is-yes' : ' is-dim'}`} disabled>{lb}</button>)}
           </div>
-          <div className="pf-go-row"><button type="button" className="pf-go" onClick={() => setLeans(null)}>{T['btn.next']}</button></div>
+          <div className="prf-go-row"><button type="button" className="prf-go" onClick={() => setLeans(null)}>{T['btn.next']}</button></div>
         </>
       ) };
     }
@@ -277,8 +277,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   if (head && !planQ && !isDone && askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong') {
     const g = tn === 1 && given.find((x) => x.facts.includes(askFact));
     if (g) head.sent = g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />;
-    if (tn === 2 && cong) head.sent = <>{lit ? <CongSt st={p.facts[cong]} at={lit.at} color={lit.color} /> : <St st={p.facts[cong]} />} <span className="pf-fc-note">{T['lbl.byOrder']}</span></>;
-    if (tn === 2 && !head.st) head.lead = <Ask part={p.facts[askFact].x} className="pf-ask-st" />;
+    if (tn === 2 && cong) head.sent = <>{lit ? <CongSt st={p.facts[cong]} at={lit.at} color={lit.color} /> : <St st={p.facts[cong]} />} <span className="prf-fc-note">{T['lbl.byOrder']}</span></>;
+    if (tn === 2 && !head.st) head.lead = <Ask part={p.facts[askFact].x} className="prf-ask-st" />;
   }
   if (cur && !planQ && !leans && !isDone && !(mode === 'walk' && body && body.t === 'action')) {
     hint = { rung: cur.rung, nudge, wait: cur.rung === 2 && showKey !== cur.key, waitMs: RULES.HINT3_WAIT_MS };
@@ -288,54 +288,54 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const leave = () => onLeave && onLeave({ nonSolo: s.nonSolo, decisions: s.decisions, ended: s.ended });
 
   return (
-    <div className={`pf-screen pf-mode-${mode}${end ? ' is-ended' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
-      <div className="pf-head">
-        <button type="button" className="pf-back" aria-label={T['btn.back']} onClick={leave}><IcBack /></button>
-        <span className="pf-head-t">{type.name}</span>
-        {levelName && <span className="pf-pill">{levelName}</span>}
-        {onSwap && !s.ended && <button type="button" className="pf-swap" aria-label={T['btn.swap']} title={T['btn.swap']} onClick={() => onSwap({ nonSolo: s.nonSolo, decisions: s.decisions })}><IcSwap /></button>}
-        <span className="pf-dots" role="img" aria-label={`${T['lbl.cleanAria']}: ${dots.filter((d) => d === true).length}`}>
+    <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
+      <div className="prf-head">
+        <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={leave}><IcBack /></button>
+        <span className="prf-head-t">{type.name}</span>
+        {levelName && <span className="prf-pill">{levelName}</span>}
+        {onSwap && !s.ended && <button type="button" className="prf-swap" aria-label={T['btn.swap']} title={T['btn.swap']} onClick={() => onSwap({ nonSolo: s.nonSolo, decisions: s.decisions })}><IcSwap /></button>}
+        <span className="prf-dots" role="img" aria-label={`${T['lbl.cleanAria']}: ${dots.filter((d) => d === true).length}`}>
           {dots.map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}
         </span>
       </div>
-      <div className="pf-figcol">
-        <div className="pf-stage">
+      <div className="prf-figcol">
+        <div className="prf-stage">
           <ProofFigure problem={p} marks={marks} focus={end || planQ ? [] : focus} selected={planQ ? planQ.picked : tapping ? sel.selected : []} pulse={pulse} question={question}
             tappable={planQ ? ['tri'] : tapping ? (tn <= 2 ? ['seg', 'ang'] : ['seg', 'ang', 'tri']) : false} onPart={planQ ? (id) => pickPlan(id) : sel.tap} ending={ending} />
         </div>
       </div>
-      <div className="pf-work">
-        <div className="pf-strip">
-          <span className="pf-strip-given">
-            <span className="pf-strip-k">{T['lbl.given']}</span>
+      <div className="prf-work">
+        <div className="prf-strip">
+          <span className="prf-strip-given">
+            <span className="prf-strip-k">{T['lbl.given']}</span>
             {given.map((g, i) => {
               const used = g.facts.every((f) => s.done.includes(f)), f0 = p.facts[g.facts[0]];
               const now = tn === 1 && !end && askFact && g.facts.includes(askFact);       // type 1: the sentence being read
               return (
-                <span key={i} className={`pf-fc${used ? ' is-used' : ''}${now ? ' is-now' : ''}`}>
+                <span key={i} className={`prf-fc${used ? ' is-used' : ''}${now ? ' is-now' : ''}`}>
                   {g.form !== 'eq' ? <span><Tx k={g.key} vars={g.vars} /></span> : f0.kind === 'cong' && lit && !end ? <CongSt st={f0} at={lit.at} color={lit.color} /> : <St st={f0} />}
-                  {g.byOrder && <span className="pf-fc-note">{T['lbl.byOrder']}</span>}
+                  {g.byOrder && <span className="prf-fc-note">{T['lbl.byOrder']}</span>}
                   {used && tn !== 2 && <IcCheck />}
                 </span>
               );
             })}
           </span>
-          {tn !== 1 && <span className="pf-strip-goal">
-            <span className="pf-strip-k">{T['lbl.toProve']}</span>
+          {tn !== 1 && <span className="prf-strip-goal">
+            <span className="prf-strip-k">{T['lbl.toProve']}</span>
             {targets(p).map((t) => {
               const ok = s.done.includes(t);
               // while writing the congruence is itself a decision (a statement gap, or Level 3), the goal names the two triangles without the matching order
               const step = s.view.steps.find((x) => x.fact === t), tris = p.figure.tris || [];
               const open = !ok && t === cong && tris.length === 2 && step && step.ask.includes('statement') && (mode === 'tap' || !!step.options);
-              return <span key={t} className={`pf-fc pf-fc-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k="lbl.goalCong" vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : tn === 2 && !ok ? <Ask part={p.facts[t].x} /> : <St st={p.facts[t]} />}</span>;
+              return <span key={t} className={`prf-fc prf-fc-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k="lbl.goalCong" vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : tn === 2 && !ok ? <Ask part={p.facts[t].x} /> : <St st={p.facts[t]} />}</span>;
             })}
           </span>}
         </div>
         {end && cardOn ? <EndCard problem={p} rows={s.rows} {...end} /> : (
           <>
-            <div className="pf-rows" ref={rowsEl}>
-              {(p.text || []).map((t, i) => <p key={i} className="pf-intro"><Tx k={t.key} vars={t.vars} /></p>)}
-              {s.view.plan === 'line' && <p className="pf-plan">{T['lbl.planL3']}</p>}
+            <div className="prf-rows" ref={rowsEl}>
+              {(p.text || []).map((t, i) => <p key={i} className="prf-intro"><Tx k={t.key} vars={t.vars} /></p>)}
+              {s.view.plan === 'line' && <p className="prf-plan">{T['lbl.planL3']}</p>}
               <ProofRows problem={p} rows={s.rows} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={lead} />
             </div>
             {!end && (
@@ -345,7 +345,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
           </>
         )}
       </div>
-      <div className="pf-sr" aria-live="polite">{live}</div>
+      <div className="prf-sr" aria-live="polite">{live}</div>
     </div>
   );
 }

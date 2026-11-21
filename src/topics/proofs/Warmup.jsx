@@ -63,46 +63,46 @@ export default function Warmup({ type, kinds, only = null, seed, onDone, onLeave
   const cols = opts.some((o) => o.st) ? 1 : opts.length === 3 ? 3 : 2;
 
   return (
-    <div className="pf-screen pf-warm">
-      <div className="pf-head">
-        <button type="button" className="pf-back" aria-label={T['btn.back']} onClick={onLeave}><IcBack /></button>
-        <span className="pf-head-t">{type.name}</span>
-        <span className="pf-pill">{T['tab.warm']}</span>
-        <span className="pf-dots" aria-hidden="true">{dots.map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
+    <div className="prf-screen prf-warm">
+      <div className="prf-head">
+        <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={onLeave}><IcBack /></button>
+        <span className="prf-head-t">{type.name}</span>
+        <span className="prf-pill">{T['tab.warm']}</span>
+        <span className="prf-dots" aria-hidden="true">{dots.map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
       </div>
-      <div className="pf-figcol">
-        <div className="pf-stage">
+      <div className="prf-figcol">
+        <div className="prf-stage">
           <ProofFigure problem={problem} marks={marks} selected={tapping ? sel.selected : []} pulse={pulse}
             tappable={tapping ? ['seg'] : false} onPart={sel.tap} />
         </div>
       </div>
-      <div className="pf-work">
+      <div className="prf-work">
         {(task.given || task.toProve) && (
-          <div className="pf-strip">
-            {task.given && <span className="pf-strip-given"><span className="pf-strip-k">{T['lbl.given']}</span>{task.given.map((st, i) => <span key={i} className="pf-fc"><St st={st} /></span>)}</span>}
-            {task.toProve && <span className="pf-strip-goal"><span className="pf-strip-k">{T['lbl.toProve']}</span><span className="pf-fc pf-fc-goal"><IcLock /><St st={task.toProve} /></span></span>}
+          <div className="prf-strip">
+            {task.given && <span className="prf-strip-given"><span className="prf-strip-k">{T['lbl.given']}</span>{task.given.map((st, i) => <span key={i} className="prf-fc"><St st={st} /></span>)}</span>}
+            {task.toProve && <span className="prf-strip-goal"><span className="prf-strip-k">{T['lbl.toProve']}</span><span className="prf-fc prf-fc-goal"><IcLock /><St st={task.toProve} /></span></span>}
           </div>
         )}
-        <div className="pf-warm-mid" key={`q${log.length}`}>
-          <p className="pf-warm-k">{skill}</p>
-          {task.sent && <p className="pf-warm-sent"><Tx k={task.sent.key} vars={task.sent.vars} /></p>}
-          {task.st && <p className="pf-warm-st"><St st={task.st} /></p>}
-          <p className="pf-warm-q"><Tx k={task.text.k} vars={task.text.vars} /></p>
+        <div className="prf-warm-mid" key={`q${log.length}`}>
+          <p className="prf-warm-k">{skill}</p>
+          {task.sent && <p className="prf-warm-sent"><Tx k={task.sent.key} vars={task.sent.vars} /></p>}
+          {task.st && <p className="prf-warm-st"><St st={task.st} /></p>}
+          <p className="prf-warm-q"><Tx k={task.text.k} vars={task.text.vars} /></p>
         </div>
-        <div className="pf-tray">
-          <div className="step-card pf-step">
-            <span className="step-label pf-sr" aria-hidden="true">{skill}</span>
+        <div className="prf-tray">
+          <div className="step-card prf-step">
+            <span className="step-label prf-sr" aria-hidden="true">{skill}</span>
             {res && (res.right
-              ? <div className="fb ok pf-fb" key={`f${n.current}`}><span>{T['fb.ok']}</span></div>
-              : <div className="fb err pf-fb" key={`f${n.current}`}><span><Tx k={task.why.k} vars={task.why.vars} /></span></div>)}
-            {res && last && !only && <p className="pf-why">{T['ui.warmDone']}</p>}
+              ? <div className="fb ok prf-fb" key={`f${n.current}`}><span>{T['fb.ok']}</span></div>
+              : <div className="fb err prf-fb" key={`f${n.current}`}><span><Tx k={task.why.k} vars={task.why.vars} /></span></div>)}
+            {res && last && !only && <p className="prf-why">{T['ui.warmDone']}</p>}
             {task.input === 'chips' && (
-              <div className={`pf-chips pf-cols-${cols}${opts.some((o) => o.st) ? ' pf-tiles' : ''}`}>
+              <div className={`prf-chips prf-cols-${cols}${opts.some((o) => o.st) ? ' prf-tiles' : ''}`}>
                 {opts.map((o) => {
                   const yes = res && o.id === task.answer, off = res && !yes;
                   if (off && o.st) return null;                    // long options: once answered only the right one stays, so the next button is in reach
                   return (
-                    <button type="button" key={o.id} className={`pf-chip${o.st ? ' pf-tile' : ''}${o.m ? ' pf-vert' : ''}${yes ? ' is-yes' : off ? ' is-dim' : ''}`} disabled={!!res} onClick={() => judge(o.id)}>
+                    <button type="button" key={o.id} className={`prf-chip${o.st ? ' prf-tile' : ''}${o.m ? ' prf-vert' : ''}${yes ? ' is-yes' : off ? ' is-dim' : ''}`} disabled={!!res} onClick={() => judge(o.id)}>
                       {o.st ? <St st={o.st} /> : o.m ? <Mx s={o.m} /> : o.label}
                     </button>
                   );
@@ -110,27 +110,27 @@ export default function Warmup({ type, kinds, only = null, seed, onDone, onLeave
               </div>
             )}
             {tapping && sel.chooser && (
-              <div className="pf-tap">
-                <p className="pf-tap-q">{T['lbl.chooser']}</p>
-                <div className="pf-chips pf-cols-2">
-                  {sel.chooser.map((id) => sel.index[id] && <button type="button" key={id} className="pf-chip" onClick={() => sel.pickFromChooser(id)}>{sel.index[id].he}</button>)}
+              <div className="prf-tap">
+                <p className="prf-tap-q">{T['lbl.chooser']}</p>
+                <div className="prf-chips prf-cols-2">
+                  {sel.chooser.map((id) => sel.index[id] && <button type="button" key={id} className="prf-chip" onClick={() => sel.pickFromChooser(id)}>{sel.index[id].he}</button>)}
                 </div>
               </div>
             )}
             {tapping && !sel.chooser && (
-              <div className="pf-warm-tap">
-                <span className="pf-warm-picked" aria-live="polite">
-                  {[0, 1].map((i) => (sel.parts[i] ? <span key={i} className="pf-fc is-now"><Mx s={sel.parts[i].part} /></span> : <i key={i} className="pf-slot is-wide" />))}
+              <div className="prf-warm-tap">
+                <span className="prf-warm-picked" aria-live="polite">
+                  {[0, 1].map((i) => (sel.parts[i] ? <span key={i} className="prf-fc is-now"><Mx s={sel.parts[i].part} /></span> : <i key={i} className="prf-slot is-wide" />))}
                 </span>
-                {sel.parts.length > 0 && <button type="button" className="pf-x" aria-label={T['btn.cancel']} onClick={sel.clear}><IcClose /></button>}
-                <button type="button" className="pf-go" disabled={sel.parts.length !== 2} onClick={() => judge(sel.selected)}>{T['btn.these']}</button>
+                {sel.parts.length > 0 && <button type="button" className="prf-x" aria-label={T['btn.cancel']} onClick={sel.clear}><IcClose /></button>}
+                <button type="button" className="prf-go" disabled={sel.parts.length !== 2} onClick={() => judge(sel.selected)}>{T['btn.these']}</button>
               </div>
             )}
-            {res && <div className="pf-go-row"><button type="button" className="pf-go" onClick={onward}>{last ? T['btn.go'] : T['btn.next']}</button></div>}
+            {res && <div className="prf-go-row"><button type="button" className="prf-go" onClick={onward}>{last ? T['btn.go'] : T['btn.next']}</button></div>}
           </div>
         </div>
       </div>
-      <div className="pf-sr" aria-live="polite">{res ? (res.right ? T['fb.ok'] : T[task.why.k]) : ''}</div>
+      <div className="prf-sr" aria-live="polite">{res ? (res.right ? T['fb.ok'] : T[task.why.k]) : ''}</div>
     </div>
   );
 }

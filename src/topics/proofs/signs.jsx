@@ -21,7 +21,7 @@ const PATHS = {
 /** One sign: `name` ∈ 'angle' | 'tri' | 'cong' | 'match'. */
 export function Sign({ name, quiet }) {
   return (
-    <svg className={`pf-sign pf-sign-${name}`} viewBox="0 0 20 14" role={quiet ? undefined : 'img'} aria-label={quiet ? undefined : NAMES[name]} aria-hidden={quiet ? 'true' : undefined} focusable="false">
+    <svg className={`prf-sign prf-sign-${name}`} viewBox="0 0 20 14" role={quiet ? undefined : 'img'} aria-label={quiet ? undefined : NAMES[name]} aria-hidden={quiet ? 'true' : undefined} focusable="false">
       {PATHS[name]}
     </svg>
   );
@@ -39,7 +39,7 @@ function pieces(s) {
 /** A maths island: left to right, never broken, signs drawn. */
 export function Mx({ s, label, className, style }) {
   return (
-    <span className={`pf-m${className ? ` ${className}` : ''}`} dir="ltr" aria-label={label || undefined} style={style}>
+    <span className={`prf-m${className ? ` ${className}` : ''}`} dir="ltr" aria-label={label || undefined} style={style}>
       {pieces(s).map((p, i) => (typeof p === 'string' ? <span key={i} aria-hidden={label ? 'true' : undefined}>{p}</span> : <Sign key={i} name={p.sign} quiet={!!label} />))}
     </span>
   );
@@ -51,8 +51,8 @@ export function St({ st, color, className }) {
 /** Type 2: an asked part and an empty box for its partner ("AB = ▢"), read as "AB שווה ל…". */
 export function Ask({ part, className }) {
   return (
-    <span className={`pf-m pf-askst${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={fill('say.ask', { x: showPart(part) })}>
-      <span aria-hidden="true"><Mx s={`${showPart(part)} =`} /> <i className="pf-slot" /></span>
+    <span className={`prf-m prf-askst${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={fill('say.ask', { x: showPart(part) })}>
+      <span aria-hidden="true"><Mx s={`${showPart(part)} =`} /> <i className="prf-slot" /></span>
     </span>
   );
 }
@@ -60,9 +60,9 @@ export function Ask({ part, className }) {
     triangles (type 2, Level 1: position 1 ↔ position 1). Colour is never alone: the letters are underlined too. */
 export function CongSt({ st, at = [], color, className }) {
   const [t1, t2] = [st.map.map((m) => m[0]), st.map.map((m) => m[1])];
-  const tri = (t) => <><Sign name="tri" quiet />{t.map((q, i) => (at.includes(i) ? <span key={i} className="pf-lk" style={color ? { color } : undefined}>{q}</span> : <span key={i}>{q}</span>))}</>;
+  const tri = (t) => <><Sign name="tri" quiet />{t.map((q, i) => (at.includes(i) ? <span key={i} className="prf-lk" style={color ? { color } : undefined}>{q}</span> : <span key={i}>{q}</span>))}</>;
   return (
-    <span className={`pf-m${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={say(st)}>
+    <span className={`prf-m${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={say(st)}>
       <span aria-hidden="true">{tri(t1)} <Sign name="cong" quiet /> {tri(t2)}</span>
     </span>
   );
@@ -76,7 +76,7 @@ export function Tx({ k, vars }) {
 
 /* ── line icons (currentColor) ── */
 const I = (d, vb = 20, sw = 2) => function Icon({ className }) {
-  return <svg className={`pf-ic${className ? ` ${className}` : ''}`} viewBox={`0 0 ${vb} ${vb}`} fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{d}</svg>;
+  return <svg className={`prf-ic${className ? ` ${className}` : ''}`} viewBox={`0 0 ${vb} ${vb}`} fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{d}</svg>;
 };
 export const IcCheck = I(<path d="M4.5 10.5l3.6 3.6L15.5 6.5" />, 20, 2.2);
 export const IcNote = I(<><path d="M10 9v5" /><circle cx="10" cy="5.9" r=".7" fill="currentColor" /></>, 20, 2.2);
@@ -97,5 +97,5 @@ export function Glyph({ mark, kind }) {
   if (kind === 'seg') d = [...Array(n)].map((_, i) => `M${10 + (i - (n - 1) / 2) * 4} 2.5v9`).join('');
   else if (mark.right) d = 'M5 11.5V5h6.5';
   else d = [...Array(n)].map((_, i) => { const r = 5 + i * 3; return `M${10 - r * 0.78} ${12.5 - r * 0.62}A${r} ${r} 0 0 1 ${10 + r * 0.78} ${12.5 - r * 0.62}`; }).join('');
-  return <svg className={`pf-gl pf-c${mark.color || 1}`} viewBox="0 0 20 14" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={d} /></svg>;
+  return <svg className={`prf-gl prf-c${mark.color || 1}`} viewBox="0 0 20 14" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={d} /></svg>;
 }

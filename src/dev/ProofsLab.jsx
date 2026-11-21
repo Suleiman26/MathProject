@@ -30,7 +30,7 @@ export const problemOf = (tpl, seed = 7, level = 2, variant = 'B', words = false
 function Figures() {
   const [end, setEnd] = useState({});
   return (
-    <div className="pf" style={{ maxWidth: 1180, margin: '0 auto', padding: 16 }}>
+    <div className="prf" style={{ maxWidth: 1180, margin: '0 auto', padding: 16 }}>
       <h1 style={{ fontSize: 20, margin: '4px 0 12px' }}>הציורים: 14 תבניות × 3 מצבים</h1>
       {T3.templates.map((t, i) => {
         const p = problemOf(t.id, 11 + i);
@@ -42,9 +42,9 @@ function Figures() {
           <section key={t.id} style={{ margin: '18px 0', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
             <p style={{ font: '600 14px var(--font)', color: 'var(--ink-2)', marginBottom: 6 }}>{t.id} · {p.canon.map((f) => <span key={f} style={{ marginInlineEnd: 12 }}><St st={p.facts[f]} /></span>)}</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 12 }}>
-              <div className="pf-stage" data-shot={`${t.id}-0`}><ProofFigure problem={p} /></div>
-              <div className="pf-stage" data-shot={`${t.id}-1`}><ProofFigure problem={p} marks={[...given, ...goal]} /></div>
-              <div className="pf-stage" data-shot={`${t.id}-2`}>
+              <div className="prf-stage" data-shot={`${t.id}-0`}><ProofFigure problem={p} /></div>
+              <div className="prf-stage" data-shot={`${t.id}-1`}><ProofFigure problem={p} marks={[...given, ...goal]} /></div>
+              <div className="prf-stage" data-shot={`${t.id}-2`}>
                 <ProofFigure problem={p} marks={[...all, { fact: c, style: 'goal' }]} selected={[partId(p.figure.segs[0])]} question={cParts} tappable={['seg', 'ang', 'tri']} onPart={() => {}} ending={end[t.id] || null} />
               </div>
             </div>
@@ -65,7 +65,7 @@ function Proof({ q }) {
   });
   const [end, setEnd] = useState(null);
   return (
-    <div className="pf">
+    <div className="prf">
       <ProofScreen type={made.type} problem={made.problem} view={made.view} level={level} levelName={`רמה ${level}`} dots={[true, true, false, null]}
         onEnd={(r) => setEnd({ clean: r.clean, dots: [true, true, false, r.clean], done: 4, typeName: made.type.name, levelName: `רמה ${level}`, onMore: () => window.location.reload(), onFinish: () => {} })}
         onLeave={() => {}} onSwap={() => window.location.reload()} end={end} />
@@ -96,7 +96,7 @@ function End({ q }) {
   const clean = state !== 'helped';
   const end = { clean, dots: clean ? [true, false, true, true] : [true, true, false, false], done: 7, typeName: typeOfTpl(q.get('tpl') || '3-X-SAS').name, levelName: 'רמה 2', lessHelp: state === 'clean', round: state === 'round',
     event: state === 'levelup' ? 'level-up' : state === 'typedone' ? 'type-done' : null, newLevel: 3, onMore: () => {}, onFinish: () => {} };
-  return <div className="pf"><ProofScreen type={typeOfTpl(q.get('tpl') || '3-X-SAS')} problem={made.problem} view={made.view} level={2} levelName="רמה 2" dots={end.dots} restored={made.s} end={end} onEnd={() => {}} onLeave={() => {}} /></div>;
+  return <div className="prf"><ProofScreen type={typeOfTpl(q.get('tpl') || '3-X-SAS')} problem={made.problem} view={made.view} level={2} levelName="רמה 2" dots={end.dots} restored={made.s} end={end} onEnd={() => {}} onLeave={() => {}} /></div>;
 }
 
 /* sample progress for ?view=topic&s=new|mid|pro (written to this device's guest progress before the topic mounts) */
@@ -117,7 +117,7 @@ function preload(name, typeId = 'prove-congruence') {
 function Warm({ q }) {
   const k = KINDS.includes(q.get('k')) ? q.get('k') : 'W1', type = TYPES.find((t) => t.warm.includes(k)) || T3;
   const [done, setDone] = useState(null);
-  return <div className="pf">{done ? <pre style={{ padding: 20, direction: 'ltr' }}>{JSON.stringify(done)}</pre> : <Warmup type={type} kinds={[k]} seed={+(q.get('seed') || 7)} onDone={setDone} onLeave={() => setDone({ left: true })} />}</div>;
+  return <div className="prf">{done ? <pre style={{ padding: 20, direction: 'ltr' }}>{JSON.stringify(done)}</pre> : <Warmup type={type} kinds={[k]} seed={+(q.get('seed') || 7)} onDone={setDone} onLeave={() => setDone({ left: true })} />}</div>;
 }
 
 /* the lab's front page: every view */
@@ -125,7 +125,7 @@ function Index() {
   const L = ({ href, children }) => <a href={href} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '0 14px', margin: '0 0 8px 8px', borderRadius: 999, background: 'var(--surface)', boxShadow: 'inset 0 0 0 1.5px var(--line-strong)', color: 'var(--ink)', textDecoration: 'none', font: '500 14px var(--font)' }}>{children}</a>;
   const H = ({ children }) => <h2 style={{ font: '700 16px var(--font)', margin: '18px 0 8px' }}>{children}</h2>;
   return (
-    <div className="pf" style={{ maxWidth: 900, margin: '0 auto', padding: 16 }} dir="ltr">
+    <div className="prf" style={{ maxWidth: 900, margin: '0 auto', padding: 16 }} dir="ltr">
       <h1 style={{ font: '800 22px var(--font)' }}>Proofs lab</h1>
       <H>The topic (sample progress on this device)</H>
       {['new', 'l1', 'l1b', 'up', 'l2', 'mid', 'l3', 'pro', 'gold'].map((n) => <L key={n} href={`?view=topic&s=${n}`}>topic · {n}</L>)}
@@ -151,42 +151,42 @@ function Index() {
 function Sheet({ q }) {
   const n = +(q.get('t') || 3), type = TYPES[n - 1];
   const nav = (
-    <p className="pf-lab-nav">{TYPES.map((t) => <a key={t.id} href={`?view=sheet&t=${t.n}`}>{t.button}</a>)}<a href="?view=sheet&t=0">ניסוחים חדשים</a><button type="button" onClick={() => window.print()}>הדפסה</button></p>
+    <p className="prf-lab-nav">{TYPES.map((t) => <a key={t.id} href={`?view=sheet&t=${t.n}`}>{t.button}</a>)}<a href="?view=sheet&t=0">ניסוחים חדשים</a><button type="button" onClick={() => window.print()}>הדפסה</button></p>
   );
   if (!type) {
     return (
-      <div className="pf pf-lab-sheet">
+      <div className="prf prf-lab-sheet">
         {nav}
-        <h1 className="pf-lab-h">דף בדיקה · ניסוחים שנכתבו בבנייה ({NEW_DRAFTS.length})</h1>
-        <p className="pf-lab-p">הטקסטים האלה לא מנוסחים במפרט. כל אחד מהם מחכה לאישור או לתיקון.</p>
-        <table className="pf-table pf-lab-texts"><tbody>{NEW_DRAFTS.map((k) => <tr key={k} className="pf-lab-card"><td dir="ltr">{k}</td><td>{TXT[k]}</td></tr>)}</tbody></table>
-        <h1 className="pf-lab-h">הנימוקים (מפרט 6.3) · ניסוח שעוד לא אושר</h1>
-        <table className="pf-table pf-lab-texts"><tbody>{Object.values(REASONS).map((r) => <tr key={r.id} className="pf-lab-card"><td>{r.short}</td><td>{r.full || '(רק כתשובה שגויה)'}</td></tr>)}</tbody></table>
+        <h1 className="prf-lab-h">דף בדיקה · ניסוחים שנכתבו בבנייה ({NEW_DRAFTS.length})</h1>
+        <p className="prf-lab-p">הטקסטים האלה לא מנוסחים במפרט. כל אחד מהם מחכה לאישור או לתיקון.</p>
+        <table className="prf-table prf-lab-texts"><tbody>{NEW_DRAFTS.map((k) => <tr key={k} className="prf-lab-card"><td dir="ltr">{k}</td><td>{TXT[k]}</td></tr>)}</tbody></table>
+        <h1 className="prf-lab-h">הנימוקים (מפרט 6.3) · ניסוח שעוד לא אושר</h1>
+        <table className="prf-table prf-lab-texts"><tbody>{Object.values(REASONS).map((r) => <tr key={r.id} className="prf-lab-card"><td>{r.short}</td><td>{r.full || '(רק כתשובה שגויה)'}</td></tr>)}</tbody></table>
       </div>
     );
   }
   return (
-    <div className="pf pf-lab-sheet">
+    <div className="prf prf-lab-sheet">
       {nav}
-      <h1 className="pf-lab-h">דף בדיקה · {type.button} · {type.templates.length} תבניות</h1>
-      <p className="pf-lab-p">{TXT[`about.${type.id}`]} לכל תבנית: הציור עם כל הסימונים, הנתון, מה שצריך להוכיח, ההוכחה כפי שנכתבת במחברת, והטענות השגויות עם ההסבר שהתלמיד מקבל.</p>
-      <div className="pf-lab-grid">
+      <h1 className="prf-lab-h">דף בדיקה · {type.button} · {type.templates.length} תבניות</h1>
+      <p className="prf-lab-p">{TXT[`about.${type.id}`]} לכל תבנית: הציור עם כל הסימונים, הנתון, מה שצריך להוכיח, ההוכחה כפי שנכתבת במחברת, והטענות השגויות עם ההסבר שהתלמיד מקבל.</p>
+      <div className="prf-lab-grid">
         {type.templates.map((t, i) => {
           const p = problemOf(t.id, 31 + i, 2, 'B', true), goal = targets(p);
           const marks = Object.keys(p.facts).filter((f) => p.canon.includes(f)).map((fact) => ({ fact, style: 'on' }));
           return (
-            <section key={t.id} className="pf-lab-card">
-              <h2 className="pf-lab-id" dir="ltr">{t.id}</h2>
-              <div className="pf-stage pf-lab-fig"><ProofFigure problem={p} marks={marks} /></div>
-              {(p.text || []).map((x, k) => <p key={k} className="pf-page-l"><Tx k={x.key} vars={x.vars} /></p>)}
-              <p className="pf-page-l"><b>{TXT['lbl.given']}</b>{' '}{(p.givenText || []).map((g, k) => <React.Fragment key={k}>{k > 0 && ', '}{g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />}{g.byOrder && ` ${TXT['lbl.byOrder']}`}</React.Fragment>)}</p>
-              {type.n !== 1 && <p className="pf-page-l"><b>{TXT['lbl.toProve']}</b>{' '}{goal.map((f, k) => <React.Fragment key={f}>{k > 0 && ', '}<St st={p.facts[f]} /></React.Fragment>)}</p>}
-              <table className="pf-table">
+            <section key={t.id} className="prf-lab-card">
+              <h2 className="prf-lab-id" dir="ltr">{t.id}</h2>
+              <div className="prf-stage prf-lab-fig"><ProofFigure problem={p} marks={marks} /></div>
+              {(p.text || []).map((x, k) => <p key={k} className="prf-page-l"><Tx k={x.key} vars={x.vars} /></p>)}
+              <p className="prf-page-l"><b>{TXT['lbl.given']}</b>{' '}{(p.givenText || []).map((g, k) => <React.Fragment key={k}>{k > 0 && ', '}{g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />}{g.byOrder && ` ${TXT['lbl.byOrder']}`}</React.Fragment>)}</p>
+              {type.n !== 1 && <p className="prf-page-l"><b>{TXT['lbl.toProve']}</b>{' '}{goal.map((f, k) => <React.Fragment key={f}>{k > 0 && ', '}<St st={p.facts[f]} /></React.Fragment>)}</p>}
+              <table className="prf-table">
                 <thead><tr><th scope="col">{TXT['lbl.claim']}</th><th scope="col">{TXT['lbl.reason']}</th></tr></thead>
-                <tbody>{canonRows(p).map((r, k) => <tr key={r.fact}><td><span className="pf-table-n">{k + 1}.</span> <St st={r.st} /></td><td>{(p.just[r.fact][0].reasons || []).map((id) => REASONS[id].full || REASONS[id].short).join(' / ')}</td></tr>)}</tbody>
+                <tbody>{canonRows(p).map((r, k) => <tr key={r.fact}><td><span className="prf-table-n">{k + 1}.</span> <St st={r.st} /></td><td>{(p.just[r.fact][0].reasons || []).map((id) => REASONS[id].full || REASONS[id].short).join(' / ')}</td></tr>)}</tbody>
               </table>
-              {p.tiles.wrong.length > 0 && <p className="pf-lab-k">טענות שגויות וההסבר</p>}
-              {p.tiles.wrong.map((w, k) => { const c = classify(p, p.given, w.st); return <p key={k} className="pf-lab-w"><St st={w.st} /> <span>{c.textKey ? <Tx k={c.textKey} vars={c.vars || {}} /> : c.c}</span></p>; })}
+              {p.tiles.wrong.length > 0 && <p className="prf-lab-k">טענות שגויות וההסבר</p>}
+              {p.tiles.wrong.map((w, k) => { const c = classify(p, p.given, w.st); return <p key={k} className="prf-lab-w"><St st={w.st} /> <span>{c.textKey ? <Tx k={c.textKey} vars={c.vars || {}} /> : c.c}</span></p>; })}
             </section>
           );
         })}

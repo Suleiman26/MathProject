@@ -173,11 +173,11 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const idx = TYPES.findIndex((x) => x.id === type.id), prev = idx > 0 ? TYPES[idx - 1] : null;
 
   const tabs = (
-    <div className="sub-tabs pf-tabs">
+    <div className="sub-tabs prf-tabs">
       {TABS.map((name, i) => {
         const locked = i > level, done = !locked && ((i === 0 ? began : i < level) || passed);
         return (
-          <button type="button" key={name} className={`sub-tab${i === tab ? ' active' : ''}${done ? ' pf-is-done' : ''}`} disabled={locked} onClick={() => setTab(i)}>
+          <button type="button" key={name} className={`sub-tab${i === tab ? ' active' : ''}${done ? ' prf-is-done' : ''}`} disabled={locked} onClick={() => setTab(i)}>
             {locked ? <IcLock /> : done ? <IcCheck /> : null}{name}
           </button>
         );
@@ -188,7 +188,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
 
   if (warm) {
     return frame(tabs, (
-      <div className="content pf-ch pf-ch-open">
+      <div className="content prf-ch prf-ch-open">
         <Warmup key={warm.key} type={type} kinds={type.warm} only={warm.only} onDone={onWarmDone} onLeave={onWarmLeave} />
       </div>
     ));
@@ -196,7 +196,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
 
   if (open) {
     return frame(tabs, (
-      <div className="content pf-ch pf-ch-open">
+      <div className="content prf-ch prf-ch-open">
         <ProofScreen key={open.key} type={type} problem={open.problem} view={open.view} level={open.level} levelName={TABS[open.level]} dots={dots(ts, open.level)}
           restored={open.restored} end={end} onEnd={onEnd} onLeave={onLeave} onSwap={end ? null : onSwap} onState={onState} />
       </div>
@@ -206,19 +206,19 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   if (rescue) {
     const go = () => (rescue.step === 1 ? startWarm({ only: rescue.warm || 'W1', then: 'proof' }) : rescue.step === 2 ? startProof(level, { walk: true }) : startProof(level));
     return frame(tabs, (
-      <div className="content pf-ch pf-ch-card">
-        <div className="pf-rescue">
-          {rescue.step !== 1 && <span className="pf-rescue-k">{T['lbl.rescueCard']}</span>}
-          <p className="pf-rescue-t">
+      <div className="content prf-ch prf-ch-card">
+        <div className="prf-rescue">
+          {rescue.step !== 1 && <span className="prf-rescue-k">{T['lbl.rescueCard']}</span>}
+          <p className="prf-rescue-t">
             {rescue.step === 1 && fill('ui.rescue1', { skill: T[`skill.${rescue.warm || 'W1'}`] })}
             {rescue.step === 2 && T['ui.rescue2']}
             {rescue.step === 3 && fill('ui.rescue3', { prev: prev ? prev.name : T['tab.warm'] })}
           </p>
-          <div className="pf-rescue-b">
+          <div className="prf-rescue-b">
             {rescue.step === 3 && prev
-              ? <button type="button" className="pf-go" onClick={() => onGoType && onGoType(prev.id)}>{prev.button}</button>
-              : <button type="button" className="pf-go" onClick={go}>{rescue.step === 2 ? T['ui.rescue2Btn'] : T['btn.go']}</button>}
-            {rescue.step === 3 && prev && <button type="button" className="pf-go is-quiet" onClick={go}>{T['btn.continue']}</button>}
+              ? <button type="button" className="prf-go" onClick={() => onGoType && onGoType(prev.id)}>{prev.button}</button>
+              : <button type="button" className="prf-go" onClick={go}>{rescue.step === 2 ? T['ui.rescue2Btn'] : T['btn.go']}</button>}
+            {rescue.step === 3 && prev && <button type="button" className="prf-go is-quiet" onClick={go}>{T['btn.continue']}</button>}
           </div>
         </div>
       </div>
@@ -231,19 +231,19 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const k = dots(ts, level).filter((d) => d === true).length;
   const inner = (
     <>
-      <p className="pf-pt-about">{T[`about.${type.id}`]}</p>
+      <p className="prf-pt-about">{T[`about.${type.id}`]}</p>
       {tabs}
-      {lockedNext && <p className="pf-locked"><IcLock /><span>{TABS[lockedNext]}: {fill('ui.locked', { n: level })}</span></p>}
-      {ts.done > 0 && <p className="pf-land-stats">
-        <span className="pf-dots is-big" role="img" aria-label={fill('lbl.cleanN', { k })}>{dots(ts, level).map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
+      {lockedNext && <p className="prf-locked"><IcLock /><span>{TABS[lockedNext]}: {fill('ui.locked', { n: level })}</span></p>}
+      {ts.done > 0 && <p className="prf-land-stats">
+        <span className="prf-dots is-big" role="img" aria-label={fill('lbl.cleanN', { k })}>{dots(ts, level).map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
         <span>{fill('lbl.done', { n: ts.done })}</span>
       </p>}
     </>
   );
   return frame(inner, (
-    <div className="content pf-ch pf-land-go">
-      <p className="pf-land-what"><span>{type.button}</span><span aria-hidden="true"> · </span><span>{TABS[viaWarm ? 0 : goLevel]}</span></p>
-      <button type="button" className="pf-go" onClick={() => (viaWarm ? startWarm({ then: began ? 'land' : 'proof' }) : startProof(goLevel))}>{began ? T['btn.continue'] : T['btn.start']}</button>
+    <div className="content prf-ch prf-land-go">
+      <p className="prf-land-what"><span>{type.button}</span><span aria-hidden="true"> · </span><span>{TABS[viaWarm ? 0 : goLevel]}</span></p>
+      <button type="button" className="prf-go" onClick={() => (viaWarm ? startWarm({ then: began ? 'land' : 'proof' }) : startProof(goLevel))}>{began ? T['btn.continue'] : T['btn.start']}</button>
     </div>
   ));
 }

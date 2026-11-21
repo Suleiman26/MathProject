@@ -325,15 +325,15 @@ test('wiring: registered, coral, hidden from the home lists', async () => {
   const page = fs.readFileSync(new URL('../../../app/topics/[slug]/page.tsx', import.meta.url), 'utf8');
   assert.match(page, /hidden \? \{ robots: \{ index: false, follow: false \} \}/);
 });
-test('CSS: every class, keyframe and custom property is pf-; no generic @property; no letter-spacing', async () => {
-  const css = (await import('./styles.js')).default; const own = css.slice(css.indexOf('/* ── pf ── */')); assert.ok(css.includes('/* ── pf ── */'));
-  for (const m of own.matchAll(/@keyframes\s+([\w-]+)/g)) assert.match(m[1], /^pf-/);
-  for (const m of css.matchAll(/@property\s+(--[\w-]+)/g)) assert.match(m[1], /^--pf-/);
-  for (const m of own.matchAll(/(--[\w-]+)\s*:/g)) assert.match(m[1], /^--pf-/);
+test('CSS: every class, keyframe and custom property is prf-; no generic @property; no letter-spacing', async () => {
+  const css = (await import('./styles.js')).default; const own = css.slice(css.indexOf('/* ── prf ── */')); assert.ok(css.includes('/* ── prf ── */'));
+  for (const m of own.matchAll(/@keyframes\s+([\w-]+)/g)) assert.match(m[1], /^prf-/);
+  for (const m of css.matchAll(/@property\s+(--[\w-]+)/g)) assert.match(m[1], /^--prf-/);
+  for (const m of own.matchAll(/(--[\w-]+)\s*:/g)) assert.match(m[1], /^--prf-/);
   assert.equal(/letter-spacing/.test(css), false);
-  // our own classes are pf-…; `is-…` are states and only ever follow a pf- class or a shared one; the rest are shared mp.css names
+  // our own classes are prf-…; `is-…` are states and only ever follow a prf- class or a shared one; the rest are shared mp.css names
   const shared = ['hdr', 'ch-btns', 'ch-btn', 'content', 'sub-tabs', 'sub-tab', 'banner', 'fb', 'ok', 'err', 'step-card', 'step-label', 'active'];
-  for (const m of own.matchAll(/\.([a-zA-Z][\w-]*)/g)) assert.ok(m[1] === 'pf' || /^(pf|is)-/.test(m[1]) || shared.includes(m[1]), m[1]);
+  for (const m of own.matchAll(/\.([a-zA-Z][\w-]*)/g)) assert.ok(m[1] === 'prf' || /^(prf|is)-/.test(m[1]) || shared.includes(m[1]), m[1]);
   for (const m of own.matchAll(/(^|[\s,>+~(])\.is-[\w-]+/g)) assert.fail(`a bare state class: ${m[0]}`);
   // every rule of ours is scoped under #root
   for (const line of own.split('\n')) { const sel = line.trim(); if (/^[.#\w][^{@]*\{/.test(sel) && !/^(from|to|\d+%)/.test(sel)) for (const one of sel.slice(0, sel.indexOf('{')).split(',')) assert.ok(one.trim().startsWith('#root '), one); }

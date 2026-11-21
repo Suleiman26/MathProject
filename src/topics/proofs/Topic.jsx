@@ -45,24 +45,24 @@ export default function App({ devRescue }) {
     const all = TYPES.map((t) => typeState(state, t.id));
     const nextUp = all.findIndex((ts) => ts.level < 4);              // the recommended order is 1 → 4
     return (
-      <nav className="ch-btns pf-path" aria-label={T['lbl.order']}>
+      <nav className="ch-btns prf-path" aria-label={T['lbl.order']}>
         {TYPES.map((t, i) => {
           const ts = all[i], passed = ts.level >= 4, lv = Math.min(3, ts.level), open = ch === i;
           const began = ts.done > 0 || ts.walked || ts.warm.done;
           return (
-            <div key={t.id} className={`pf-pt${open ? ' is-open' : ''}${passed ? ' is-passed' : ''}${began ? ' is-began' : ''}`}>
-              <div className="pf-pt-row">
+            <div key={t.id} className={`prf-pt${open ? ' is-open' : ''}${passed ? ' is-passed' : ''}${began ? ' is-began' : ''}`}>
+              <div className="prf-pt-row">
                 <button type="button" className={`ch-btn ${open ? 'active' : ''}`} aria-expanded={open} onClick={() => go(i)}>
-                  <span className="pf-pt-n">{t.n}</span><span className="pf-sr">. </span><span className="pf-pt-name">{t.name}</span>
+                  <span className="prf-pt-n">{t.n}</span><span className="prf-sr">. </span><span className="prf-pt-name">{t.name}</span>
                 </button>
-                {i === nextUp && <span className="pf-pt-next">{T['lbl.nextUp']}</span>}
-                {passed && <span className="pf-pt-ok" aria-hidden="true"><IcCheck /></span>}
-                <span className="pf-pt-lv" aria-hidden="true">
+                {i === nextUp && <span className="prf-pt-next">{T['lbl.nextUp']}</span>}
+                {passed && <span className="prf-pt-ok" aria-hidden="true"><IcCheck /></span>}
+                <span className="prf-pt-lv" aria-hidden="true">
                   {[0, 1, 2, 3].map((k) => <i key={k} className={passed || (k === 0 ? began : k < lv) ? 'is-on' : k === lv && began ? 'is-here' : ''} style={{ height: `${7 + k * 3}px` }} />)}
                 </span>
-                <span className="pf-sr">{passed ? T['lbl.passed'] : began ? tabOf(ts.level) : ''}</span>
+                <span className="prf-sr">{passed ? T['lbl.passed'] : began ? tabOf(ts.level) : ''}</span>
               </div>
-              {open && <div className="pf-pt-open">{inner}</div>}
+              {open && <div className="prf-pt-open">{inner}</div>}
             </div>
           );
         })}
@@ -71,11 +71,11 @@ export default function App({ devRescue }) {
   }, [ch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className={`pf pf-topic${inProof ? ' pf-in-proof' : ''}`}>
-      <p className="pf-team" title={T['lbl.team']}>{T['ui.teamNote']}</p>
-      <div className="hdr pf-mast">
-        <h1 className="pf-wm">{T['lbl.title']}</h1>
-        {hero && <div className="pf-stage pf-mast-fig" key={TYPES[ch].id}><ProofFigure problem={hero.p} marks={hero.marks} label={T['lbl.sample']} /></div>}
+    <div className={`prf prf-topic${inProof ? ' prf-in-proof' : ''}`}>
+      <p className="prf-team" title={T['lbl.team']}>{T['ui.teamNote']}</p>
+      <div className="hdr prf-mast">
+        <h1 className="prf-wm">{T['lbl.title']}</h1>
+        {hero && <div className="prf-stage prf-mast-fig" key={TYPES[ch].id}><ProofFigure problem={hero.p} marks={hero.marks} label={T['lbl.sample']} /></div>}
       </div>
       <ProofChapter type={TYPES[ch]} key={TYPES[ch].id} path={path} onOpen={setInProof} onGoType={(id) => { const i = TYPES.findIndex((t) => t.id === id); if (i >= 0) { go(i); try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { /* older browsers */ } } }} devRescue={devRescue} />
     </div>

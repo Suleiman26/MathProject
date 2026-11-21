@@ -49,12 +49,12 @@ export function TapStatement({ sel, onAdd, onMatching }) {
   const { parts, kind, preview, chooser, order } = sel;
   if (chooser) {
     return (
-      <div className="pf-tap">
-        <p className="pf-tap-q">{T['lbl.chooser']}</p>
-        <div className="pf-chips pf-cols-2">
-          {chooser.map((id) => sel.index[id] && <button type="button" key={id} className="pf-chip" onClick={() => sel.pickFromChooser(id)}>{sel.index[id].he}</button>)}
+      <div className="prf-tap">
+        <p className="prf-tap-q">{T['lbl.chooser']}</p>
+        <div className="prf-chips prf-cols-2">
+          {chooser.map((id) => sel.index[id] && <button type="button" key={id} className="prf-chip" onClick={() => sel.pickFromChooser(id)}>{sel.index[id].he}</button>)}
         </div>
-        <div className="pf-tap-foot"><button type="button" className="pf-x" onClick={sel.closeChooser}><IcClose /><span>{T['btn.cancel']}</span></button></div>
+        <div className="prf-tap-foot"><button type="button" className="prf-x" onClick={sel.closeChooser}><IcClose /><span>{T['btn.cancel']}</span></button></div>
       </div>
     );
   }
@@ -62,42 +62,42 @@ export function TapStatement({ sel, onAdd, onMatching }) {
   const t1 = twoTris ? parts[0].part : null, t2 = twoTris ? parts[1].part : null;
   const left = twoTris ? t2.filter((v) => !order.includes(v)) : [];
   return (
-    <div className="pf-tap">
+    <div className="prf-tap">
       {parts.length > 0 && (
-        <div className="pf-prev">
-          {preview && <St st={preview} className="pf-prev-st" />}
-          {!preview && !twoTris && <span className="pf-prev-st pf-m" dir="ltr"><Mx s={kind === 'tri' ? `△${parts[0].part.join('')}` : kind === 'ang' ? `∢${parts[0].part.r[0]}${parts[0].part.v}${parts[0].part.r[1]}` : parts[0].part} /> <span className="pf-prev-eq">{kind === 'tri' ? <Mx s="≅" /> : '='}</span> <i className="pf-slot is-wide" /></span>}
+        <div className="prf-prev">
+          {preview && <St st={preview} className="prf-prev-st" />}
+          {!preview && !twoTris && <span className="prf-prev-st prf-m" dir="ltr"><Mx s={kind === 'tri' ? `△${parts[0].part.join('')}` : kind === 'ang' ? `∢${parts[0].part.r[0]}${parts[0].part.v}${parts[0].part.r[1]}` : parts[0].part} /> <span className="prf-prev-eq">{kind === 'tri' ? <Mx s="≅" /> : '='}</span> <i className="prf-slot is-wide" /></span>}
           {twoTris && (
-            <span className="pf-prev-st pf-m" dir="ltr" aria-label={`${parts[0].he}, ${parts[1].he}`}>
-              <Mx s={`△${t1.join('')} ≅ △`} />{[0, 1, 2].map((i) => <i key={i} className={`pf-slot${order[i] ? ' is-set' : i === order.length ? ' is-next' : ''}`}>{order[i] || ''}</i>)}
+            <span className="prf-prev-st prf-m" dir="ltr" aria-label={`${parts[0].he}, ${parts[1].he}`}>
+              <Mx s={`△${t1.join('')} ≅ △`} />{[0, 1, 2].map((i) => <i key={i} className={`prf-slot${order[i] ? ' is-set' : i === order.length ? ' is-next' : ''}`}>{order[i] || ''}</i>)}
             </span>
           )}
           {(preview || (twoTris && order.length === 3)) && (
-            <button type="button" className="pf-go pf-add" onClick={() => (preview ? onAdd(preview) : onMatching(t1, order))}>{T['btn.add']}</button>
+            <button type="button" className="prf-go prf-add" onClick={() => (preview ? onAdd(preview) : onMatching(t1, order))}>{T['btn.add']}</button>
           )}
         </div>
       )}
       {sel.shared && (
-        <button type="button" className="pf-chip pf-self" onClick={() => sel.setSelf(true)}><St st={{ kind: 'seg', x: parts[0].part, y: parts[0].part }} /><span>{T['lbl.sameSeg']}</span></button>
+        <button type="button" className="prf-chip prf-self" onClick={() => sel.setSelf(true)}><St st={{ kind: 'seg', x: parts[0].part, y: parts[0].part }} /><span>{T['lbl.sameSeg']}</span></button>
       )}
       {twoTris && order.length < 3 && (
-        <div className="pf-chips pf-cols-3 pf-verts">
-          {t2.map((v) => <button type="button" key={v} className="pf-chip pf-vert" disabled={!left.includes(v)} onClick={() => sel.setOrder([...order, v])}><span className="pf-m" dir="ltr">{v}</span></button>)}
+        <div className="prf-chips prf-cols-3 prf-verts">
+          {t2.map((v) => <button type="button" key={v} className="prf-chip prf-vert" disabled={!left.includes(v)} onClick={() => sel.setOrder([...order, v])}><span className="prf-m" dir="ltr">{v}</span></button>)}
         </div>
       )}
-      <div className="pf-tap-foot">
-        <button type="button" className={`pf-listb${sel.open ? ' is-open' : ''}`} aria-expanded={sel.open} onClick={() => sel.setOpen(!sel.open)}><IcList /><span>{T['btn.parts']}</span></button>
-        {parts.length > 0 && <button type="button" className="pf-x" onClick={sel.clear}><IcClose /><span>{T['btn.cancel']}</span></button>}
+      <div className="prf-tap-foot">
+        <button type="button" className={`prf-listb${sel.open ? ' is-open' : ''}`} aria-expanded={sel.open} onClick={() => sel.setOpen(!sel.open)}><IcList /><span>{T['btn.parts']}</span></button>
+        {parts.length > 0 && <button type="button" className="prf-x" onClick={sel.clear}><IcClose /><span>{T['btn.cancel']}</span></button>}
       </div>
       {sel.open && (
-        <div className="pf-parts">
+        <div className="prf-parts">
           {KINDS.map(([k, key]) => {
             const items = sel.list.filter((x) => x.kind === k);
             return items.length > 0 && (
-              <div key={k} className="pf-parts-g" role="group" aria-label={T[key]}>
-                <span className="pf-parts-t">{T[key]}</span>
-                <div className="pf-parts-c">
-                  {items.map((x) => <button type="button" key={x.id} className={`pf-chip pf-partc${sel.selected.includes(x.id) ? ' is-on' : ''}`} aria-pressed={sel.selected.includes(x.id)} aria-label={x.he} data-part={x.id} onClick={() => sel.pick(x.id)}><Mx s={k === 'seg' ? x.part : k === 'tri' ? `△${x.part.join('')}` : `∢${x.part.r[0]}${x.part.v}${x.part.r[1]}`} /></button>)}
+              <div key={k} className="prf-parts-g" role="group" aria-label={T[key]}>
+                <span className="prf-parts-t">{T[key]}</span>
+                <div className="prf-parts-c">
+                  {items.map((x) => <button type="button" key={x.id} className={`prf-chip prf-partc${sel.selected.includes(x.id) ? ' is-on' : ''}`} aria-pressed={sel.selected.includes(x.id)} aria-label={x.he} data-part={x.id} onClick={() => sel.pick(x.id)}><Mx s={k === 'seg' ? x.part : k === 'tri' ? `△${x.part.join('')}` : `∢${x.part.r[0]}${x.part.v}${x.part.r[1]}`} /></button>)}
                 </div>
               </div>
             );
@@ -114,16 +114,16 @@ export function GroupPick({ wrong = [], onPick }) {
   const group = GROUPS.find((x) => x.id === g);
   if (!group) {
     return (
-      <div className="pf-chips pf-cols-2 pf-groups">
-        {GROUPS.map((x) => <button type="button" key={x.id} className="pf-chip pf-group" onClick={() => setG(x.id)}>{x.he}</button>)}
+      <div className="prf-chips prf-cols-2 prf-groups">
+        {GROUPS.map((x) => <button type="button" key={x.id} className="prf-chip prf-group" onClick={() => setG(x.id)}>{x.he}</button>)}
       </div>
     );
   }
   return (
-    <div className="pf-groupin">
-      <div className="pf-group-h"><span className="pf-group-t">{group.he}</span><button type="button" className="pf-x" onClick={() => setG(null)}><span>{T['btn.back']}</span></button></div>
-      <div className={`pf-chips ${group.reasons.every((r) => [...REASONS[r].short].length <= 7) ? 'pf-cols-3' : 'pf-cols-2'}`}>
-        {group.reasons.map((r) => <button type="button" key={r} className="pf-chip" disabled={wrong.includes(r)} onClick={() => onPick(r)}>{REASONS[r].short}</button>)}
+    <div className="prf-groupin">
+      <div className="prf-group-h"><span className="prf-group-t">{group.he}</span><button type="button" className="prf-x" onClick={() => setG(null)}><span>{T['btn.back']}</span></button></div>
+      <div className={`prf-chips ${group.reasons.every((r) => [...REASONS[r].short].length <= 7) ? 'prf-cols-3' : 'prf-cols-2'}`}>
+        {group.reasons.map((r) => <button type="button" key={r} className="prf-chip" disabled={wrong.includes(r)} onClick={() => onPick(r)}>{REASONS[r].short}</button>)}
       </div>
     </div>
   );

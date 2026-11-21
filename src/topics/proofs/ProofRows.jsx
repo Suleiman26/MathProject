@@ -8,18 +8,18 @@ import { St, Glyph, IcCheck } from './signs.jsx';
 
 export default function ProofRows({ problem, rows, openRow, onOpen, fresh, lead = [] }) {
   return (
-    <ol className="pf-rowlist">
+    <ol className="prf-rowlist">
       {rows.map((r, i) => {
         const f = problem.facts[r.fact], open = openRow === r.fact, reason = REASONS[r.reason] || REASONS.given;
         return (
-          <li key={r.fact} className={`pf-row${fresh === r.fact ? ' is-new' : ''}${open ? ' is-open' : ''}${lead.includes(r.fact) ? ' is-lead' : ''}`}>
-            <button type="button" className="pf-row-b" aria-expanded={open} onClick={() => onOpen(open ? null : r.fact)}>
-              <span className="pf-row-n">{i + 1}</span>
-              <St st={f} className="pf-row-st" />
-              <span className="pf-row-r">{reason.short}</span>
-              <span className="pf-row-g">{f.kind !== 'cong' && <Glyph mark={f.mark} kind={f.kind} />}<IcCheck className="pf-row-ok" /></span>
+          <li key={r.fact} className={`prf-row${fresh === r.fact ? ' is-new' : ''}${open ? ' is-open' : ''}${lead.includes(r.fact) ? ' is-lead' : ''}`}>
+            <button type="button" className="prf-row-b" aria-expanded={open} onClick={() => onOpen(open ? null : r.fact)}>
+              <span className="prf-row-n">{i + 1}</span>
+              <St st={f} className="prf-row-st" />
+              <span className="prf-row-r">{reason.short}</span>
+              <span className="prf-row-g">{f.kind !== 'cong' && <Glyph mark={f.mark} kind={f.kind} />}<IcCheck className="prf-row-ok" /></span>
             </button>
-            {open && <p className="pf-row-full"><b>{T['lbl.reason']}:</b> {reason.full || reason.short}</p>}
+            {open && <p className="prf-row-full"><b>{T['lbl.reason']}:</b> {reason.full || reason.short}</p>}
           </li>
         );
       })}
