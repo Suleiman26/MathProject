@@ -3243,6 +3243,66 @@
       "old": "  const reset=()=>{const e=genRatio(ex.ctx);setEx(e);setStep(1);setR1('');setR2('');setS1('');setS2('');setChain([]);setFb(null);};\n",
       "new": "  const reset=()=>{ratioAt=at+1;setAt(at+1);setStep(1);setR1('');setR2('');setS1('');setS2('');setChain([]);setFb(null);};\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "const PQ_WHY={\n",
+      "new": "/* After flipping the fractions (Sulaiman, fixes board #92) x is in a numerator and the student goes\n   on with the inverse operation, never cross-multiplying: each fraction becomes one term of the\n   equation, kept as written (e.g. 12/3 = x/5), and is solved with the operation box (× 5). */\nfunction pqFracSide(n,d){return n==='x'?[{id:pqUid(),type:'x',num:1,den:d}]:[{id:pqUid(),type:'const',num:n,den:d}];}\nfunction pqAsFracs(s){return{left:pqFracSide(s[0],s[1]),right:pqFracSide(s[2],s[3])};}\nconst PQ_WHY={\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "function PqStart({slots,flipped,onFlip,onCross}){\n",
+      "new": "function PqStart({slots,onFlip,onCross}){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "    {flipped&&<div className=\"fb ok\">✓ הפכנו את שני השברים. עכשיו x במונה.</div>}\n",
+      "new": "",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "    const showC=!(abs===den);\n",
+      "new": "    if(abs===1&&den>1)return<Frac n={<span className=\"tv-x\" style={{fontSize:'inherit'}}>x</span>} d={den} style={{...pillFracStyle,color:'#134e4a'}}/>;   // x/5 after a flip (#92)\n    const showC=!(abs===den);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "  const setOpValClean=v=>{setOpVal(v);setOpErr('');};\n  const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};\n  const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};\n  const applyOp=()=>{\n    const v=opVal.trim();\n    if(!/^-?\\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}\n    const k=parseInt(v,10);\n    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}\n    const isX=opIsX&&(opType==='+'||opType==='−');\n    setCur(c=>pqDoOperate(c,opType,k,isX));\n    setOpVal('');setOpErr('');setOpIsX(false);\n  };\n  const handleSimplify=()=>{\n    setCur(c=>({left:pqCanSimp(c.left)?pqDoSimplify(c.left):c.left,right:pqCanSimp(c.right)?pqDoSimplify(c.right):c.right}));\n  };\n  const finish=()=>setStep(3);\n  const reset=()=>{\n    const e=genProportion();setEx(e);setStep(1);\n",
+      "new": "  // flipping (#92): no cross-multiplication after it, the student solves x/… = … with the inverse operation\n  const doFlip=()=>{\n    setFlipped(true);\n    setCur(pqAsFracs(pqFlip(eq)));\n    setCrossed(true);\n  };\n  const setOpValClean=v=>{setOpVal(v);setOpErr('');};\n  const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};\n  const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};\n  const applyOp=()=>{\n    const v=opVal.trim();\n    if(!/^-?\\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}\n    const k=parseInt(v,10);\n    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}\n    const isX=opIsX&&(opType==='+'||opType==='−');\n    setCur(c=>pqDoOperate(c,opType,k,isX));\n    setOpVal('');setOpErr('');setOpIsX(false);\n  };\n  const handleSimplify=()=>{\n    setCur(c=>({left:pqCanSimp(c.left)?pqDoSimplify(c.left):c.left,right:pqCanSimp(c.right)?pqDoSimplify(c.right):c.right}));\n  };\n  const finish=()=>setStep(3);\n  const reset=()=>{\n    const e=genProportion();setEx(e);setStep(1);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "      <div className=\"vis-wrap\">\n        {ex.ctx.vis==='glass'?<div style={{display:'flex',gap:20,alignItems:'flex-end'}}>\n          <div style={{textAlign:'center'}}><GlassVis pct={100} color=\"#3b82f6\"/><div style={{fontSize:12,marginTop:4}}>{ex.a} {ex.ctx.unit1} = {ex.b}</div></div>\n          <div style={{textAlign:'center'}}><GlassVis pct={0} color=\"#f97316\"/><div style={{fontSize:12,marginTop:4}}>{ex.c} {ex.ctx.unit1} = x</div></div>\n        </div>\n        :<BarVis total={ex.c} filled={ex.a} color1=\"#3b82f6\" color2=\"#f97316\"/>}\n      </div>\n",
+      "new": "      {/* the half-coloured picture under the question was removed (Sulaiman, fixes board #92: not helpful) */}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "          {!crossed?<PqStart slots={eqNow} flipped={flipped} onFlip={()=>setFlipped(true)} onCross={doCrossMultiply}/>:<>\n            <div className=\"solve-grid\">\n              {solved===null&&<>\n                <div className=\"g-left\"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>\n                <div className=\"g-mid\"></div>\n                <div className=\"g-right\"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>\n              </>}\n              <div className=\"g-left side-zone\">{renderTerms(cur.left)}</div>\n              <span className=\"g-mid eq-sign\">=</span>\n              <div className=\"g-right side-zone\">{renderTerms(cur.right)}</div>\n            </div>\n            {opErr&&<div className=\"fb err\">{opErr}</div>}\n            {solved===null?\n              <div className=\"ans-row\">\n                <button className=\"btn bg\" onClick={applyOp}>✓ אישור</button>\n                <button className=\"btn\" style={{background:'#e5e7eb',color:'#374151'}} disabled={!canSimpAny} onClick={handleSimplify}>פשט</button>\n              </div>\n            :<>\n              <div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {solved}</div>\n              <div className=\"center\" style={{marginTop:8}}><button className=\"btn bg\" onClick={finish}>המשך ›</button></div>\n            </>}\n          </>}\n        </>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {ex.d} {ex.ctx.unit2}</div>}\n",
+      "new": "          {!crossed?<PqStart slots={eqNow} onFlip={doFlip} onCross={doCrossMultiply}/>:<>\n            {flipped&&<div className=\"fb ok pq-flipped\">✓ הפכנו את שני השברים, ועכשיו x במונה. המשיכו לפתור את המשוואה בפעולה הפוכה.</div>}\n            <div className=\"solve-grid\">\n              {solved===null&&<>\n                <div className=\"g-left\"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>\n                <div className=\"g-mid\"></div>\n                <div className=\"g-right\"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>\n              </>}\n              <div className=\"g-left side-zone\">{renderTerms(cur.left)}</div>\n              <span className=\"g-mid eq-sign\">=</span>\n              <div className=\"g-right side-zone\">{renderTerms(cur.right)}</div>\n            </div>\n            {opErr&&<div className=\"fb err\">{opErr}</div>}\n            {solved===null?\n              <div className=\"ans-row\">\n                <button className=\"btn bg\" onClick={applyOp}>✓ אישור</button>\n                <button className=\"btn\" style={{background:'#e5e7eb',color:'#374151'}} disabled={!canSimpAny} onClick={handleSimplify}>פשט</button>\n              </div>\n            :<>\n              <div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {solved}</div>\n              <div className=\"center\" style={{marginTop:8}}><button className=\"btn bg\" onClick={finish}>המשך ›</button></div>\n            </>}\n          </>}\n        </>:<div className=\"ans-row\" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ x = {ex.d} {ex.ctx.unit2}</div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "  const setOpValClean=v=>{setOpVal(v);setOpErr('');};\n  const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};\n  const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};\n  const applyOp=()=>{\n    const v=opVal.trim();\n    if(!/^-?\\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}\n    const k=parseInt(v,10);\n    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}\n    const isX=opIsX&&(opType==='+'||opType==='−');\n    setCur(c=>pqDoOperate(c,opType,k,isX));\n    setOpVal('');setOpErr('');setOpIsX(false);\n  };\n  const handleSimplify=()=>{\n    setCur(c=>({left:pqCanSimp(c.left)?pqDoSimplify(c.left):c.left,right:pqCanSimp(c.right)?pqDoSimplify(c.right):c.right}));\n  };\n  const finish=()=>setStep(3);\n  const reset=()=>{\n    const e=genPctCalc();setEx(e);setStep(1);\n",
+      "new": "  // flipping (#92): no cross-multiplication after it, the student solves x/… = … with the inverse operation\n  const doFlip=()=>{\n    setFlipped(true);\n    setCur(pqAsFracs(pqFlip(eq)));\n    setCrossed(true);\n  };\n  const setOpValClean=v=>{setOpVal(v);setOpErr('');};\n  const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};\n  const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};\n  const applyOp=()=>{\n    const v=opVal.trim();\n    if(!/^-?\\d+$/.test(v)){setOpErr('הזינו מספר שלם');return;}\n    const k=parseInt(v,10);\n    if(k===0){setOpErr('בחרו מספר שאינו אפס');return;}\n    const isX=opIsX&&(opType==='+'||opType==='−');\n    setCur(c=>pqDoOperate(c,opType,k,isX));\n    setOpVal('');setOpErr('');setOpIsX(false);\n  };\n  const handleSimplify=()=>{\n    setCur(c=>({left:pqCanSimp(c.left)?pqDoSimplify(c.left):c.left,right:pqCanSimp(c.right)?pqDoSimplify(c.right):c.right}));\n  };\n  const finish=()=>setStep(3);\n  const reset=()=>{\n    const e=genPctCalc();setEx(e);setStep(1);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "      <div className=\"vis-wrap\"><BarVis total={20} filled={Math.round(ex.pct/5)} color1=\"#f59e0b\" color2=\"#e5e7eb\"/></div>\n",
+      "new": "      {/* the half-coloured bar by the question was removed (Sulaiman, fixes board #92: not helpful) */}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #92: flip leads to inverse operation, picture removed (merged with #88)",
+      "old": "          {!crossed?<PqStart slots={eqNow} flipped={flipped} onFlip={()=>setFlipped(true)} onCross={doCrossMultiply}/>:<>\n",
+      "new": "          {!crossed?<PqStart slots={eqNow} onFlip={doFlip} onCross={doCrossMultiply}/>:<>\n            {flipped&&<div className=\"fb ok pq-flipped\">✓ הפכנו את שני השברים, ועכשיו x במונה. המשיכו לפתור את המשוואה בפעולה הפוכה.</div>}\n",
+      "count": 1
     }
   ],
   "directed-numbers": [

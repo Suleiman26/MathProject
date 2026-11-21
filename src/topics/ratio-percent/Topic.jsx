@@ -72,6 +72,11 @@ const pqXDown=s=>s[1]==='x'||s[3]==='x';
 const pqFlip=s=>[s[1],s[0],s[3],s[2]];   // both fractions upside down: still equal
 function pqCrossSide(p,q){return p==='x'?[pqMkTerm('x',q)]:q==='x'?[pqMkTerm('x',p)]:[pqMkTerm('const',p*q)];}
 function pqCross(s){return{left:pqCrossSide(s[0],s[3]),right:pqCrossSide(s[1],s[2])};}
+/* After flipping the fractions (Sulaiman, fixes board #92) x is in a numerator and the student goes
+   on with the inverse operation, never cross-multiplying: each fraction becomes one term of the
+   equation, kept as written (e.g. 12/3 = x/5), and is solved with the operation box (× 5). */
+function pqFracSide(n,d){return n==='x'?[{id:pqUid(),type:'x',num:1,den:d}]:[{id:pqUid(),type:'const',num:n,den:d}];}
+function pqAsFracs(s){return{left:pqFracSide(s[0],s[1]),right:pqFracSide(s[2],s[3])};}
 const PQ_WHY={
   fill:'מלאו את כל ארבע המשבצות.',
   nox:'כתבו x באחת המשבצות, במקום הגודל שלא ידוע.',
@@ -82,11 +87,10 @@ const PQ_WHY={
 function PqFb({fb}){return PQ_WHY[fb]?<div className="fb err">{PQ_WHY[fb]}</div>:<Fb fb={fb}/>;}
 /* step 2 before cross-multiplying: the student's own proportion. If x is in a denominator,
    explain (before the button) that both fractions may be turned upside down. */
-function PqStart({slots,flipped,onFlip,onCross}){
+function PqStart({slots,onFlip,onCross}){
   const down=pqXDown(slots),f=pqFlip(slots);
   return<>
     <div className="ans-row" style={{fontSize:22}}><Frac n={slots[0]} d={slots[1]}/>&nbsp;=&nbsp;<Frac n={slots[2]} d={slots[3]}/></div>
-    {flipped&&<div className="fb ok">✓ הפכנו את שני השברים. עכשיו x במונה.</div>}
     {down&&<div className="pq-flip">
       <b>x נמצא במכנה.</b> אפשר להפוך את שני השברים: המונה יורד למטה והמכנה עולה למעלה.
       אם שני שברים שווים, גם השברים ההפוכים שלהם שווים, ולכן המשוואה נשארת נכונה, ו-x יעבור למונה:
@@ -108,6 +112,7 @@ function PqTermPill({term,index}){
       if(den===1)return<span className="tv">{abs}</span>;
       return<Frac n={abs} d={den} style={{...pillFracStyle,color:'#134e4a'}}/>;
     }
+    if(abs===1&&den>1)return<Frac n={<span className="tv-x" style={{fontSize:'inherit'}}>x</span>} d={den} style={{...pillFracStyle,color:'#134e4a'}}/>;   // x/5 after a flip (#92)
     const showC=!(abs===den);
     return<>{showC&&(den===1?<span className="tv">{abs}</span>:<Frac n={abs} d={den} style={{...pillFracStyle,color:'#134e4a'}}/>)}<span className="tv-x">x</span></>;
   };
@@ -817,6 +822,12 @@ function Ch2(){
     setCur(pqCross(eqNow));
     setCrossed(true);
   };
+  // flipping (#92): no cross-multiplication after it, the student solves x/… = … with the inverse operation
+  const doFlip=()=>{
+    setFlipped(true);
+    setCur(pqAsFracs(pqFlip(eq)));
+    setCrossed(true);
+  };
   const setOpValClean=v=>{setOpVal(v);setOpErr('');};
   const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};
   const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};
@@ -865,13 +876,7 @@ function Ch2(){
         אם <b>{ex.a}</b> {ex.ctx.unit1} {ex.ctx.q} <b>{ex.b}</b> {ex.ctx.unit2},<br/>
         {ex.ctx.tail(ex.c)}
       </p>
-      <div className="vis-wrap">
-        {ex.ctx.vis==='glass'?<div style={{display:'flex',gap:20,alignItems:'flex-end'}}>
-          <div style={{textAlign:'center'}}><GlassVis pct={100} color="#3b82f6"/><div style={{fontSize:12,marginTop:4}}>{ex.a} {ex.ctx.unit1} = {ex.b}</div></div>
-          <div style={{textAlign:'center'}}><GlassVis pct={0} color="#f97316"/><div style={{fontSize:12,marginTop:4}}>{ex.c} {ex.ctx.unit1} = x</div></div>
-        </div>
-        :<BarVis total={ex.c} filled={ex.a} color1="#3b82f6" color2="#f97316"/>}
-      </div>
+      {/* the half-coloured picture under the question was removed (Sulaiman, fixes board #92: not helpful) */}
 
       {/* Step 1 */}
       <div className={`step-card ${step>1?'done':''}`}>
@@ -897,7 +902,8 @@ function Ch2(){
       {step>=2 && <div className={`step-card ${step>2?'done':''}`}>
         <div className="step-label">שלב ב׳ — פתרו את המשוואה כדי למצוא את x</div>
         {step===2?<>
-          {!crossed?<PqStart slots={eqNow} flipped={flipped} onFlip={()=>setFlipped(true)} onCross={doCrossMultiply}/>:<>
+          {!crossed?<PqStart slots={eqNow} onFlip={doFlip} onCross={doCrossMultiply}/>:<>
+            {flipped&&<div className="fb ok pq-flipped">✓ הפכנו את שני השברים, ועכשיו x במונה. המשיכו לפתור את המשוואה בפעולה הפוכה.</div>}
             <div className="solve-grid">
               {solved===null&&<>
                 <div className="g-left"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
@@ -1003,6 +1009,12 @@ function Ch4(){
     setCur(pqCross(eqNow));
     setCrossed(true);
   };
+  // flipping (#92): no cross-multiplication after it, the student solves x/… = … with the inverse operation
+  const doFlip=()=>{
+    setFlipped(true);
+    setCur(pqAsFracs(pqFlip(eq)));
+    setCrossed(true);
+  };
   const setOpValClean=v=>{setOpVal(v);setOpErr('');};
   const setOpTypeClean=t=>{setOpType(t);setOpErr('');if(t==='×'||t==='÷')setOpIsX(false);};
   const toggleOpIsX=()=>{setOpIsX(v=>!v);setOpErr('');};
@@ -1048,7 +1060,7 @@ function Ch4(){
     </div>
     <div className="card">
       <div className="card-t">חישובי אחוזים</div>
-      <div className="vis-wrap"><BarVis total={20} filled={Math.round(ex.pct/5)} color1="#f59e0b" color2="#e5e7eb"/></div>
+      {/* the half-coloured bar by the question was removed (Sulaiman, fixes board #92: not helpful) */}
       <p className="q-text">{ex.q}</p>
 
       {/* Step 1 */}
@@ -1075,7 +1087,8 @@ function Ch4(){
       {step>=2 && <div className={`step-card ${step>2?'done':''}`}>
         <div className="step-label">שלב ב׳ — פתרו את המשוואה כדי למצוא את x</div>
         {step===2?<>
-          {!crossed?<PqStart slots={eqNow} flipped={flipped} onFlip={()=>setFlipped(true)} onCross={doCrossMultiply}/>:<>
+          {!crossed?<PqStart slots={eqNow} onFlip={doFlip} onCross={doCrossMultiply}/>:<>
+            {flipped&&<div className="fb ok pq-flipped">✓ הפכנו את שני השברים, ועכשיו x במונה. המשיכו לפתור את המשוואה בפעולה הפוכה.</div>}
             <div className="solve-grid">
               {solved===null&&<>
                 <div className="g-left"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
