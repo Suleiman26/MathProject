@@ -130,3 +130,53 @@ test('checkMatching: any consistent order', () => {
   assert.equal(checkMatching(P, ['A', 'O', 'C'], ['D', 'O', 'B']).kind, 'wrong-matching');
   assert.equal(checkMatching(P, ['A', 'O', 'C'], ['O', 'B', 'D']).textKey, 'st.matchingShared');
 });
+
+/* ── Task 9: what each level presents (§7.2–7.4) ── */
+import { present, reasonChips, decisionsOf, optionsFor, whyOf } from './core.js';
+import { seeded, makeR } from '../new/core.js';
+test('present: decisions per level for the X-SAS conclusion proof', () => {
+  const R = makeR(seeded(1)), n = (l, v, c = 0) => decisionsOf(present(P, l, v, { counted: c, R }));
+  assert.equal(n(1, 'A'), 1); assert.equal(n(1, 'B', 0), 3); assert.equal(n(1, 'B', 2), 4);
+  assert.equal(n(2, 'A'), 6); assert.equal(n(2, 'B'), 10); assert.equal(n(3, 'A'), 10); assert.equal(n(3, 'B'), 10);
+  assert.equal(present(P, 2, 'A', { R }).tiles.every((t) => t.fact), true);            // no wrong tiles in A
+  assert.ok(present(P, 2, 'B', { R }).tiles.filter((t) => !t.fact).length <= 2);
+  assert.deepEqual(present(P, 2, 'A', { R }).pre.sort(), ['a', 'b']);
+  assert.equal(present(P, 3, 'B', { R }).shortFirst, true); assert.equal(present(P, 3, 'A', { R }).plan, 'line');
+});
+test('present: modes, chips and flags follow the table', () => {
+  const R = makeR(seeded(3)), v = (l, x, c = 0) => present(P, l, x, { counted: c, R });
+  assert.deepEqual(['1A', '1B', '2A', '2B', '3A', '3B'].map((k) => v(+k[0], k[1]).mode), ['walk', 'fill', 'tiles', 'tiles', 'tap', 'tap']);
+  assert.deepEqual([v(1, 'A').chipsN, v(1, 'B').chipsN, v(2, 'A').chipsN, v(2, 'B').chipsN], [3, 4, 6, 8]);
+  assert.deepEqual(['1A', '1B', '2A', '2B', '3A', '3B'].map((k) => v(+k[0], k[1]).whyLine), [true, true, true, false, true, false]);
+  assert.deepEqual([v(1, 'A').autoHint, v(1, 'B').autoHint, v(2, 'A').autoHint], [true, true, false]);
+  assert.deepEqual([v(1, 'A').ties, v(1, 'A').plan, v(2, 'B').plan, v(3, 'B').plan], [true, 'tris', 'tris', null]);
+  const gap = v(1, 'B', 2).steps.find((s) => s.ask.includes('statement'));
+  assert.equal(gap.fact, 'goal'); assert.equal(gap.options.length, 3);
+  assert.equal(gap.options.filter((o) => classify(P, ['a', 'b', 'c', 'cong'], o).c === 'ok').length, 1);
+  assert.equal(v(2, 'B').tiles.filter((t) => t.fact).length, 5);
+  const T3 = { ...xsas(), type: 'prove-congruence', target: 'cong', canon: ['a', 'c', 'b', 'cong'] };
+  const g3 = present(T3, 1, 'B', { counted: 2, R }).steps.find((s) => s.ask.includes('statement'));
+  assert.equal(g3.fact, 'cong'); assert.deepEqual(g3.options.map((o) => classify(T3, ['a', 'b', 'c'], o).c).sort(), ['false', 'false', 'ok']);
+  assert.equal(present(T3, 1, 'A', { R }).plan, null);
+});
+test('reasonChips: n chips, every accepted reason inside, "alternate" only on the X figure', () => {
+  const R = makeR(seeded(2)); const c = reasonChips(P, 'c', 6, R);
+  assert.equal(c.length, 6); assert.ok(c.includes('vertical')); assert.equal(new Set(c).size, 6);
+  assert.ok(!reasonChips(over(), 'k', 8, R).includes('alternate'));
+  const t = reasonChips(P, 'cong', 3, R); assert.deepEqual([...t].sort(), ['asa', 'sas', 'sss']);
+  const W = xsas(); W.just.a = [{ reasons: ['midpoint', 'given'], needs: [] }]; W.roles.a = 'given-words';
+  const w = reasonChips(W, 'a', 4, R); assert.ok(w.includes('midpoint') && w.includes('given'));
+});
+test('options for a statement gap: one right, the others wrong', () => {
+  const R = makeR(seeded(9));
+  for (let i = 0; i < 20; i++) {
+    const o = optionsFor(P, 'cong', 3, R); assert.equal(o.length, 3);
+    assert.deepEqual(o.map((x) => classify(P, ['a', 'b', 'c'], x).c).sort(), ['false', 'false', 'ok']);
+  }
+});
+test('whyOf: the why-line of each role', () => {
+  assert.equal(whyOf(P, 'a').key, 'why.given'); assert.deepEqual(whyOf(P, 'c'), { key: 'why.vertical', vars: { pt: 'O' } });
+  assert.deepEqual(whyOf(P, 'cong', 'sas'), { key: 'why.sas', vars: { m1: 'A ↔ B', m2: 'O ↔ O', m3: 'C ↔ D' } });
+  assert.deepEqual(whyOf(P, 'goal'), { key: 'why.concl-side', vars: { x: 'AC', y: 'BD' } });
+  assert.equal(whyOf(P, 'e1').key, 'why.concl-angle');
+});

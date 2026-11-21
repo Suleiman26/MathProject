@@ -92,6 +92,7 @@ export const T = {
 
   /* ── other texts (§9.2) ── */
   'ui.filled': 'מילאנו את הצעד הזה יחד. הנימוק: {{reason}}.',
+  'ui.filledSt': 'מילאנו את הצעד הזה יחד: {st}.',
   'ui.endClean': 'מ.ש.ל. הוכחה נקייה.',
   'ui.endHelped': 'מ.ש.ל. ההוכחה הושלמה. היה צעד שמילאנו יחד, ולכן היא לא נספרת כנקייה. הרמה לא יורדת.',
   'ui.levelUp': 'עליתם רמה. {{type}} · רמה {{n}}',
@@ -201,7 +202,7 @@ export const T = {
 
 /** Keys whose text is not drafted in the spec (written by the builder; for Sulaiman's review sheet). */
 export const NEW_DRAFTS = [
-  'fb.ok', 'rs.cong.sss1', 'ui.rescue2',
+  'fb.ok', 'rs.cong.sss1', 'ui.rescue2', 'ui.filledSt',
   'say.angRight', 'lbl.place1', 'lbl.place2', 'lbl.place3',
   'gv.bisect2', 'tx.X', 'tx.K', 'tx.Z', 'tx.T', 'tx.2', 'tx.cevian',
   'w.W2.known', 'w.W2.looks', 'w.W5side', 'w.W6.yes', 'w.W6.no', 'w.W7',
