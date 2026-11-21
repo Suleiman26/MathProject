@@ -21,14 +21,14 @@ const DEFAULT_CATALOG = (() => {
   const g = [["g7", "כיתה ז׳"], ["g8", "כיתה ח׳"], ["g9", "כיתה ט׳"]];
   const c = [["c1", "אלגברה", "indigo"], ["c2", "גיאומטריה", "sky"], ["c3", "תחום מספרי", "teal"]];
   const t = [
-    ["משוואות", "equation-solver.html", ["g7", "g8"], "equation", "teal", "c1"],
+    ["משוואות ליניאריות", "equation-solver.html", ["g7", "g8"], "equation", "teal", "c1"],
     ["משוואות מתקדמות", "equations-advanced.html", ["g8", "g9"], "fraction", "indigo", "c1"],
     ["אי־שוויונות", "inequalities.html", ["g8", "g9"], "inequality", "pink", "c1"],
     ["משוואות ריבועיות", "quadratic-solver.html", ["g9"], "square", "blue", "c1"],
     ["פונקציה לינארית", "linear-function.html", ["g8", "g9"], "line", "teal", "c1"],
     ["פרבולה", "parabola-practice.html", ["g9"], "parabola", "indigo", "c1"],
     ["נקודות חיתוך", "intersection.html", ["g9"], "intersection", "blue", "c1"],
-    ["מספרים מכוונים", "directed-numbers.html", ["g7"], "numberline", "teal", "c3"],
+    ["יסודות החשבון", "directed-numbers.html", ["g7"], "numberline", "teal", "c3"],
     ["יחס ואחוזים", "ratio-percent.html", ["g7"], "percent", "teal", "c3"],
     ["חזקות ושורשים", "powers-roots.html", ["g8", "g9"], "root", "violet", "c3"],
     ["זוויות ומקבילים", "angles-parallel.html", ["g7"], "parallel", "teal", "c2"],
