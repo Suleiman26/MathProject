@@ -414,6 +414,39 @@ html[data-page="equation-solver"] #root .wx-banner .btn { margin-top: 16px; min-
 html[data-page="equation-solver"] #root .wx-banner .wx-line b { box-shadow: none; background: transparent; }
 html[data-page="equation-solver"] #root .wx-banner :is(.wx-ex, .wx-x) { color: var(--ok-800, #166534); }
 
+/* Chapter 2's explanation, "what is an equation" (fixes board #90): src/topics/equation-solver/EqLesson.jsx */
+html[data-page="equation-solver"] #root .eqx-eq { display: inline-flex; align-items: center; gap: 0; direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+html[data-page="equation-solver"] #root .eqx-is { display: inline-block; margin: 0 .45em; font-weight: 800; color: var(--a-600, #0d9488); }
+html[data-page="equation-solver"] #root .eqx-eq.hot .eqx-is { color: #c2410c; transform: scale(1.15); }
+html[data-page="equation-solver"] #root .eqx-sign { display: inline-flex; align-items: center; justify-content: center; min-width: 1.6em; padding: 0 .3em; border-radius: 8px; background: #fff7ed; color: #c2410c; font-weight: 800; }
+html[data-page="equation-solver"] #root .eqx-vs { display: grid; gap: 8px; margin-top: 14px; }
+html[data-page="equation-solver"] #root .eqx-vs > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--a-50, #f0fdfa) 60%, #fff); font-size: .95rem; color: var(--ink-2); }
+html[data-page="equation-solver"] #root .eqx-vs > div.on { background: #fff7ed; color: var(--ink); font-weight: 600; }
+html[data-page="equation-solver"] #root .eqx-vs b { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 2px 12px; border-radius: 12px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1.5px var(--a-200, #99f6e4); font-size: 1.2rem; }
+html[data-page="equation-solver"] #root .eqx-line { display: flex; justify-content: center; margin: 10px 0 !important; font-size: 1.35rem; }
+html[data-page="equation-solver"] #root .eqx-line.eqx-big { font-size: 1.6rem; margin-top: 4px !important; }
+html[data-page="equation-solver"] #root .wx-say + .wx-say { margin-top: 10px; }
+html[data-page="equation-solver"] #root .wx-say p + p { margin-top: 6px; }
+html[data-page="equation-solver"] #root .eqx-bal { margin: 12px auto 4px; max-width: 340px; text-align: center; }
+html[data-page="equation-solver"] #root .eqx-bal svg { display: block; width: 100%; height: auto; }
+html[data-page="equation-solver"] #root .eqx-bal figcaption { font-size: .85rem; color: var(--ink-3); margin-top: 2px; }
+html[data-page="equation-solver"] #root .eqx-stand { fill: var(--a-200, #99f6e4); }
+html[data-page="equation-solver"] #root .eqx-beam { fill: var(--a-600, #0d9488); }
+html[data-page="equation-solver"] #root .eqx-pin { fill: #fff; stroke: var(--a-600, #0d9488); stroke-width: 3; }
+html[data-page="equation-solver"] #root .eqx-cord { stroke: var(--a-300, #5eead4); stroke-width: 2; }
+html[data-page="equation-solver"] #root .eqx-pan { fill: var(--a-100, #ccfbf1); stroke: var(--a-600, #0d9488); stroke-width: 2; }
+html[data-page="equation-solver"] #root .eqx-load { font: 700 19px var(--font-sans, system-ui, sans-serif); fill: var(--a-900, #134e4a); text-anchor: middle; }
+html[data-page="equation-solver"] #root .eqx-ops { display: grid; gap: 8px; margin-top: 12px; }
+html[data-page="equation-solver"] #root .eqx-op { display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--a-50, #f0fdfa) 75%, #fff); font-size: 1rem; line-height: 1.6; color: var(--ink); }
+html[data-page="equation-solver"] #root .eqx-op b { flex: 0 0 auto; min-width: 72px; text-align: center; font-size: 1.3rem; color: var(--a-700, #0f766e); }
+html[data-page="equation-solver"] #root .eqx-steps .eqx-work { flex-basis: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0 2px; font-size: 1.2rem; }
+html[data-page="equation-solver"] #root .eqx-steps .eqx-work .eqx-eq.hot { padding: 2px 14px; border-radius: 12px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1.5px var(--a-200, #99f6e4); }
+html[data-page="equation-solver"] #root .eqx-steps .eqx-work .eqx-eq.hot .eqx-is { transform: none; }
+@media (max-width: 420px) {
+  html[data-page="equation-solver"] #root .eqx-vs > div, html[data-page="equation-solver"] #root .eqx-op { flex-direction: column; align-items: stretch; text-align: center; gap: 6px; }
+  html[data-page="equation-solver"] #root .eqx-op b { min-width: 0; }
+}
+
 /* Parabola: its unnamed toggle buttons were 35px; finger-sized like the rest
    (44px; the check button keeps its own 56px from mp.css) */
 html[data-page="parabola-practice"] #root .card button:not(.mp-check) { min-height: 44px; }

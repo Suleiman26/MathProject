@@ -25,7 +25,7 @@ export function Ex({ s }) {
   return <span dir="ltr" className="wx-ex">{r.ok ? <Node n={r.ast} /> : s}</span>;
 }
 /* Hebrew text with [[math]] inside */
-function Rich({ text }) {
+export function Rich({ text }) {
   return String(text).split(/(\[\[.*?\]\])/).map((seg, i) =>
     seg.startsWith('[[') ? <Ex key={i} s={seg.slice(2, -2)} /> : <React.Fragment key={i}>{seg}</React.Fragment>);
 }

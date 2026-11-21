@@ -205,6 +205,30 @@
       "old": "        <h1>פתרון משוואות בנעלם אחד</h1>\n",
       "new": "        <h1>משוואות ליניאריות</h1>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #90: chapter 2 opens with an explanation of equations and a worked example",
+      "old": "function loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c===1||c===2)return c}catch(e){}return done>0?2:1}\n",
+      "new": "const EQ_SEEN='mp-equation-solve-seen';\nfunction loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c===1||c===2)return c}catch(e){}return done>0?2:1}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #90: chapter 2 opens with an explanation of equations and a worked example",
+      "old": "  const introSeen=useRef(done>=X_ROUNDS);\n",
+      "new": "  /* Fixes board #90: chapter 2 opens with an explanation (what an equation is, the balance, inverse operations, a worked example) until the student goes to practice once */\n  const[eqTab,setEqTabState]=useState(()=>{try{if(localStorage.getItem(EQ_SEEN))return'practice'}catch(e){}return'learn'});\n  function setEqTab(t){setEqTabState(t);if(t==='practice'){try{localStorage.setItem(EQ_SEEN,'1')}catch(e){}}try{window.scrollTo({top:0,behavior:'instant'})}catch(e){}}\n  const introSeen=useRef(done>=X_ROUNDS);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #90: chapter 2 opens with an explanation of equations and a worked example",
+      "old": "      {ch===2&&<div className=\"content\">\n",
+      "new": "      {ch===2&&<div className=\"content wx\">\n        <div className=\"sub-tabs\">\n          <button className={`sub-tab ${eqTab==='learn'?'active':''}`} onClick={()=>setEqTab('learn')}>הסבר ודוגמה</button>\n          <button className={`sub-tab ${eqTab==='practice'?'active':''}`} onClick={()=>setEqTab('practice')}>תרגול</button>\n        </div>\n        {eqTab==='learn'?<EqLesson onStart={()=>setEqTab('practice')}/>:<>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #90: chapter 2 opens with an explanation of equations and a worked example",
+      "old": "      </div>}\n",
+      "new": "        </>}\n      </div>}\n",
+      "count": 1
     }
   ],
   "triangles": [
