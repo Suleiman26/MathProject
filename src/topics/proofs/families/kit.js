@@ -124,10 +124,31 @@ function liesOf(base, quick) {
   return found;
 }
 
-/** Build until the drawing is honest. */
-export function honest(build, R, tries = 200) {
+/* ── room for the marks ───────────────────────────────────────────────────── */
+const MIN_TRI_DEG = 20, MIN_INRADIUS = 17, MIN_SEG = 34;      // degrees; pixels of the 320 × 196 view
+/** Why a drawing is too thin for its marks (ticks, arcs and the goal echo would crowd); [] = roomy. */
+export function cramped(fig) {
+  const out = [], L = layout(fig), P = L.pts, d = (a, b) => Math.hypot(P[a][0] - P[b][0], P[a][1] - P[b][1]);
+  for (const t of fig.tris || []) {
+    for (let i = 0; i < 3; i++) if (measure(fig, { v: t[i], r: [t[(i + 1) % 3], t[(i + 2) % 3]] }) < MIN_TRI_DEG) out.push(`△${t.join('')} has a sliver angle at ${t[i]}`);
+    const s = [d(t[0], t[1]), d(t[1], t[2]), d(t[2], t[0])], per = s[0] + s[1] + s[2], h = per / 2;
+    const area = Math.sqrt(Math.max(0, h * (h - s[0]) * (h - s[1]) * (h - s[2])));
+    if ((2 * area) / per < MIN_INRADIUS) out.push(`△${t.join('')} is too thin on screen`);
+  }
+  for (const s of fig.segs || []) if (d(s[0], s[1]) < MIN_SEG) out.push(`${s} is too short on screen`);
+  return out;
+}
+
+/** Build until the drawing is honest and has room for its marks. */
+export function honest(build, R, tries = 400) {
   let last = [];
-  for (let i = 0; i < tries; i++) { const b = build(R); if (!lies(b, { quick: true }).length) return b; last = lies(b); }
+  for (let i = 0; i < tries; i++) {
+    const b = build(R);
+    if (lies(b, { quick: true }).length) { last = lies(b); continue; }
+    const c = cramped(b.figure);
+    if (!c.length) return b;
+    last = c;
+  }
   throw new Error(`honest: no honest drawing in ${tries} tries (${last.slice(0, 3).join('; ')})`);
 }
 

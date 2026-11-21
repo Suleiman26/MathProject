@@ -4,7 +4,7 @@
    hint, the red "?" badge, tappable hit shapes (Level 3) and the ending motion (spec §7.6, §11.3).
    Geometry comes from figure-core.js; nothing here judges anything. */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { layout, markGeom, partsNear, partId, partName, motionMatrix, motionFrames } from './figure-core.js';
+import { layout, markGeom, triEcho, partsNear, partId, partName, motionMatrix, motionFrames } from './figure-core.js';
 import { partsOf } from './core.js';
 import { RULES } from './mastery.js';
 import { distPointSeg } from '../new/chapters/geometry/geo.js';
@@ -25,15 +25,6 @@ export function useReducedMotion() {
     return () => { if (mq.removeEventListener) mq.removeEventListener('change', on); else mq.removeListener(on); };
   }, []);
   return reduce;
-}
-
-/* a triangle drawn a little inside its sides (the dashed "goal" outline of a congruence) */
-function inset(P) {
-  const [a, b, c] = P, la = Math.hypot(b[0] - c[0], b[1] - c[1]), lb = Math.hypot(a[0] - c[0], a[1] - c[1]), lc = Math.hypot(a[0] - b[0], a[1] - b[1]);
-  const per = la + lb + lc, I = [(la * a[0] + lb * b[0] + lc * c[0]) / per, (la * a[1] + lb * b[1] + lc * c[1]) / per];
-  const area = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) / 2, rad = (2 * area) / per;
-  const by = Math.max(2.5, Math.min(6, rad * 0.28)), k = Math.max(0.35, 1 - by / Math.max(rad, 1));
-  return P.map((p) => [I[0] + (p[0] - I[0]) * k, I[1] + (p[1] - I[1]) * k]);
 }
 
 /** Every tappable part of a figure by id: { id, kind, part, he } (the parts list uses it too). */
@@ -66,7 +57,8 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
   }, [marks, problem, fig]);
 
   const dimAll = focus.length > 0 && !focus.some((id) => id.startsWith('t:'));
-  const dim = (id) => (dimAll && !focus.includes(id) ? ' is-dim' : '');
+  // focus: the row's parts stand out, the unmarked lines step back; a marked (coloured) part is never washed out
+  const dim = (id, painted) => (!dimAll ? '' : focus.includes(id) ? ' is-focus' : painted ? '' : ' is-dim');
   const sel = (id) => (selected.includes(id) ? ' is-sel' : '');
   const centre = useMemo(() => { const P = Object.values(L.pts); return [P.reduce((s, p) => s + p[0], 0) / P.length, P.reduce((s, p) => s + p[1], 0) / P.length]; }, [L]);
 
@@ -149,25 +141,26 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
         return (
           <g key={t.id}>
             <polygon className={`pf-tri${st === 'on' ? ' is-on' : ''}${sel(t.id)}`} points={pts(t.pts)} />
-            {st === 'goal' && <polygon className="pf-tri-goal" points={pts(inset(t.pts))} />}
+            {st === 'goal' && <polygon className="pf-tri-goal" points={pts(t.pts)} />}
+            {st === 'goal' && !selected.includes(t.id) && triEcho(t.pts) && <polygon className="pf-tri-echo" points={pts(triEcho(t.pts))} />}
           </g>
         );
       })}
       {L.segs.map((g) => {
         const p = paint.seg[g.id];
         const cls = p ? (p.style === 'goal' ? ' is-goal' : ` pf-c${p.mark.color || 1}`) : '';
-        return <line key={g.id} className={`pf-sg${cls}${dim(g.id)}${sel(g.id)}`} x1={r1(g.a[0])} y1={r1(g.a[1])} x2={r1(g.b[0])} y2={r1(g.b[1])} />;
+        return <line key={g.id} className={`pf-sg${cls}${dim(g.id, !!p)}${sel(g.id)}`} x1={r1(g.a[0])} y1={r1(g.a[1])} x2={r1(g.b[0])} y2={r1(g.b[1])} />;
       })}
       {showAngles && L.angles.map((a) => (paint.ang[a.id] ? null : <path key={`q${a.id}`} className={`pf-arc is-quiet${sel(a.id)}`} d={a.d} />))}
       {Object.entries(paint.seg).map(([id, p]) => (p.style !== 'on' ? null : (
-        <g key={`m${id}`} className={`pf-mk pf-c${p.mark.color || 1}${dim(id)}`} style={p.delay ? { animationDelay: `${p.delay}ms` } : undefined}>
+        <g key={`m${id}`} className={`pf-mk pf-c${p.mark.color || 1}${dim(id, true)}`} style={p.delay ? { animationDelay: `${p.delay}ms` } : undefined}>
           {markGeom(L, p.part, p.mark).lines.map((q, i) => <line key={i} x1={r1(q[0])} y1={r1(q[1])} x2={r1(q[2])} y2={r1(q[3])} />)}
         </g>
       )))}
       {Object.entries(paint.ang).map(([id, p]) => {
         const g = markGeom(L, p.part, p.style === 'goal' ? { arcs: 1, right: p.mark.right } : p.mark);
         return (
-          <g key={`m${id}`} className={`pf-mk ${p.style === 'goal' ? 'is-goal' : `pf-c${p.mark.color || 1}`}${dim(id)}${sel(id)}`} style={p.delay ? { animationDelay: `${p.delay}ms` } : undefined}>
+          <g key={`m${id}`} className={`pf-mk ${p.style === 'goal' ? 'is-goal' : `pf-c${p.mark.color || 1}`}${dim(id, true)}${sel(id)}`} style={p.delay ? { animationDelay: `${p.delay}ms` } : undefined}>
             {g.arcs.map((d, i) => <path key={i} d={d} />)}
             {g.square && <path d={g.square} />}
           </g>

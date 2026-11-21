@@ -57,3 +57,26 @@ test('motion frames: start where the triangle is, end on the matching, rigid all
   assert.ok(close(ff[4], flip)); assert.ok(close(ff[2], [1, 0, 0, 0, 0, 20]));
   assert.ok(close(motionFrames([1, 0, 0, 1, 30, -10], 2)[1], [1, 0, 0, 1, 15, -5]));
 });
+
+/* ── room for the marks (the phone gate, 2026-11-21) ── */
+test('two angles side by side at one vertex never draw their arcs at one radius', async () => {
+  const { layout: lay, markGeom: mg } = await import('./figure-core.js');
+  const fig = { points: { A: [0, 2], B: [-2, 0], C: [2, 0], D: [0, 0] }, lines: [['B', 'D', 'C']], segs: ['AB', 'AC', 'BD', 'DC', 'AD'],
+    angles: [{ v: 'A', r: ['B', 'D'] }, { v: 'A', r: ['C', 'D'] }, { v: 'B', r: ['A', 'D'] }, { v: 'C', r: ['A', 'D'] }], tris: [['A', 'B', 'D'], ['A', 'C', 'D']] };
+  const L = lay(fig), at = (v) => L.angles.filter((a) => a.vn === v).map((a) => a.r);
+  assert.equal(new Set(at('A')).size, 2); assert.ok(Math.abs(at('A')[0] - at('A')[1]) >= 9);          // clear of up to three arcs
+  assert.deepEqual([at('B'), at('C')], [[18], [18]]);                                                  // alone at its vertex: the usual radius
+  const r = (d) => +d.match(/A([\d.]+) /)[1];
+  assert.deepEqual(L.angles.filter((a) => a.vn === 'A').map((a) => r(mg(L, a.part, { arcs: 1 }).arcs[0])), at('A'));   // the marks follow
+  // vertical angles (not side by side) keep one radius
+  const X = lay({ points: { A: [-2, 0], B: [2, 0], C: [-1, 1.5], D: [1, -1.5], O: [0, 0] }, lines: [['A', 'O', 'B'], ['C', 'O', 'D']], segs: ['AO', 'OB', 'CO', 'OD'], angles: [{ v: 'O', r: ['A', 'C'] }, { v: 'O', r: ['B', 'D'] }], tris: [] });
+  assert.deepEqual(X.angles.map((a) => a.r), [18, 18]);
+});
+test('the goal echo of a triangle stays inside it, clear of the ticks; a small triangle gets none', async () => {
+  const { triEcho } = await import('./figure-core.js');
+  const P = [[20, 180], [300, 180], [160, 20]], Q = triEcho(P);
+  assert.equal(Q.length, 3);
+  const dist = (p, a, b) => Math.abs((b[0] - a[0]) * (a[1] - p[1]) - (a[0] - p[0]) * (b[1] - a[1])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+  for (const q of Q) for (let i = 0; i < 3; i++) assert.ok(dist(q, P[i], P[(i + 1) % 3]) >= 11);
+  assert.equal(triEcho([[0, 0], [60, 0], [30, 30]]), null);
+});

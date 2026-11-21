@@ -17,7 +17,7 @@ const ROLES = ['A', 'B', 'C', 'D', 'O'];
 
 function draw(R, variant, opts) {
   const a = 1, c = R.bool() ? 0.5 + R.rand() * 0.33 : 1.2 + R.rand() * 0.55;   // CO : AO, never close to 1
-  const th = (R.bool() ? R.int(36, 78) : R.int(102, 142)) * Math.PI / 180;     // ∢AOC
+  const th = (R.bool() ? R.int(40, 78) : R.int(102, 132)) * Math.PI / 180;     // ∢AOC
   const A = [-a, 0], C = [-c * Math.cos(th), c * Math.sin(th)];
   const pts = place({ A, B: [a, 0], C, D: [-C[0], -C[1]], O: [0, 0] }, R);
   const figure = {

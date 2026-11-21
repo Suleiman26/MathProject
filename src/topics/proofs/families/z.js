@@ -18,7 +18,7 @@ const VARIANTS = {
 const ROLES = ['A', 'B', 'C', 'D'];
 
 function draw(R, variant, opts) {
-  const al = R.int(24, 70), ga = R.int(18, 62);                        // ∢BAC, ∢BCA
+  const al = R.int(28, 70), ga = R.int(24, 62);                        // ∢BAC, ∢BCA
   const [A, C, B] = triFromAngles([al, ga, 180 - al - ga], 1);
   const pts = place({ A, B, C, D: [A[0] + C[0] - B[0], A[1] + C[1] - B[1]] }, R);
   const figure = {

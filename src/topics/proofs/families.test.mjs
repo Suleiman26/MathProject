@@ -84,3 +84,12 @@ test('cevian triangle: "midpoint" gives the same equality as "median"; a third v
   assert.deepEqual(Object.keys(c.lines), ['AD', 'CE']);
   assert.deepEqual(lies({ figure: c.figure, facts: Object.fromEntries(Object.values(c.lines).map((l, i) => [`f${i}`, l.gives])) }), []);
 });
+
+test('every family drawing has room for its marks: no sliver angle, no thin triangle, no short side', async () => {
+  const { cramped } = await import('./families/kit.js');
+  const { seeded, makeR } = await import('../new/core.js');
+  const fams = [(await import('./families/x.js')).default, (await import('./families/k.js')).default, (await import('./families/z.js')).default, (await import('./families/t.js')).default, (await import('./families/two.js')).default];
+  const R = makeR(seeded(41));
+  for (const f of fams) for (const v of Object.keys(f.variants)) for (let i = 0; i < Math.max(40, RUNS / 10); i++) assert.deepEqual(cramped(f.build(R, v, {}).figure), [], `${v}`);
+  assert.ok(cramped({ points: { A: [0, 0], B: [10, 0], C: [5, 0.6] }, lines: [], segs: ['AB'], angles: [], tris: [['A', 'B', 'C']] }).length > 0);
+});

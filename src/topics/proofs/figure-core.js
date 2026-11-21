@@ -9,6 +9,7 @@ import { T } from './texts.js';
 
 const PAD = 24;                 // room around the drawing for the letters
 const HIT_W = 22, PULL_BUSY = 28, PULL = 12, WEDGE = 30, ARC_R = 18, ARC_STEP = 4;
+const ARC_TIER = 2 * ARC_STEP + 3;   // two angles side by side at one vertex: the narrower one's arcs sit outside the other's (up to 3 arcs)
 const TICK_HALF = 6, TICK_GAP = 4.6, SQUARE = 9, CLEAR = 1.5;
 
 /** A part's id: 's:AO', 'a:O:AC' (by rays: pass the figure to merge ∢OAC with ∢BAC), 't:ACO'. */
@@ -99,6 +100,21 @@ export function layout(fig, W = 320, H = 196) {
     const v = pts[a.v], u1 = unit(sub(pts[a.r[0]], v)), u2 = unit(sub(pts[a.r[1]], v));
     return { id: partId(a, fig), part: a, vn: a.v, v, u1, u2, bis: bisector(u1, u2), p1: add(v, mul(u1, ARC_R)), p2: add(v, mul(u2, ARC_R)), r: ARC_R, d: arcPath(v, u1, u2, ARC_R) };
   });
+  // arcs of two angles that share a ray at one vertex never sit at one radius (they would read as a
+  // single arc): going around the vertex, each neighbour takes the other radius; of two, the narrower is outside
+  const sameRay = (p, q) => dot(p, q) > 1 - 1e-9;
+  const touch = (a, b) => a !== b && a.id !== b.id && a.vn === b.vn && (sameRay(a.u1, b.u1) || sameRay(a.u1, b.u2) || sameRay(a.u2, b.u1) || sameRay(a.u2, b.u2));
+  const wide = (a) => Math.acos(Math.max(-1, Math.min(1, dot(a.u1, a.u2))));
+  const tier = new Map();
+  for (const a of [...angles].sort((x, y) => wide(y) - wide(x))) {
+    if (tier.has(a.id)) continue;
+    const taken = new Set(angles.filter((b) => touch(a, b) && tier.has(b.id)).map((b) => tier.get(b.id)));
+    tier.set(a.id, taken.has(0) ? (taken.has(1) ? 2 : 1) : 0);
+  }
+  for (const a of angles) {
+    const r = ARC_R + (tier.get(a.id) || 0) * ARC_TIER;
+    if (r !== a.r) Object.assign(a, { r, p1: add(a.v, mul(a.u1, r)), p2: add(a.v, mul(a.u2, r)), d: arcPath(a.v, a.u1, a.u2, r) });
+  }
 
   // hit shapes: a wide line pulled back from busy ends, a wedge, a triangle's fill
   const degree = (n) => segs.filter((g) => g.n.includes(n)).length + angles.filter((a) => a.vn === n).length;
@@ -135,6 +151,17 @@ export function layout(fig, W = 320, H = 196) {
   return L;
 }
 
+/** The inner echo of a triangle (the dashed "goal" of a congruence): the same triangle, smaller,
+    around its incentre, so its sides stay clear of the ticks (mid-side) and its corners clear of the
+    arcs. null when the triangle is too small on screen to hold it (the tint alone shows the goal). */
+export function triEcho(P, k = 0.5) {
+  const [a, b, c] = P, la = dist(b, c), lb = dist(a, c), lc = dist(a, b), per = la + lb + lc;
+  const area = Math.abs(cross(sub(b, a), sub(c, a))) / 2, rad = (2 * area) / per;
+  if (rad * (1 - k) < 11) return null;                      // a tick reaches 6px in; leave air around it
+  const I = [(la * a[0] + lb * b[0] + lc * c[0]) / per, (la * a[1] + lb * b[1] + lc * c[1]) / per];
+  return P.map((p) => add(I, mul(sub(p, I), k)));
+}
+
 /** The marks of one part: ticks at a segment's middle, arcs (or a 90° square) at an angle. */
 export function markGeom(L, part, mark = {}) {
   const out = { lines: [], arcs: [], square: null };
@@ -147,11 +174,13 @@ export function markGeom(L, part, mark = {}) {
     }
   } else if (k === 'ang') {
     const v = L.pts[part.v], u1 = unit(sub(L.pts[part.r[0]], v)), u2 = unit(sub(L.pts[part.r[1]], v));
+    const at = L.angles.find((x) => x.vn === part.v && ((dot(x.u1, u1) > 1 - 1e-9 && dot(x.u2, u2) > 1 - 1e-9) || (dot(x.u1, u2) > 1 - 1e-9 && dot(x.u2, u1) > 1 - 1e-9)));
+    const r0 = at ? at.r : ARC_R;
     if (mark.right || mark.square) {
       const q1 = add(v, mul(u1, SQUARE)), q2 = add(v, mul(u2, SQUARE)), q = add(q1, mul(u2, SQUARE));
       out.square = `M${r1(q1[0])} ${r1(q1[1])}L${r1(q[0])} ${r1(q[1])}L${r1(q2[0])} ${r1(q2[1])}`;
     } else {
-      for (let i = 0; i < (mark.arcs || 1); i++) out.arcs.push(arcPath(v, u1, u2, ARC_R + ARC_STEP * i));
+      for (let i = 0; i < (mark.arcs || 1); i++) out.arcs.push(arcPath(v, u1, u2, r0 + ARC_STEP * i));
     }
   }
   return out;

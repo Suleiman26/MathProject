@@ -32,7 +32,7 @@ function wordsFor(variant, opts, R) {
 }
 
 function draw(R, variant, opts) {
-  const be = (R.bool() ? R.int(25, 39) : R.int(52, 72)) * Math.PI / 180;   // the base angle, never near 45°
+  const be = (R.bool() ? R.int(33, 39) : R.int(52, 68)) * Math.PI / 180;   // the base angle, never near 45°
   const w = 0.85 + R.rand() * 0.3;
   const pts = place({ A: [0, w * Math.tan(be)], B: [-w, 0], C: [w, 0], D: [0, 0] }, R);
   const figure = {
