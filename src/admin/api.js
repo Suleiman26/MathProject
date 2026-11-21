@@ -22,6 +22,7 @@ const DEFAULT_CATALOG = (() => {
   const c = [["c1", "אלגברה", "indigo"], ["c2", "גיאומטריה", "sky"], ["c3", "תחום מספרי", "teal"]];
   const t = [
     ["משוואות ליניאריות", "equation-solver.html", ["g7", "g8"], "equation", "teal", "c1"],
+    ["מערכת משוואות", "systems.html", ["g8"], "system", "indigo", "c1"],
     ["משוואות מתקדמות", "equations-advanced.html", ["g8", "g9"], "fraction", "indigo", "c1"],
     ["אי־שוויונות", "inequalities.html", ["g8", "g9"], "inequality", "pink", "c1"],
     ["משוואות ריבועיות", "quadratic-solver.html", ["g9"], "square", "blue", "c1"],
@@ -31,6 +32,7 @@ const DEFAULT_CATALOG = (() => {
     ["יסודות החשבון", "directed-numbers.html", ["g7"], "numberline", "teal", "c3"],
     ["יחס ואחוזים", "ratio-percent.html", ["g7"], "percent", "teal", "c3"],
     ["חזקות ושורשים", "powers-roots.html", ["g8", "g9"], "root", "violet", "c3"],
+    ["סטטיסטיקה והסתברות", "statistics.html", ["g7", "g8", "g9"], "chart", "orange", "c3"],
     ["זוויות ומקבילים", "angles-parallel.html", ["g7"], "parallel", "teal", "c2"],
     ["משולשים", "triangles.html", ["g7", "g8"], "triangle", "sky", "c2"],
     ["מרובעים", "quadrilaterals.html", ["g8"], "quad", "cyan", "c2"],

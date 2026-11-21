@@ -22,3 +22,7 @@ from (values
      coalesce((select max(position) + 1 from public.topics where category_id = (select id from public.categories where name = 'תחום מספרי')), 0))
 ) as t (name, page, grades, icon, color, cat, pos)
 where not exists (select 1 from public.topics x where x.page = t.page);
+
+-- Fixes board #85 / #91 (2026-11-21): the home page reads these names from here.
+update public.topics set name = 'משוואות ליניאריות' where page = 'equation-solver.html' and name <> 'משוואות ליניאריות';
+update public.topics set name = 'יסודות החשבון'    where page = 'directed-numbers.html' and name <> 'יסודות החשבון';
