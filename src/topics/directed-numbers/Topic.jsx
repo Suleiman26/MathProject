@@ -882,8 +882,8 @@ function checkFrFlip(ex, sn, sd) {
 function frFlip(v) { return [v[0] < 0 ? -v[1] : v[1], Math.abs(v[0])]; }
 
 /* a fraction is always drawn numerator over denominator */
-function Frac({ n, d }) {
-  return <span className="frac"><span className="frac-num">{n}</span><span className="frac-den">{d}</span></span>;
+function Frac({ n, d, style }) {
+  return <span className="frac" style={style}><span className="frac-num">{n}</span><span className="frac-den">{d}</span></span>;
 }
 /* a signed number [n, d]. mode 'p': always in brackets with its sign, 'm': brackets only when negative, 'r': no brackets */
 function FrNum({ v, mode }) {
@@ -1281,22 +1281,295 @@ function Ch7() {
   );
 }
 
+/* ═══════ Chapter 3: Conversions — fraction ↔ decimal (moved here from ratio-percent, fixes board #85) ═══════
+   Sulaiman's code from ratio-percent's chapter 3, unchanged except the name (Ch3 → ChConv,
+   this topic already has a Ch3) and its helpers copied with it: gcd, PieVis, Fb. */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;}
+/* Pie/Cake */
+function PieVis({total, filled, color1='#f59e0b', color2='#e5e7eb'}){
+  const slices = [];
+  for(let i=0;i<total;i++){
+    const a1 = (i/total)*360 - 90;
+    const a2 = ((i+1)/total)*360 - 90;
+    const r = 70, cx=80, cy=80;
+    const x1=cx+r*Math.cos(a1*Math.PI/180), y1=cy+r*Math.sin(a1*Math.PI/180);
+    const x2=cx+r*Math.cos(a2*Math.PI/180), y2=cy+r*Math.sin(a2*Math.PI/180);
+    const large = (a2-a1)>180?1:0;
+    slices.push(<path key={i} d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`}
+      fill={i<filled?color1:color2} stroke="#fff" strokeWidth="2"/>);
+  }
+  return <svg viewBox="0 0 160 160" style={{width:140,height:140}}>{slices}</svg>;
+}
+
+/* Feedback */
+function Fb({fb}){
+  if(!fb) return null;
+  return fb==='ok'?<div className="fb ok">✓ נכון!</div>:<div className="fb err">✗ לא נכון, נסה שוב.</div>;
+}
+
+function pow10MultiplierFor(d){
+  let target=10;
+  while(target%d!==0){target*=10;if(target>100000)return null;}
+  return {target,mult:target/d};
+}
+/* decimal → fraction: any 1-3 digit decimal whose digit-string is reducible
+   against its power-of-10 denominator (gcd>1) — guarantees at least one
+   division step, and gives full variety (not just ÷5) instead of a small
+   curated list */
+function genDecToFracEx(){
+  for(let tries=0;tries<300;tries++){
+    const digits = pick([1,2,3]);
+    const target = Math.pow(10,digits);
+    const numerator = randInt(1,target-1);
+    const g = gcd(numerator,target);
+    if(g<=1) continue; // coprime — no reduction possible, skip
+    const decStr = '0.'+String(numerator).padStart(digits,'0');
+    return {n:numerator/g,d:target/g,dec:parseFloat(decStr),decStr,
+      unreducedNum:numerator,unreducedDen:target,digits,type:0};
+  }
+  return {n:3,d:4,dec:0.75,decStr:'0.75',unreducedNum:75,unreducedDen:100,digits:2,type:0};
+}
+function genFracToDecEx(){
+  // any reduced fraction n/d with d=2^a·5^b (a,b in 0..3, d>1, d≤1000) — 15
+  // distinct denominators instead of the old fixed list of 7
+  for(let tries=0;tries<300;tries++){
+    const a=randInt(0,3), b=randInt(0,3);
+    if(a===0&&b===0) continue;
+    const d=Math.pow(2,a)*Math.pow(5,b);
+    const n=randInt(1,d-1);
+    if(gcd(n,d)!==1) continue;
+    const {target,mult} = pow10MultiplierFor(d);
+    const digits = Math.round(Math.log10(target));
+    const unreducedNum = n*mult, unreducedDen = target;
+    const decStr = '0.'+String(unreducedNum).padStart(digits,'0');
+    return {n,d,dec:parseFloat(decStr),decStr,unreducedNum,unreducedDen,digits,type:1};
+  }
+  return {n:3,d:4,dec:0.75,decStr:'0.75',unreducedNum:75,unreducedDen:100,digits:2,type:1};
+}
+function genDecFracEx(forceType){
+  const type = forceType!=null?forceType:randInt(0,1); // 0=decimal→fraction, 1=fraction→decimal
+  return type===0?genDecToFracEx():genFracToDecEx();
+}
+
+function ChConv(){
+  const [part,setPart]=useState(0); // 0 = decimal→fraction sub-chapter, 1 = fraction→decimal sub-chapter
+  const [ex,setEx]=useState(()=>genDecFracEx(0));
+  const [phase,setPhase]=useState('write');
+  const [fb,setFb]=useState(null);
+  const [hintMsg,setHintMsg]=useState(null);
+
+  // type 0: decimal → fraction
+  const [fn,setFn]=useState('');const [fd,setFd]=useState('');
+  const [curN,setCurN]=useState(null);const [curD,setCurD]=useState(null);
+  const [divVal,setDivVal]=useState('');
+
+  // type 1: fraction → decimal
+  const [multVal,setMultVal]=useState('');
+  const [usedMult,setUsedMult]=useState(null);
+  const [eqN,setEqN]=useState(null);const [eqD,setEqD]=useState(null);
+  const [decAns,setDecAns]=useState('');
+
+  const resetState=(e)=>{
+    setEx(e);setPhase(e.type===0?'write':'mult');
+    setFb(null);setHintMsg(null);
+    setFn('');setFd('');setCurN(null);setCurD(null);setDivVal('');
+    setMultVal('');setUsedMult(null);setEqN(null);setEqD(null);setDecAns('');
+  };
+  const reset=()=>resetState(genDecFracEx(part));
+  const switchPart=(p)=>{setPart(p);resetState(genDecFracEx(p));};
+
+  // ── type 0 handlers ──
+  const checkWrite=()=>{
+    const vn=parseInt(fn),vd=parseInt(fd);
+    if(vn===ex.unreducedNum&&vd===ex.unreducedDen){
+      setFb('ok');
+      setTimeout(()=>{
+        setCurN(vn);setCurD(vd);
+        // some decimals (e.g. 0.1 → 1/10) are already fully reduced — nothing to divide by
+        setPhase(gcd(vn,vd)>1?'reduce':'done');
+        setFb(null);
+      },600);
+    } else setFb('err');
+  };
+  const applyDivide=()=>{
+    const k=parseInt(divVal);
+    if(!k||k<2||curN%k!==0||curD%k!==0){setFb('err');return;}
+    const newN=curN/k,newD=curD/k;
+    setCurN(newN);setCurD(newD);setDivVal('');setFb(null);
+    if(gcd(newN,newD)>1) setHintMsg('יפה! השבר צומצם — ניתן לצמצם עוד.');
+    else{setHintMsg(null);setPhase('done');}
+  };
+
+  // ── type 1 handlers ──
+  const checkMult=()=>{
+    const k=parseInt(multVal);
+    if(!k||k<1){setFb('err');return;}
+    const val=ex.d*k;
+    const isPow10 = Number.isInteger(val)&&val>=10&&/^10*$/.test(String(val));
+    if(!isPow10){setFb('err');return;}
+    setFb('ok');
+    setEqN(ex.n*k);setEqD(val);setUsedMult(k);
+    setTimeout(()=>{setPhase('decimal');setFb(null);},600);
+  };
+  const checkDec=()=>{
+    const v=parseFloat((decAns||'').trim().replace(',','.'));
+    if(!isNaN(v)&&Math.abs(v-ex.dec)<1e-9){setFb('ok');setPhase('done');}
+    else setFb('err');
+  };
+
+  const done = phase==='done';
+
+  return <div className="content">
+    <div className="sub-tabs">
+      <button className={`sub-tab-btn ${part===0?'active':''}`} onClick={()=>switchPart(0)}>עשרוני → שבר</button>
+      <button className={`sub-tab-btn ${part===1?'active':''}`} onClick={()=>switchPart(1)}>שבר → עשרוני</button>
+    </div>
+
+    {part===0?<>
+      <div className="info">
+        <b>עשרוני → שבר:</b> כותבים את הספרות שאחרי הנקודה כמונה, וכפולת 10 מתאימה כמכנה, ואז מצמצמים.
+      </div>
+      <div className="example-box">
+        <div className="ex-title">לדוגמה:</div>
+        <div className="ex-eq">0.75</div>
+        <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>כותבים כשבר (2 ספרות → מכנה 100):</div>
+        <div className="ex-eq"><Frac n={75} d={100}/></div>
+        <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מצמצמים שוב ושוב עד שלא ניתן יותר:</div>
+        <div className="ex-eq" style={{display:'flex',alignItems:'center',justifyContent:'center',flexWrap:'wrap',gap:8}}>
+          <Frac n={75} d={100}/><span>(÷5)</span><Frac n={15} d={20}/><span>(÷5)</span><Frac n={3} d={4}/>
+        </div>
+      </div>
+    </>:<>
+      <div className="info">
+        <b>שבר → עשרוני:</b> מוצאים מכפיל שהופך את המכנה לכפולת 10, מכפילים בו את המונה והמכנה, וכותבים כעשרוני.
+      </div>
+      <div className="example-box">
+        <div className="ex-title">לדוגמה:</div>
+        <div className="ex-eq"><Frac n={3} d={4}/></div>
+        <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>מוצאים מכפיל שהופך את המכנה לכפולת 10 <span dir="ltr">(4 × 25 = 100)</span>:</div>
+        <div className="ex-eq" style={{display:'flex',alignItems:'center',justifyContent:'center',flexWrap:'wrap',gap:8}}>
+          <Frac n="3 · 25" d="4 · 25"/><span>=</span><Frac n={75} d={100}/>
+        </div>
+        <div style={{textAlign:'center',fontSize:13,color:'#0f766e',marginTop:4}}>כותבים כעשרוני:</div>
+        <div className="ex-eq" style={{display:'flex',alignItems:'center',justifyContent:'center',flexWrap:'wrap',gap:8}}>
+          <Frac n={75} d={100}/><span>= 0.75</span>
+        </div>
+      </div>
+    </>}
+
+    {ex.type===0?<div className="card">
+      <div className="card-t">המרת עשרוני לשבר</div>
+      {ex.d<=30&&<div className="vis-wrap"><PieVis total={ex.d} filled={ex.n} color1="#14b8a6"/></div>}
+      <div className="eq-box" style={{fontSize:24}}>{ex.decStr}</div>
+
+      <div className={`step-card ${phase!=='write'?'done':''}`}>
+        <div className="step-label">כתבו את המספר כשבר (המכנה הוא כפולת 10 המתאימה):</div>
+        {phase==='write'?<>
+          <div className="ans-row" style={{fontSize:20}}>
+            <Frac n={<input type="text" value={fn} onChange={e=>{setFn(e.target.value);setFb(null);}} placeholder="?" style={{width:55,fontSize:16}}/>}
+                  d={<input type="text" value={fd} onChange={e=>{setFd(e.target.value);setFb(null);}} placeholder="?" style={{width:55,fontSize:16}}
+                    onKeyDown={e=>e.key==='Enter'&&checkWrite()}/>}/>
+            <button className="btn bg" onClick={checkWrite} style={{marginRight:8}}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ <Frac n={ex.unreducedNum} d={ex.unreducedDen} style={{color:'#16a34a'}}/>
+        </div>}
+      </div>
+
+      {(phase==='reduce'||phase==='done') && <div className={`step-card ${phase==='done'?'done':''}`}>
+        <div className="step-label">צמצמו את השבר עד שלא ניתן לצמצם יותר:</div>
+        {phase==='reduce'?<>
+          <div className="ans-row" style={{fontSize:20}}>
+            <Frac n={curN} d={curD}/>
+            <span>÷</span>
+            <input type="text" value={divVal} onChange={e=>{setDivVal(e.target.value);setFb(null);setHintMsg(null);}}
+              placeholder="?" style={{width:55}} onKeyDown={e=>e.key==='Enter'&&applyDivide()}/>
+            <button className="btn bg" onClick={applyDivide}>✓ צמצם</button>
+          </div>
+          {hintMsg&&<div className="fb ok">{hintMsg}</div>}
+          {fb==='err'&&<div className="fb err">אי אפשר לצמצם בזה — נסו מספר אחר.</div>}
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ <Frac n={ex.n} d={ex.d} style={{color:'#16a34a'}}/> — לא ניתן לצמצם יותר
+        </div>}
+      </div>}
+    </div>
+    :<div className="card">
+      <div className="card-t">המרת שבר לעשרוני</div>
+      {ex.d<=30&&<div className="vis-wrap"><PieVis total={ex.d} filled={ex.n} color1="#14b8a6"/></div>}
+      <div className="eq-box" style={{fontSize:24}}><Frac n={ex.n} d={ex.d}/></div>
+
+      <div className={`step-card ${phase!=='mult'?'done':''}`}>
+        <div className="step-label">מצאו מכפיל שהופך את המכנה לכפולת 10 (10, 100, 1000...):</div>
+        {phase==='mult'?<>
+          <p style={{fontSize:13,color:'#64748b',textAlign:'center',marginBottom:6}}>
+            רמז: אם קשה למצוא את המכפיל ישירות, נסו לחלק את <span dir="ltr">10, 100, 1000</span> במכנה —
+            החילוק שנותן מספר שלם הוא המכפיל המתאים.
+          </p>
+          <div className="ans-row" style={{fontSize:18}}>
+            <Frac n={ex.n} d={ex.d}/>
+            <span>×</span>
+            <input type="text" value={multVal} onChange={e=>{setMultVal(e.target.value);setFb(null);}}
+              placeholder="?" style={{width:55}} onKeyDown={e=>e.key==='Enter'&&checkMult()}/>
+            <button className="btn bg" onClick={checkMult}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
+          ✓ <Frac n={ex.n} d={ex.d} style={{color:'#16a34a'}}/> × {usedMult} = <Frac n={eqN} d={eqD} style={{color:'#16a34a'}}/>
+        </div>}
+      </div>
+
+      {(phase==='decimal'||phase==='done') && <div className={`step-card ${phase==='done'?'done':''}`}>
+        <div className="step-label">כתבו את המספר כעשרוני:</div>
+        {phase==='decimal'?<>
+          <div className="ans-row" style={{fontSize:20}}>
+            <Frac n={eqN} d={eqD}/>
+            <span>=</span>
+            <input type="text" value={decAns} onChange={e=>{setDecAns(e.target.value);setFb(null);}}
+              placeholder="0.XX" style={{width:100}} onKeyDown={e=>e.key==='Enter'&&checkDec()}/>
+            <button className="btn bg" onClick={checkDec}>✓ בדוק</button>
+          </div>
+          <Fb fb={fb}/>
+        </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>✓ {ex.decStr}</div>}
+      </div>}
+    </div>}
+
+    {done?<div className="banner">
+      ✅ כל הכבוד! &nbsp; <Frac n={ex.n} d={ex.d}/> = {ex.decStr}
+      <div style={{marginTop:12}}><button className="btn" style={{background:'#fff',color:'#16a34a',fontSize:17}} onClick={reset}>תרגיל חדש ↺</button></div>
+    </div>:<div className="center" style={{marginTop:8}}><button className="btn bp" onClick={reset}>תרגיל חדש ↺</button></div>}
+  </div>;
+}
+
+/* ═══════ Chapter 1: directed numbers (fixes board #85) ═══════
+   The topic is now "יסודות החשבון": the arithmetic base. Its first chapter holds the five
+   directed-number chapters (until 2026-11-21 chapters 1-5) as sub-chapters. */
+const DN_PARTS = ['חיבור', 'חיסור', 'כפל', 'חילוק', 'סדר פעולות'];
+function ChDirected() {
+  const [part, setPart] = useState(0);
+  const P = [Ch1, Ch2, Ch3, Ch4, Ch5][part];
+  return (
+    <div>
+      <div className="content" style={{marginBottom:0}}>
+        <div className="sub-tabs">
+          {DN_PARTS.map((l, i) => (
+            <button key={i} className={`sub-tab-btn ${part===i?'active':''}`} onClick={() => setPart(i)}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <P key={part} />
+    </div>
+  );
+}
+
 /* ═══════ Main App ═══════ */
 function App() {
   const [ch, setCh] = useState(1);
-  const labels = [
-    '\u05D7\u05D9\u05D1\u05D5\u05E8',
-    '\u05D7\u05D9\u05E1\u05D5\u05E8',
-    '\u05DB\u05E4\u05DC',
-    '\u05D7\u05D9\u05DC\u05D5\u05E7',
-    '\u05E1\u05D3\u05E8 \u05E4\u05E2\u05D5\u05DC\u05D5\u05EA',
-    '\u05EA\u05E8\u05D2\u05D5\u05DC \u05DE\u05E7\u05D9\u05E3',
-    'שברים'
-  ];
+  const labels = ['מספרים מכוונים', 'שברים', 'המרות', 'תרגול מקיף'];
   return (
     <div>
       <div className="hdr">
-        <div className="hdr-title">{'\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD \u05DE\u05DB\u05D5\u05D5\u05E0\u05D9\u05DD'}</div>
+        <div className="hdr-title">יסודות החשבון</div>
         <div className="ch-btns">
           {labels.map((l, i) => (
             <button key={i} className={`ch-btn ${ch===i+1?'active':''}`}
@@ -1304,7 +1577,7 @@ function App() {
           ))}
         </div>
       </div>
-      {ch===1 ? <Ch1 key="c1"/> : ch===2 ? <Ch2 key="c2"/> : ch===3 ? <Ch3 key="c3"/> : ch===4 ? <Ch4 key="c4"/> : ch===5 ? <Ch5 key="c5"/> : ch===6 ? <Ch6 key="c6"/> : <Ch7 key="c7"/>}
+      {ch===1 ? <ChDirected key="c1"/> : ch===2 ? <Ch7 key="c2"/> : ch===3 ? <ChConv key="c3"/> : <Ch6 key="c4"/>}
     </div>
   );
 }

@@ -97,6 +97,7 @@ def main(argv):
     # texts taken off the home page on purpose (who asked, when, why)
     REMOVED_ON_PURPOSE = {
         "מצב הפרויקט: מה נעשה, מה חסר ומה בעבודה": "Abed 2026-11-02: project status link only in the admin, not for students",
+        "מספרים מכוונים": "Sulaiman, fixes board #85 (2026-11-21): the topic was renamed יסודות החשבון (directed numbers are its first chapter)",
     }
     missing = [t for t in p.out if t not in src and t not in REMOVED_ON_PURPOSE]
     print(f"\nhome page: {len(p.out) - len(missing)}/{len(p.out)} original texts present" + (f"  MISSING: {missing}" if missing else ""))

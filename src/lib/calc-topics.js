@@ -17,8 +17,9 @@ export const CALC_TOPICS = {
   "triangles": true,
   "similar-triangles": true,
   "angles-parallel": true,
-  // ratio and percent — but not "conversions": 3 ÷ 8 on a calculator IS the answer there
-  "ratio-percent": { except: ["3. המרות"] },
+  // ratio and percent ("conversions", where 3 ÷ 8 on a calculator IS the answer, moved to
+  // directed-numbers on 2026-11-21, board #85: no calculator there)
+  "ratio-percent": true,
   // functions and the quadratic formula: substituting numbers, the discriminant, roots
   "quadratic-solver": true,
   "parabola-practice": true,

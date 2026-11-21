@@ -6,7 +6,7 @@
 export const CHAPTERS = {
   "angles-parallel": ["1. קודקודיות", "2. צמודות", "3. מתחלפות", "4. מתאימות", "5. חד-צדדיות", "6. הכל יחד"],
   "circle": ["1. היכרות", "2. רדיאנים", "3. היקף", "4. שטח", "5. קשת", "6. הכל יחד"],
-  "directed-numbers": ["1. חיבור", "2. חיסור", "3. כפל", "4. חילוק", "5. סדר פעולות", "6. תרגול מקיף", "7. שברים"],
+  "directed-numbers": ["1. מספרים מכוונים", "2. שברים", "3. המרות", "4. תרגול מקיף"],
   "equation-solver": ["1. ביטוי אלגברי", "2. פתרון משוואות"],
   "equations-advanced": ["1 — לינארית עם מכנה", "2 — ריבועית עם מכנה", "3 — כפל מקוצר", "4 — הכל יחד"],
   "inequalities": ["1. אי-שוויון פשוט", "2. ציר מספרים", "3. מערכת אי-שוויונות"],
@@ -19,7 +19,7 @@ export const CHAPTERS = {
   "pythagoras": ["פרק 1 — משולשים", "פרק 2 — יישום"],
   "quadratic-solver": ["1. משוואה פשוטה", "2. גורם משותף", "3. בידוד x²", "4. נוסחת השורשים", "5. סיכום ותרגול"],
   "quadrilaterals": ["1. ריבוע", "2. מלבן", "3. מעוין", "4. מקבילית", "5. טרפז", "6. דלתון"],
-  "ratio-percent": ["1. יחס", "2. פרופורציה", "3. המרות", "4. חישובי %", "5. עלייה/ירידה"],
+  "ratio-percent": ["1. יחס", "2. פרופורציה", "3. חישובי %", "4. עלייה/ירידה"],
   "similar-triangles": ["1. זיהוי דמיון", "2. יחס דמיון וצלע חסרה", "3. דמיון בתוך צורות"],
   "solids3d": ["1. קובייה", "2. תיבה", "3. גליל", "4. קונוס", "5. פירמידה", "6. כדור", "7. שאלות משולבות"],
   "triangles": ["1. זוויות", "2. סוגי משולשים", "3. משולשים מיוחדים", "4. חפיפה"],
@@ -28,6 +28,11 @@ export const CHAPTERS = {
 /* Old chapter names → today's, so earlier practice still counts after a
    chapter moves (circle, 2026-11-02: radians moved up to chapter 2). */
 const RENAMED = {
+  // 2026-11-21 (board #85): the topic became "יסודות החשבון"; the five directed-number chapters are the
+  // sub-chapters of its chapter 1, fractions moved up, and conversions came from ratio-percent (practice
+  // done there stays with ratio-percent: a row belongs to the page it was answered on)
+  "directed-numbers": { "1. חיבור": "1. מספרים מכוונים", "2. חיסור": "1. מספרים מכוונים", "3. כפל": "1. מספרים מכוונים", "4. חילוק": "1. מספרים מכוונים", "5. סדר פעולות": "1. מספרים מכוונים", "6. תרגול מקיף": "4. תרגול מקיף", "7. שברים": "2. שברים" },
+  "ratio-percent": { "4. חישובי %": "3. חישובי %", "5. עלייה/ירידה": "4. עלייה/ירידה" },
   // 2026-11-14 (board #70): the topic got chapters; earlier practice (no chapter name) was all equation solving
   "equation-solver": { "": "2. פתרון משוואות" },
   "circle": { "2. היקף": "3. היקף", "3. שטח": "4. שטח", "4. קשת": "5. קשת", "5. הכל יחד": "6. הכל יחד", "6. רדיאנים": "2. רדיאנים" },
