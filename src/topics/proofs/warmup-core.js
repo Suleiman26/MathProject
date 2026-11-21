@@ -11,7 +11,7 @@
 import { T } from './texts.js';
 import { REASONS } from './reasons.js';
 import { RULES } from './mastery.js';
-import { show, norm, segKey, congOf, targets } from './core.js';
+import { show, norm, segKey, congOf, targets, measure } from './core.js';
 import { partId } from './figure-core.js';
 import { bare } from './types/tiles.js';
 import readGiven from './types/read-given.js';
@@ -63,7 +63,10 @@ function w3(R) {
 }
 
 /* W4: "איזה משפט חפיפה מתאים לסימונים?" — two separate triangles with three marked pairs; the two traps:
-   the angle is not between the two sides, and three angle pairs (answer: אי אפשר לקבוע) */
+   the angle is not between the two sides, and three angle pairs (answer: אי אפשר לקבוע).
+   "Not between" is asked only when it is truly side-side-angle ambiguous (review I2): the angle is
+   opposite the SHORTER of the two marked sides, so a second, visibly different triangle has the same
+   three marks. Opposite the longer side the triangles would be congruent (צ.צ.ז, the 4th theorem). */
 const SETS = {
   sas: [['sAB', 'aB', 'sBC'], ['sCA', 'aA', 'sAB'], ['sBC', 'aC', 'sCA']],
   asa: [['aA', 'sAB', 'aB'], ['aB', 'sBC', 'aC'], ['aC', 'sCA', 'aA']],
@@ -71,16 +74,33 @@ const SETS = {
   'not-between': [['sAB', 'sBC', 'aA'], ['sAB', 'sBC', 'aC'], ['sCA', 'sAB', 'aB'], ['sCA', 'sAB', 'aC'], ['sBC', 'sCA', 'aA'], ['sBC', 'sCA', 'aB']],
   'three-angles': [['aA', 'aB', 'aC']],
 };
+const SSA_SHORTER = 0.9, SSA_APART = 0.25;      // opposite side ≤ 90% of the other; the two triangles' third vertices this far apart (× that side)
+/** Side-side-angle with two real, visibly different triangles (the angle's vertex v, adjacent side b, opposite side a). */
+export function ssaAmbiguous(fig, facts, ids) {
+  const sts = ids.map((id) => facts[id]), ang = sts.find((f) => f.kind === 'ang'), sides = sts.filter((f) => f.kind === 'seg').map((f) => f.x);
+  if (!ang || sides.length !== 2) return false;
+  const v = ang.x.v, adj = sides.find((x) => x.includes(v)), opp = sides.find((x) => !x.includes(v));
+  if (!adj || !opp) return false;
+  const a = measure(fig, opp), b = measure(fig, adj), al = measure(fig, ang.x) * Math.PI / 180;
+  if (!(a <= SSA_SHORTER * b)) return false;
+  const disc = a * a - b * b * Math.sin(al) ** 2;            // the third vertex on the other ray: s = b·cos α ± √(a² − b²·sin² α)
+  return disc > 0 && 2 * Math.sqrt(disc) >= SSA_APART * b && b * Math.cos(al) - Math.sqrt(disc) > 0;
+}
 function w4(R) {
-  const base = TWO.build(R, '2-SSS', {});
-  const real = R.bool(0.6), which = real ? R.pick(['sas', 'asa', 'sss']) : R.pick(['not-between', 'three-angles']);
-  const ids = R.pick(SETS[which]), facts = {};
-  let ticks = 0, arcs = 0;
-  ids.forEach((id, i) => { const st = bare(base.facts[id]); facts[id] = { ...st, mark: st.kind === 'seg' ? { ticks: ++ticks, color: i + 1 } : { arcs: ++arcs, color: i + 1 } }; });
-  const [t1, t2] = base.figure.tris.map((t) => `△${t.join('')}`);
-  return { kind: 'W4', text: { k: 'w.W4', vars: { t1, t2 } }, figure: base.figure, facts, marks: [...ids], reveal: [], input: 'chips',
-    options: [...['sas', 'asa', 'sss'].map((id) => ({ id, label: REASONS[id].short })), { id: 'cant', label: T['lbl.cant'] }],
-    answer: real ? which : 'cant', ...(real ? {} : { trap: which }), why: why('W4') };
+  for (let i = 0; i < 400; i++) {
+    const base = TWO.build(R, '2-SSS', {});
+    const real = R.bool(0.6), which = real ? R.pick(['sas', 'asa', 'sss']) : R.pick(['not-between', 'three-angles']);
+    const sets = which === 'not-between' ? SETS[which].filter((ids) => ssaAmbiguous(base.figure, base.facts, ids)) : SETS[which];
+    if (!sets.length) continue;
+    const ids = R.pick(sets), facts = {};
+    let ticks = 0, arcs = 0;
+    ids.forEach((id, k) => { const st = bare(base.facts[id]); facts[id] = { ...st, mark: st.kind === 'seg' ? { ticks: ++ticks, color: k + 1 } : { arcs: ++arcs, color: k + 1 } }; });
+    const [t1, t2] = base.figure.tris.map((t) => `△${t.join('')}`);
+    return { kind: 'W4', text: { k: 'w.W4', vars: { t1, t2 } }, figure: base.figure, facts, marks: [...ids], reveal: [], input: 'chips',
+      options: [...['sas', 'asa', 'sss'].map((id) => ({ id, label: REASONS[id].short })), { id: 'cant', label: T['lbl.cant'] }],
+      answer: real ? which : 'cant', ...(real ? {} : { trap: which }), why: why('W4') };
+  }
+  throw new Error('warm-up W4: no ambiguous side-side-angle set');
 }
 
 /* W5: "△ABC ≅ △EFD. איזה קודקוד מתאים לקודקוד B?" / which side matches */

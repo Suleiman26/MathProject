@@ -60,3 +60,31 @@ test('W2 / W6: both answers come up; W7 wrong options are false in the drawing; 
   }
   for (const k of Object.keys(c)) assert.ok(c[k] > 100, k);
 });
+/* review I2: "angle not between the sides" is only asked when it is truly side-side-angle ambiguous: the angle is
+   opposite the SHORTER marked side, so a second, different triangle has the same three marks */
+function ssaOf(t) {
+  const P = t.figure.points, [s1, s2, a] = t.marks.map((id) => t.facts[id]);
+  const ang = a.kind === 'ang' ? a : null, sides = [s1, s2, a].filter((f) => f.kind === 'seg').map((f) => f.x);
+  const v = ang.x.v, adj = sides.find((s) => s.includes(v)), opp = sides.find((s) => !s.includes(v));
+  const w = [...adj].find((q) => q !== v), u = ang.x.r.find((q) => q !== w);
+  const d = Math.hypot(P[u][0] - P[v][0], P[u][1] - P[v][1]), dir = [(P[u][0] - P[v][0]) / d, (P[u][1] - P[v][1]) / d];
+  const wv = [P[w][0] - P[v][0], P[w][1] - P[v][1]], b = Math.hypot(...wv), A = Math.hypot(P[opp[0]][0] - P[opp[1]][0], P[opp[0]][1] - P[opp[1]][1]);
+  const half = dir[0] * wv[0] + dir[1] * wv[1], disc = half * half - (b * b - A * A);   // |W − (V + s·dir)| = a  ⇔  s² − 2·half·s + b² − a² = 0
+  return { a: A, b, roots: disc > 0 ? [half - Math.sqrt(disc), half + Math.sqrt(disc)] : [], onRay: ang.x.r.includes(u) && opp.includes(u) && opp.includes(w), d };
+}
+test('W4 "not between": the angle is opposite the shorter side and a second, different triangle fits the marks (review I2)', () => {
+  const R = makeR(seeded(80)); let n = 0;
+  for (let i = 0; i < 3000; i++) {
+    const t = makeTask(R, 'W4');
+    if (t.trap !== 'not-between') continue;
+    n++;
+    const g = ssaOf(t);
+    assert.ok(g.onRay, 'the opposite side ends on the angle\'s other ray');
+    assert.ok(g.a < g.b * 0.95, `angle opposite the shorter side (${g.a.toFixed(3)} vs ${g.b.toFixed(3)})`);
+    assert.equal(g.roots.length, 2); assert.ok(g.roots[0] > 0.05 * g.b, 'both triangles are real');
+    assert.ok(g.roots.some((r) => Math.abs(r - g.d) < 1e-6 * g.b), 'the drawn triangle is one of the two');
+    assert.ok(g.roots[1] - g.roots[0] > 0.15 * g.b, 'the two triangles differ visibly');
+    assert.equal(t.answer, 'cant');
+  }
+  assert.ok(n > 200, `only ${n} "not between" tasks`);
+});
