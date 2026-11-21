@@ -100,6 +100,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-fc .pf-ic{font-size:13px}
 #root .pf-fc.is-used{color:var(--ink-2)}
 #root .pf-fc.is-used .pf-ic{color:var(--ok-600)}
+#root .pf-fc.is-now{border-color:var(--a-500);background:var(--a-50);color:var(--a-900)}
+#root .pf-fc-note{font-size:.78rem;color:var(--ink-3)}
+#root .pf-lk{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;font-weight:700}
+#root .pf-askst .pf-slot{width:1.9em;vertical-align:-.3em}
+#root .pf-ask-sent{flex:0 0 100%;min-width:0;padding:4px 10px;border-radius:10px;background:var(--a-50);color:var(--a-900);font-size:.95rem;line-height:1.45}
 #root .pf-fc-goal{background:var(--a-50);border:1.5px dashed var(--a-300);color:var(--a-800)}
 #root .pf-fc-goal.is-done{background:var(--ok-50);border:1.5px solid var(--ok-500);color:var(--ok-800)}
 

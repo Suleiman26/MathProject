@@ -60,7 +60,7 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
       const f = problem.facts[m.fact];
       if (!f) continue;
       if (f.kind === 'cong') { for (const t of partsOf(f)) tri[partId(t)] = m.style; continue; }
-      for (const part of partsOf(f)) (f.kind === 'seg' ? seg : ang)[partId(part, fig)] = { style: m.style, mark: f.mark || {}, part, delay: m.delay || 0 };
+      for (const part of m.only || partsOf(f)) (f.kind === 'seg' ? seg : ang)[partId(part, fig)] = { style: m.style, mark: f.mark || {}, part, delay: m.delay || 0 };   // m.only: a goal shown by one of its parts (type 2)
     }
     return { seg, ang, tri };
   }, [marks, problem, fig]);
@@ -113,7 +113,10 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
 
   const halo = (id, cls, key) => {
     const x = index[id];
-    if (!x) return null;
+    if (!x) {                                     // a drawn-only line (type 1: the sentence's line) pulses too
+      const g = id.startsWith('s:') && L.segs.find((q) => q.id === id);
+      return g ? <line key={key} className={cls} x1={r1(g.a[0])} y1={r1(g.a[1])} x2={r1(g.b[0])} y2={r1(g.b[1])} /> : null;
+    }
     if (x.kind === 'seg') { const g = L.segs.find((s) => s.id === id); return g && <line key={key} className={cls} x1={r1(g.a[0])} y1={r1(g.a[1])} x2={r1(g.b[0])} y2={r1(g.b[1])} />; }
     if (x.kind === 'ang') { const h = L.hits.find((q) => q.id === id); return h && <path key={key} className={`${cls} is-fill`} d={h.d} />; }
     const t = L.tris.find((q) => q.id === id);

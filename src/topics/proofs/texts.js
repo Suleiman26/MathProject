@@ -144,6 +144,7 @@ export const T = {
   'say.ang': 'הזווית {x} שווה לזווית {y}',
   'say.angRight': 'הזווית {x} שווה לזווית {y}, ושתיהן ישרות',
   'say.cong': 'המשולש {x} חופף למשולש {y}',
+  'say.ask': 'מחפשים את החלק ששווה לחלק {x}',
 
   /* ── the words a given sentence can use (inserted into rs.words.otherDef, why.given-words) ── */
   'word.median': 'תיכון', 'word.bisector': 'חוצה זווית', 'word.midpoint': 'אמצע', 'word.altitude': 'גובה',
@@ -238,7 +239,7 @@ export const NEW_DRAFTS = [
   'lbl.title', 'lbl.whatClaim', 'lbl.pickTile', 'lbl.tapTwo', 'lbl.tapSecond', 'lbl.matchOrder', 'lbl.chooser', 'lbl.goalCong', 'lbl.sameSeg', 'lbl.walkIntro',
   'lbl.proofDone', 'lbl.cleanN', 'lbl.cleanAria', 'lbl.figure', 'lbl.leanGiven', 'lbl.leanSeen', 'lbl.leanRows', 'lbl.here',
   'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn',
-  'ui.planOk',
+  'ui.planOk', 'say.ask',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

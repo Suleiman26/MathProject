@@ -262,7 +262,8 @@ export function whyOf(p, id, reason) {
     const [m1, m2, m3] = f.map.map(([u, v]) => `${u} ↔ ${v}`);
     return { key: `why.${th}`, vars: { m1, m2, m3 } };
   }
-  if (role === 'partner') return { key: 'why.partner', vars: { p: showPart(f.x), q: showPart(f.y) } };
+  // type 2: the letters written in the same places (a side: both its letters; an angle: its vertex)
+  if (role === 'partner') return { key: 'why.partner', vars: f.kind === 'ang' ? { p: f.x.v, q: f.y.v } : { p: f.x, q: f.y } };
   return f.kind === 'seg' ? { key: 'why.concl-side', vars: { x: f.x, y: f.y } } : { key: 'why.concl-angle', vars: { x: showPart(f.x), y: showPart(f.y) } };
 }
 
@@ -324,7 +325,7 @@ export const TYPE_N = { 'read-given': 1, 'congruent-parts': 2, 'prove-congruence
 /**
  * present(problem, level, variant, { counted, R }) → view =
  *   { mode:'walk'|'fill'|'tiles'|'tap', known:[factId] (true from the start, no row: type 2's congruence),
- *     pre:[factId] (written + justified at the start), steps:[{ fact, ask:[…], options?, chips }],
+ *     pre:[factId] (written + justified at the start; a known fact is pre but gets no row), steps:[{ fact, ask:[…], options?, chips }],
  *     tiles:[{ id, st, fact|null, why? }], chipsN, whyLine, autoHint, shortFirst, plan, ties, letters }
  * Walk and fill modes go through `steps` in order (show rows in canon order); tiles and tap modes
  * accept any valid order.
@@ -334,7 +335,7 @@ export function present(p, level, variant, ctx = {}) {
   const rows = p.canon.filter((f) => f !== congOf(p) || n !== 2);
   const known = n === 2 && congOf(p) ? [congOf(p)] : [];
   const plainGiven = (f) => (p.given || []).includes(f) && roleOf(p, f) === 'given';
-  const view = { mode: 'tiles', known, pre: [], steps: [], tiles: [], chipsN: 6, whyLine: false, autoHint: false, shortFirst: false, plan: null, ties: false, letters: false };
+  const view = { mode: 'tiles', known, pre: [...known], steps: [], tiles: [], chipsN: 6, whyLine: false, autoHint: false, shortFirst: false, plan: null, ties: false, letters: false };
   const step = (fact, ask, extra = {}) => ({ fact, ask, chips: view.chipsN, ...extra });
   const gap = (fact) => step(fact, ['statement'], { options: optionsFor(p, fact, 3, R) });
   const tile = (st, fact, why) => ({ st, fact, ...(why ? { why } : {}) });
@@ -361,7 +362,7 @@ export function present(p, level, variant, ctx = {}) {
     view.mode = 'tiles'; view.plan = n === 4 ? 'tris' : null;
     if (variant === 'A') {
       view.whyLine = true; view.chipsN = n === 2 ? 4 : 6;
-      view.pre = big ? rows.filter((f) => (p.given || []).includes(f)) : [];
+      view.pre = big ? rows.filter((f) => (p.given || []).includes(f)) : [...known];
       const todo = rows.filter((f) => !view.pre.includes(f));
       view.steps = todo.map((f) => step(f, ['statement', 'reason']));
       const extra = n === 1 ? wrongTiles.slice(0, 2) : n === 2 ? wrongTiles.slice(0, 1) : [];

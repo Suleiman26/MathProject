@@ -46,9 +46,9 @@ export default function EndCard({ problem, rows, clean, counted = true, dots = [
           <div className="pf-page-in">
             {(p.text || []).map((t, i) => <p key={i} className="pf-page-l"><Tx k={t.key} vars={t.vars} /></p>)}
             <p className="pf-page-l"><b>{T['lbl.given']}</b>{' '}
-              {(p.givenText || []).map((g, i) => <React.Fragment key={i}>{i > 0 && ', '}{g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />}</React.Fragment>)}
+              {(p.givenText || []).map((g, i) => <React.Fragment key={i}>{i > 0 && ', '}{g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />}{g.byOrder && ` ${T['lbl.byOrder']}`}</React.Fragment>)}
             </p>
-            <p className="pf-page-l"><b>{T['lbl.toProve']}</b>{' '}{targets(p).map((t, i) => <React.Fragment key={t}>{i > 0 && ', '}<St st={p.facts[t]} /></React.Fragment>)}</p>
+            {p.type !== 'read-given' && <p className="pf-page-l"><b>{T['lbl.toProve']}</b>{' '}{targets(p).map((t, i) => <React.Fragment key={t}>{i > 0 && ', '}<St st={p.facts[t]} /></React.Fragment>)}</p>}
             <table className="pf-table">
               <thead><tr><th scope="col">{T['lbl.claim']}</th><th scope="col">{T['lbl.reason']}</th></tr></thead>
               <tbody>

@@ -95,7 +95,9 @@ function hintFx(s, rung) {
   if (role === 'given-words') { const def = acceptedReasons(p, fact).find((r) => DEFS.includes(r)); vars.word = def ? T[`word.${def}`] : ''; }
   if (role === 'vertical') vars.pt = f.x.v;
   if (role === 'partner') vars.letter = typeof f.x === 'string' ? f.x[0] : f.x.v;
-  return { t: 'hint', rung, key: `hint.${role}.${rung}`, vars, parts: partsOf(f) };
+  // while the statement is open, types 1 and 2 point only where to look (p.cue): both parts would give the answer away
+  const cue = s.cur.kind === 'statement' && p.cue && p.cue[fact];
+  return { t: 'hint', rung, key: `hint.${role}.${rung}`, vars, parts: cue || partsOf(f) };
 }
 function taint(s) { if (!s.cur.tainted) { s.cur.tainted = true; s.nonSolo += 1; } }
 function decide(s, state, fact, label = s.cur.label) {
@@ -239,7 +241,7 @@ export function start(problem, view) {
     v: 1, problem, view, done: [...known], rows: [], pending: null, cur: null, decisions: [], errs: {}, nonSolo: 0,
     stash: {}, placed: [], stepI: 0, nst: 0, ended: false,
   };
-  for (const f of pre) { s.rows.push({ fact: f, reason: firstReason(problem, f, s.done), by: 'app' }); s.done.push(f); }
+  for (const f of pre) { if (s.done.includes(f)) continue; s.rows.push({ fact: f, reason: firstReason(problem, f, s.done), by: 'app' }); s.done.push(f); }   // a known fact (type 2's congruence) has no row
   if (view.mode === 'fill') advance(s, []);
   else if (!ORDERED(view)) openStatement(s);
   return s;

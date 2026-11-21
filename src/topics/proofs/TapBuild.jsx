@@ -13,8 +13,8 @@ import { St, Mx, IcList, IcClose } from './signs.jsx';
 const KINDS = [['seg', 'lbl.segs'], ['ang', 'lbl.angs'], ['tri', 'lbl.tris']];
 
 /** The selection in the drawing: at most two parts of one kind. */
-export function useSelection(problem, onNote) {
-  const list = useMemo(() => partsIndex(problem.figure), [problem]);
+export function useSelection(problem, onNote, kinds = null) {
+  const list = useMemo(() => partsIndex(problem.figure).filter((x) => !kinds || kinds.includes(x.kind)), [problem]); // eslint-disable-line react-hooks/exhaustive-deps
   const index = useMemo(() => Object.fromEntries(list.map((x) => [x.id, x])), [list]);
   const [selected, setSelected] = useState([]);
   const [chooser, setChooser] = useState(null);

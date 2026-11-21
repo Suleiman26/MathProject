@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { seeded, makeR } from '../new/core.js';
 import { TYPES, TABS, tabOf, typeById } from './types/index.js';
 import { lies } from './families/kit.js';
-import { present, classify, checkReason, isDone, canonRows, required, decisionsOf, show, norm } from './core.js';
+import { present, classify, checkReason, isDone, canonRows, required, decisionsOf, show, norm, holds, optionsFor, whyOf } from './core.js';
 import { start, act, restore, snapshot } from './session.js';
 
 const RUNS = Number(process.env.RUNS || 3000);
@@ -166,4 +166,79 @@ test('type 4: wrong tiles are one unused consequence and one letter-swap; the go
 test('type 4: remake rebuilds the same problem', () => {
   const t = typeById('then-conclusion'), R = makeR(seeded(44));
   for (let i = 0; i < 20; i++) { const p = t.make(R, 2, 'B', { recent: [], last: null }, { words: ['midpoint', 'bisector'] }), q = t.remake(p); assert.equal(q.id, p.id); assert.deepEqual(q.facts, p.facts); assert.deepEqual(q.tiles, p.tiles); assert.deepEqual(q.figure, p.figure); }
+});
+
+/* ── Task 17: type 2 ── */
+test('type 2: 6 templates; three asked parts with a side and an angle; no marks at the start', () => {
+  const t = typeById('congruent-parts'); assert.equal(t.templates.length, 6); assert.equal(t.button, '2. מחפיפה לשוויונות');
+  assert.deepEqual(t.templates.map((x) => x.id), ['2-a', '2-b', '2-c', '2-d', '2-e', '2-f']); assert.deepEqual(t.warm, ['W5']);
+  const R = makeR(seeded(11));
+  for (let i = 0; i < 500; i++) {
+    const p = t.make(R, 2, 'B', { recent: [], last: null }, {});
+    assert.equal(p.target.length, 3); const kinds = p.target.map((f) => p.facts[f].kind); assert.ok(kinds.includes('seg') && kinds.includes('ang'));
+    assert.deepEqual(p.given, ['cong']); assert.deepEqual(present(p, 2, 'B', { R }).pre, ['cong']);
+    assert.deepEqual(start(p, present(p, 2, 'B', { R })).rows, []);                     // the given congruence is no row, and no mark is drawn
+    for (const f of p.target) { assert.equal(classify(p, ['cong'], p.facts[f]).c, 'ok'); assert.equal(checkReason(p, ['cong'], f, p.facts[f].kind === 'seg' ? 'cp-sides' : 'cp-angles').ok, true); }
+    const rest = Object.keys(p.facts).filter((f) => f !== 'cong' && !p.target.includes(f)); assert.equal(rest.length, 3);
+    assert.equal(classify(p, ['cong'], p.facts[rest[0]]).textKey, 'st.notAsked');
+    for (const w of p.tiles.wrong) { const c = classify(p, ['cong'], w.st); assert.deepEqual([c.c, c.kind, c.textKey], ['false', 'wrong-matching', 'st.partner']); }
+  }
+});
+test('type 2: 2-b is not alphabetical; 2-f matches A with C', () => {
+  const t = typeById('congruent-parts'), R = makeR(seeded(12));
+  for (let i = 0; i < 50; i++) { const b = t.make(R, 1, 'B', { recent: [], last: null }, { only: '2-b' }); const second = b.facts.cong.map.map((m) => m[1]).join(''); assert.notEqual(second, [...second].sort().join('')); }
+  const f = t.make(R, 1, 'B', { recent: [], last: null }, { only: '2-f' }); const m = Object.fromEntries(f.facts.cong.map); const [x] = Object.keys(m).filter((k) => m[m[k]] === k && m[k] !== k); assert.ok(x);
+  const d = t.make(R, 1, 'B', { recent: [], last: null }, { only: '2-d' }); assert.ok(d.facts.cong.map.some(([u, v]) => u === v && u === 'O'));
+  const e = t.make(R, 1, 'B', { recent: [], last: null }, { only: '2-e' }); assert.equal(e.facts.cong.map.filter(([u, v]) => u === v).length, 2);
+  const a = t.make(R, 1, 'A', { recent: [], last: null }, {}); assert.equal(a.template, '2-a');
+  const c = t.make(R, 1, 'B', { recent: [], last: null }, { only: '2-c' }); assert.equal(c.figure.motion.mirror, true);
+});
+test('type 2: the pairs follow the written matching, a shared side is never asked, the partner part reads in order', () => {
+  const t = typeById('congruent-parts'), R = makeR(seeded(13));
+  for (let i = 0; i < 300; i++) {
+    const p = t.make(R, 2, 'B', { recent: [], last: null }, {}), F = Object.fromEntries(p.facts.cong.map);
+    for (const [id, f] of Object.entries(p.facts)) {
+      if (f.kind === 'cong') continue;
+      assert.equal(holds(p.figure, f), true, `${p.id} ${id}`);
+      if (f.kind === 'seg') assert.equal(f.y, [...f.x].map((q) => F[q]).join('')); else assert.equal(f.y.v, F[f.x.v]);
+    }
+    for (const id of p.target) { const f = p.facts[id]; assert.ok(!(f.kind === 'seg' && [...f.x].sort().join('') === [...f.y].sort().join('')), `${p.id} asks a shared side`); assert.deepEqual(p.cue[id], [f.x]); }
+    assert.equal(p.givenText.length, 1); assert.equal(p.givenText[0].byOrder, true);
+    // every wrong partner (also in Level 1 options) gets the matching explanation, never "false" alone
+    for (const id of p.target) for (const o of optionsFor(p, id, 3, R)) { const c = classify(p, ['cong'], o); assert.ok(c.c === 'ok' || c.textKey === 'st.partner', `${p.id} option ${show(o)} → ${c.textKey}`); }
+  }
+});
+test('type 2: a wrong partner names the right vertex in the explanation', () => {
+  const p = typeById('congruent-parts').make(makeR(seeded(14)), 2, 'B', { recent: [], last: null }, { only: '2-b' });
+  const M = p.facts.cong.map, F = Object.fromEntries(M);
+  for (const w of p.tiles.wrong) {
+    const c = classify(p, ['cong'], w.st), { p: v, q } = c.vars;
+    assert.equal(F[v], q); assert.equal(c.vars.place, ['הראשון', 'השני', 'השלישי'][M.findIndex((m) => m[0] === v)]);
+    assert.ok(!(w.st.kind === 'seg' ? [...w.st.y] : [w.st.y.v]).includes(q) || w.st.kind === 'seg');
+  }
+  assert.ok(new Set(p.tiles.wrong.map((w) => w.why)).size >= 2);
+});
+test('type 2: the why-line names the letters in the same places', () => {
+  const p = typeById('congruent-parts').make(makeR(seeded(15)), 1, 'A', { recent: [], last: null }, {});
+  const a = p.target.find((f) => p.facts[f].kind === 'ang'), s = p.target.find((f) => p.facts[f].kind === 'seg');
+  assert.deepEqual(whyOf(p, a).vars, { p: p.facts[a].x.v, q: p.facts[a].y.v }); assert.deepEqual(whyOf(p, s).vars, { p: p.facts[s].x, q: p.facts[s].y });
+});
+test('type 2: a hint while the partner is open pulses only the asked part', () => {
+  const p = typeById('congruent-parts').make(makeR(seeded(16)), 2, 'B', { recent: [], last: null }, {}), view = present(p, 2, 'B', { R: makeR(seeded(1)) });
+  const o = act(start(p, view), { t: 'hint' }), h = o.fx.find((f) => f.t === 'hint');
+  assert.equal(h.parts.length, 1); assert.equal(h.key, 'hint.partner.1');
+});
+test('decisions: type 2 = 1, 3, 6, 6, 6', () => {
+  const t = typeById('congruent-parts'), R = makeR(seeded(17));
+  const n = (l, v) => decisionsOf(present(t.make(R, l, v, { recent: [], last: null }, {}), l, v, { counted: 2, R }));
+  assert.deepEqual([n(1, 'A'), n(1, 'B'), n(2, 'A'), n(2, 'B'), n(3, 'B')], [1, 3, 6, 6, 6]);
+  const p = t.make(R, 2, 'A', { recent: [], last: null }, {}), v = present(p, 2, 'A', { R });
+  assert.equal(v.tiles.filter((x) => x.fact).length, 3); assert.equal(v.tiles.filter((x) => !x.fact).length, 1); assert.equal(v.chipsN, 4);
+  const q = t.make(R, 2, 'B', { recent: [], last: null }, {}), w = present(q, 2, 'B', { R });
+  assert.equal(w.tiles.filter((x) => !x.fact).length, 3); assert.equal(w.chipsN, 6);
+  assert.equal(present(p, 1, 'A', { R }).letters, true); assert.equal(present(p, 2, 'B', { R }).letters, false);
+});
+test('type 2: remake rebuilds the same problem', () => {
+  const t = typeById('congruent-parts'), R = makeR(seeded(18));
+  for (let i = 0; i < 30; i++) { const p = t.make(R, 2, 'B', { recent: [], last: null }, {}), q = t.remake(p); assert.equal(q.id, p.id); assert.deepEqual(q.facts, p.facts); assert.deepEqual(q.tiles, p.tiles); assert.deepEqual(q.figure, p.figure); assert.deepEqual(q.target, p.target); }
 });

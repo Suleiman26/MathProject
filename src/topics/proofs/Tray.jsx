@@ -76,7 +76,9 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
         {head && (
           <div className="pf-ask">
             <div className="pf-ask-t">
+              {head.sent && <span className="pf-ask-sent">{head.sent}</span>}
               {head.kicker && <span className="pf-ask-k">{head.kicker}</span>}
+              {head.lead}
               {head.st && <St st={head.st} color={head.color} className="pf-ask-st" />}
               {head.reason && <span className="pf-ask-r">{head.reason}</span>}
               {head.ask && <span className="pf-ask-q">{head.ask}</span>}

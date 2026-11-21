@@ -3,7 +3,7 @@
    small inline SVGs (Rubik has no such glyphs; spec §11 "Signs"). Each sign has a Hebrew name for
    screen readers. Also the small line icons the screens share (never an emoji, never a "✓" char). */
 import React from 'react';
-import { tx } from './texts.js';
+import { tx, fill } from './texts.js';
 import { show, say, showPart } from './core.js';
 
 const SIGNS = {
@@ -47,6 +47,25 @@ export function Mx({ s, label, className, style }) {
 /** A statement island, read aloud as a Hebrew sentence. `color` paints it in a pair colour (Level 1). */
 export function St({ st, color, className }) {
   return <Mx s={show(st)} label={say(st)} className={className} style={color ? { color } : undefined} />;
+}
+/** Type 2: an asked part and an empty box for its partner ("AB = ▢"), read as "AB שווה ל…". */
+export function Ask({ part, className }) {
+  return (
+    <span className={`pf-m pf-askst${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={fill('say.ask', { x: showPart(part) })}>
+      <span aria-hidden="true"><Mx s={`${showPart(part)} =`} /> <i className="pf-slot" /></span>
+    </span>
+  );
+}
+/** A congruence island whose letters at the positions `at` (0–2) carry a pair colour in both
+    triangles (type 2, Level 1: position 1 ↔ position 1). Colour is never alone: the letters are underlined too. */
+export function CongSt({ st, at = [], color, className }) {
+  const [t1, t2] = [st.map.map((m) => m[0]), st.map.map((m) => m[1])];
+  const tri = (t) => <><Sign name="tri" quiet />{t.map((q, i) => (at.includes(i) ? <span key={i} className="pf-lk" style={color ? { color } : undefined}>{q}</span> : <span key={i}>{q}</span>))}</>;
+  return (
+    <span className={`pf-m${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={say(st)}>
+      <span aria-hidden="true">{tri(t1)} <Sign name="cong" quiet /> {tri(t2)}</span>
+    </span>
+  );
 }
 /** A part's name ("AO", "∢AOC", "△AOC") as an island. */
 export function Part({ part }) { return <Mx s={showPart(part)} />; }
