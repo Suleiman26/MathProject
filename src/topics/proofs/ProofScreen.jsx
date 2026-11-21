@@ -42,7 +42,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const [live, setLive] = useState('');
   // type 4: the unscored plan question "באילו שני משולשים נמצאים …?" before the first row (not a decision, no row)
   const [planQ, setPlanQ] = useState(() => (!restored && view.plan === 'tris' && (problem.figure.tris || []).length === 2 ? { picked: [] } : null));
-  const n = useRef(0), timers = useRef({}), rowsEl = useRef(null), qedDone = useRef(false), intro = useRef(!restored);
+  const n = useRef(0), timers = useRef({}), rowsEl = useRef(null), workEl = useRef(null), qedDone = useRef(false), intro = useRef(!restored);
   const reduce = useReducedMotion();
   const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), type.n <= 2 ? ['seg', 'ang'] : null);
   const p = problem, cur = s.cur, mode = s.view.mode, cong = congOf(p);
@@ -121,6 +121,14 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     if (el && s.rows.length !== rowsSeen.current) el.scrollTop = el.scrollHeight;
     rowsSeen.current = s.rows.length;
   }, [s.rows.length]);
+  // on a computer the page itself scrolls (the sheet is as tall as its rows): keep the sheet's foot, where the tray is, in view
+  useEffect(() => {
+    const el = workEl.current;
+    if (!el || !window.matchMedia || !window.matchMedia('(min-width:1024px) and (min-height:501px)').matches) return;
+    if (end && cardOn) { window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); return; }   // the end: the result line first, the notebook page under it
+    const over = el.getBoundingClientRect().bottom - window.innerHeight + 16;
+    if (over > 0) window.scrollBy({ top: over, behavior: reduce ? 'auto' : 'smooth' });
+  }, [s.rows.length, curKey, cardOn, fbs, why, hintLine, leans, planQ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* type 4's plan question: tap the two triangles (in the drawing or as chips); the reply is a private note */
   function pickPlan(id) {
@@ -304,7 +312,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
             tappable={planQ ? ['tri'] : tapping ? (tn <= 2 ? ['seg', 'ang'] : ['seg', 'ang', 'tri']) : false} onPart={planQ ? (id) => pickPlan(id) : sel.tap} ending={ending} />
         </div>
       </div>
-      <div className="prf-work">
+      <div className="prf-work" ref={workEl}>
         <div className="prf-strip">
           <span className="prf-strip-given">
             <span className="prf-strip-k">{T['lbl.given']}</span>
