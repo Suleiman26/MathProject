@@ -5,6 +5,11 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// Chapters 1–3 (fixes board #84, Sulaiman 2026-11-21) come from the "חדש" module: src/topics/new/ (Mount.jsx, chapters/).
+import NewChapter from '../new/Mount';
+import shortMult from '../new/chapters/algebra/short-mult.js';
+import factoring from '../new/chapters/algebra/factoring.js';
+import algFractions from '../new/chapters/algebra/alg-fractions.js';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useEffect, useRef } = React;
@@ -3248,12 +3253,15 @@ function Section5() {
 
 // ─── App root ─────────────────────────────────
 function App() {
-  const [tab, setTab] = useState(1);
+  const [tab, setTab] = useState(6);
   const tabs = [
-    { k:1, label:'1 — לינארית עם מכנה' },
-    { k:2, label:'2 — ריבועית עם מכנה' },
-    { k:3, label:'3 — כפל מקוצר' },
-    { k:5, label:'4 — הכל יחד' },   // 'common factor' moved to the quadratic equations topic (c = 0)
+    { k:6, label:'1 — חוק הפילוג המורחב וכפל מקוצר' },   // 6–8: from the "חדש" module (board #84)
+    { k:7, label:'2 — פירוק לגורמים' },
+    { k:8, label:'3 — שברים אלגבריים' },
+    { k:1, label:'4 — לינארית עם מכנה' },
+    { k:2, label:'5 — ריבועית עם מכנה' },
+    { k:3, label:'6 — כפל מקוצר' },
+    { k:5, label:'7 — הכל יחד' },   // 'common factor' moved to the quadratic equations topic (c = 0)
   ];
   return (
     <div>
@@ -3269,6 +3277,9 @@ function App() {
       {tab===3&&<Section3/>}
       {tab===4&&<Section4/>}
       {tab===5&&<Section5/>}
+      {tab===6&&<NewChapter ch={shortMult}/>}
+      {tab===7&&<NewChapter ch={factoring}/>}
+      {tab===8&&<NewChapter ch={algFractions}/>}
     </div>);
 }
 

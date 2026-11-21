@@ -60,7 +60,7 @@ const LIST = [
   ['dn.mul', 'directed-numbers', '1. מספרים מכוונים', BOTH, dn.mul],
   ['dn.div', 'directed-numbers', '1. מספרים מכוונים', BOTH, dn.div],
   ['dn.combo', 'directed-numbers', '4. תרגול מקיף', BOTH, dn.combo],
-  ['eq.linear', 'equation-solver', '2. פתרון משוואות', BOTH, eq.linear],   // the topic has chapter buttons since 2026-11-14
+  ['eq.linear', 'equation-solver', '4. פתרון משוואות', BOTH, eq.linear],   // the topic has chapter buttons since 2026-11-14
   ['pr.powers', 'powers-roots', '1. הבנת חזקות', TYPED, pr.powers],
   ['pr.laws', 'powers-roots', '2. חוקי חזקות', BOTH, pr.laws],
   ['pr.param', 'powers-roots', '3. פרמטרי', BOTH, pr.param],
@@ -91,15 +91,15 @@ const LIST = [
   ['ci.mix', 'circle', '6. הכל יחד', BOTH, ci.combined],
   ['tr.angles', 'triangles', '1. זוויות', BOTH, tr.angles],
   ['tr.special', 'triangles', '3. משולשים מיוחדים', BOTH, tr.special],
-  ['lf.slope', 'linear-function', '4. חישוב שיפוע', BOTH, lf.slope],
-  ['lf.read', 'linear-function', '6. זיהוי שיפוע וחיתוך', BOTH, lf.readLine],
-  ['lf.rearr', 'linear-function', '7. סידור וזיהוי', BOTH, lf.rearrange],
-  ['lf.mpoint', 'linear-function', '8. ישר מ-m ונקודה', BOTH, lf.slopePoint],
-  ['lf.twopts', 'linear-function', '9. ישר מ-2 נקודות', BOTH, lf.twoPoints],
+  ['lf.slope', 'linear-function', '5. חישוב שיפוע', BOTH, lf.slope],
+  ['lf.read', 'linear-function', '7. זיהוי שיפוע וחיתוך', BOTH, lf.readLine],
+  ['lf.rearr', 'linear-function', '8. סידור וזיהוי', BOTH, lf.rearrange],
+  ['lf.mpoint', 'linear-function', '9. ישר מ-m ונקודה', BOTH, lf.slopePoint],
+  ['lf.twopts', 'linear-function', '10. ישר מ-2 נקודות', BOTH, lf.twoPoints],
   ['ix.lines', 'intersection', '1. ישר–ישר', BOTH, ix.lineLine],
-  ['ea.linfrac', 'equations-advanced', '1 — לינארית עם מכנה', BOTH, ea.linearFrac],
-  ['ea.sm', 'equations-advanced', '3 — כפל מקוצר', BOTH, ea.shortMult],
-  ['ea.combo', 'equations-advanced', '4 — הכל יחד', BOTH, ea.combined],
+  ['ea.linfrac', 'equations-advanced', '4 — לינארית עם מכנה', BOTH, ea.linearFrac],
+  ['ea.sm', 'equations-advanced', '6 — כפל מקוצר', BOTH, ea.shortMult],
+  ['ea.combo', 'equations-advanced', '7 — הכל יחד', BOTH, ea.combined],
   ['qs.coef', 'quadratic-solver', '4. נוסחת השורשים', BOTH, qs.coefficients],   // chapters renamed 2026-11-13 (a, b, c are read for the formula)
 ];
 

@@ -7,6 +7,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 // The root sign that covers everything under it (fixes board #65).
 import { Root as MpRoot } from '@/components/Root';
+// Chapter 6 (fixes board #84, Sulaiman 2026-11-21) comes from the "חדש" module: src/topics/new/ (Mount.jsx, chapters/).
+import NewChapter from '../new/Mount';
+import { wordsQuadratic } from '../new/chapters/equations/word-problems.js';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useMemo, useRef, useEffect } = React;
@@ -666,7 +669,7 @@ function FormulaTemplate({a,b,c,n=4}){
 }
 
 /* ── Chapters (fixes board #61): one case at a time, explanation → "הבנתי" → practice ─── */
-const QS_CH=['1. משוואה פשוטה','2. גורם משותף','3. בידוד x²','4. נוסחת השורשים','5. סיכום ותרגול'];
+const QS_CH=['1. משוואה פשוטה','2. גורם משותף','3. בידוד x²','4. נוסחת השורשים','5. סיכום ותרגול','6. שאלות מילוליות'];
 const QS_KIND={2:'c0',3:'b0',4:'none',5:'mix'};
 const QS_KEY='qs-learned';
 function loadLearned(){try{return JSON.parse(localStorage.getItem(QS_KEY))||{}}catch(e){return{}}}
@@ -845,7 +848,7 @@ function App(){
     if(i>1){setTab('practice');toTop()}
   }
   const kind=QS_KIND[ch];
-  const{t,B}=QS_LESSON[ch];
+  const{t,B}=QS_LESSON[ch]||{};
   return(
     <div className="app">
       <h1>משוואות ריבועיות</h1>
@@ -853,13 +856,14 @@ function App(){
       <div className="ch-nav qs-chnav" ref={top}>
         {QS_CH.map((l,i)=><button key={i} type="button" className={`ch-btn ${ch===i+1?'active':''}`} onClick={()=>go(i+1)}>{l}</button>)}
       </div>
-      {ch>1&&<div className="sub-tabs">
+      {ch===6&&<NewChapter ch={wordsQuadratic}/>}
+      {ch>1&&ch<6&&<div className="sub-tabs">
         <button type="button" className={`sub-tab ${tab==='learn'?'active':''}`} onClick={()=>{setTab('learn')}}>{ch===5?'סיכום':'הסבר ודוגמה'}</button>
         <button type="button" className={`sub-tab ${tab==='practice'?'active':''}`} disabled={!learned[ch]} onClick={()=>setTab('practice')}>{learned[ch]?'':'🔒 '}{ch===5?'תרגול משולב':'תרגול'}</button>
       </div>}
-      {ch>1&&!learned[ch]&&<div className="qs-lock">התרגול נפתח אחרי שקוראים את ההסבר ולוחצים ״הבנתי״.</div>}
-      {(ch===1||tab==='learn')&&<Lesson ch={ch} learned={!!learned[ch]} onOk={()=>ok(ch)} onGo={go}/>}
-      {ch>1&&tab==='practice'&&learned[ch]&&<>
+      {ch>1&&ch<6&&!learned[ch]&&<div className="qs-lock">התרגול נפתח אחרי שקוראים את ההסבר ולוחצים ״הבנתי״.</div>}
+      {ch<6&&(ch===1||tab==='learn')&&<Lesson ch={ch} learned={!!learned[ch]} onOk={()=>ok(ch)} onGo={go}/>}
+      {ch>1&&ch<6&&tab==='practice'&&learned[ch]&&<>
         {kind!=='none'&&<details className="qs-example qs-info">
           <summary><span>תזכורת: {t}</span></summary>
           <div className="qs-info-body"><B/></div>

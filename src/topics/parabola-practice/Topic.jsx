@@ -11,6 +11,9 @@ const Fr = ({ n, d }) => <span className="pp-fr" dir="ltr"><span>{n}</span><span
 // The root sign that covers everything under it (fixes board #65).
 import { Root } from '@/components/Root';
 import { drawGraph, graphDpr, monoCheck, MonoRows, MonoError, MonoSummary, signCheck, SignRows, SignError, SignSummary, SIGN_EMPTY, QuadIntro } from './extras';
+// Chapter 2 (fixes board #84, Sulaiman 2026-11-21) comes from the "חדש" module: src/topics/new/ (Mount.jsx, chapters/).
+import NewChapter from '../new/Mount';
+import parabolaShifts from '../new/chapters/equations/parabola-shifts.js';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useEffect, useRef, useCallback } = React;
@@ -1202,9 +1205,10 @@ function Section10() {
 }
 
 // ── Main App ──────────────────────────────────────────────────────────────────
-const SECTIONS = [Section1, Section2, Section3, Section4, Section5, Section6, Section7, Section8, Section9, Section10];
+const SectionShifts = () => <NewChapter ch={parabolaShifts} />;
+const SECTIONS = [Section1, SectionShifts, Section2, Section3, Section4, Section5, Section6, Section7, Section8, Section9, Section10];
 const SECTION_NAMES = [
-  'השפעת מקדמים', 'ציר סימטריה', 'קודקוד מגרף', 'קודקוד ממשוואה',
+  'השפעת מקדמים', 'הזזות של פרבולה', 'ציר סימטריה', 'קודקוד מגרף', 'קודקוד ממשוואה',
   'שרטוט חופשי', 'חיתוך ציר y', 'שורשים', 'עלייה/ירידה', 'חיוביות/שליליות', 'חקירה מלאה'
 ];
 

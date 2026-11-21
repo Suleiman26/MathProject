@@ -9,6 +9,11 @@ import ReactDOM from 'react-dom';
 import WordsChapter from './WordsChapter';
 // Chapter 2's explanation before the practice (fixes board #90) lives in ./EqLesson.jsx.
 import EqLesson from './EqLesson';
+// Chapters 2, 3 and 5 (fixes board #84, Sulaiman 2026-11-21) come from the "חדש" module: src/topics/new/ (Mount.jsx, chapters/).
+import NewChapter from '../new/Mount';
+import likeTerms from '../new/chapters/algebra/like-terms.js';
+import distributive from '../new/chapters/algebra/distributive.js';
+import { wordsLinear } from '../new/chapters/equations/word-problems.js';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useMemo, useEffect, useRef } = React;
@@ -191,7 +196,7 @@ function OpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX,v='x'}){
    A student who already solved equations here comes back to the solver; the last chapter is remembered. */
 const CH_KEY='mp-equation-solver-ch';
 const EQ_SEEN='mp-equation-solve-seen';
-function loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c===1||c===2)return c}catch(e){}return done>0?2:1}
+function loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c>=1&&c<=5)return c}catch(e){}return done>0?2:1}
 function App(){
   const[done,setDone]=useState(loadDone);
   const[ch,setChState]=useState(()=>loadCh(done));
@@ -276,10 +281,16 @@ function App(){
         <span className="hdr-sub">כיתה ז׳</span>
         <div className="ch-nav">
           <button className={`ch-btn ${ch===1?'active':''}`} onClick={()=>setCh(1)}>1. ביטוי אלגברי</button>
-          <button className={`ch-btn ${ch===2?'active':''}`} onClick={()=>setCh(2)}>2. פתרון משוואות</button>
+          <button className={`ch-btn ${ch===3?'active':''}`} onClick={()=>setCh(3)}>2. כינוס איברים דומים</button>
+          <button className={`ch-btn ${ch===4?'active':''}`} onClick={()=>setCh(4)}>3. חוק הפילוג</button>
+          <button className={`ch-btn ${ch===2?'active':''}`} onClick={()=>setCh(2)}>4. פתרון משוואות</button>
+          <button className={`ch-btn ${ch===5?'active':''}`} onClick={()=>setCh(5)}>5. שאלות מילוליות</button>
         </div>
       </div>
       {ch===1&&<WordsChapter/>}
+      {ch===3&&<NewChapter ch={likeTerms}/>}
+      {ch===4&&<NewChapter ch={distributive}/>}
+      {ch===5&&<NewChapter ch={wordsLinear}/>}
       {ch===2&&<div className="content wx">
         <div className="sub-tabs">
           <button className={`sub-tab ${eqTab==='learn'?'active':''}`} onClick={()=>setEqTab('learn')}>הסבר ודוגמה</button>

@@ -26,12 +26,15 @@ export const CALC_TOPICS = {
   "intersection": true,
   "linear-function": true,
   // the "חדש" module (board #84): where numbers are computed; not in the algebra-technique chapters
-  "new": { only: ["3. שאלות מילוליות", "5. מנסרה משולשת", "6. שכיחות ושכיחות יחסית", "7. הסתברות", "8. קנה מידה", "9. מבוא לפונקציות", "11. ממוצע, חציון, שכיח וטווח", "12. זווית חיצונית למשולש", "13. צלעות וזוויות במשולש", "20. משולש 30°-60°-90° ותיכון ליתר", "21. יחס שטחים במשולשים דומים", "22. הסתברות: מאורע משלים ודו-שלבי"] },
+  "new": { only: ["2. מנסרה משולשת", "3. קנה מידה", "4. זווית חיצונית למשולש", "5. צלעות וזוויות במשולש", "6. משולש 30°-60°-90° ותיכון ליתר", "7. יחס שטחים במשולשים דומים"] },
+  // statistics and probability (board #84, 2026-11-21): means, relative frequencies, probabilities
+  "statistics": true,
 
   // no calculator: the exercise is "compute this" / the algebra steps themselves
   "directed-numbers": false,
   "powers-roots": false,
-  "equation-solver": false,
+  "equation-solver": { only: ["5. שאלות מילוליות"] }, // the stories (board #84): the equation is the skill, not the sums
+  "systems": false,
   "equations-advanced": false, // (its quadratic chapters get the calculator through EQN_TOPICS below)
   "inequalities": false,
 };
@@ -42,9 +45,9 @@ export const CALC_TOPICS = {
    CALC_TOPICS says `false` for its topic (equations-advanced: only its quadratic chapters). */
 export const EQN_TOPICS = {
   "quadratic-solver": true,
-  "parabola-practice": { only: ["7. שורשים", "9. חיוביות/שליליות", "10. חקירה מלאה"] }, // where the roots are needed
+  "parabola-practice": { only: ["8. שורשים", "10. חיוביות/שליליות", "11. חקירה מלאה"] }, // where the roots are needed
   "intersection": { only: ["2. ישר–פרבולה"] },
-  "equations-advanced": { only: ["2 — ריבועית עם מכנה", "4 — הכל יחד"] },
+  "equations-advanced": { only: ["5 — ריבועית עם מכנה", "7 — הכל יחד"] },
 };
 
 const norm = (t) => (t || "").replace(/\s+/g, " ").trim();

@@ -5,6 +5,9 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// Chapter 3 (fixes board #84, Sulaiman 2026-11-21) comes from the "חדש" module: src/topics/new/ (Mount.jsx, chapters/).
+import NewChapter from '../new/Mount';
+import functionsIntro from '../new/chapters/data/functions-intro.js';
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useRef,useCallback,useEffect,useMemo}=React;
@@ -1255,13 +1258,14 @@ const CHAPTERS=[
   {label:'0. מערכת הצירים',comp:Chapter0},
   {label:'1. קריאת נקודות',comp:Chapter1},
   {label:'2. סימון נקודות',comp:Chapter2},
-  {label:'3. קו ישר ושיפוע',comp:ChapterSlopeIntro},
-  {label:'4. חישוב שיפוע',comp:Chapter3},
-  {label:'5. משוואת y=mx+b',comp:ChapterLineEqIntro},
-  {label:'6. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},
-  {label:'7. סידור וזיהוי',comp:ChapterRearrangeIdEq},
-  {label:'8. ישר מ-m ונקודה',comp:Chapter5},
-  {label:'9. ישר מ-2 נקודות',comp:Chapter6},
+  {label:'3. מבוא לפונקציות',comp:()=><NewChapter ch={functionsIntro}/>},
+  {label:'4. קו ישר ושיפוע',comp:ChapterSlopeIntro},
+  {label:'5. חישוב שיפוע',comp:Chapter3},
+  {label:'6. משוואת y=mx+b',comp:ChapterLineEqIntro},
+  {label:'7. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},
+  {label:'8. סידור וזיהוי',comp:ChapterRearrangeIdEq},
+  {label:'9. ישר מ-m ונקודה',comp:Chapter5},
+  {label:'10. ישר מ-2 נקודות',comp:Chapter6},
 ];
 
 function App(){
