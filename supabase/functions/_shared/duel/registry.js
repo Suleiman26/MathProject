@@ -69,8 +69,8 @@ const LIST = [
   ['rp.ratio', 'ratio-percent', '1. יחס', BOTH, rp.ratio],
   ['rp.proportion', 'ratio-percent', '2. פרופורציה', BOTH, rp.proportion],
   ['rp.convert', 'directed-numbers', '3. המרות', BOTH, rp.convert],   // conversions moved to directed-numbers (board #85, 2026-11-21); id kept
-  ['rp.pct', 'ratio-percent', '3. חישובי %', BOTH, rp.pct],
-  ['rp.change', 'ratio-percent', '4. עלייה/ירידה', BOTH, rp.change],
+  ['rp.pct', 'ratio-percent', '2. פרופורציה', BOTH, rp.pct],
+  ['rp.change', 'ratio-percent', '3. עלייה/ירידה', BOTH, rp.change],
   // Task 2b: the rest of the zero-drawing topics
   ['qd.square', 'quadrilaterals', '1. ריבוע', BOTH, qd.square],
   ['qd.rect', 'quadrilaterals', '2. מלבן', BOTH, qd.rectangle],

@@ -1094,10 +1094,26 @@ function Ch5(){
   </div>;
 }
 
+/* Chapter 2 has two sub-chapters (Sulaiman, fixes board #86): the proportion itself, and
+   percent calculations as one of its applications (until 2026-11-21 its own chapter "4. חישובי %").
+   The conversions chapter moved to "יסודות החשבון" (directed-numbers, fixes board #85). */
+function Ch2Parts(){
+  const [part,setPart]=useState(0);
+  return <div>
+    <div className="content" style={{marginBottom:0}}>
+      <div className="sub-tabs">
+        <button className={`sub-tab-btn ${part===0?'active':''}`} onClick={()=>setPart(0)}>א. פרופורציה</button>
+        <button className={`sub-tab-btn ${part===1?'active':''}`} onClick={()=>setPart(1)}>ב. יישום של פרופורציה - אחוזים</button>
+      </div>
+    </div>
+    {part===0?<Ch2 key="p"/>:<Ch4 key="pct"/>}
+  </div>;
+}
+
 /* ═══════ Main App ═══════ */
 function App(){
   const [ch, setCh] = useState(1);
-  const labels = ['יחס','פרופורציה','חישובי %','עלייה/ירידה'];
+  const labels = ['יחס','פרופורציה','עלייה/ירידה'];
   return <div>
     <div className="hdr">
       <div className="hdr-title">יחס, פרופורציה ואחוזים</div>
@@ -1108,7 +1124,7 @@ function App(){
         )}
       </div>
     </div>
-    {ch===1?<Ch1 key="c1"/>:ch===2?<Ch2 key="c2"/>:ch===3?<Ch4 key="c3"/>:<Ch5 key="c4"/>}
+    {ch===1?<Ch1 key="c1"/>:ch===2?<Ch2Parts key="c2"/>:<Ch5 key="c3"/>}
   </div>;
 }
 
