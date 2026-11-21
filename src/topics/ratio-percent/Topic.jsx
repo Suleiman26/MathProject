@@ -51,6 +51,54 @@ function pqCheckSolved(eq){
   if(eq.right.length===1&&isX1(eq.right[0])&&eq.left.length===1&&isC(eq.left[0]))return eq.left[0].num;
   return null;
 }
+/* A proportion written in any correct order (Sulaiman, fixes board #87).
+   The four boxes of  tl/bl = tr/br  are kept as [tl, bl, tr, br]. An answer is accepted only when
+   exactly one box is x, the other three are the question's three numbers, and the equation is TRUE
+   for the real answer: tl·br = bl·tr (whole numbers, no rounding). So any correct order passes and
+   a wrong one never does. */
+function pqReadSlot(v){const s=String(v==null?'':v).trim().toLowerCase();if(s==='x')return'x';return /^\d+$/.test(s)?parseInt(s,10):null;}
+function pqCheckProportion(vals,known,ans){
+  const s=vals.map(pqReadSlot);
+  if(s.some(v=>v===null))return{ok:false,why:'fill'};
+  const xs=s.filter(v=>v==='x').length;
+  if(xs!==1)return{ok:false,why:xs?'manyx':'nox'};
+  const nums=s.filter(v=>v!=='x').sort((p,q)=>p-q),want=[...known].sort((p,q)=>p-q);
+  if(nums.length!==want.length||nums.some((v,i)=>v!==want[i]))return{ok:false,why:'nums'};
+  const val=s.map(v=>v==='x'?ans:v);
+  if(val[0]*val[3]!==val[1]*val[2])return{ok:false,why:'order'};
+  return{ok:true,slots:s};
+}
+const pqXDown=s=>s[1]==='x'||s[3]==='x';
+const pqFlip=s=>[s[1],s[0],s[3],s[2]];   // both fractions upside down: still equal
+function pqCrossSide(p,q){return p==='x'?[pqMkTerm('x',q)]:q==='x'?[pqMkTerm('x',p)]:[pqMkTerm('const',p*q)];}
+function pqCross(s){return{left:pqCrossSide(s[0],s[3]),right:pqCrossSide(s[1],s[2])};}
+const PQ_WHY={
+  fill:'מלאו את כל ארבע המשבצות.',
+  nox:'כתבו x באחת המשבצות, במקום הגודל שלא ידוע.',
+  manyx:'x צריך להופיע רק פעם אחת.',
+  nums:'השתמשו בשלושת המספרים מהשאלה, ו-x במקום הגודל שלא ידוע.',
+  order:'✗ המשוואה הזאת לא נכונה. בשני השברים צריך לסדר את הגדלים באותו אופן.',
+};
+function PqFb({fb}){return PQ_WHY[fb]?<div className="fb err">{PQ_WHY[fb]}</div>:<Fb fb={fb}/>;}
+/* step 2 before cross-multiplying: the student's own proportion. If x is in a denominator,
+   explain (before the button) that both fractions may be turned upside down. */
+function PqStart({slots,flipped,onFlip,onCross}){
+  const down=pqXDown(slots),f=pqFlip(slots);
+  return<>
+    <div className="ans-row" style={{fontSize:22}}><Frac n={slots[0]} d={slots[1]}/>&nbsp;=&nbsp;<Frac n={slots[2]} d={slots[3]}/></div>
+    {flipped&&<div className="fb ok">✓ הפכנו את שני השברים. עכשיו x במונה.</div>}
+    {down&&<div className="pq-flip">
+      <b>x נמצא במכנה.</b> אפשר להפוך את שני השברים: המונה יורד למטה והמכנה עולה למעלה.
+      אם שני שברים שווים, גם השברים ההפוכים שלהם שווים, ולכן המשוואה נשארת נכונה, ו-x יעבור למונה:
+      <div className="ans-row" style={{fontSize:18,marginTop:6}}><Frac n={f[0]} d={f[1]}/>&nbsp;=&nbsp;<Frac n={f[2]} d={f[3]}/></div>
+      <div className="pq-flip-or">אפשר גם לבצע הכפלה בהצלבה בלי להפוך.</div>
+    </div>}
+    <div className="center pq-start-btns" style={{marginTop:10}}>
+      {down&&<button className="btn bp" onClick={onFlip}>⇅ הפוך את השברים</button>}
+      <button className="btn bg" onClick={onCross}>✕ בצע הכפלה בהצלבה</button>
+    </div>
+  </>;
+}
 function PqTermPill({term,index}){
   const{type,num,den}=term;
   const isNeg=num<0;const abs=Math.abs(num);
@@ -500,6 +548,9 @@ function Ch2(){
   const [p1,setP1]=useState('');const [p2,setP2]=useState('');
   const [p3,setP3]=useState('');const [p4,setP4]=useState('');
   const [fb,setFb]=useState(null);
+  const [eq,setEq]=useState(null);        // the proportion as the student wrote it (#87)
+  const [flipped,setFlipped]=useState(false);
+  const eqNow = eq?(flipped?pqFlip(eq):eq):null;
 
   // step 2: equation-solving state (operation-box method)
   const [crossed,setCrossed]=useState(false);
@@ -513,19 +564,17 @@ function Ch2(){
   const canSimpAny = cur?(pqCanSimp(cur.left)||pqCanSimp(cur.right)):false;
 
   const check1=()=>{
-    const v1=parseInt(p1),v2=parseInt(p2),v3=parseInt(p3);
-    const v4=p4.trim().toLowerCase();
-    // accept a/b=c/x (matching units across the "=") or a/c=b/x (matching same-type units within each fraction)
-    const valid = v1===ex.a&&((v2===ex.b&&v3===ex.c)||(v2===ex.c&&v3===ex.b))&&v4==='x';
-    if(valid){
-      setFb('ok');
+    // any correct order is accepted, x in any box (#87): checked by pqCheckProportion
+    const r=pqCheckProportion([p1,p2,p3,p4],[ex.a,ex.b,ex.c],ex.d);
+    if(r.ok){
+      setFb('ok');setEq(r.slots);setFlipped(false);
       setTimeout(()=>{
         setStep(2);setFb(null);
       },600);
-    } else setFb('err');
+    } else setFb(r.why);
   };
   const doCrossMultiply=()=>{
-    setCur({left:[pqMkTerm('x',ex.a)],right:[pqMkTerm('const',ex.b*ex.c)]});
+    setCur(pqCross(eqNow));
     setCrossed(true);
   };
   const setOpValClean=v=>{setOpVal(v);setOpErr('');};
@@ -546,7 +595,7 @@ function Ch2(){
   const finish=()=>setStep(3);
   const reset=()=>{
     const e=genProportion();setEx(e);setStep(1);
-    setP1('');setP2('');setP3('');setP4('');setFb(null);
+    setP1('');setP2('');setP3('');setP4('');setFb(null);setEq(null);setFlipped(false);
     setCrossed(false);setCur(null);setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);
   };
 
@@ -587,6 +636,7 @@ function Ch2(){
       {/* Step 1 */}
       <div className={`step-card ${step>1?'done':''}`}>
         <div className="step-label">שלב א׳ — כתוב את הפרופורציה</div>
+        {step===1&&<div className="rp-hint">אפשר לכתוב את הפרופורציה בכל סדר נכון, ו-x יכול להיות במונה או במכנה.</div>}
         {step===1?<>
           <div className="ans-row" style={{fontSize:20}}>
             <Frac n={<input type="text" value={p1} onChange={e=>{setP1(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}/>}
@@ -597,9 +647,9 @@ function Ch2(){
                     onKeyDown={e=>e.key==='Enter'&&check1()}/>}/>
             <button className="btn bg" onClick={check1} style={{marginRight:8}}>✓ בדוק</button>
           </div>
-          <Fb fb={fb}/>
+          <PqFb fb={fb}/>
         </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
-          ✓ <Frac n={ex.a} d={ex.b} style={{color:'#16a34a'}}/> = <Frac n={ex.c} d="x" style={{color:'#16a34a'}}/>
+          ✓ <Frac n={eq[0]} d={eq[1]} style={{color:'#16a34a'}}/> = <Frac n={eq[2]} d={eq[3]} style={{color:'#16a34a'}}/>
         </div>}
       </div>
 
@@ -607,14 +657,7 @@ function Ch2(){
       {step>=2 && <div className={`step-card ${step>2?'done':''}`}>
         <div className="step-label">שלב ב׳ — פתרו את המשוואה כדי למצוא את x</div>
         {step===2?<>
-          {!crossed?<>
-            <div className="ans-row" style={{fontSize:22}}>
-              <Frac n={ex.a} d={ex.b}/>&nbsp;=&nbsp;<Frac n={ex.c} d="x"/>
-            </div>
-            <div className="center" style={{marginTop:10}}>
-              <button className="btn bg" onClick={doCrossMultiply}>✕ בצע הכפלה בהצלבה</button>
-            </div>
-          </>:<>
+          {!crossed?<PqStart slots={eqNow} flipped={flipped} onFlip={()=>setFlipped(true)} onCross={doCrossMultiply}/>:<>
             <div className="solve-grid">
               {solved===null&&<>
                 <div className="g-left"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
@@ -937,26 +980,22 @@ function Ch4(){
   const solved = useMemo(()=>cur?pqCheckSolved(cur):null,[cur]);
   const canSimpAny = cur?(pqCanSimp(cur.left)||pqCanSimp(cur.right)):false;
 
-  // which slot holds the unknown, and the canonical display values
-  const n1Disp = ex.type===0?'x':ex.part;
-  const d1Disp = ex.type===2?'x':ex.whole;
-  const n2Disp = ex.type===1?'x':ex.pct;
-  const d2Disp = 100;
+  // the proportion as the student wrote it: any correct order, x in any box (#87)
+  const [eq,setEq]=useState(null);
+  const [flipped,setFlipped]=useState(false);
+  const eqNow = eq?(flipped?pqFlip(eq):eq):null;
+  // the three known numbers (part, whole, percent, 100 without the unknown one)
+  const known = ex.type===0?[ex.whole,ex.pct,100]:ex.type===1?[ex.part,ex.whole,100]:[ex.part,ex.pct,100];
 
   const check1=()=>{
-    const match=(v,expected)=>expected==='x'?v.trim().toLowerCase()==='x':parseInt(v)===expected;
-    const valid = match(p1,n1Disp)&&match(p2,d1Disp)&&match(p3,n2Disp)&&match(p4,d2Disp);
-    if(valid){
-      setFb('ok');
+    const r=pqCheckProportion([p1,p2,p3,p4],known,ex.ans);
+    if(r.ok){
+      setFb('ok');setEq(r.slots);setFlipped(false);
       setTimeout(()=>{setStep(2);setFb(null);},600);
-    } else setFb('err');
+    } else setFb(r.why);
   };
   const doCrossMultiply=()=>{
-    let leftCoef,rightConst;
-    if(ex.type===0){leftCoef=100;rightConst=ex.whole*ex.pct;}
-    else if(ex.type===1){leftCoef=ex.whole;rightConst=ex.part*100;}
-    else{leftCoef=ex.pct;rightConst=ex.part*100;}
-    setCur({left:[pqMkTerm('x',leftCoef)],right:[pqMkTerm('const',rightConst)]});
+    setCur(pqCross(eqNow));
     setCrossed(true);
   };
   const setOpValClean=v=>{setOpVal(v);setOpErr('');};
@@ -977,7 +1016,7 @@ function Ch4(){
   const finish=()=>setStep(3);
   const reset=()=>{
     const e=genPctCalc();setEx(e);setStep(1);
-    setP1('');setP2('');setP3('');setP4('');setFb(null);
+    setP1('');setP2('');setP3('');setP4('');setFb(null);setEq(null);setFlipped(false);
     setCrossed(false);setCur(null);setOpVal('');setOpErr('');setOpType('+');setOpIsX(false);
   };
 
@@ -1010,6 +1049,7 @@ function Ch4(){
       {/* Step 1 */}
       <div className={`step-card ${step>1?'done':''}`}>
         <div className="step-label">שלב א׳ — סמנו את הלא-ידוע ב-x וכתבו את שוויון השברים</div>
+        {step===1&&<div className="rp-hint">אפשר לכתוב את שוויון השברים בכל סדר נכון, ו-x יכול להיות במונה או במכנה.</div>}
         {step===1?<>
           <div className="ans-row" style={{fontSize:20}}>
             <Frac n={<input type="text" value={p1} onChange={e=>{setP1(e.target.value);setFb(null);}} placeholder="?" style={{width:50,fontSize:16}}/>}
@@ -1020,9 +1060,9 @@ function Ch4(){
                     onKeyDown={e=>e.key==='Enter'&&check1()}/>}/>
             <button className="btn bg" onClick={check1} style={{marginRight:8}}>✓ בדוק</button>
           </div>
-          <Fb fb={fb}/>
+          <PqFb fb={fb}/>
         </>:<div className="ans-row" style={{color:'#16a34a',fontWeight:700,fontSize:18}}>
-          ✓ <Frac n={n1Disp} d={d1Disp} style={{color:'#16a34a'}}/> = <Frac n={n2Disp} d={d2Disp} style={{color:'#16a34a'}}/>
+          ✓ <Frac n={eq[0]} d={eq[1]} style={{color:'#16a34a'}}/> = <Frac n={eq[2]} d={eq[3]} style={{color:'#16a34a'}}/>
         </div>}
       </div>
 
@@ -1030,14 +1070,7 @@ function Ch4(){
       {step>=2 && <div className={`step-card ${step>2?'done':''}`}>
         <div className="step-label">שלב ב׳ — פתרו את המשוואה כדי למצוא את x</div>
         {step===2?<>
-          {!crossed?<>
-            <div className="ans-row" style={{fontSize:22}}>
-              <Frac n={n1Disp} d={d1Disp}/>&nbsp;=&nbsp;<Frac n={n2Disp} d={d2Disp}/>
-            </div>
-            <div className="center" style={{marginTop:10}}>
-              <button className="btn bg" onClick={doCrossMultiply}>✕ בצע הכפלה בהצלבה</button>
-            </div>
-          </>:<>
+          {!crossed?<PqStart slots={eqNow} flipped={flipped} onFlip={()=>setFlipped(true)} onCross={doCrossMultiply}/>:<>
             <div className="solve-grid">
               {solved===null&&<>
                 <div className="g-left"><PqOpBox opType={opType} opVal={opVal} opIsX={opIsX} onOpType={setOpTypeClean} onOpVal={setOpValClean} onToggleX={toggleOpIsX}/></div>
