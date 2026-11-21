@@ -7,7 +7,14 @@ import ProofFigure from '@/topics/proofs/ProofFigure';
 import { St } from '@/topics/proofs/signs';
 import { typeById } from '@/topics/proofs/types/index';
 import { partId } from '@/topics/proofs/figure-core';
-import { partsOf } from '@/topics/proofs/core';
+import { partsOf, present } from '@/topics/proofs/core';
+import ProofScreen from '@/topics/proofs/ProofScreen';
+import TopBar from '@/components/TopBar';
+import Topic from '@/topics/proofs/Topic';
+import { emptyType, KEY } from '@/topics/proofs/mastery';
+import { initRuntime } from '@/lib/mp-runtime';
+import { seeded, makeR } from '@/topics/new/core';
+import { start, act, ready } from '@/topics/proofs/session';
 
 const T3 = typeById('prove-congruence');
 export const problemOf = (tpl, seed = 7, level = 2, variant = 'B', words = false) => T3.remake({ template: tpl, seed, level, variant, meta: { words } });
@@ -41,19 +48,79 @@ function Figures() {
   );
 }
 
+/* ?view=proof&l=1|2|3&v=A|B&tpl=<id>&seed=<n>&c=<counted proofs so far>&words=1 */
+function Proof({ q }) {
+  const level = +(q.get('l') || 1), variant = q.get('v') || 'B', seed = +(q.get('seed') || 7);
+  const [made] = useState(() => {
+    const problem = problemOf(q.get('tpl') || '3-X-SAS', seed, level, variant, q.get('words') ? true : false);
+    return { problem, view: present(problem, level, variant, { counted: +(q.get('c') || 0), R: makeR(seeded(seed)) }) };
+  });
+  const [end, setEnd] = useState(null);
+  return (
+    <div className="pf">
+      <ProofScreen type={T3} problem={made.problem} view={made.view} level={level} levelName={`רמה ${level}`} dots={[true, true, false, null]}
+        onEnd={(r) => setEnd({ clean: r.clean, dots: [true, true, false, r.clean], done: 4, typeName: T3.name, levelName: `רמה ${level}`, onMore: () => window.location.reload(), onFinish: () => {} })}
+        onLeave={() => {}} onSwap={() => window.location.reload()} end={end} />
+    </div>
+  );
+}
+
+/* a finished session: every row written by its canon reason; `help` fills the first step with hint 3 */
+function solved(problem, view, help) {
+  let s = start(problem, view);
+  const go = (a) => { s = act(s, a).s; };
+  if (help) { go({ t: 'hint' }); go({ t: 'hint' }); go({ t: 'hint' }); }
+  for (let i = 0; i < 40 && !ready(s); i++) {
+    if (!s.cur) { go({ t: 'next' }); continue; }
+    const fact = s.cur.fact || s.cur.expect;
+    if (s.cur.kind === 'statement') go({ t: 'statement', st: problem.facts[fact] }); else go({ t: 'reason', id: problem.just[fact][0].reasons[0] });
+  }
+  go({ t: 'qed' });
+  return s;
+}
+/* ?view=end&state=clean|helped|levelup|typedone|round */
+function End({ q }) {
+  const state = q.get('state') || 'clean';
+  const [made] = useState(() => {
+    const problem = problemOf(q.get('tpl') || '3-X-SAS', 7, 2, 'B'), view = present(problem, 2, 'B', { R: makeR(seeded(7)) });
+    return { problem, view, s: solved(problem, view, state === 'helped') };
+  });
+  const clean = state !== 'helped';
+  const end = { clean, dots: clean ? [true, false, true, true] : [true, true, false, false], done: 7, typeName: T3.name, levelName: 'רמה 2', lessHelp: state === 'clean', round: state === 'round',
+    event: state === 'levelup' ? 'level-up' : state === 'typedone' ? 'type-done' : null, newLevel: 3, onMore: () => {}, onFinish: () => {} };
+  return <div className="pf"><ProofScreen type={T3} problem={made.problem} view={made.view} level={2} levelName="רמה 2" dots={end.dots} restored={made.s} end={end} onEnd={() => {}} onLeave={() => {}} /></div>;
+}
+
+/* sample progress for ?view=topic&s=new|mid|pro (written to this device's guest progress before the topic mounts) */
+const REC = (solo, n = 4) => ({ n, solo, helped: 0, missed: n - solo, filled: 0, variant: 'B', tpl: '3-X-SAS', day: 1 });
+function preload(name) {
+  const t = emptyType();
+  if (name === 'mid') Object.assign(t, { level: 2, walked: true, done: 7, hist: { 1: [REC(4), REC(4)], 2: [REC(6, 6), REC(3, 6), REC(6, 6)], 3: [] }, count: { 1: 2, 2: 3, 3: 0 }, lastHelp: 2 });
+  if (name === 'pro') Object.assign(t, { level: 3, walked: true, done: 15, hist: { 1: [REC(4), REC(4)], 2: [REC(6, 6), REC(6, 6)], 3: [REC(9, 9), REC(9, 9)] }, count: { 1: 2, 2: 2, 3: 2 }, lastHelp: 0 });
+  if (name === 'l1') Object.assign(t, { level: 1, walked: true, done: 1 });
+  try { sessionStorage.removeItem('mp:proofs:open'); if (name === 'new') localStorage.removeItem(KEY + 'g'); else localStorage.setItem(KEY + 'g', JSON.stringify({ v: 1, types: { 'prove-congruence': t } })); } catch (e) { /* private mode */ }
+}
+
 export default function ProofsLab() {
   const [q, setQ] = useState(null);
   useEffect(() => {
     document.documentElement.dataset.topic = 'orange';
-    setQ(new URLSearchParams(window.location.search));
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.get('s')) preload(qs.get('s'));
+    setQ(qs);
+    initRuntime();
     return () => { delete document.documentElement.dataset.topic; };
   }, []);
   const view = q ? q.get('view') || 'figures' : null;
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: css }} />
+      {view && view !== 'figures' && <TopBar title="הוכחות" />}
       <div id="root" dir="rtl">
         {view === 'figures' && <Figures />}
+        {view === 'proof' && <Proof q={q} />}
+        {view === 'end' && <End q={q} />}
+        {view === 'topic' && <Topic devRescue={q.get('rescue') ? { step: +q.get('rescue'), warm: 'W4' } : null} />}
       </div>
     </>
   );

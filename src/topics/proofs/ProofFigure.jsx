@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { layout, markGeom, partsNear, partId, partName, motionMatrix, motionFrames } from './figure-core.js';
 import { partsOf } from './core.js';
 import { RULES } from './mastery.js';
+import { distPointSeg } from '../new/chapters/geometry/geo.js';
 import { T } from './texts.js';
 
 const r1 = (n) => Math.round(n * 10) / 10;
@@ -27,11 +28,11 @@ export function useReducedMotion() {
 }
 
 /* a triangle drawn a little inside its sides (the dashed "goal" outline of a congruence) */
-function inset(P, by) {
+function inset(P) {
   const [a, b, c] = P, la = Math.hypot(b[0] - c[0], b[1] - c[1]), lb = Math.hypot(a[0] - c[0], a[1] - c[1]), lc = Math.hypot(a[0] - b[0], a[1] - b[1]);
   const per = la + lb + lc, I = [(la * a[0] + lb * b[0] + lc * c[0]) / per, (la * a[1] + lb * b[1] + lc * c[1]) / per];
   const area = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) / 2, rad = (2 * area) / per;
-  const k = Math.max(0.35, 1 - by / Math.max(rad, 1));
+  const by = Math.max(2.5, Math.min(6, rad * 0.28)), k = Math.max(0.35, 1 - by / Math.max(rad, 1));
   return P.map((p) => [I[0] + (p[0] - I[0]) * k, I[1] + (p[1] - I[1]) * k]);
 }
 
@@ -91,8 +92,15 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
         p.x = e.clientX; p.y = e.clientY;
         const q = p.matrixTransform(m.inverse()), scale = Math.abs(m.a) || 1;
         const ok = (x) => index[x] && tappable.includes(index[x].kind);
-        const tight = partsNear(L, [q.x, q.y], 8 / scale).filter(ok);
-        near = tight.length === 1 ? tight : partsNear(L, [q.x, q.y], RULES.NEAR_PX / scale).filter(ok);
+        const pt = [q.x, q.y], tight = partsNear(L, pt, 8 / scale).filter(ok);
+        // a clear tap needs no chooser: on one line away from the corners, or well inside one angle
+        const segs = L.segs.filter((g) => g.tap).map((g) => [g.id, distPointSeg(pt, g.a, g.b)]).sort((x, y) => x[1] - y[1]);
+        const corner = L.angles.some((a2) => Math.hypot(pt[0] - a2.v[0], pt[1] - a2.v[1]) < 20);
+        const mine = index[id];
+        if (tight.length === 1) near = tight;
+        else if (mine && mine.kind === 'seg' && segs[0] && segs[0][0] === id && segs[0][1] <= 7 && !(segs[1] && segs[1][1] < 10) && !corner) near = [id];
+        else if (mine && mine.kind === 'ang' && !(segs[0] && segs[0][1] < 7) && L.angles.filter((a2) => Math.hypot(pt[0] - a2.v[0], pt[1] - a2.v[1]) < 30).length === 1) near = [id];
+        else near = partsNear(L, pt, RULES.NEAR_PX / scale).filter(ok);
         if (!near.length) near = [id];
       } catch { near = [id]; }
     }
@@ -135,7 +143,7 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
         return (
           <g key={t.id}>
             <polygon className={`pf-tri${st === 'on' ? ' is-on' : ''}${sel(t.id)}`} points={pts(t.pts)} />
-            {st === 'goal' && <polygon className="pf-tri-goal" points={pts(inset(t.pts, 7))} />}
+            {st === 'goal' && <polygon className="pf-tri-goal" points={pts(inset(t.pts))} />}
           </g>
         );
       })}

@@ -207,7 +207,7 @@ export const T = {
   'lbl.cleanAria': 'הוכחות נקיות מתוך ארבע האחרונות',
   'lbl.figure': 'הציור',
   'lbl.leanGiven': 'על הנתון',
-  'lbl.leanSeen': 'על מה שרואים בציור',
+  'lbl.leanSeen': 'על הציור',
   'lbl.leanRows': 'על שורות קודמות',
   'lbl.here': 'אתם כאן',
   'lbl.passed': 'הושלמה',
