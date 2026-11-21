@@ -20,10 +20,11 @@ export function useSelection(problem, onNote) {
   const [chooser, setChooser] = useState(null);
   const [order, setOrder] = useState([]);
   const [open, setOpen] = useState(false);
+  const [self, setSelf] = useState(false);            // a shared side stated as equal to itself
   function pick(id) {
     setChooser(null);
     if (!index[id]) return;
-    setOrder([]);
+    setOrder([]); setSelf(false);
     setSelected((cur) => {
       if (cur.includes(id)) return cur.filter((x) => x !== id);
       if (cur.length && index[cur[0]].kind !== index[id].kind) { if (onNote) onNote('st.kinds'); return [id]; }
@@ -32,12 +33,15 @@ export function useSelection(problem, onNote) {
     });
   }
   const tap = (id, near) => { if (near && near.length >= 2) setChooser(near); else pick(id); };
-  const clear = () => { setSelected([]); setChooser(null); setOrder([]); };
+  const clear = () => { setSelected([]); setChooser(null); setOrder([]); setSelf(false); };
   const parts = selected.map((id) => index[id]).filter(Boolean);
   const kind = parts.length ? parts[0].kind : null;
   let preview = null;
   if (parts.length === 2 && kind !== 'tri') preview = { kind, x: parts[0].part, y: parts[1].part };
-  return { list, index, selected, parts, kind, preview, chooser, order, setOrder, open, setOpen, pick, tap, clear, pickFromChooser: pick, closeChooser: () => setChooser(null) };
+  const tris = problem.figure.tris || [];
+  const shared = parts.length === 1 && kind === 'seg' && tris.length > 1 && tris.every((t) => [...parts[0].part].every((q) => t.includes(q)));
+  if (shared && self) preview = { kind: 'seg', x: parts[0].part, y: parts[0].part };
+  return { shared: shared && !self, setSelf, list, index, selected, parts, kind, preview, chooser, order, setOrder, open, setOpen, pick, tap, clear, pickFromChooser: pick, closeChooser: () => setChooser(null) };
 }
 
 /** The tray while a Level-3 statement is being built. */
@@ -73,6 +77,9 @@ export function TapStatement({ sel, onAdd, onMatching }) {
           )}
         </div>
       )}
+      {sel.shared && (
+        <button type="button" className="pf-chip pf-self" onClick={() => sel.setSelf(true)}><St st={{ kind: 'seg', x: parts[0].part, y: parts[0].part }} /><span>{T['lbl.sameSeg']}</span></button>
+      )}
       {twoTris && order.length < 3 && (
         <div className="pf-chips pf-cols-3 pf-verts">
           {t2.map((v) => <button type="button" key={v} className="pf-chip pf-vert" disabled={!left.includes(v)} onClick={() => sel.setOrder([...order, v])}><span className="pf-m" dir="ltr">{v}</span></button>)}
@@ -90,7 +97,7 @@ export function TapStatement({ sel, onAdd, onMatching }) {
               <div key={k} className="pf-parts-g" role="group" aria-label={T[key]}>
                 <span className="pf-parts-t">{T[key]}</span>
                 <div className="pf-parts-c">
-                  {items.map((x) => <button type="button" key={x.id} className={`pf-chip pf-partc${sel.selected.includes(x.id) ? ' is-on' : ''}`} aria-pressed={sel.selected.includes(x.id)} aria-label={x.he} onClick={() => sel.pick(x.id)}><Mx s={k === 'seg' ? x.part : k === 'tri' ? `△${x.part.join('')}` : `∢${x.part.r[0]}${x.part.v}${x.part.r[1]}`} /></button>)}
+                  {items.map((x) => <button type="button" key={x.id} className={`pf-chip pf-partc${sel.selected.includes(x.id) ? ' is-on' : ''}`} aria-pressed={sel.selected.includes(x.id)} aria-label={x.he} data-part={x.id} onClick={() => sel.pick(x.id)}><Mx s={k === 'seg' ? x.part : k === 'tri' ? `△${x.part.join('')}` : `∢${x.part.r[0]}${x.part.v}${x.part.r[1]}`} /></button>)}
                 </div>
               </div>
             );

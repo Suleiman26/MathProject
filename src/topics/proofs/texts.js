@@ -201,6 +201,8 @@ export const T = {
   'lbl.tapSecond': 'עכשיו געו בחלק השני, מאותו סוג.',
   'lbl.matchOrder': 'כתבו את המשולש השני לפי סדר ההתאמה.',
   'lbl.chooser': 'לאיזה חלק התכוונתם?',
+  'lbl.goalCong': 'המשולשים {t1}, {t2} חופפים',
+  'lbl.sameSeg': 'אותו קטע בשני המשולשים',
   'lbl.walkIntro': 'עוברים יחד על הוכחה שלמה, שורה אחרי שורה.',
   'lbl.proofDone': 'כל השורות מנומקות. נשאר רק לסיים.',
   'lbl.cleanN': 'הוכחות נקיות: {{k}} מתוך 4',
@@ -232,7 +234,7 @@ export const NEW_DRAFTS = [
   'w.W1.why', 'w.W2.why', 'w.W3.why', 'w.W4.why', 'w.W5.why', 'w.W6.why', 'w.W7.why',
   'skill.W1', 'skill.W2', 'skill.W3', 'skill.W4', 'skill.W5', 'skill.W6', 'skill.W7',
   'about.read-given', 'about.congruent-parts', 'about.prove-congruence', 'about.then-conclusion',
-  'lbl.title', 'lbl.whatClaim', 'lbl.pickTile', 'lbl.tapTwo', 'lbl.tapSecond', 'lbl.matchOrder', 'lbl.chooser', 'lbl.walkIntro',
+  'lbl.title', 'lbl.whatClaim', 'lbl.pickTile', 'lbl.tapTwo', 'lbl.tapSecond', 'lbl.matchOrder', 'lbl.chooser', 'lbl.goalCong', 'lbl.sameSeg', 'lbl.walkIntro',
   'lbl.proofDone', 'lbl.cleanN', 'lbl.cleanAria', 'lbl.figure', 'lbl.leanGiven', 'lbl.leanSeen', 'lbl.leanRows', 'lbl.here',
   'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn',
 ];

@@ -7,7 +7,7 @@ import { seeded, makeR } from '../new/core.js';
 import { useAccount, accountApi } from '@/lib/account';
 import { present, decisionsOf } from './core.js';
 import { snapshot, restore } from './session.js';
-import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, useForce, dots, lessHelp, leftRecord } from './mastery.js';
+import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, useForce as clearForce, dots, lessHelp, leftRecord } from './mastery.js';
 import { TYPES, TABS } from './types/index.js';
 import { T, fill } from './texts.js';
 import ProofScreen from './ProofScreen.jsx';
@@ -82,7 +82,7 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
     const problem = type.make(R, lv, variant, { recent: t.recent, last: last.current }, { counted: t.count[lv], want: t.retry, words: [] });
     let view = present(problem, lv, variant, { counted: t.count[lv], R });
     if (opts.walk) view = { ...view, ties: false, steps: view.steps.map((s) => ({ ...s, ask: [] })) };   // a fully worked example
-    if (t.force === 'A' && !opts.walk) putType(useForce(t));
+    if (t.force === 'A' && !opts.walk) putType(clearForce(t));
     last.current = { family: problem.family, theorem: problem.theorem };
     nextRescue.current = null;
     setEnd(null); setRescue(null); setTab(level);
@@ -135,7 +135,7 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
     sitting.current += 1;
     nextRescue.current = out.rescue;
     setEnd({
-      clean: r.clean, dots: dots(out.ts, o.level), done: out.ts.done, lessHelp: less, event: out.event, newLevel: out.ts.level,
+      clean: r.clean, counted: o.counted && !o.walk, dots: dots(out.ts, o.level), done: out.ts.done, lessHelp: less, event: out.event, newLevel: out.ts.level,
       round: sitting.current % RULES.ROUND === 0, typeName: type.name, levelName: TABS[o.level],
       onMore: () => {
         if (nextRescue.current) { const rs = nextRescue.current; nextRescue.current = null; setOpen(null); setEnd(null); setRescue(rs); return; }
@@ -201,7 +201,6 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
       {tabs}
       {lockedNext && <p className="pf-locked"><IcLock /><span>{TABS[lockedNext]}: {fill('ui.locked', { n: level })}</span></p>}
       <section className="pf-land">
-        <p className="pf-land-k">{type.n}</p>
         <h2 className="pf-land-h">{type.name}</h2>
         <p className="pf-land-a">{T[`about.${type.id}`]}</p>
         {sample && <div className="pf-stage pf-land-fig"><ProofFigure problem={sample} marks={sampleMarks} label={T['lbl.sample']} /></div>}
@@ -217,12 +216,12 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
             );
           })}
         </ol>
-        <div className="pf-land-stats">
+        {began && <div className="pf-land-stats">
           <span className="pf-dots is-big" aria-hidden="true">{dots(ts, level).map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
           <span>{fill('lbl.cleanN', { k: dots(ts, level).filter((d) => d === true).length })}</span>
           <span className="pf-end-sep" aria-hidden="true" />
           <span>{fill('lbl.done', { n: ts.done })}</span>
-        </div>
+        </div>}
       </section>
       <div className="pf-land-go">
         <button type="button" className="pf-go" onClick={() => startProof(Math.min(tabLevel, level))}>{began ? T['btn.continue'] : T['btn.start']}{tab >= 1 && began ? ` · ${TABS[Math.min(tabLevel, level)]}` : ''}</button>

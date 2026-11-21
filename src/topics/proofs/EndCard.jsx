@@ -9,7 +9,7 @@ import { targets } from './core.js';
 import { T, fill } from './texts.js';
 import { St, Tx, IcCheck, IcBook } from './signs.jsx';
 
-export default function EndCard({ problem, rows, clean, dots = [], done = 0, lessHelp, event, levelName, typeName, newLevel, round, onMore, onFinish }) {
+export default function EndCard({ problem, rows, clean, counted = true, dots = [], done = 0, lessHelp, event, levelName, typeName, newLevel, round, onMore, onFinish }) {
   // the result line mounts one frame after the card: a small new node of its own (tracker rule: a
   // new node with more than 40 descendants is not read as feedback)
   const [shown, setShown] = useState(false);
@@ -33,9 +33,9 @@ export default function EndCard({ problem, rows, clean, dots = [], done = 0, les
             </div>
           )}
           <div className="pf-end-stats">
-            <span className="pf-dots is-big" aria-hidden="true">{dots.map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
-            <span>{fill('lbl.cleanN', { k })}</span>
-            <span className="pf-end-sep" aria-hidden="true" />
+            {counted && <span className="pf-dots is-big" aria-hidden="true">{dots.map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>}
+            {counted && <span>{fill('lbl.cleanN', { k })}</span>}
+            {counted && <span className="pf-end-sep" aria-hidden="true" />}
             <span>{fill('lbl.done', { n: done })}</span>
           </div>
           {lessHelp && <p className="pf-end-line">{T['ui.lessHelp']}</p>}

@@ -46,6 +46,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const p = problem, cur = s.cur, mode = s.view.mode, cong = congOf(p);
   const later = (name, ms, fn) => { clearTimeout(timers.current[name]); timers.current[name] = setTimeout(fn, ms); };
   useEffect(() => () => { Object.values(timers.current).forEach(clearTimeout); }, []);
+  useEffect(() => { if (onState) onState(sRef.current); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { const t = setTimeout(() => { intro.current = false; }, 1400); return () => clearTimeout(t); }, []);
 
   /* ── one action → the reducer → show its effects ── */
@@ -269,7 +271,10 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
             <span className="pf-strip-k">{T['lbl.toProve']}</span>
             {targets(p).map((t) => {
               const ok = s.done.includes(t);
-              return <span key={t} className={`pf-fc pf-fc-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}<St st={p.facts[t]} /></span>;
+              // while writing the congruence is itself a decision (a statement gap, or Level 3), the goal names the two triangles without the matching order
+              const step = s.view.steps.find((x) => x.fact === t), tris = p.figure.tris || [];
+              const open = !ok && t === cong && tris.length === 2 && step && step.ask.includes('statement') && (mode === 'tap' || !!step.options);
+              return <span key={t} className={`pf-fc pf-fc-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k="lbl.goalCong" vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : <St st={p.facts[t]} />}</span>;
             })}
           </span>
         </div>

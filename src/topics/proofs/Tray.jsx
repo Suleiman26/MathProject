@@ -7,6 +7,7 @@
    whose .step-label names the decision kind. The labels are hidden: they name the answer. */
 import React from 'react';
 import { T } from './texts.js';
+import { show } from './core.js';
 import { St, Tx, IcCheck, IcNote, IcBulb, IcClose } from './signs.jsx';
 
 const short = (s) => [...s].length <= 7;
@@ -53,7 +54,7 @@ function Body({ body, onPick, onNext, onQed, qedBusy }) {
     return (
       <div className={`pf-chips pf-tiles${body.t === 'options' ? ' pf-cols-1' : ' pf-cols-2'}`}>
         {body.items.map((o) => (
-          <button type="button" key={o.id} className="pf-chip pf-tile" disabled={!!o.disabled} onClick={() => onPick(o.id)}><St st={o.st} /></button>
+          <button type="button" key={o.id} className={`pf-chip pf-tile${show(o.st).length > 13 ? ' is-wide' : ''}`} disabled={!!o.disabled} onClick={() => onPick(o.id)}><St st={o.st} /></button>
         ))}
       </div>
     );

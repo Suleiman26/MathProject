@@ -24,7 +24,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-gl.pf-c1{stroke:var(--pf-p1)}
 #root .pf-gl.pf-c2{stroke:var(--pf-p2)}
 #root .pf-gl.pf-c3{stroke:var(--pf-p3)}
-#root .pf-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+#root .pf-sr{position:absolute;top:0;left:0;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 
 /* ── figure ── */
 #root .pf-stage{position:relative;isolation:isolate;height:clamp(150px,30dvh,240px);padding:2px 12px}
@@ -38,7 +38,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-sg.pf-c2{stroke:var(--pf-p2)}
 #root .pf-sg.pf-c3{stroke:var(--pf-p3)}
 #root .pf-sg.is-goal{stroke:var(--pf-goal);stroke-width:2.4;stroke-dasharray:5.5 4.5}
-#root .pf-sg.is-dim{opacity:.5}
+#root .pf-sg.is-dim{opacity:.58}
 #root .pf-sg.is-sel{stroke:var(--pf-goal);stroke-width:4.6;opacity:1}
 #root .pf-tri{fill:var(--a-500);fill-opacity:0;stroke:none;transition:fill-opacity .4s ease}
 #root .pf-tri.is-on{fill-opacity:.11}
@@ -49,7 +49,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-mk.pf-c2{stroke:var(--pf-p2)}
 #root .pf-mk.pf-c3{stroke:var(--pf-p3)}
 #root .pf-mk.is-goal{stroke:var(--pf-goal);stroke-width:2;stroke-dasharray:3.5 3.5}
-#root .pf-mk.is-dim{opacity:.5}
+#root .pf-mk.is-dim{opacity:.58}
 #root .pf-mk.is-sel{stroke:var(--pf-goal);stroke-width:3.4;stroke-dasharray:none;opacity:1}
 #root .pf-arc.is-quiet{fill:none;stroke:var(--line-strong);stroke-width:1.8;stroke-linecap:round;pointer-events:none}
 #root .pf-arc.is-quiet.is-sel{stroke:var(--pf-goal);stroke-width:3.4}
@@ -75,10 +75,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 }
 
 /* ── screen ── */
-#root .pf-screen{position:relative;display:flex;flex-direction:column;height:calc(100dvh - var(--pf-top));min-height:400px;overflow:hidden;background:var(--surface);color:var(--ink);font-size:16px;line-height:1.5;text-align:start}
+#root .pf-screen{position:relative;display:flex;flex-direction:column;width:100%;max-width:100vw;min-width:0;height:calc(100dvh - var(--pf-top));min-height:400px;overflow:hidden;overflow:clip;touch-action:manipulation;background:var(--surface);color:var(--ink);font-size:16px;line-height:1.5;text-align:start}
 #root .pf-screen button{font-family:inherit;touch-action:manipulation;-webkit-user-select:none;user-select:none}
-#root .pf-figcol{flex:none}
-#root .pf-work{flex:1;min-height:0;display:flex;flex-direction:column}
+#root .pf-figcol{flex:none;min-width:0}
+#root .pf-work{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
 
 /* ── head ── */
 #root .pf-head{flex:none;display:flex;align-items:center;gap:8px;height:44px;padding-inline:4px 14px}
@@ -91,8 +91,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-dots i.is-off{background:var(--line-strong);box-shadow:none}
 
 /* ── strip ── */
-#root .pf-strip{flex:none;display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;padding:3px 14px;border-bottom:1px solid var(--line);font-size:.84rem;color:var(--ink-3)}
-#root .pf-strip-given{flex:1 0 auto;max-width:100%;display:flex;align-items:center;gap:6px;height:30px;overflow-x:auto;overscroll-behavior-x:contain;white-space:nowrap;scrollbar-width:none}
+#root .pf-strip{flex:none;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;padding:3px 14px;border-bottom:1px solid var(--line);font-size:.84rem;color:var(--ink-3)}
+#root .pf-strip-given{flex:1 1 auto;min-width:0;max-width:100%;display:flex;align-items:center;gap:6px;height:30px;overflow-x:auto;overscroll-behavior-x:contain;white-space:nowrap;scrollbar-width:none}
 #root .pf-strip-given::-webkit-scrollbar{display:none}
 #root .pf-strip-goal{flex:none;display:flex;align-items:center;gap:6px;height:30px}
 #root .pf-strip-k{flex:none;font-weight:600}
@@ -153,9 +153,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 
 /* ── chips ── */
 #root .pf-chips{display:grid;gap:8px;margin-top:8px}
-#root .pf-cols-1{grid-template-columns:1fr}
-#root .pf-cols-2{grid-template-columns:1fr 1fr}
-#root .pf-cols-3{grid-template-columns:repeat(3,1fr)}
+#root .pf-cols-1{grid-template-columns:minmax(0,1fr)}
+#root .pf-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+#root .pf-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#root .pf-chip.is-wide{grid-column:1 / -1}
 #root .pf-chip{display:flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:6px 10px;border:1.5px solid var(--line-strong);border-radius:12px;background:var(--surface);box-shadow:none;color:var(--ink);font-size:.92rem;font-weight:500;line-height:1.25;text-align:center}
 #root .pf-chip:disabled{opacity:.4;text-decoration:line-through}
 #root .pf-chip.is-dim{opacity:.4}
@@ -170,9 +171,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-qed{min-height:52px;font-size:1.2rem}
 
 /* ── fb ── */
-#root .pf-fb{display:flex;align-items:flex-start;gap:8px;width:100%;max-width:none;margin:0;padding:9px 12px;border-radius:12px;font-size:.92rem;font-weight:500;line-height:1.45;text-align:start}
+#root .pf-fb{display:flex;align-items:flex-start;gap:8px;width:100%;max-width:none;margin:0;padding:7px 12px;border-radius:12px;font-size:.92rem;font-weight:500;line-height:1.45;text-align:start}
 #root .fb.pf-fb{padding-inline-start:40px}
-#root .fb.pf-fb::before{top:10px;inset-inline-start:12px}
+#root .fb.pf-fb::before{top:8px;inset-inline-start:12px}
 #root .pf-note.pf-fb{border:1px solid transparent;background:var(--surface-3);color:var(--ink);animation:pf-row .2s var(--ease-out) backwards}
 #root .pf-note.pf-fb.is-ok{border-color:var(--ok-200);background:var(--ok-50);color:var(--ok-800)}
 #root .pf-note.pf-fb .pf-ic{margin-top:2px;font-size:18px;color:var(--ink-3)}
@@ -188,8 +189,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-slot{display:inline-block;width:1.15em;height:1.3em;margin-inline:1px;vertical-align:-.28em;border-radius:6px;border:1.5px dashed var(--a-300);background:var(--surface);font-style:normal;text-align:center;line-height:1.25em}
 #root .pf-slot.is-wide{width:2.4em}
 #root .pf-slot.is-next{border-color:var(--a-600)}
-#root .pf-slot.is-set{width:auto;min-width:.7em;margin:0;border:0;background:transparent}
-#root .pf-add{flex:0 0 auto;min-height:44px;padding-inline:16px;font-size:.95rem;white-space:nowrap}
+#root .pf-slot.is-set{width:auto;min-width:.7em;height:auto;margin:0;border:0;background:transparent;vertical-align:baseline;line-height:inherit}
+#root .pf-add{flex:none;width:max-content;min-height:44px;padding-inline:16px;font-size:.95rem;white-space:nowrap}
+#root .pf-self{gap:10px;justify-content:flex-start;padding-inline:12px;font-size:.88rem;color:var(--ink-2)}
+#root .pf-self .pf-m{font-size:1.02rem;color:var(--ink)}
 #root .pf-vert{font-size:1.1rem;font-weight:600}
 #root .pf-tap-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #root .pf-listb{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding-inline:10px;border:0;border-radius:12px;background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink-2);font-size:.86rem;font-weight:600}
@@ -243,7 +246,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-team{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;max-width:var(--page-w);margin:6px auto 0;padding:6px 12px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-2);font-size:.78rem;line-height:1.45;color:var(--ink-2)}
 #root .pf-topic > .hdr{padding:14px 16px 6px;gap:8px}
 #root .pf-topic > .hdr h1{font-size:1.25rem}
-#root .pf-ch > .sub-tabs{margin:8px 0 10px}
+#root .pf-topic > .pf-ch{margin-top:2px}
+#root .pf-ch > .sub-tabs{margin:4px 0 10px}
 #root .pf-team-t{font-size:.76rem;font-weight:700;color:var(--ink-3)}
 #root .pf-topic > .pf-team{width:calc(100% - 32px)}
 
@@ -254,8 +258,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-locked{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:-4px;font-size:.82rem;color:var(--ink-3)}
 #root .pf-locked .pf-ic{font-size:14px}
 #root .pf-land{margin-top:12px;text-align:center}
-#root .pf-land-k{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--pf-btn);color:#fff;font-size:.95rem;font-weight:800}
-#root .pf-land-h{margin-top:8px;font-size:clamp(1.9rem,8.6vw,2.7rem);font-weight:800;line-height:1.1;color:var(--ink)}
+#root .pf-land-h{margin-top:0;font-size:clamp(1.9rem,8.6vw,2.7rem);font-weight:800;line-height:1.1;color:var(--ink)}
 #root .pf-land-a{max-width:30ch;margin:8px auto 0;font-size:1.02rem;line-height:1.55;color:var(--ink-2);text-wrap:balance}
 #root .pf-land-fig{height:clamp(170px,30dvh,250px);margin-top:10px}
 #root .pf-steps{list-style:none;display:flex;align-items:flex-end;justify-content:center;gap:10px;margin:14px 0 0;padding:0 0 22px;direction:rtl}
@@ -286,6 +289,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .pf-stage{height:min(62dvh,480px)}
   #root .pf-work{margin-bottom:16px;overflow:hidden;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--sh-2)}
   #root .pf-tray{max-height:52dvh}
+}
+/* short phones (an iPhone SE in Safari shows about 550px): one-line strip with the goal first, a lower drawing */
+@media (max-height:600px) and (max-width:899px) and (orientation:portrait){
+  #root .pf-head{height:40px}
+  #root .pf-stage{height:150px}
+  #root .pf-strip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-block:2px}
+  #root .pf-strip::-webkit-scrollbar{display:none}
+  #root .pf-strip-goal{order:-1}
+  #root .pf-strip-given{flex:0 0 auto;max-width:none;overflow:visible}
+  #root .pf-strip-goal{position:sticky;inset-inline-start:0;z-index:1;padding-inline-end:8px;background:var(--surface)}
+  #root .pf-intro{font-size:.84rem}
 }
 @media (prefers-reduced-motion: reduce){
   #root .pf-row.is-new,#root .pf-hint,#root .pf-why,#root .pf-hintb.is-nudge{animation:none}

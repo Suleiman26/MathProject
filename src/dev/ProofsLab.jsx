@@ -98,6 +98,10 @@ function preload(name) {
   if (name === 'mid') Object.assign(t, { level: 2, walked: true, done: 7, hist: { 1: [REC(4), REC(4)], 2: [REC(6, 6), REC(3, 6), REC(6, 6)], 3: [] }, count: { 1: 2, 2: 3, 3: 0 }, lastHelp: 2 });
   if (name === 'pro') Object.assign(t, { level: 3, walked: true, done: 15, hist: { 1: [REC(4), REC(4)], 2: [REC(6, 6), REC(6, 6)], 3: [REC(9, 9), REC(9, 9)] }, count: { 1: 2, 2: 2, 3: 2 }, lastHelp: 0 });
   if (name === 'l1') Object.assign(t, { level: 1, walked: true, done: 1 });
+  if (name === 'l1b') Object.assign(t, { level: 1, walked: true, done: 3, hist: { 1: [REC(3, 3), REC(2, 3)], 2: [], 3: [] }, count: { 1: 2, 2: 0, 3: 0 } });
+  if (name === 'up') Object.assign(t, { level: 1, walked: true, done: 3, hist: { 1: [REC(3, 3), REC(1, 3), REC(3, 3)], 2: [], 3: [] }, count: { 1: 3, 2: 0, 3: 0 }, lastHelp: 2 });
+  if (name === 'l2') Object.assign(t, { level: 2, walked: true, done: 4, hist: { 1: [REC(4), REC(4), REC(4)], 2: [], 3: [] }, count: { 1: 3, 2: 0, 3: 0 } });
+  if (name === 'l3') Object.assign(t, { level: 3, walked: true, done: 9, hist: { 1: [REC(4), REC(4)], 2: [REC(6, 6), REC(6, 6), REC(6, 6)], 3: [] }, count: { 1: 2, 2: 3, 3: 0 } });
   try { sessionStorage.removeItem('mp:proofs:open'); if (name === 'new') localStorage.removeItem(KEY + 'g'); else localStorage.setItem(KEY + 'g', JSON.stringify({ v: 1, types: { 'prove-congruence': t } })); } catch (e) { /* private mode */ }
 }
 

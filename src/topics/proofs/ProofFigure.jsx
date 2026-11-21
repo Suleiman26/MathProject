@@ -77,9 +77,12 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
     let frames;
     try { frames = motionFrames(motionMatrix(L, problem), 24).map((m) => ({ transform: `matrix(${m.map((v) => +v.toFixed(4)).join(',')})` })); } catch { return undefined; }
     const there = el.animate(frames, { duration: 600, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'both' });
-    let back = null;
-    const t = setTimeout(() => { back = el.animate([...frames].reverse(), { duration: 450, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'both' }); }, 1250);
-    return () => { clearTimeout(t); there.cancel(); if (back) back.cancel(); };
+    let back = null, fade = null;
+    const t = setTimeout(() => {
+      back = el.animate([...frames].reverse(), { duration: 450, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'both' });
+      fade = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, delay: 450, fill: 'both' });
+    }, 1250);
+    return () => { clearTimeout(t); there.cancel(); if (back) back.cancel(); if (fade) fade.cancel(); };
   }, [end, L, problem]);
 
   function tap(e, id) {
@@ -168,10 +171,10 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
         );
       })}
       {selected.map((id) => (index[id] && index[id].kind === 'ang' ? halo(id, 'pf-selw', `s${id}`) : null))}
-      {pulse.map((id) => halo(id, 'pf-pulse', `p${id}`))}
+      {[...new Set(pulse)].map((id) => halo(id, 'pf-pulse', `p${id}`))}
       {end && tri1 && <polygon ref={mover} className="pf-mover" points={pts(tri1)} />}
       {L.labels.map((l) => <text key={l.p} className="pf-lb" x={r1(l.x)} y={r1(l.y)} dy=".36em">{l.p}</text>)}
-      {question.map((id) => {
+      {[...new Set(question)].map((id) => {
         const c = badgeAt(id);
         return c && (
           <g key={`b${id}`} className="pf-qm" transform={`translate(${r1(c[0])} ${r1(c[1])})`}>
