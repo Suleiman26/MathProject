@@ -3,7 +3,7 @@
    A/B variants, the four dots, and device storage that never throws (Review Focus 1, 4). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { warmed, RULES, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord } from './mastery.js';
+import { warmed, RULES, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord, takeRescue } from './mastery.js';
 
 const rec = (n, solo, o = {}) => ({ n, solo, helped: 0, missed: n - solo - (o.filled || 0), filled: o.filled || 0, variant: 'B', tpl: o.tpl || '3-X-SAS', day: 1 });
 const run = (ts, level, recs, opt) => { let out; for (const r of recs) { out = record(ts, level, r, opt); ts = out.ts; } return out; };
@@ -126,4 +126,27 @@ test('warm-up: done once it is behind the student; answers are kept per kind, hi
   const b = warmed(a, { W1: [true, true, true, true, true, true, true] });
   assert.equal(b.warm.kinds.W1.length, 8); assert.deepEqual(warmed(emptyType()).warm, { done: true, kinds: {} });
   assert.deepEqual(warmed(emptyType(), { W2: 'x' }).warm.kinds, {});
+});
+test('rescue is queued on the type until the next start, so a proof left in the middle never uses a stage silently (review M3)', () => {
+  const left = (decided) => leftRecord({ n: 8, decided, variant: 'B', tpl: '3-K-SAS', day: 2 });
+  let o = record({ ...emptyType(), level: 2 }, 2, left([{ state: 'missed' }]), { errs: { 'wrong-theorem': 1 } });
+  assert.equal(o.ts.queued, null);
+  o = record(o.ts, 2, left([{ state: 'solo' }, { state: 'helped' }]));
+  assert.deepEqual([o.rescue, o.ts.queued, o.ts.resc.stage], [{ step: 1, warm: 'W4' }, { step: 1, warm: 'W4' }, 1]);
+  const st = { v: 1, types: { 'prove-congruence': o.ts } }, mem = new Map(), store = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
+  save(store, 'g', st); assert.deepEqual(typeState(load(store, 'g'), 'prove-congruence').queued, { step: 1, warm: 'W4' });     // it survives a reload
+  const t = takeRescue(o.ts); assert.deepEqual([t.rescue, t.ts.queued, t.ts.resc.stage], [{ step: 1, warm: 'W4' }, null, 1]);
+  assert.deepEqual(takeRescue(t.ts).rescue, null);
+  o = record(t.ts, 2, rec(8, 4)); o = record(o.ts, 2, rec(8, 4)); assert.deepEqual(o.ts.queued, { step: 2 });              // the next stage, only after step 1 was shown
+  for (let i = 0; i < 3; i++) o = record(o.ts, 2, rec(8, 8));
+  assert.deepEqual([o.ts.level, o.ts.queued], [3, null]);                                                                       // a level-up drops it
+  for (const junk of [{ step: 9 }, { step: 1, warm: 'W9' }, 'x', 7]) assert.equal(typeState({ v: 1, types: { t: { ...emptyType(), queued: junk } } }, 't').queued, null);
+});
+test('server seeding restores a finished type: 3 clean proofs ("win") at רמה 3 → level 4 (review M11)', async () => {
+  const { TYPES } = await import('./types/index.js');
+  const row = (win) => ({ page: 'proofs.html', chapter: '3. הוכחת חפיפה › רמה 3', ok: 9, bad: 1, win });
+  assert.equal(seedFromServer({ v: 1, types: {} }, [row(3)], TYPES).types['prove-congruence'].level, 4);
+  assert.equal(seedFromServer({ v: 1, types: {} }, [row(2)], TYPES).types['prove-congruence'].level, 3);
+  assert.equal(seedFromServer({ v: 1, types: {} }, [row('3')], TYPES).types['prove-congruence'].level, 3);
+  assert.equal(seedFromServer({ v: 1, types: {} }, [{ ...row(5), chapter: '3. הוכחת חפיפה › רמה 2' }], TYPES).types['prove-congruence'].level, 2);
 });

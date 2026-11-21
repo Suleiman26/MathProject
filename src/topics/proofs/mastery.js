@@ -38,7 +38,7 @@ export function emptyType() {
     level: 1, walked: false, warm: { done: false, kinds: {} },
     hist: { 1: [], 2: [], 3: [] }, count: { 1: 0, 2: 0, 3: 0 },
     done: 0, lastHelp: null, recent: [], errs: {},
-    resc: { stage: 0, bad: 0 }, force: null, retry: null,
+    resc: { stage: 0, bad: 0 }, force: null, retry: null, queued: null,
   };
 }
 
@@ -71,9 +71,16 @@ function cleanType(x) {
     resc: isObj(x.resc) ? { stage: nat(x.resc.stage, 2), bad: nat(x.resc.bad) } : { stage: 0, bad: 0 },
     force: x.force === 'A' ? 'A' : null,
     retry: typeof x.retry === 'string' ? x.retry : null,
+    queued: cleanQueued(x.queued),
   };
 }
 const copy = (ts) => cleanType(ts);
+/* a rescue card waiting for the next start: { step:1, warm:'W1'…'W7' } | { step:2 } | { step:3 } */
+function cleanQueued(q) {
+  if (!isObj(q)) return null;
+  if (q.step === 1) return /^W[1-7]$/.test(q.warm) ? { step: 1, warm: q.warm } : null;
+  return q.step === 2 || q.step === 3 ? { step: q.step } : null;
+}
 
 /* the warm-up kind for the commonest error at this level (tie → the earlier kind; none → W1) */
 function warmFor(errs) {
@@ -83,8 +90,10 @@ function warmFor(errs) {
 }
 
 /**
- * Record one finished proof. Pure: returns a new state.
+ * Record one finished (or left) proof. Pure: returns a new state.
  * → { ts, event: null | 'level-up' | 'type-done', rescue: null | { step:1, warm } | { step:2 } | { step:3 } }
+ * A rescue is also kept on the type (ts.queued) until the next proof starts (takeRescue), so a proof left
+ * in the middle, or "סיום" on the end card, never uses up a stage of the ladder without showing it (review M3).
  */
 export function record(ts0, level, rec, { counted = true, errs = {}, filledReason = null } = {}) {
   const ts = copy(ts0);
@@ -107,7 +116,7 @@ export function record(ts0, level, rec, { counted = true, errs = {}, filledReaso
   const fast = allPerfect && h.length >= RULES.FAST_MIN_PROOFS && h.reduce((s, x) => s + x.n, 0) >= RULES.FAST_MIN_DECISIONS;
   if (fast || last.filter(isClean).length >= RULES.NEED) {
     ts.level = Math.min(4, ts.level + 1);
-    ts.errs = {}; ts.resc = { stage: 0, bad: 0 }; ts.force = null;
+    ts.errs = {}; ts.resc = { stage: 0, bad: 0 }; ts.force = null; ts.queued = null;
     return { ts, event: ts.level === 4 ? 'type-done' : 'level-up', rescue };
   }
 
@@ -119,7 +128,14 @@ export function record(ts0, level, rec, { counted = true, errs = {}, filledReaso
     else { rescue = { step: 2 }; ts.resc.stage = 2; }
     ts.resc.bad = 0; ts.force = 'A';
   }
+  if (rescue) ts.queued = rescue;
   return { ts, event, rescue };
+}
+/** The rescue card waiting on this type, taken off it (shown once): { ts, rescue | null }. */
+export function takeRescue(ts0) {
+  const ts = copy(ts0), rescue = ts.queued;
+  ts.queued = null;
+  return { ts, rescue };
 }
 
 /** Which variant the next proof at this level is, and whether it counts. */
@@ -181,7 +197,9 @@ export function adoptGuest(store, accountId) {
   } catch { /* private mode: nothing to adopt */ }
 }
 
-/** A signed-in student on a new device: any row at "רמה N" proves level N was earned. Never lowers. */
+/** A signed-in student on a new device: any row at "רמה N" proves level N was earned, and RULES.NEED clean
+    proofs (the tracker's "win") at רמה 3 restore a finished type (level 4; review M11). Never lowers.
+    (A finish by the fast track, two perfect proofs, stays at level 3 here: the rows cannot show it.) */
 export function seedFromServer(state, rows, TYPES) {
   if (!Array.isArray(rows)) return state;
   const tabs = { [T['tab.1']]: 1, [T['tab.2']]: 2, [T['tab.3']]: 3 };
@@ -194,7 +212,8 @@ export function seedFromServer(state, rows, TYPES) {
     if (!type || !n) continue;
     types = types || { ...state.types };
     const ts = cleanType(types[type.id]);
-    ts.level = Math.max(ts.level, n); ts.warm.done = true;
+    const done = n === 3 && Number.isFinite(row.win) && row.win >= RULES.NEED;
+    ts.level = Math.max(ts.level, done ? 4 : n); ts.warm.done = true;
     types[type.id] = ts;
   }
   return types ? { ...state, types } : state;

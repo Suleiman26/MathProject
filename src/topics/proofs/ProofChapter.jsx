@@ -9,7 +9,7 @@ import { seeded, makeR } from '../new/core.js';
 import { useAccount, accountApi } from '@/lib/account';
 import { present, decisionsOf } from './core.js';
 import { snapshot, restore } from './session.js';
-import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord } from './mastery.js';
+import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord, takeRescue } from './mastery.js';
 import { TYPES, TABS } from './types/index.js';
 import { T, fill } from './texts.js';
 import ProofScreen from './ProofScreen.jsx';
@@ -25,7 +25,7 @@ export function readOpen() { try { const o = JSON.parse(window.sessionStorage.ge
 const dropOpen = () => { try { window.sessionStorage.removeItem(OPEN_KEY); } catch { /* private mode */ } };
 
 export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, devWarm }) {
-  const { account } = useAccount();
+  const { ready, account } = useAccount();
   const [who, setWho] = useState(firstWho);
   const [state, setState] = useState(() => load(store(), firstWho()));
   const stateRef = useRef(state), whoRef = useRef(who);
@@ -36,7 +36,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const [end, setEnd] = useState(null);
   const [rescue, setRescue] = useState(devRescue || null);
   const [warm, setWarm] = useState(devWarm ? { key: 1, only: devWarm === true ? null : devWarm, then: 'land' } : null);   // { key, only, then:'proof'|'land' }
-  const live = useRef(null), last = useRef(null), sitting = useRef(0), nextRescue = useRef(null), alive = useRef(true), n = useRef(0);
+  const live = useRef(null), last = useRef(null), sitting = useRef(0), alive = useRef(true), n = useRef(0);
 
   const commit = (next) => { stateRef.current = next; setState(next); save(store(), whoRef.current, next); };
   const putType = (t) => commit({ ...stateRef.current, types: { ...stateRef.current.types, [type.id]: t } });
@@ -52,9 +52,12 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     setOpen({ key: ++n.current, problem: s.problem, view: s.view, level, variant: s.problem.variant, counted: o.counted !== false, walk: !!o.walk, restored: s });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── the account: adopt the guest progress on sign-in, reload when the student changes, seed levels from the server once ── */
+  /* ── the account: adopt the guest progress on sign-in, reload when the student changes, seed levels from the server once.
+     Nothing happens before the account state is ready (review M10): until then useAccount() says "no account" even
+     for a signed-in student, and switching to the guest key would drop a restored proof. ── */
   const id = account && account.id;
   useEffect(() => {
+    if (!ready) return;
     const w = whoKey(account);
     if (w === whoRef.current) return;
     if (live.current) leaveNow();
@@ -62,7 +65,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     whoRef.current = w; setWho(w);
     const next = load(store(), w);
     stateRef.current = next; setState(next); setOpen(null); setEnd(null);
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, ready]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!id) return undefined;
     let on = true;
@@ -76,9 +79,15 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
 
   useEffect(() => { if (onOpen) onOpen(!!open || !!warm || !!rescue); }, [open, warm, rescue, onOpen]);
 
-  /* ── start a proof ── */
+  /* ── start a proof (a rescue card waiting on the type comes first: it is shown once, then taken off) ── */
   function startProof(level, opts = {}) {
     const t = typeState(stateRef.current, type.id);
+    if (t.queued && !opts.walk) {
+      const out = takeRescue(t);
+      putType(out.ts);
+      setEnd(null); setOpen(null); setWarm(null); setRescue(out.rescue);
+      return;
+    }
     let { variant, counted } = variantFor(t, level);
     let lv = level;
     if (opts.walk) { variant = 'A'; counted = false; lv = 1; }
@@ -91,7 +100,6 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     if (opts.walk) view = { ...view, ties: false, steps: view.steps.map((s) => ({ ...s, ask: [] })) };   // a fully worked example
     if (t.force === 'A' && !opts.walk) putType(clearForce(t));
     last.current = { family: problem.family, theorem: problem.theorem };
-    nextRescue.current = null;
     setEnd(null); setRescue(null); setTab(level);
     setOpen({ key: ++n.current, problem, view, level, variant, counted, walk: !!opts.walk, restored: null });
   }
@@ -154,14 +162,10 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     putType(out.ts);
     live.current = null; dropOpen();
     sitting.current += 1;
-    nextRescue.current = out.rescue;
     setEnd({
       clean: r.clean, filled: r.summary.filled > 0, counted: o.counted && !o.walk, dots: dots(out.ts, o.level), done: out.ts.done, lessHelp: less, event: out.event, newLevel: out.ts.level,
       round: sitting.current % RULES.ROUND === 0, typeName: type.name, levelName: TABS[o.level],
-      onMore: () => {
-        if (nextRescue.current) { const rs = nextRescue.current; nextRescue.current = null; setOpen(null); setEnd(null); setRescue(rs); return; }
-        startProof(Math.max(1, Math.min(3, out.event ? out.ts.level : o.level)));
-      },
+      onMore: () => startProof(Math.max(1, Math.min(3, out.event ? out.ts.level : o.level))),   // a queued rescue card comes first
       onFinish: () => { setOpen(null); setEnd(null); setTab(Math.max(1, Math.min(3, typeState(stateRef.current, type.id).level))); },
     });
   }
