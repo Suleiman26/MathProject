@@ -129,6 +129,13 @@ export function variantFor(ts, level) {
   return { variant: 'B', counted: true };
 }
 export const walked = (ts) => ({ ...copy(ts), walked: true });
+/** The warm-up is behind the student (§7.1): its answers per kind are kept (the last few), the history is not touched. */
+export function warmed(ts, res = {}) {
+  const t = copy(ts), kinds = { ...t.warm.kinds };
+  for (const [k, v] of Object.entries(res || {})) if (Array.isArray(v)) kinds[k] = [...(kinds[k] || []), ...v.map((b) => (b ? 1 : 0))].slice(-RULES.WARM_CAP);
+  t.warm = { done: true, kinds };
+  return t;
+}
 export const useForce = (ts) => ({ ...copy(ts), force: null });
 
 /** The four dots: the last 4 counted proofs at this level (clean or not), oldest first, padded with null. */

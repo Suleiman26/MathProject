@@ -3,7 +3,7 @@
    A/B variants, the four dots, and device storage that never throws (Review Focus 1, 4). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RULES, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord } from './mastery.js';
+import { warmed, RULES, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord } from './mastery.js';
 
 const rec = (n, solo, o = {}) => ({ n, solo, helped: 0, missed: n - solo - (o.filled || 0), filled: o.filled || 0, variant: 'B', tpl: o.tpl || '3-X-SAS', day: 1 });
 const run = (ts, level, recs, opt) => { let out; for (const r of recs) { out = record(ts, level, r, opt); ts = out.ts; } return out; };
@@ -118,4 +118,12 @@ test('left in the middle: counts as not clean after a non-solo decision, not at 
   assert.equal(leftRecord({ n: 8, decided: [{ state: 'solo' }, { state: 'solo' }] }), null);
   assert.deepEqual(leftRecord({ n: 8, decided: [{ state: 'solo' }, { state: 'missed' }], variant: 'B', tpl: '3-K-SAS', day: 3 }), { n: 8, solo: 1, helped: 0, missed: 7, filled: 0, variant: 'B', tpl: '3-K-SAS', day: 3 });
   assert.equal(isClean(leftRecord({ n: 10, decided: [{ state: 'helped' }] , variant: 'B', tpl: 'x', day: 1 })), false);
+});
+
+test('warm-up: done once it is behind the student; answers are kept per kind, history untouched', () => {
+  const a = warmed(emptyType(), { W1: [true, false], W4: [true] });
+  assert.deepEqual([a.warm.done, a.warm.kinds, a.hist, a.done, a.level], [true, { W1: [1, 0], W4: [1] }, { 1: [], 2: [], 3: [] }, 0, 1]);
+  const b = warmed(a, { W1: [true, true, true, true, true, true, true] });
+  assert.equal(b.warm.kinds.W1.length, 8); assert.deepEqual(warmed(emptyType()).warm, { done: true, kinds: {} });
+  assert.deepEqual(warmed(emptyType(), { W2: 'x' }).warm.kinds, {});
 });
