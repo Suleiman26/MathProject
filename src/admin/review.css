@@ -406,6 +406,29 @@
   .adm-root .cpl-pb-rv { background: var(--cpl-v50); border-color: var(--cpl-v200); color: var(--cpl-v700); }
   .adm-root .cpl-bd { min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--cpl-c600); color: #fff; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; }
   .adm-root .cpl-toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
+
+  /* touch: every tap target at least 44×44 (review M3); the desktop sizes above stay as they are */
+  .adm-root .cpl-b, .adm-root .cpl-b.sm, .adm-root .cpl-pvh .cpl-b.sm { height: 44px; min-width: 44px; }
+  .adm-root .cpl-ib, .adm-root .cpl-srch-x { width: 44px; height: 44px; }
+  .adm-root .cpl-srch-x { top: 1px; }
+  .adm-root .cpl-back { height: 44px; }
+  .adm-root .cpl-who { height: 44px; padding-inline-end: 9px; }
+  .adm-root .cpl-who i { width: 30px; height: 30px; }
+  .adm-root .cpl-tabs a { height: 44px; }
+  .adm-root .cpl-chip, .adm-root .cpl-rsn .cpl-chip { height: 44px; }
+  .adm-root .cpl-hint button { min-height: 44px; min-width: 44px; padding: 0 8px; }
+  .adm-root .cpl-above { min-height: 44px; }
+  .adm-root .cpl-fold > summary, .adm-root .cpl-how summary { display: flex; align-items: center; min-height: 44px; padding-block: 0; }
+  .adm-root .cpl-how summary { padding-inline: 12px; }
+  .adm-root .cpl-foot a { display: inline-flex; align-items: center; min-height: 44px; padding: 0; }
+  .adm-root .cpl-by button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0 8px; }
+  .adm-root .cpl-toast button { height: 44px; min-width: 64px; padding: 0 14px; }
+  /* the shared board card and attach kit inside this screen */
+  .adm-root .cpl-items .abtn, .adm-root .cpl-items .abtn.sm { min-height: 44px; }
+  .adm-root .cpl-items .fa-inl { padding-block: 10px; margin-block: -6px; vertical-align: middle; }
+  .adm-root .cpl-items .fa-x, .adm-root .cpl-rep .fa-x { width: 44px; height: 44px; }
+  .adm-root .cpl-rep .fa-btn, .adm-root .cpl-items .fa-btn { min-height: 44px; }
+  .adm-root .cpl-rep .fa-link input, .adm-root .cpl-rep .fa-link .abtn, .adm-root .cpl-items .fa-link input, .adm-root .cpl-items .fa-link .abtn { height: 44px; }
 }
 @media (max-width: 1099px) and (min-width: 700px) {
   .adm-root .cpl[data-step="pv"] .cpl-canvas { background: var(--surface-3); justify-content: center; }
