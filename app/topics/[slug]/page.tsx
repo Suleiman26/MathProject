@@ -15,8 +15,9 @@ export const dynamicParams = false;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const t = (TOPICS as Record<string, { title: string }>)[slug];
-  return { title: t ? t.title : "מתמטיקה חט״ב" };
+  const t = (TOPICS as Record<string, { title: string; hidden?: boolean }>)[slug];
+  // a hidden topic (not approved yet) stays out of search engines
+  return { title: t ? t.title : "מתמטיקה חט״ב", ...(t && t.hidden ? { robots: { index: false, follow: false } } : {}) };
 }
 
 export default async function TopicPage({ params }: Props) {

@@ -313,3 +313,37 @@ test('type 1: remake rebuilds the same problem', () => {
   for (let i = 0; i < 30; i++) { const p = t.make(R, 2, 'B', { recent: [], last: null }, {}), q = t.remake(p); assert.equal(q.id, p.id); assert.deepEqual(q.facts, p.facts); assert.deepEqual(q.tiles, p.tiles); assert.deepEqual(q.figure, p.figure); assert.deepEqual(q.givenText, p.givenText); }
 });
 test('all four types are present, in order', () => { assert.deepEqual(TYPES.map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה']); assert.equal(TYPES.reduce((n, t) => n + t.templates.length, 0), 63); });
+
+/* ── wiring (plan Task 20) ── */
+test('wiring: registered, coral, hidden from the home lists', async () => {
+  const fs = await import('node:fs');
+  const src = fs.readFileSync(new URL('../registry.js', import.meta.url), 'utf8');
+  assert.match(src, /"proofs": \{"title": "הוכחות", "topic": "orange", "file": "proofs\.html", "hidden": true\}/);
+  assert.match(src, /"proofs": \(\) => import\('\.\/proofs\/Topic\.jsx'\)/); assert.match(src, /"proofs": \(\) => import\('\.\/proofs\/styles\.js'\)/);
+  const { CHAPTERS } = await import('../../home/chapters.js'); assert.equal('proofs' in CHAPTERS, false);
+  const cat = fs.readFileSync(new URL('../../home/catalog.js', import.meta.url), 'utf8'); assert.equal(/proofs/.test(cat), false);
+  const page = fs.readFileSync(new URL('../../../app/topics/[slug]/page.tsx', import.meta.url), 'utf8');
+  assert.match(page, /hidden \? \{ robots: \{ index: false, follow: false \} \}/);
+});
+test('CSS: every class, keyframe and custom property is pf-; no generic @property; no letter-spacing', async () => {
+  const css = (await import('./styles.js')).default; const own = css.slice(css.indexOf('/* ── pf ── */')); assert.ok(css.includes('/* ── pf ── */'));
+  for (const m of own.matchAll(/@keyframes\s+([\w-]+)/g)) assert.match(m[1], /^pf-/);
+  for (const m of css.matchAll(/@property\s+(--[\w-]+)/g)) assert.match(m[1], /^--pf-/);
+  for (const m of own.matchAll(/(--[\w-]+)\s*:/g)) assert.match(m[1], /^--pf-/);
+  assert.equal(/letter-spacing/.test(css), false);
+  // our own classes are pf-…; `is-…` are states and only ever follow a pf- class or a shared one; the rest are shared mp.css names
+  const shared = ['hdr', 'ch-btns', 'ch-btn', 'content', 'sub-tabs', 'sub-tab', 'banner', 'fb', 'ok', 'err', 'step-card', 'step-label', 'active'];
+  for (const m of own.matchAll(/\.([a-zA-Z][\w-]*)/g)) assert.ok(m[1] === 'pf' || /^(pf|is)-/.test(m[1]) || shared.includes(m[1]), m[1]);
+  for (const m of own.matchAll(/(^|[\s,>+~(])\.is-[\w-]+/g)) assert.fail(`a bare state class: ${m[0]}`);
+  // every rule of ours is scoped under #root
+  for (const line of own.split('\n')) { const sel = line.trim(); if (/^[.#\w][^{@]*\{/.test(sel) && !/^(from|to|\d+%)/.test(sel)) for (const one of sel.slice(0, sel.indexOf('{')).split(',')) assert.ok(one.trim().startsWith('#root '), one); }
+});
+test('every text key the screens use exists', async () => {
+  const fs = await import('node:fs'); const { T } = await import('./texts.js');
+  const dir = new URL('./', import.meta.url);
+  for (const f of fs.readdirSync(dir).filter((n) => /\.jsx$/.test(n))) {
+    const src = fs.readFileSync(new URL(f, dir), 'utf8');
+    for (const m of src.matchAll(/\bT\['([\w.-]+)'\]/g)) assert.ok(T[m[1]] != null, `${f}: no text "${m[1]}"`);
+    for (const m of src.matchAll(/\bfill\('([\w.-]+)'/g)) assert.ok(T[m[1]] != null, `${f}: no text "${m[1]}"`);
+  }
+});
