@@ -12,7 +12,7 @@ import { partsOf, present, classify, canonRows, targets } from '@/topics/proofs/
 import Warmup from '@/topics/proofs/Warmup';
 import { KINDS } from '@/topics/proofs/warmup-core';
 import { REASONS } from '@/topics/proofs/reasons';
-import { T as TXT, NEW_DRAFTS } from '@/topics/proofs/texts';
+import { T as TXT, NEW_DRAFTS, OPEN_POINTS } from '@/topics/proofs/texts';
 import { Tx } from '@/topics/proofs/signs';
 import ProofScreen from '@/topics/proofs/ProofScreen';
 import TopBar from '@/components/TopBar';
@@ -157,6 +157,8 @@ function Sheet({ q }) {
     return (
       <div className="prf prf-lab-sheet">
         {nav}
+        <h1 className="prf-lab-h">שאלות פתוחות במתמטיקה ({OPEN_POINTS.length})</h1>
+        {OPEN_POINTS.map((t, i) => <p key={i} className="prf-lab-p">{t}</p>)}
         <h1 className="prf-lab-h">דף בדיקה · ניסוחים שנכתבו בבנייה ({NEW_DRAFTS.length})</h1>
         <p className="prf-lab-p">הטקסטים האלה לא מנוסחים במפרט. כל אחד מהם מחכה לאישור או לתיקון.</p>
         <table className="prf-table prf-lab-texts"><tbody>{NEW_DRAFTS.map((k) => <tr key={k} className="prf-lab-card"><td dir="ltr">{k}</td><td>{TXT[k]}</td></tr>)}</tbody></table>

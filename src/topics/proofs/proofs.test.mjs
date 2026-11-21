@@ -45,7 +45,8 @@ for (const type of TYPES) for (const level of [1, 2, 3]) for (const variant of [
         for (const f of order) { assert.equal(classify(p, done, p.facts[f]).c, 'ok', `${p.id} ${f}`); assert.equal(checkReason(p, done, f, p.just[f][0].reasons[0]).ok, true); done.push(f); }
         assert.equal(isDone(p, done), true);
       }
-      for (const t of p.tiles.wrong) { const c = classify(p, p.given, t.st); assert.ok(c.c === 'early' || c.c === 'false', `${p.id} wrong tile is ${c.c}`); assert.equal(c.kind, { consequence: 'looks-equal', goal: c.kind, 'letter-swap': 'false-statement', word: 'wrong-word', position: 'wrong-matching', 'next-letter': 'wrong-matching', 'kind-mix': 'wrong-matching' }[t.why]); }
+      for (const t of p.tiles.wrong) { const c = classify(p, p.given, t.st); if (c.c === 'iso') { assert.equal(t.why, 'consequence'); continue; }   // family T: true, no reason in phase 1 (review I3)
+        assert.ok(c.c === 'early' || c.c === 'false', `${p.id} wrong tile is ${c.c}`); assert.equal(c.kind, { consequence: 'looks-equal', goal: c.kind, 'letter-swap': 'false-statement', word: 'wrong-word', position: 'wrong-matching', 'next-letter': 'wrong-matching', 'kind-mix': 'wrong-matching' }[t.why]); }
       assert.ok(p.tiles.wrong.length <= (type.n >= 3 ? 2 : 4));
       if (variant === 'A') assert.equal(view.tiles.filter((t) => !t.fact).length <= (type.n === 1 ? 2 : type.n === 2 ? 1 : 0), true);
       if (variant === 'B' && type.n >= 3) assert.notEqual(p.family, '2');             // family 2 is for entry proofs only
@@ -345,5 +346,35 @@ test('every text key the screens use exists', async () => {
     const src = fs.readFileSync(new URL(f, dir), 'utf8');
     for (const m of src.matchAll(/\bT\['([\w.-]+)'\]/g)) assert.ok(T[m[1]] != null, `${f}: no text "${m[1]}"`);
     for (const m of src.matchAll(/\bfill\('([\w.-]+)'/g)) assert.ok(T[m[1]] != null, `${f}: no text "${m[1]}"`);
+  }
+});
+
+/* ── review fixes ── */
+test('family T: what the isosceles triangle gives is a neutral note, never "looks equal" or a wrong try (review I3)', () => {
+  const t3 = typeById('prove-congruence'), t4 = typeById('then-conclusion'), R = makeR(seeded(51));
+  for (let i = 0; i < 40; i++) {
+    const sss = t3.make(R, 3, 'B', { recent: [], last: null }, { only: '3-T-SSS' });
+    for (const id of ['aB', 'aA', 'aD']) for (const done of [[], ['sAB'], ['sAB', 'sBD']]) assert.deepEqual([classify(sss, done, sss.facts[id]).c, classify(sss, done, sss.facts[id]).textKey], ['iso', 'st.isoLater'], `T-SSS ${id}`);
+    const sas = t3.make(R, 3, 'B', { recent: [], last: null }, { only: '3-T-SAS' });
+    for (const id of ['sBD', 'aB', 'aD']) assert.equal(classify(sas, [], sas.facts[id]).c, 'iso', `T-SAS ${id}`);
+    const asa = t3.make(R, 3, 'B', { recent: [], last: null }, { only: '3-T-ASA' });                // AB = AC is not given here
+    for (const id of ['sAB', 'sBD', 'aB']) assert.deepEqual([classify(asa, [], asa.facts[id]).c, classify(asa, [], asa.facts[id]).kind], ['early', 'looks-equal'], `T-ASA ${id}`);
+    const goal = t4.make(R, 3, 'B', { recent: [], last: null }, { only: '4-T-SAS-1' });              // the goal BD = DC: still neutral before the congruence
+    assert.equal(classify(goal, [], goal.facts.sBD).c, 'iso');
+    const rows = canonRows(goal).map((r) => r.fact), done = [];
+    for (const f of rows) { assert.equal(classify(goal, done, goal.facts[f]).c, 'ok', `${goal.id} ${f}`); done.push(f); }          // the congruence path still works
+    // in a proof: a note, no decision, no error kind, no taint
+    let s = start(sss, present(sss, 3, 'B', { R })), o = act(s, { t: 'statement', st: sss.facts.aB });
+    assert.deepEqual([o.fx[0].cls, o.fx[0].key, o.s.decisions.length, o.s.nonSolo, o.s.errs], ['note', 'st.isoLater', 0, 0, {}]);
+    // a family that is not T is untouched
+    const x = t3.make(R, 3, 'B', { recent: [], last: null }, { only: '3-X-SAS' }), c = x.consequences[0];
+    assert.equal(classify(x, [], x.facts[c]).kind, 'looks-equal');
+  }
+});
+test('type 3: the "looks equal" tile never says "= 90°" (review I5)', () => {
+  const t = typeById('prove-congruence'), R = makeR(seeded(52));
+  for (const id of ['3-T-SAS', '3-T-SSS']) for (let i = 0; i < 80; i++) {
+    const p = t.make(R, 2, 'B', { recent: [], last: null }, { only: id });
+    for (const w of p.tiles.wrong) { assert.ok(!w.st.right, `${p.id}`); assert.doesNotMatch(show(w.st), /90/); }
   }
 });

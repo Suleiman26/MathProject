@@ -6,8 +6,8 @@ import assert from 'node:assert/strict';
 import { seeded, makeR } from '../new/core.js';
 import { makeTask, checkTask, flow, next, answer, passed, KINDS } from './warmup-core.js';
 import { layout, labelErrors } from './figure-core.js';
-import { holds, norm } from './core.js';
-import { TYPES } from './types/index.js';
+import { holds, norm, isoLater } from './core.js';
+import { TYPES, typeById } from './types/index.js';
 import { T, tx } from './texts.js';
 
 const RUNS = Number(process.env.RUNS || 3000);
@@ -56,7 +56,13 @@ test('W2 / W6: both answers come up; W7 wrong options are false in the drawing; 
     c[makeTask(R, 'W2').answer]++; c[makeTask(R, 'W6').answer]++;
     const t7 = makeTask(R, 'W7'); for (const o of t7.options) assert.equal(holds(t7.figure, o.st), o.id === t7.answer, 'W7 option truth');
     const t3 = makeTask(R, 'W3'); assert.ok(t3.reveal.length === 1 && norm(t3.figure, t3.facts[t3.reveal[0]]) === t3.answer);
-    const t6 = makeTask(R, 'W6'); if (t6.answer === 'yes') assert.ok(Object.values(t6.facts).some((f) => norm(t6.figure, f) === norm(t6.figure, t6.st)) || true);
+    // W6 (review M1): "yes" is a given or a seen fact, "no" is the goal or another consequence
+    const t6 = makeTask(R, 'W6'), k6 = norm(t6.figure, t6.st);
+    assert.equal(t6.answer === 'yes', ['given', 'seen'].includes(t6.from), t6.from);
+    if (t6.from === 'given') assert.ok(t6.given.some((g) => norm(t6.figure, g) === k6), 'W6 given');
+    if (t6.from === 'seen') { assert.ok(holds(t6.figure, t6.st)); assert.ok(t6.st.kind === 'seg' ? t6.st.x.split('').sort().join('') === t6.st.y.split('').sort().join('') : t6.st.x.v === t6.st.y.v, 'W6 seen: a shared side or vertical angles'); assert.ok(!t6.given.some((g) => norm(t6.figure, g) === k6)); }
+    if (t6.from === 'goal') assert.equal(k6, norm(t6.figure, t6.toProve));
+    if (t6.from === 'consequence') { assert.ok(holds(t6.figure, t6.st)); assert.notEqual(k6, norm(t6.figure, t6.toProve)); assert.ok(!t6.given.some((g) => norm(t6.figure, g) === k6)); }
   }
   for (const k of Object.keys(c)) assert.ok(c[k] > 100, k);
 });
@@ -87,4 +93,14 @@ test('W4 "not between": the angle is opposite the shorter side and a second, dif
     assert.equal(t.answer, 'cant');
   }
   assert.ok(n > 200, `only ${n} "not between" tasks`);
+});
+test('W2 / W6: an isosceles consequence of family T is never "only looks so" or "not yet" (review I3)', () => {
+  const R = makeR(seeded(81)), seen = { T: 0 };
+  for (let i = 0; i < 1500; i++) for (const kind of ['W2', 'W6']) {
+    const t = makeTask(R, kind), p = typeById(t.src.type).remake(t.src);
+    assert.equal(norm(p.figure, p.facts[t.src.fact]), norm(t.figure, t.st), 'src rebuilds the statement');
+    if (p.family === 'T') seen.T++;
+    if (t.answer === 'looks' || t.answer === 'no') assert.equal(isoLater(p, p.given, t.src.fact), false, `${kind} ${p.id} ${t.src.fact}`);
+  }
+  assert.ok(seen.T > 100, 'family T comes up');
 });

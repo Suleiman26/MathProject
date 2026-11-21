@@ -160,6 +160,20 @@ export function checkMatching(p, tri1, ordered) {
   return { ok: false, kind: 'wrong-matching', ...matchingMiss(p, pairs) };
 }
 
+/* ── family T: what an isosceles triangle gives (lead ruling on review I3) ── */
+/* Once AB = AC is known (given or written), the base angles are equal, and the bisector, the median and
+   the altitude from the apex are one line (any one of them gives the other two). Phase 1 has no reason
+   for that, so such a true fact is a neutral note: never "looks equal", never a wrong try, never an
+   error kind for the rescue ladder. Fact ids are family T's pair ids (stable after renaming). */
+const APEX = ['aA', 'sBD', 'aD'];
+export function isoLater(p, done, id) {
+  if (p.family !== 'T' || !p.isosceles || !p.facts[id]) return false;
+  const known = (f) => (done || []).includes(f) || (p.given || []).includes(f);
+  if (!known('sAB') || known(id)) return false;
+  if (id === 'aB') return true;
+  return APEX.includes(id) && APEX.some((f) => f !== id && known(f));
+}
+
 /* ── classify a statement (§10.2) ─────────────────────────────────────────── */
 export function classify(p, done, st) {
   const id = findFact(p, st);
@@ -171,6 +185,7 @@ export function classify(p, done, st) {
         const n = Math.max(0, ...(p.just[id] || []).map((j) => j.needs.filter((x) => done.includes(x)).length));
         return { c: 'early', fact: id, sub: 'congruence', kind: 'too-early', textKey: 'st.congEarly', vars: { n } };
       }
+      if (isoLater(p, done, id)) return { c: 'iso', fact: id, textKey: 'st.isoLater', vars: {} };
       if (targets(p).includes(id)) return { c: 'early', fact: id, sub: 'target', kind: 'goal-as-known', textKey: 'st.goalEarly', vars: {} };
       return { c: 'early', fact: id, sub: 'consequence', kind: 'looks-equal', textKey: 'st.consEarly', vars: {} };
     }

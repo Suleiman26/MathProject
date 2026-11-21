@@ -5,18 +5,18 @@
 import { seeded, makeR } from '../../new/core.js';
 import { T } from '../texts.js';
 import { DEFS } from '../reasons.js';
-import { bare, letterSwap, pickTemplate, wordsFor } from './tiles.js';
+import { plain, letterSwap, pickTemplate, wordsFor } from './tiles.js';
 import X from '../families/x.js'; import K from '../families/k.js'; import Z from '../families/z.js';
 import TT from '../families/t.js'; import TWO from '../families/two.js';
 
 const FAMS = { X, K, Z, T: TT, 2: TWO };
 const TEMPLATES = Object.values(FAMS).flatMap((f) => Object.entries(f.variants).map(([variant, v]) => ({ id: `3-${variant}`, family: f.id, variant, theorem: v.theorem })));
 
-/* §7.5 wrong tiles for type 3: one true consequence not known yet, one false letter-swap of a given */
+/* §7.5 wrong tiles for type 3: one true consequence not known yet (plain: never "= 90°"), one false letter-swap of a given */
 function wrongTiles(base, R) {
   const wrong = [], traps = {};
   const c = R.pick(base.consequences);
-  wrong.push({ st: bare(base.facts[c]), why: 'consequence' });
+  wrong.push({ st: plain(base.facts[c]), why: 'consequence' });
   const ls = letterSwap(base, R);
   if (ls) { wrong.push(ls.tile); traps[ls.trap[0]] = ls.trap[1]; }
   return { wrong, traps };

@@ -11,9 +11,9 @@
 import { T } from './texts.js';
 import { REASONS } from './reasons.js';
 import { RULES } from './mastery.js';
-import { show, norm, segKey, congOf, targets, measure } from './core.js';
+import { show, norm, segKey, congOf, targets, measure, isoLater } from './core.js';
 import { partId } from './figure-core.js';
-import { bare } from './types/tiles.js';
+import { bare, plain } from './types/tiles.js';
 import readGiven from './types/read-given.js';
 import congruentParts from './types/congruent-parts.js';
 import proveCongruence from './types/prove-congruence.js';
@@ -22,10 +22,11 @@ import TWO from './families/two.js';
 
 export const KINDS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7'];
 const NONE = { recent: [], last: null };
-const plain = (f) => { const { right, ...st } = bare(f); return st; };          // a consequence never says "= 90°"
 const freeOf = (p) => Object.keys(p.roles).find((id) => p.roles[id] === 'vertical' || p.roles[id] === 'common') || null;
 const pickFacts = (p, ids) => Object.fromEntries(ids.map((id) => [id, p.facts[id]]));
 const why = (kind) => ({ k: `w.${kind}.why`, vars: {} });
+/* where a task's statement comes from (the problem can be rebuilt with its type's remake(); tests) */
+const srcOf = (p, fact) => ({ type: p.type, template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null, fact });
 
 /* W1: "נתון: AO = OB. געו בציור בשני הקטעים האלה." */
 function w1(R) {
@@ -40,16 +41,22 @@ function w1(R) {
   throw new Error('warm-up W1: no given segment pair');
 }
 
-/* W2: "ידועה, או רק נראית כך?" — a given (marked) statement, or a true one that is not known yet */
+/* W2: "ידוע, או רק נראה כך?" — a given (marked) statement, or a true one that is not known yet.
+   Family T: what the isosceles triangle gives is never the "looks" answer (review I3: it is known, by a theorem we skip in phase 1). */
 function w2(R) {
-  const p = proveCongruence.make(R, 1, R.bool() ? 'A' : 'B', NONE, {}), known = R.bool();
-  const st = known ? bare(p.facts[R.pick(p.given)]) : plain(p.facts[R.pick(p.consequences)]);
-  return { kind: 'W2', text: { k: 'w.W2', vars: { st: show(st) } }, st, figure: p.figure, facts: pickFacts(p, p.given), marks: [...p.given], reveal: [],
-    given: p.given.map((id) => bare(p.facts[id])), input: 'chips',
-    options: [{ id: 'known', label: T['w.W2.known'] }, { id: 'looks', label: T['w.W2.looks'] }], answer: known ? 'known' : 'looks', why: why('W2') };
+  for (let i = 0; i < 200; i++) {
+    const p = proveCongruence.make(R, 1, R.bool() ? 'A' : 'B', NONE, {}), known = R.bool();
+    const looks = p.consequences.filter((c) => !isoLater(p, p.given, c));
+    if (!known && !looks.length) continue;
+    const id = known ? R.pick(p.given) : R.pick(looks), st = known ? bare(p.facts[id]) : plain(p.facts[id]);
+    return { kind: 'W2', text: { k: 'w.W2', vars: { st: show(st) } }, st, src: srcOf(p, id), figure: p.figure, facts: pickFacts(p, p.given), marks: [...p.given], reveal: [],
+      given: p.given.map((id) => bare(p.facts[id])), input: 'chips',
+      options: [{ id: 'known', label: T['w.W2.known'] }, { id: 'looks', label: T['w.W2.looks'] }], answer: known ? 'known' : 'looks', why: why('W2') };
+  }
+  throw new Error('warm-up W2: no statement');
 }
 
-/* W3: "איזה שוויון רואים בציור בלי שהוא נתון?" — the shared side / the vertical angles, a given, a consequence */
+/* W3: "איזה שוויון ידוע מהציור עצמו, בלי נתון?" — the shared side / the vertical angles, a given, a consequence */
 function w3(R) {
   for (let i = 0; i < 200; i++) {
     const p = proveCongruence.make(R, 1, 'B', NONE, {}), free = freeOf(p);
@@ -120,17 +127,25 @@ function w5(R) {
   throw new Error('warm-up W5: no side to ask');
 }
 
-/* W6: "מותר כבר להשתמש בזה?" — before the congruence: a given or a seen fact (yes), the goal or another consequence (not yet) */
+/* W6: "מותר כבר להשתמש בזה?" — before the congruence: a given or a seen fact (yes), the goal or another consequence (not yet).
+   `from` says which (given · seen · goal · consequence). Family T: an isosceles consequence is never asked (review I3). */
 function w6(R) {
-  const p = thenConclusion.make(R, 1, R.bool() ? 'A' : 'B', NONE, {}), goal = targets(p)[0], free = freeOf(p);
-  const yes = R.bool();
-  let id;
-  if (yes) id = free && R.bool(0.3) ? free : R.pick(p.given);
-  else { const others = p.consequences.filter((c) => c !== goal); id = others.length && R.bool() ? R.pick(others) : goal; }
-  const st = yes ? bare(p.facts[id]) : plain(p.facts[id]);
-  return { kind: 'W6', text: { k: 'w.W6', vars: { st: show(st) } }, st, figure: p.figure, facts: pickFacts(p, [...p.given, goal]), marks: [...p.given], reveal: [], goal,
-    given: p.given.map((g) => bare(p.facts[g])), toProve: plain(p.facts[goal]), input: 'chips',
-    options: [{ id: 'yes', label: T['w.W6.yes'] }, { id: 'no', label: T['w.W6.no'] }], answer: yes ? 'yes' : 'no', why: why('W6') };
+  for (let i = 0; i < 200; i++) {
+    const p = thenConclusion.make(R, 1, R.bool() ? 'A' : 'B', NONE, {}), goal = targets(p)[0], free = freeOf(p);
+    const yes = R.bool();
+    let id, from;
+    if (yes) { const seen = free && R.bool(0.3); id = seen ? free : R.pick(p.given); from = seen ? 'seen' : 'given'; }
+    else {
+      const others = p.consequences.filter((c) => c !== goal && !isoLater(p, p.given, c)), other = others.length && R.bool();
+      id = other ? R.pick(others) : goal; from = other ? 'consequence' : 'goal';
+      if (isoLater(p, p.given, id)) continue;
+    }
+    const st = yes ? bare(p.facts[id]) : plain(p.facts[id]);
+    return { kind: 'W6', text: { k: 'w.W6', vars: { st: show(st) } }, st, from, src: srcOf(p, id), figure: p.figure, facts: pickFacts(p, [...p.given, goal]), marks: [...p.given], reveal: [], goal,
+      given: p.given.map((g) => bare(p.facts[g])), toProve: plain(p.facts[goal]), input: 'chips',
+      options: [{ id: 'yes', label: T['w.W6.yes'] }, { id: 'no', label: T['w.W6.no'] }], answer: yes ? 'yes' : 'no', why: why('W6') };
+  }
+  throw new Error('warm-up W6: no statement');
 }
 
 /* W7: a word → what it gives ("AD תיכון לצלע BC" → pick the equality) */

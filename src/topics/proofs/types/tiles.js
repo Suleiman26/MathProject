@@ -5,6 +5,8 @@ import { findFact, holds, norm, show } from '../core.js';
 
 /** A statement without its drawing mark (a tile, a trap). */
 export const bare = (st) => { const { mark, ...rest } = st; return structuredClone(rest); };
+/** A consequence as a tile: bare, and never "= 90°" (in family T the right angle needs the straight angle too, not only the congruence). */
+export const plain = (st) => { const { right, ...rest } = bare(st); return rest; };
 
 /* the words a family variant can use when its given is worded (§6.4) */
 export const WORDS = { 'X-SAS': ['midpoint'], 'K-SAS': ['bisector'], 'T-SSS': ['median', 'midpoint'], 'T-SAS': ['bisector'], 'T-ASA': ['bisector', 'altitude'] };

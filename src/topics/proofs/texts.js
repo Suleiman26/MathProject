@@ -52,6 +52,7 @@ export const T = {
   'st.congEarly': 'נכון, אבל מוקדם מדי. לחפיפה צריך שלושה שוויונות. יש כרגע {n}.',
   'st.consEarly': 'זה נראה כך בציור, אבל עוד לא ידוע. זה ינבע מהחפיפה, אחרי שנוכיח אותה.',
   'st.notNeeded': 'נכון, אבל לא צריך את זה כדי להגיע למה שצריך להוכיח.',
+  'st.isoLater': 'נכון, אבל עוד לא למדנו את המשפט שמנמק את זה כאן. נמשיך בדרך אחרת.',
   'st.unprovable': 'ייתכן שזה נכון, אבל ברשימת הנימוקים שלנו אין נימוק שמוכיח את זה. נסו דרך אחרת.',
   'st.falseSeg': 'מהנתון אי אפשר לדעת שהקטעים {x}, {y} שווים.',
   'st.falseAng': 'מהנתון אי אפשר לדעת שהזוויות {x}, {y} שוות.',
@@ -230,6 +231,11 @@ export const T = {
   'about.then-conclusion': 'קודם מוכיחים חפיפה, ואחר כך שוויון שנובע ממנה.',
 };
 
+/** Open maths points for Sulaiman (printed on the review sheet, above the new texts). */
+export const OPEN_POINTS = [
+  'משפחה T, כשנתון AB = AC: זוויות הבסיס שוות, וחוצה הזווית מהקודקוד הוא גם תיכון וגם גובה. זה נכון, אבל בשלב 1 אין לזה נימוק ברשימה. כרגע תלמיד שכותב את זה מקבל הערה ניטרלית (st.isoLater), בלי טעות ובלי השפעה על הרמה. להחליט: להשאיר כך, להוסיף את משפטי המשולש שווה השוקיים, או לתת את משפחה T רק לפני הפרק הזה.',
+];
+
 /** Keys whose text is not drafted in the spec (written by the builder; for Sulaiman's review sheet). */
 export const NEW_DRAFTS = [
   'fb.ok', 'rs.cong.sss1', 'ui.rescue2', 'ui.filledSt',
@@ -243,7 +249,7 @@ export const NEW_DRAFTS = [
   'lbl.proofDone', 'lbl.cleanN', 'lbl.cleanAria', 'lbl.figure', 'lbl.leanGiven', 'lbl.leanSeen', 'lbl.leanRows', 'lbl.here',
   'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn', 'lbl.nextUp', 'btn.these',
   'ui.planOk', 'say.ask',
-  'ui.endSlips',
+  'ui.endSlips', 'st.isoLater',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;
