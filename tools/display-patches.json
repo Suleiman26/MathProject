@@ -3149,6 +3149,84 @@
       "old": "      {ch===1 ? <Ch1 key=\"c1\"/> : ch===2 ? <Ch2 key=\"c2\"/> : ch===3 ? <Ch3 key=\"c3\"/> : ch===4 ? <Ch4 key=\"c4\"/> : ch===5 ? <Ch5 key=\"c5\"/> : ch===6 ? <Ch6 key=\"c6\"/> : <Ch7 key=\"c7\"/>}\n",
       "new": "      {ch===1 ? <ChDirected key=\"c1\"/> : ch===2 ? <Ch7 key=\"c2\"/> : ch===3 ? <ChConv key=\"c3\"/> : <Ch6 key=\"c4\"/>}\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "  ];\n",
+      "new": "    // added for fixes board #89 (a more varied comprehensive practice)\n    () => { // a − b × (c + d)\n      const b = randNonZero(-9,9);\n      let c, d; do { c = randInt(-9,9); d = randInt(-9,9); } while (c+d === 0 || Math.abs(c+d) > 9);\n      const a = randInt(-15,15);\n      return { tokens:[a,'−',b,'×','(',c,'+',d,')'], result: a - b*(c+d) };\n    },\n    () => { // (a − b) ÷ c + d\n      const c = randInt(2,5) * pick([1,-1]), k = randNonZero(-4,4); // |k·c| ≤ 20, so a fitting b always exists\n      let a, b; do { a = randInt(-12,12); b = a - k*c; } while (Math.abs(b) > 15);\n      const d = randInt(-15,15);\n      return { tokens:['(',a,'−',b,')','÷',c,'+',d], result: k + d };\n    },\n    () => { // a × (b + c) ÷ d\n      const d = randInt(2,5), a = d * randNonZero(-3,3);\n      let b, c; do { b = randInt(-9,9); c = randInt(-9,9); } while (b+c === 0 || Math.abs(b+c) > 8);\n      return { tokens:[a,'×','(',b,'+',c,')','÷',d], result: a*(b+c)/d };\n    },\n    () => { // a ÷ b × c − d  (× and ÷ from left to right)\n      const b = randInt(2,9) * pick([1,-1]), k = randNonZero(-9,9), a = k*b;\n      const c = randNonZero(-6,6), d = randInt(-15,15);\n      return { tokens:[a,'÷',b,'×',c,'−',d], result: k*c - d };\n    },\n    () => { // a − (b − c) × d\n      let b, c; do { b = randInt(-9,9); c = randInt(-9,9); } while (b === c);\n      const d = randNonZero(-6,6), a = randInt(-15,15);\n      return { tokens:[a,'−','(',b,'−',c,')','×',d], result: a - (b-c)*d };\n    },\n  ];\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "function Ch6() {\n",
+      "new": "function Ch6({ onNext }) {\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "    const e = genCombo();\n",
+      "new": "    if (onNext) { onNext(); return; } // in the mixed practice (board #89) the next exercise may be of another kind\n    const e = genCombo();\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "function Ch7() {\n  const [part, setPart] = useState(-1); // -1 = the opening part \"מה זה שבר?\"\n  const [ex, setEx] = useState(() => genFrEx(0));\n  const [phase, setPhase] = useState(1); // 0 = division: turn it into a multiplication, 1 = solve, 2 = done\n",
+      "new": "/* mixed (the comprehensive practice, board #89): one exercise of a random kind, without the\n   sub-tabs and the lesson; \"new exercise\" asks the practice for the next one (onNext) */\nfunction Ch7({ mixed, onNext }) {\n  const [part, setPart] = useState(() => (mixed ? randInt(0, 3) : -1)); // -1 = the opening part \"מה זה שבר?\"\n  const [ex, setEx] = useState(() => genFrEx(part < 0 ? 0 : part));\n  const [phase, setPhase] = useState(part === 3 ? 0 : 1); // 0 = division: turn it into a multiplication, 1 = solve, 2 = done\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "  const reset = () => load(part);\n",
+      "new": "  const reset = () => (mixed ? onNext() : load(part));\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "      <div className=\"sub-tabs\">\n        <button className={`sub-tab-btn ${part<0?'active':''}`} onClick={() => switchPart(-1)}>מה זה שבר?</button>\n",
+      "new": "      {!mixed && <div className=\"sub-tabs\">\n        <button className={`sub-tab-btn ${part<0?'active':''}`} onClick={() => switchPart(-1)}>מה זה שבר?</button>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "      </div>\n\n      {part < 0 && <FrIntro onNext={() => switchPart(0)} />}\n",
+      "new": "      </div>}\n\n      {part < 0 && <FrIntro onNext={() => switchPart(0)} />}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "      {part >= 0 && <FrLesson part={part} />}\n",
+      "new": "      {part >= 0 && !mixed && <FrLesson part={part} />}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "function ChConv(){\n  const [part,setPart]=useState(0); // 0 = decimal→fraction sub-chapter, 1 = fraction→decimal sub-chapter\n  const [ex,setEx]=useState(()=>genDecFracEx(0));\n  const [phase,setPhase]=useState('write');\n",
+      "new": "/* mixed (the comprehensive practice, board #89): one exercise of either kind, without the\n   sub-tabs and the lesson; \"new exercise\" asks the practice for the next one (onNext) */\nfunction ChConv({mixed,onNext}){\n  const [part,setPart]=useState(()=>mixed?randInt(0,1):0); // 0 = decimal→fraction sub-chapter, 1 = fraction→decimal sub-chapter\n  const [ex,setEx]=useState(()=>genDecFracEx(part));\n  const [phase,setPhase]=useState(part===0?'write':'mult');\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "  const reset=()=>resetState(genDecFracEx(part));\n",
+      "new": "  const reset=()=>mixed?onNext():resetState(genDecFracEx(part));\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "    <div className=\"sub-tabs\">\n      <button className={`sub-tab-btn ${part===0?'active':''}`} onClick={()=>switchPart(0)}>עשרוני → שבר</button>\n      <button className={`sub-tab-btn ${part===1?'active':''}`} onClick={()=>switchPart(1)}>שבר → עשרוני</button>\n    </div>\n\n    {part===0?<>\n",
+      "new": "    {!mixed&&<div className=\"sub-tabs\">\n      <button className={`sub-tab-btn ${part===0?'active':''}`} onClick={()=>switchPart(0)}>עשרוני → שבר</button>\n      <button className={`sub-tab-btn ${part===1?'active':''}`} onClick={()=>switchPart(1)}>שבר → עשרוני</button>\n    </div>}\n\n    {mixed?null:part===0?<>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "/* ═══════ Main App ═══════ */\n",
+      "new": "/* ═══════ Chapter 4: comprehensive practice (fixes board #89) ═══════\n   Last in the topic and mixed from all of it: an exercise with several operations (solved step\n   by step), a fraction exercise with signs (any of its four kinds), or a conversion between a\n   fraction and a decimal (either way). Never the same kind three times in a row. */\nconst MIX_KINDS = ['expr', 'expr', 'frac', 'frac', 'conv'];\nfunction ChMix() {\n  const [round, setRound] = useState(0);\n  const [kinds, setKinds] = useState(() => [pick(MIX_KINDS)]);\n  const next = () => {\n    setKinds(ks => {\n      let k; do { k = pick(MIX_KINDS); } while (ks.length >= 2 && k === ks[0] && k === ks[1]);\n      return [k, ...ks].slice(0, 2);\n    });\n    setRound(r => r + 1);\n  };\n  const kind = kinds[0];\n  return kind === 'expr' ? <Ch6 key={round} onNext={next} />\n    : kind === 'frac' ? <Ch7 key={round} mixed onNext={next} />\n    : <ChConv key={round} mixed onNext={next} />;\n}\n\n/* ═══════ Main App ═══════ */\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board item #89: the comprehensive practice (last chapter) mixes step-by-step expressions (5 more kinds), signed fractions and conversions",
+      "old": "      {ch===1 ? <ChDirected key=\"c1\"/> : ch===2 ? <Ch7 key=\"c2\"/> : ch===3 ? <ChConv key=\"c3\"/> : <Ch6 key=\"c4\"/>}\n",
+      "new": "      {ch===1 ? <ChDirected key=\"c1\"/> : ch===2 ? <Ch7 key=\"c2\"/> : ch===3 ? <ChConv key=\"c3\"/> : <ChMix key=\"c4\"/>}\n",
+      "count": 1
     }
   ]
 }

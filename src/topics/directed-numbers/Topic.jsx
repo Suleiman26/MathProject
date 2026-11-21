@@ -673,6 +673,34 @@ function genCombo() {
       const a = randInt(-15,15);
       return { tokens:[a,'+',b,'÷',c,'−',d,'×',e], result: a + k1 - d*e };
     },
+    // added for fixes board #89 (a more varied comprehensive practice)
+    () => { // a − b × (c + d)
+      const b = randNonZero(-9,9);
+      let c, d; do { c = randInt(-9,9); d = randInt(-9,9); } while (c+d === 0 || Math.abs(c+d) > 9);
+      const a = randInt(-15,15);
+      return { tokens:[a,'−',b,'×','(',c,'+',d,')'], result: a - b*(c+d) };
+    },
+    () => { // (a − b) ÷ c + d
+      const c = randInt(2,5) * pick([1,-1]), k = randNonZero(-4,4); // |k·c| ≤ 20, so a fitting b always exists
+      let a, b; do { a = randInt(-12,12); b = a - k*c; } while (Math.abs(b) > 15);
+      const d = randInt(-15,15);
+      return { tokens:['(',a,'−',b,')','÷',c,'+',d], result: k + d };
+    },
+    () => { // a × (b + c) ÷ d
+      const d = randInt(2,5), a = d * randNonZero(-3,3);
+      let b, c; do { b = randInt(-9,9); c = randInt(-9,9); } while (b+c === 0 || Math.abs(b+c) > 8);
+      return { tokens:[a,'×','(',b,'+',c,')','÷',d], result: a*(b+c)/d };
+    },
+    () => { // a ÷ b × c − d  (× and ÷ from left to right)
+      const b = randInt(2,9) * pick([1,-1]), k = randNonZero(-9,9), a = k*b;
+      const c = randNonZero(-6,6), d = randInt(-15,15);
+      return { tokens:[a,'÷',b,'×',c,'−',d], result: k*c - d };
+    },
+    () => { // a − (b − c) × d
+      let b, c; do { b = randInt(-9,9); c = randInt(-9,9); } while (b === c);
+      const d = randNonZero(-6,6), a = randInt(-15,15);
+      return { tokens:[a,'−','(',b,'−',c,')','×',d], result: a - (b-c)*d };
+    },
   ];
   return pick(templates)();
 }
@@ -710,7 +738,7 @@ function collapseTokens(tokens, leftPos, rightPos, result) {
   }
   return nt;
 }
-function Ch6() {
+function Ch6({ onNext }) {
   const [ex, setEx] = useState(() => genCombo());
   const [tokens, setTokens] = useState(() => ex.tokens);
   const [phase, setPhase] = useState('mark'); // 'mark' | 'compute' | 'done'
@@ -721,6 +749,7 @@ function Ch6() {
   const [history, setHistory] = useState([]);
 
   const reset = () => {
+    if (onNext) { onNext(); return; } // in the mixed practice (board #89) the next exercise may be of another kind
     const e = genCombo();
     setEx(e); setTokens(e.tokens); setPhase('mark'); setActive(null);
     setMarkFb(null); setComputeVal(''); setComputeFb(null); setHistory([]);
@@ -1171,10 +1200,12 @@ function FrIntro({ onNext }) {
     </div>
   );
 }
-function Ch7() {
-  const [part, setPart] = useState(-1); // -1 = the opening part "מה זה שבר?"
-  const [ex, setEx] = useState(() => genFrEx(0));
-  const [phase, setPhase] = useState(1); // 0 = division: turn it into a multiplication, 1 = solve, 2 = done
+/* mixed (the comprehensive practice, board #89): one exercise of a random kind, without the
+   sub-tabs and the lesson; "new exercise" asks the practice for the next one (onNext) */
+function Ch7({ mixed, onNext }) {
+  const [part, setPart] = useState(() => (mixed ? randInt(0, 3) : -1)); // -1 = the opening part "מה זה שבר?"
+  const [ex, setEx] = useState(() => genFrEx(part < 0 ? 0 : part));
+  const [phase, setPhase] = useState(part === 3 ? 0 : 1); // 0 = division: turn it into a multiplication, 1 = solve, 2 = done
   const [f1, setF1] = useState('');
   const [f2, setF2] = useState('');
   const [ffb, setFfb] = useState(null);
@@ -1187,7 +1218,7 @@ function Ch7() {
     setF1(''); setF2(''); setFfb(null); setN(''); setD(''); setFb(null);
   };
   const switchPart = (p) => { setPart(p); if (p >= 0) load(p); };
-  const reset = () => load(part);
+  const reset = () => (mixed ? onNext() : load(part));
   const checkFlip = () => {
     const r = checkFrFlip(ex, f1, f2);
     if (r === 'ok') { setFfb(null); setPhase(1); } else setFfb(r);
@@ -1203,16 +1234,16 @@ function Ch7() {
 
   return (
     <div className="content">
-      <div className="sub-tabs">
+      {!mixed && <div className="sub-tabs">
         <button className={`sub-tab-btn ${part<0?'active':''}`} onClick={() => switchPart(-1)}>מה זה שבר?</button>
         {FR_PARTS.map((l, i) => (
           <button key={i} className={`sub-tab-btn ${part===i?'active':''}`} onClick={() => switchPart(i)}>{l}</button>
         ))}
-      </div>
+      </div>}
 
       {part < 0 && <FrIntro onNext={() => switchPart(0)} />}
 
-      {part >= 0 && <FrLesson part={part} />}
+      {part >= 0 && !mixed && <FrLesson part={part} />}
 
       {part >= 0 && ex.part > 0 && (
         <div className="card">
@@ -1351,10 +1382,12 @@ function genDecFracEx(forceType){
   return type===0?genDecToFracEx():genFracToDecEx();
 }
 
-function ChConv(){
-  const [part,setPart]=useState(0); // 0 = decimal→fraction sub-chapter, 1 = fraction→decimal sub-chapter
-  const [ex,setEx]=useState(()=>genDecFracEx(0));
-  const [phase,setPhase]=useState('write');
+/* mixed (the comprehensive practice, board #89): one exercise of either kind, without the
+   sub-tabs and the lesson; "new exercise" asks the practice for the next one (onNext) */
+function ChConv({mixed,onNext}){
+  const [part,setPart]=useState(()=>mixed?randInt(0,1):0); // 0 = decimal→fraction sub-chapter, 1 = fraction→decimal sub-chapter
+  const [ex,setEx]=useState(()=>genDecFracEx(part));
+  const [phase,setPhase]=useState(part===0?'write':'mult');
   const [fb,setFb]=useState(null);
   const [hintMsg,setHintMsg]=useState(null);
 
@@ -1375,7 +1408,7 @@ function ChConv(){
     setFn('');setFd('');setCurN(null);setCurD(null);setDivVal('');
     setMultVal('');setUsedMult(null);setEqN(null);setEqD(null);setDecAns('');
   };
-  const reset=()=>resetState(genDecFracEx(part));
+  const reset=()=>mixed?onNext():resetState(genDecFracEx(part));
   const switchPart=(p)=>{setPart(p);resetState(genDecFracEx(p));};
 
   // ── type 0 handlers ──
@@ -1420,12 +1453,12 @@ function ChConv(){
   const done = phase==='done';
 
   return <div className="content">
-    <div className="sub-tabs">
+    {!mixed&&<div className="sub-tabs">
       <button className={`sub-tab-btn ${part===0?'active':''}`} onClick={()=>switchPart(0)}>עשרוני → שבר</button>
       <button className={`sub-tab-btn ${part===1?'active':''}`} onClick={()=>switchPart(1)}>שבר → עשרוני</button>
-    </div>
+    </div>}
 
-    {part===0?<>
+    {mixed?null:part===0?<>
       <div className="info">
         <b>עשרוני → שבר:</b> כותבים את הספרות שאחרי הנקודה כמונה, וכפולת 10 מתאימה כמכנה, ואז מצמצמים.
       </div>
@@ -1562,6 +1595,27 @@ function ChDirected() {
   );
 }
 
+/* ═══════ Chapter 4: comprehensive practice (fixes board #89) ═══════
+   Last in the topic and mixed from all of it: an exercise with several operations (solved step
+   by step), a fraction exercise with signs (any of its four kinds), or a conversion between a
+   fraction and a decimal (either way). Never the same kind three times in a row. */
+const MIX_KINDS = ['expr', 'expr', 'frac', 'frac', 'conv'];
+function ChMix() {
+  const [round, setRound] = useState(0);
+  const [kinds, setKinds] = useState(() => [pick(MIX_KINDS)]);
+  const next = () => {
+    setKinds(ks => {
+      let k; do { k = pick(MIX_KINDS); } while (ks.length >= 2 && k === ks[0] && k === ks[1]);
+      return [k, ...ks].slice(0, 2);
+    });
+    setRound(r => r + 1);
+  };
+  const kind = kinds[0];
+  return kind === 'expr' ? <Ch6 key={round} onNext={next} />
+    : kind === 'frac' ? <Ch7 key={round} mixed onNext={next} />
+    : <ChConv key={round} mixed onNext={next} />;
+}
+
 /* ═══════ Main App ═══════ */
 function App() {
   const [ch, setCh] = useState(1);
@@ -1577,7 +1631,7 @@ function App() {
           ))}
         </div>
       </div>
-      {ch===1 ? <ChDirected key="c1"/> : ch===2 ? <Ch7 key="c2"/> : ch===3 ? <ChConv key="c3"/> : <Ch6 key="c4"/>}
+      {ch===1 ? <ChDirected key="c1"/> : ch===2 ? <Ch7 key="c2"/> : ch===3 ? <ChConv key="c3"/> : <ChMix key="c4"/>}
     </div>
   );
 }
