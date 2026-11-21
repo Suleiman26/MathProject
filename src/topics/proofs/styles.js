@@ -194,7 +194,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-tap-q{font-size:.95rem;font-weight:500;color:var(--ink)}
 #root .prf-prev{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 8px 6px 12px;border-radius:14px;background:var(--a-50);box-shadow:inset 0 0 0 1.5px var(--a-300);animation:prf-row .2s var(--ease-out) backwards}
 /* the preview + "להוסיף שורה" stay pinned at the top of the tray while the parts list scrolls under it (review M8) */
-#root .prf-tray .prf-prev{position:sticky;top:0;z-index:2;box-shadow:inset 0 0 0 1.5px var(--a-300),0 8px 14px -12px rgb(28 27 25 / .35)}
+#root .prf-tray .prf-prev{position:sticky;top:0;z-index:2;box-shadow:inset 0 0 0 1.5px var(--a-300),0 -12px 0 0 var(--surface-2),0 8px 14px -12px rgb(28 27 25 / .35)}
 #root .prf-prev-st{flex:1;min-width:0;font-size:1.14rem;color:var(--a-900);text-align:left}
 #root .prf-prev-eq{margin-inline:.25em;color:var(--a-700)}
 #root .prf-slot{display:inline-block;width:1.15em;height:1.3em;margin-inline:1px;vertical-align:-.28em;border-radius:6px;border:1.5px dashed var(--a-300);background:var(--surface);font-style:normal;text-align:center;line-height:1.25em}
