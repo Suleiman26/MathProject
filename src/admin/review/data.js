@@ -17,7 +17,7 @@ const LOCAL = "mp:cpl-checks";
 const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL)) || []; } catch { return []; } };
 const writeLocal = (v) => { try { localStorage.setItem(LOCAL, JSON.stringify(v)); } catch {} };
 /* the function does not exist (yet): preview's demo object has no entry, or PostgREST can't find it */
-const missingFn = (e) => /is not a function|Could not find the function|PGRST202|schema cache|404/i.test(String((e && e.message) || e));
+const missingFn = (e) => /is not a function|Could not find the function|PGRST202|schema cache/i.test(String((e && e.message) || e));
 
 export let checksShared = true;
 
