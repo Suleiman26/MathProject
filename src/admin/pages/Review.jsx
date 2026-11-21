@@ -223,12 +223,13 @@ export default function Review() {
     setRep({ level: lvl, place: pl, snap, frameReady: ready, reason: null, text: "", more: false });
   }
 
-  async function sendReport(built, pending) {
+  async function sendReport(built, pending, _rep, who) {
+    const author = who || name; // the name picked a moment ago in the form ("מי שולח?") is not in state yet
     setBusy(true);
     try {
-      const { id } = await addFix(a.run, { topic: built.topic, section: built.section, body: built.body, author: name });
+      const { id } = await addFix(a.run, { topic: built.topic, section: built.section, body: built.body, author });
       let failed = 0;
-      if (id && pending.ready.length && !a.preview) failed = await sendPending({ tok: a.tok, itemId: id, pending, author: name });
+      if (id && pending.ready.length && !a.preview) failed = await sendPending({ tok: a.tok, itemId: id, pending, author });
       await reloadItems();
       setRep(null);
       if (id) { setFlash(id); setTimeout(() => setFlash(null), 1800); }

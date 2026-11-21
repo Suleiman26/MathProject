@@ -10,6 +10,9 @@ const CH_SEL = "#root :is(.ch-btn, .nav-btn, .ph)";
 const SUB_SEL = "#root :is(.sub-tab, .sub-tab-btn, .sub-btn, .tab)";
 const NEW_Q = /תרגיל חדש|שאלה חדשה|עוד תרגיל|תרגיל נוסף/;
 const nrm = (t) => String(t || "").replace(/\s+/g, " ").trim();
+const GUARD_WAIT = 30000;
+/** true / false only when the page's own MP says so; null while it isn't there yet */
+const guardOf = (w) => { try { const mp = w && w.MP; return mp && typeof mp.adminFrame === "boolean" ? mp.adminFrame : null; } catch { return null; } };
 
 export const topicUrl = (slug, chapter, subs) => {
   const p = new URLSearchParams();
@@ -41,9 +44,13 @@ export function useFrame(onPlace, onClick) {
     const d = doc(); if (!d) return;
     let path = ""; try { path = d.location.pathname; } catch {}
     const place = readPlace(d);
-    setSt((s) => (s.path === path && s.place.chapter === place.chapter && s.place.subs.join("›") === place.subs.join("›") ? s : { ...s, path, place }));
+    const g = guardOf(win());
+    setSt((s) => {
+      const guard = g === true ? true : g === false ? false : s.guard;
+      return s.path === path && s.guard === guard && s.place.chapter === place.chapter && s.place.subs.join("›") === place.subs.join("›") ? s : { ...s, path, place, guard };
+    });
     cb.current && cb.current(place, path);
-  }, [doc]);
+  }, [doc, win]);
 
   const onLoad = useCallback(() => {
     clear();
@@ -62,13 +69,18 @@ export function useFrame(onPlace, onClick) {
       d.addEventListener("keydown", (e) => { if (e.key === "Enter") setTimeout(() => clk.current && clk.current(), 350); }, true);
     } catch {}
     read();
-    // the guard: the page itself says it runs as the admin's frame (never assumed)
-    let n = 0;
+    // the guard: the page itself says it runs as the admin's frame (never assumed). A slow (cold phone) load
+    // keeps the pill on "בודק…": red only when the page's MP says false, or nothing confirmed it in 30 s.
+    // Backoff 250 ms → 2 s; stops when this document goes away (the frame navigated or the panel unmounted).
+    const t0 = Date.now();
+    let gap = 250;
     const poll = () => {
-      const w = win(); const mp = w && w.MP;
-      if (mp && mp.adminFrame === true) { setSt((s) => ({ ...s, guard: true })); return; }
-      if (++n > 24) { setSt((s) => ({ ...s, guard: false })); return; }
-      later(poll, 250);
+      if (doc() !== d) return;
+      const g = guardOf(win());
+      if (g === true) { setSt((s) => (s.guard === true ? s : { ...s, guard: true })); return; }
+      if (g === false || Date.now() - t0 >= GUARD_WAIT) { setSt((s) => (s.guard === false ? s : { ...s, guard: false })); if (g === false) return; }
+      gap = Math.min(gap * 1.5, 2000);
+      later(poll, gap);
     };
     poll();
     // a topic page that never draws (missing, crashed): offer "open in a tab" and a report

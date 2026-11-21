@@ -77,10 +77,12 @@ export function ReportForm({ rep, setRep, slug, topicName, grade, ctx, name, set
     return x ? x.it : null;
   }, [ctx, rep.level, slug, grade, place.chapter, (place.subs || []).join("›")]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const send = async () => {
+  // who: the name just picked in "מי שולח?" (the request then goes at once, no second tap)
+  const send = async (who) => {
+    const by = typeof who === "string" ? who : name;
     if (!canSend) return;
-    if (!name) { setRep({ ...rep, needName: true }); return; }
-    const ok = await onSend(built, pending, rep);
+    if (!by) { setRep({ ...rep, needName: true }); return; }
+    const ok = await onSend(built, pending, rep, by);
     if (ok) pending.clear();
   };
   const dupText = dup ? String(dup.body || "").split("\n").find((l) => l.startsWith("מה לתקן:"))?.replace(/^מה לתקן:\s*/, "") || String(dup.body || "").split("\n").filter((l) => !/^איפה:|^סוג:/.test(l)).join(" ") : "";
@@ -143,9 +145,9 @@ export function ReportForm({ rep, setRep, slug, topicName, grade, ctx, name, set
       </div>
       <div className="cpl-rep-f">
         {rep.needName && !name
-          ? <div className="cpl-who-pick"><span>מי שולח?</span>{PEOPLE.map((p) => <button key={p} type="button" className="cpl-b sm" onClick={() => { setName(p); setRep({ ...rep, needName: false }); }}>{p}</button>)}</div>
+          ? <div className="cpl-who-pick"><span>מי שולח?</span>{PEOPLE.map((p) => <button key={p} type="button" className="cpl-b sm" onClick={() => { setName(p); setRep({ ...rep, needName: false }); send(p); }}>{p}</button>)}</div>
           : <>
-            <button type="button" className="cpl-b pri" disabled={!canSend} onClick={send}><Flag weight="fill" />{busy ? "שולח…" : "שליחה"}</button>
+            <button type="button" className="cpl-b pri" disabled={!canSend} onClick={() => send()}><Flag weight="fill" />{busy ? "שולח…" : "שליחה"}</button>
             <span className="cpl-by">שולח: <button type="button" onClick={() => setName(PEOPLE[(PEOPLE.indexOf(name) + 1) % PEOPLE.length])}>{name || "בחרו"}</button></span>
           </>}
       </div>
