@@ -72,7 +72,7 @@ export default function Warmup({ type, kinds, only = null, seed, onDone, onLeave
       </div>
       <div className="pf-figcol">
         <div className="pf-stage">
-          <ProofFigure problem={problem} marks={marks} selected={tapping ? sel.selected : res && task.input === 'tap' && res.right ? task.tap.need : []} pulse={pulse}
+          <ProofFigure problem={problem} marks={marks} selected={tapping ? sel.selected : []} pulse={pulse}
             tappable={tapping ? ['seg'] : false} onPart={sel.tap} />
         </div>
       </div>
