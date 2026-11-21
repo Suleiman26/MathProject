@@ -455,7 +455,7 @@ html, .adm-root body { min-height: 100%; }
   .adm-root .mtop .brand { padding: 0; }
   .adm-root .mtop .brand svg { width: 30px; height: 30px; }
   .adm-root .bnav {
-    display: grid; grid-template-columns: repeat(8, 1fr);
+    display: grid; grid-template-columns: repeat(9, 1fr);
     position: relative; flex: none; z-index: 40;
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--surface) 92%, transparent);

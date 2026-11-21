@@ -19,6 +19,7 @@ export const ICONS = {
   cube:         { label: "גוף", svg: '<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9" opacity=".6"/></g>' },
   star:         { label: "כוכב", svg: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>' },
   book:         { label: "ספר", svg: '<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 006.5 23H20v-5" opacity=".6"/></g>' },
+  proof:        { label: "הוכחה", svg: '<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M2.5 19L7 8l4.5 11z"/><path d="M12.5 19L17 8l4.5 11z" opacity=".55"/><path d="M3.6 13.2l1.6.6M13.6 13.2l1.6.6"/></g>' },
   chart:        { label: "נתונים", svg: '<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20h16" opacity=".45"/><path d="M7 17v-5M12 17V7M17 17v-8"/></g>' },
   // board #84 (2026-11-21): a system of two equations (a brace before two lines)
   system:       { label: "מערכת משוואות", svg: '<path d="M8 4c-2 0-2 1.5-2 3.5S6 11 4 12c2 1 2 2.5 2 4.5S6 20 8 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 8.5h9M11 15.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' }

@@ -316,13 +316,13 @@ test('type 1: remake rebuilds the same problem', () => {
 test('all four types are present, in order', () => { assert.deepEqual(TYPES.map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה']); assert.equal(TYPES.reduce((n, t) => n + t.templates.length, 0), 62); });
 
 /* ── wiring (plan Task 20) ── */
-test('wiring: registered, coral, hidden from the home lists', async () => {
+test('wiring: registered, coral, public on the home lists (Abed, 2026-11-21)', async () => {
   const fs = await import('node:fs');
   const src = fs.readFileSync(new URL('../registry.js', import.meta.url), 'utf8');
-  assert.match(src, /"proofs": \{"title": "הוכחות", "topic": "orange", "file": "proofs\.html", "hidden": true\}/);
+  assert.match(src, /"proofs": \{"title": "הוכחות", "topic": "orange", "file": "proofs\.html"\}/);
   assert.match(src, /"proofs": \(\) => import\('\.\/proofs\/Topic\.jsx'\)/); assert.match(src, /"proofs": \(\) => import\('\.\/proofs\/styles\.js'\)/);
-  const { CHAPTERS } = await import('../../home/chapters.js'); assert.equal('proofs' in CHAPTERS, false);
-  const cat = fs.readFileSync(new URL('../../home/catalog.js', import.meta.url), 'utf8'); assert.equal(/proofs/.test(cat), false);
+  const { CHAPTERS } = await import('../../home/chapters.js'); assert.deepEqual(CHAPTERS.proofs, TYPES.map((t) => t.button));
+  const cat = fs.readFileSync(new URL('../../home/catalog.js', import.meta.url), 'utf8'); assert.match(cat, /slug: "proofs", name: "הוכחות", grades: "כיתה ח׳", g: \["8"\]/);
   const page = fs.readFileSync(new URL('../../../app/topics/[slug]/page.tsx', import.meta.url), 'utf8');
   assert.match(page, /hidden \? \{ robots: \{ index: false, follow: false \} \}/);
 });

@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, Sword, SignOut, Backspace, Info, ClipboardText, House, ArrowRight } from "@phosphor-icons/react";
+import { SquaresFour, ListChecks, Stack, ChartBar, Users, CreditCard, Gear, Sword, SignOut, Backspace, Info, House, ArrowRight, ListMagnifyingGlass } from "@phosphor-icons/react";
 import { call, login, isPreview } from "./api";
 import { ToastHost } from "./ui";
 
 export const NAV = [
   { href: "/admin", label: "לוח בקרה", short: "לוח", Icon: SquaresFour, sub: "תמונת מצב של הפלטפורמה" },
-  { href: "/admin/fixes", also: ["/admin/review"], label: "תיקונים", short: "תיקונים", Icon: ListChecks, sub: "מה לתקן בכל נושא, מה תוקן ומחכה לבדיקה, ומה אושר" },
+  // בקרת תוכן has its own menu entry (Abed couldn't find it as a tab inside תיקונים, 2026-11-21)
+  { href: "/admin/review", label: "בקרת תוכן", short: "בקרה", Icon: ListMagnifyingGlass, sub: "כל הכיתות, הנושאים, הפרקים והשאלות במסך אחד: בודקים ומבקשים תיקון" },
+  { href: "/admin/fixes", label: "תיקונים", short: "תיקונים", Icon: ListChecks, sub: "מה לתקן בכל נושא, מה תוקן ומחכה לבדיקה, ומה אושר" },
   { href: "/admin/content", label: "תוכן", short: "תוכן", Icon: Stack, sub: "כיתות, קטגוריות ונושאים. גררו כדי לשנות סדר." },
   { href: "/admin/analytics", label: "ניתוח", short: "ניתוח", Icon: ChartBar, sub: "איפה התלמידים מצליחים ואיפה נתקעים" },
   { href: "/admin/students", label: "תלמידים", short: "תלמידים", Icon: Users, sub: "פעילות התלמידים (אנונימית עד שתהיה הרשמה)" },
@@ -103,7 +105,6 @@ export default function AdminShell({ children }) {
             </nav>
             <div className="side-foot">
               <div className={"status-pill" + (preview ? " demo" : "")}><i /><span>{preview ? "מצב תצוגה · נתוני דוגמה" : "מחובר למסד הנתונים"}</span></div>
-              <a className="side-link" href="/classic/project-hub.html" target="_blank" rel="noopener"><ClipboardText size={17} /><span>מצב הפרויקט</span></a>
               <a className="side-link" href="/"><House size={17} /><span>חזרה לאתר</span></a>
               <button type="button" className="side-link" onClick={() => signOut(false)}><SignOut size={17} /><span>יציאה</span></button>
             </div>
@@ -112,7 +113,6 @@ export default function AdminShell({ children }) {
             <div className="brand"><Mark /><div><b>ניהול</b><small>מתמטיקה חט״ב</small></div></div>
             <span className="mtop-a">
               <a className="ibtn" href="/" aria-label="חזרה לאתר"><House size={18} /></a>
-              <a className="ibtn" href="/classic/project-hub.html" target="_blank" rel="noopener" aria-label="מצב הפרויקט: מה נעשה, מה חסר ומה בעבודה"><ClipboardText size={18} /></a>
               <button type="button" className="ibtn" onClick={() => signOut(false)} aria-label="יציאה"><SignOut size={18} /></button>
             </span>
           </header>

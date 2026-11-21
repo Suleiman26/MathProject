@@ -32,13 +32,16 @@ for this project on Abed's personal accounts.
 | Drawing/display fixes per topic | `src/styles/topic-fixes.css` (scoped with `html[data-page="<topic>"]`) |
 | Home page | `app/page.tsx`, `src/home/` |
 | Logo + app icons ("Loop") | sources `design/logo-gpt/` (`loop-master-1024.png`, `loop-maskable-1024.png`); served `app/icon.png`, `app/apple-icon.png`, `public/icon-192/512.png`, `public/icon-maskable-512.png`, `public/brand/logo-loop.png` (in-page logo), `public/og.png`. Phones cache icons hard: a new logo needs a new file name |
-| Admin (PIN 1111) | `app/admin/*`, `src/admin/*`. Entry: quiet "כניסת צוות" link at the bottom of every page (`LegalFooter`). Project status page (`/classic/project-hub.html`) is linked only from the admin |
+| Admin (PIN 1111) | `app/admin/*`, `src/admin/*`. Entry: quiet "כניסת צוות" link at the bottom of every page (`LegalFooter`). Project status page (`/classic/project-hub.html`) is no longer linked anywhere (Abed, 2026-11-21) |
 | Database (Supabase) | `supabase/migrations`; how to connect: `supabase/README.md`; settings: `src/lib/config.js` |
 | Old plain-HTML site | `public/classic/` (served at `/classic`), git tag `html-v1` |
 | 3D shapes view (solids topic) | `src/components/solid3d/` (three.js, lazy); `?flat=1` shows the old drawings |
 | Phone bottom bar (2026-11-11, replaces the top header on phones <768px; signed-in home, /profile*, /duel hub only, never topic pages) | `src/components/BottomNav.jsx`, `src/styles/bottomnav.css`; middle Loop button = the railway's next step via `src/lib/next-step.js`; preview `/dev/railway` |
 | Side calculator on topic pages (2026-11-13, board #55) | `src/components/Calculator.jsx` (lazy), `src/styles/calculator.css` (prefix `calc-`), maths `src/lib/calc-core.js` (`node --test src/lib/calc-core.test.mjs`). **Which topics/chapters get it: `src/lib/calc-topics.js`.** Button in `TopBar.jsx`, chip in the answer keypad bar; never open together with the keypad |
 | Fixes board attachments (images, PDFs, links; 2026-11-14) | UI `src/admin/pages/FixAttach.jsx` + `Fixes.jsx`, client `src/admin/files.js`; private bucket `fix-files` + PIN-guarded functions in `supabase/migrations/20261114120000_fix_files.sql`; edge function `supabase/functions/fix-files` (one-time upload links, 1-hour view links; deploy `supabase functions deploy fix-files --no-verify-jwt`). Scans download with `supabase storage cp --linked --experimental ss:///fix-files/<path> <local>` |
+| Module "חדש" (Ministry-plan chapters the site lacked; board #84) | `src/topics/new/` (data-driven: `core.js`, `Engine.jsx`, `chapters/<pack>/`), test `node --test src/topics/new/new.test.mjs`. Hidden: only at `/topics/new` (not in the catalog) until Sulaiman places each chapter in a real topic. Its registry entry is hand-added (convert-topics.py would drop it) |
+| Square-root sign (bar over the whole radicand, everywhere) | `src/components/Root.jsx` (`<Root>`, `<RootText s="…">`), `src/styles/root.css`, parser `src/lib/root-core.js`; preview `/dev/roots` |
+| Equation-solver word stories (chapter "1. ביטוי אלגברי") | `src/topics/equation-solver/words.js` (stories, safe parser, value-based checking), `WordsChapter.jsx`, test `words.test.mjs` |
 | Shared page frame, chapter ✓, empty-check nudge | `src/styles/mp.css` §11, `src/components/TopicView.jsx`, `src/lib/mp-runtime.js` |
 
 URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/<topic>.html` links redirect (next.config.ts).
@@ -127,7 +130,7 @@ URLs: `/topics/<topic>` (`?ch=<chapter button text>` opens that chapter). Old `/
   badge names) in `src/lib/progress.js`; database: `account_achievements`,
   `account_topic`, `account_set_goal` (`20261031120000_progress_v2.sql`).
 
-## Duels ("דו-קרב", live since 2026-11-09, switch OFF until Abed turns it on)
+## Duels ("דו-קרב", live since 2026-11-09; admin switch off / test / on — only Abed changes it)
 - Live 1v1 friend duels: 15 questions / 5 min. Design: `docs/superpowers/specs/2026-11-07-duels-design.md`,
   plan + topic audit in `docs/superpowers/`, mockup `design/duel/mockup.html`.
 - Release switch: admin → Settings → דו-קרבים: off / test (only `duel_tester` accounts) / on.
