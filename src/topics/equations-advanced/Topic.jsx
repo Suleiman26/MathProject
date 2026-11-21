@@ -652,7 +652,7 @@ function Section1() {
 
   return (
     <div className="section-wrapper">
-      <div className="section-title">תת-פרק 1 — משוואה לינארית עם נעלם במכנה</div>
+      <div className="section-title">תת-פרק 4 — משוואה לינארית עם נעלם במכנה</div>
       <div className="info-box ea-explain">
         <b>למה מכנה משותף?</b> מחפשים מספר (או ביטוי) שאם נכפול בו <b>את כל המשוואה</b>, כל המכנים יצטמצמו, ונקבל משוואה רגילה בלי שברים.
         <div className="ea-ex" dir="ltr"><Frac num="x" den="3"/><span>+ 2 = 5</span><span className="ea-arrow">⟶ ·3 ⟶</span><span>x + 6 = 15</span></div>
@@ -1040,7 +1040,7 @@ function Section2() {
 
   return (
     <div className="section-wrapper">
-      <div className="section-title">תת-פרק 2 — משוואה ריבועית עם נעלם במכנה</div>
+      <div className="section-title">תת-פרק 5 — משוואה ריבועית עם נעלם במכנה</div>
       <div className="difficulty-row">
         <button className="btn btn-new" style={{marginRight:'auto'}} onClick={()=>reset()}>משוואה חדשה ↺</button>
       </div>
@@ -2170,7 +2170,7 @@ function Section3() {
 
   return (
     <div className="section-wrapper">
-      <div className="section-title">תת-פרק 3 — נוסחאות כפל מקוצר</div>
+      <div className="section-title">תת-פרק 6 — נוסחאות כפל מקוצר</div>
       <FormulasRef/>
       <div className="sub-tabs">
         {subTabs.map(t=>(
@@ -2956,7 +2956,7 @@ function Section5() {
   // ─── Render ──────────────────────────────────────────────────────────────
   return (
     <div className="section-wrapper">
-      <div className="section-title">תת-פרק 5 — הכל יחד</div>
+      <div className="section-title">תת-פרק 7 — הכל יחד</div>
       <div className="section-sub">שילוב: נעלם במכנה · נוסחאות כפל מקוצר · גורם משותף</div>
       <FormulasRef/>
 

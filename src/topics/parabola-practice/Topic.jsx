@@ -288,7 +288,7 @@ function Section2() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">2 — ציר הסימטריה</div>
+        <div className="section-title">3 — ציר הסימטריה</div>
         <div className="explanation">
           ציר הסימטריה הוא הישר האנכי העובר דרך הקודקוד. הוא מחלק את הפרבולה לשני חצאים שווים.<br />
           <strong>משוואתו: <bdi dir="ltr">x = <Fr n="−b" d="2a" /></bdi></strong>
@@ -334,7 +334,7 @@ function Section3() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">3 — מציאת הקודקוד מגרף</div>
+        <div className="section-title">4 — מציאת הקודקוד מגרף</div>
         <div className="explanation">
           <strong>הקודקוד</strong> הוא הנקודה שבה הפרבולה ״מסתובבת״: הנקודה הכי נמוכה כשהפרבולה פתוחה למעלה, או הכי גבוהה כשהיא פתוחה למטה. ציר הסימטריה עובר דרכו.<br/>
           כדי לקרוא אותו מהגרף: יורדים ממנו לציר x (זה ה-x שלו) ופונים לציר y (זה ה-y שלו).
@@ -389,7 +389,7 @@ function Section4() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">4 — מציאת הקודקוד מהמשוואה</div>
+        <div className="section-title">5 — מציאת הקודקוד מהמשוואה</div>
         <div className="explanation pp-ex">
           <div><strong>איך מוצאים את הקודקוד בלי גרף?</strong></div>
           <div>1. ה-x של הקודקוד: <bdi dir="ltr">x = <Fr n="−b" d="2a" /></bdi></div>
@@ -513,7 +513,7 @@ function Section5() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">5 — שרטוט פרבולה דרך קודקוד ונקודה נוספת</div>
+        <div className="section-title">6 — שרטוט פרבולה דרך קודקוד ונקודה נוספת</div>
         <div className="task-box">שרטט את הפרבולה על ידי לחיצה ארוכה וגרירה לאורך עקומת הפרבולה</div>
         <div style={{fontSize: 13, color: '#555', marginBottom: 8}}>קודקוד: ({vx}, {vy}) | נקודה נוספת: ({px2}, {py2 % 1 === 0 ? py2 : py2.toFixed(1)})</div>
         <Graph
@@ -566,7 +566,7 @@ function Section6() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">6 — חיתוך עם ציר y ושרטוט</div>
+        <div className="section-title">7 — חיתוך עם ציר y ושרטוט</div>
         <div className="formula">y = {a}x² {b >= 0 ? '+' : ''}{b}x {c >= 0 ? '+' : ''}{c}</div>
         <div className="explanation">נקודת החיתוך עם ציר y מתקבלת כאשר x=0, כלומר y=c</div>
 
@@ -695,7 +695,7 @@ function Section7() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">7 — חיתוך עם ציר x (שורשים)</div>
+        <div className="section-title">8 — חיתוך עם ציר x (שורשים)</div>
         <div className="explanation">
           נמצא את נקודות החיתוך עם ציר x על ידי פתרון <strong>ax²+bx+c=0</strong> בעזרת נוסחת השורשים:<br />
           <bdi dir="ltr">x = <Fr n={<>−b ± <Root>b²−4ac</Root></>} d="2a" /></bdi>
@@ -775,7 +775,7 @@ function Section8() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">8 — תחומי עלייה וירידה</div>
+        <div className="section-title">9 — תחומי עלייה וירידה</div>
         <div className="formula">y = {fn.a}x² {fn.b >= 0 ? '+' : ''}{fn.b}x {fn.c >= 0 ? '+' : ''}{fn.c}</div>
         <div className="task-box">
           לחץ על כפתור, ואז לחץ וגרור על הגרף כדי לסמן את התחום הרצוי
@@ -900,7 +900,7 @@ function Section9() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">9 — תחומי חיוביות ושליליות</div>
+        <div className="section-title">10 — תחומי חיוביות ושליליות</div>
         <div className="formula">y = {a}x² {b >= 0 ? '+' : ''}{b}x {c >= 0 ? '+' : ''}{c}</div>
         <div style={{fontSize: 14, color: '#555', marginBottom: 8}}>שורשים: x₁={lo}, x₂={hi}</div>
         <div className="task-box">
@@ -1010,7 +1010,7 @@ function Section10() {
   return (
     <div className="section">
       <div className="card">
-        <div className="section-title">10 — חקירה מלאה</div>
+        <div className="section-title">11 — חקירה מלאה</div>
         <div className="formula">y = {a}x² {b >= 0 ? '+' : ''}{b}x {c >= 0 ? '+' : ''}{c}</div>
         <div className="step-indicator">
           {stepLabels.map((l,i) => (

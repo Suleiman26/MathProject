@@ -23,6 +23,36 @@
       "old": "  {label:'3. קו ישר ושיפוע',comp:ChapterSlopeIntro},\n  {label:'4. חישוב שיפוע',comp:Chapter3},\n  {label:'5. משוואת y=mx+b',comp:ChapterLineEqIntro},\n  {label:'6. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},\n  {label:'7. סידור וזיהוי',comp:ChapterRearrangeIdEq},\n  {label:'8. ישר מ-m ונקודה',comp:Chapter5},\n  {label:'9. ישר מ-2 נקודות',comp:Chapter6},\n",
       "new": "  {label:'3. מבוא לפונקציות',comp:()=><NewChapter ch={functionsIntro}/>},\n  {label:'4. קו ישר ושיפוע',comp:ChapterSlopeIntro},\n  {label:'5. חישוב שיפוע',comp:Chapter3},\n  {label:'6. משוואת y=mx+b',comp:ChapterLineEqIntro},\n  {label:'7. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},\n  {label:'8. סידור וזיהוי',comp:ChapterRearrangeIdEq},\n  {label:'9. ישר מ-m ונקודה',comp:Chapter5},\n  {label:'10. ישר מ-2 נקודות',comp:Chapter6},\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 4 — חישוב שיפוע משתי נקודות</div>\n",
+      "new": "      <div className=\"task-title\">שלב 5 — חישוב שיפוע משתי נקודות</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 6 — זיהוי שיפוע וחיתוך ממשוואה</div>\n",
+      "new": "      <div className=\"task-title\">שלב 7 — זיהוי שיפוע וחיתוך ממשוואה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 7 — סידור משוואה וזיהוי שיפוע וחיתוך</div>\n",
+      "new": "      <div className=\"task-title\">שלב 8 — סידור משוואה וזיהוי שיפוע וחיתוך</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 8 — משוואת ישר לפי שיפוע ונקודה</div>\n",
+      "new": "      <div className=\"task-title\">שלב 9 — משוואת ישר לפי שיפוע ונקודה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 9 — משוואת ישר דרך שתי נקודות</div>\n",
+      "new": "      <div className=\"task-title\">שלב 10 — משוואת ישר דרך שתי נקודות</div>\n",
+      "count": 1
     }
   ],
   "equation-solver": [
@@ -1117,6 +1147,30 @@
       "old": "    </div>);\n}\n\n\n",
       "new": "      {tab===6&&<NewChapter ch={shortMult}/>}\n      {tab===7&&<NewChapter ch={factoring}/>}\n      {tab===8&&<NewChapter ch={algFractions}/>}\n    </div>);\n}\n\n\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board #84: sub-chapter numbers follow the inserted chapters",
+      "old": "      <div className=\"section-title\">תת-פרק 1 — משוואה לינארית עם נעלם במכנה</div>\n",
+      "new": "      <div className=\"section-title\">תת-פרק 4 — משוואה לינארית עם נעלם במכנה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: sub-chapter numbers follow the inserted chapters",
+      "old": "      <div className=\"section-title\">תת-פרק 2 — משוואה ריבועית עם נעלם במכנה</div>\n",
+      "new": "      <div className=\"section-title\">תת-פרק 5 — משוואה ריבועית עם נעלם במכנה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: sub-chapter numbers follow the inserted chapters",
+      "old": "      <div className=\"section-title\">תת-פרק 3 — נוסחאות כפל מקוצר</div>\n",
+      "new": "      <div className=\"section-title\">תת-פרק 6 — נוסחאות כפל מקוצר</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: sub-chapter numbers follow the inserted chapters",
+      "old": "      <div className=\"section-title\">תת-פרק 5 — הכל יחד</div>\n",
+      "new": "      <div className=\"section-title\">תת-פרק 7 — הכל יחד</div>\n",
+      "count": 1
     }
   ],
   "quadratic-solver": [
@@ -1986,6 +2040,60 @@
       "why": "Fixes board #84: parabola shifts moved from חדש",
       "old": "const SECTIONS = [Section1, Section2, Section3, Section4, Section5, Section6, Section7, Section8, Section9, Section10];\nconst SECTION_NAMES = [\n  'השפעת מקדמים', 'ציר סימטריה', 'קודקוד מגרף', 'קודקוד ממשוואה',\n",
       "new": "const SectionShifts = () => <NewChapter ch={parabolaShifts} />;\nconst SECTIONS = [Section1, SectionShifts, Section2, Section3, Section4, Section5, Section6, Section7, Section8, Section9, Section10];\nconst SECTION_NAMES = [\n  'השפעת מקדמים', 'הזזות של פרבולה', 'ציר סימטריה', 'קודקוד מגרף', 'קודקוד ממשוואה',\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">2 — ציר הסימטריה</div>\n",
+      "new": "        <div className=\"section-title\">3 — ציר הסימטריה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">3 — מציאת הקודקוד מגרף</div>\n",
+      "new": "        <div className=\"section-title\">4 — מציאת הקודקוד מגרף</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">4 — מציאת הקודקוד מהמשוואה</div>\n",
+      "new": "        <div className=\"section-title\">5 — מציאת הקודקוד מהמשוואה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">5 — שרטוט פרבולה דרך קודקוד ונקודה נוספת</div>\n",
+      "new": "        <div className=\"section-title\">6 — שרטוט פרבולה דרך קודקוד ונקודה נוספת</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">6 — חיתוך עם ציר y ושרטוט</div>\n",
+      "new": "        <div className=\"section-title\">7 — חיתוך עם ציר y ושרטוט</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">7 — חיתוך עם ציר x (שורשים)</div>\n",
+      "new": "        <div className=\"section-title\">8 — חיתוך עם ציר x (שורשים)</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">8 — תחומי עלייה וירידה</div>\n",
+      "new": "        <div className=\"section-title\">9 — תחומי עלייה וירידה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">9 — תחומי חיוביות ושליליות</div>\n",
+      "new": "        <div className=\"section-title\">10 — תחומי חיוביות ושליליות</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">10 — חקירה מלאה</div>\n",
+      "new": "        <div className=\"section-title\">11 — חקירה מלאה</div>\n",
       "count": 1
     }
   ],
