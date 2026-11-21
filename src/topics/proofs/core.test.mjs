@@ -47,3 +47,86 @@ test('parts and kinds', () => {
   assert.deepEqual(partsOf({ kind: 'cong', map: [['A', 'B'], ['O', 'O'], ['C', 'D']] }), [['A', 'O', 'C'], ['B', 'O', 'D']]);
   assert.deepEqual([kindOf('AO'), kindOf(A('O', ['A', 'C'])), kindOf(['A', 'O', 'C'])], ['seg', 'ang', 'tri']);
 });
+
+/* ── Task 3: the graph checker (§10.2) ── */
+import { classify, checkReason, checkMatching, required, isDone, canonRows, findFact, roleOf } from './core.js';
+const P = xsas(), fact = (id) => P.facts[id];
+test('classify: every case of §10.2', () => {
+  assert.deepEqual(classify(P, [], fact('a')).c, 'ok');
+  assert.equal(classify(P, [], { kind: 'seg', x: 'BO', y: 'OA' }).fact, 'a');
+  assert.equal(classify(P, ['a'], fact('a')).c, 'written');
+  let r = classify(P, [], fact('cong'));   assert.deepEqual([r.c, r.sub, r.kind, r.textKey, r.vars.n], ['early', 'congruence', 'too-early', 'st.congEarly', 0]);
+  assert.equal(classify(P, ['a', 'c'], fact('cong')).vars.n, 2);
+  r = classify(P, [], fact('goal'));        assert.deepEqual([r.c, r.sub, r.kind], ['early', 'target', 'goal-as-known']);
+  r = classify(P, [], fact('e1'));          assert.deepEqual([r.c, r.sub, r.kind], ['early', 'consequence', 'looks-equal']);
+  r = classify(P, ['a', 'b', 'c', 'cong'], fact('e1')); assert.deepEqual([r.c, r.textKey], ['extra', 'st.notNeeded']);
+  r = classify(P, [], { kind: 'seg', x: 'AD', y: 'CB' }); assert.deepEqual([r.c, r.textKey], ['unprovable', 'st.unprovable']);
+  r = classify(P, [], { kind: 'seg', x: 'AO', y: 'CO' }); assert.deepEqual([r.c, r.kind, r.textKey], ['false', 'false-statement', 'st.falseSeg']);
+  r = classify(P, ['a', 'b', 'c'], { kind: 'cong', map: [['A', 'D'], ['O', 'O'], ['C', 'B']] }); assert.deepEqual([r.c, r.kind], ['false', 'wrong-matching']);
+  assert.deepEqual(r.vars, { s1: 'AO', s2: 'OB', p: 'A', q: 'B' });
+  r = classify(P, ['a', 'b', 'c'], { kind: 'cong', map: [['A', 'O'], ['O', 'B'], ['C', 'D']] }); assert.equal(r.textKey, 'st.matchingShared');
+  assert.equal(classify(P, ['a', 'b', 'c'], { kind: 'cong', map: [['C', 'D'], ['A', 'B'], ['O', 'O']] }).c, 'ok');
+});
+test('classify: a trap has its own message; type 2 extras are "not asked"', () => {
+  const Q = xsas(); const st = { kind: 'seg', x: 'AO', y: 'CO' };
+  Q.traps = { [`S:AO=CO`]: { kind: 'false-statement', textKey: 'st.letterSwap', vars: { given: 'AO = OB' } } };
+  const r = classify(Q, [], st); assert.deepEqual([r.c, r.kind, r.textKey, r.vars.given], ['false', 'false-statement', 'st.letterSwap', 'AO = OB']);
+  const W = xsas(); W.type = 'congruent-parts';
+  assert.equal(classify(W, ['a', 'b', 'c', 'cong'], fact('e1')).textKey, 'st.notAsked');
+});
+test('any valid order is accepted; nothing is compared with canon', () => {
+  for (const order of [['a', 'c', 'b'], ['b', 'a', 'c'], ['c', 'b', 'a']]) {
+    const done = [];
+    for (const id of [...order, 'cong', 'goal']) { assert.equal(classify(P, done, fact(id)).c, 'ok', id); done.push(id); }
+    assert.equal(isDone(P, done), true);
+  }
+  assert.deepEqual(canonRows(P).map((x) => x.fact), ['a', 'c', 'b', 'cong', 'goal']);
+  assert.equal(findFact(P, { kind: 'ang', x: { v: 'O', r: ['D', 'B'] }, y: { v: 'O', r: ['C', 'A'] } }), 'c');
+  assert.deepEqual(['a', 'c', 'cong', 'goal', 'e1'].map((f) => roleOf(P, f)), ['given', 'vertical', 'congruence', 'conclusion', 'conclusion']);
+});
+test('checkReason: the table of §9.2', () => {
+  const miss = (done, f, rs) => { const x = checkReason(P, done, f, rs); return [x.ok, x.kind, x.textKey]; };
+  assert.equal(checkReason(P, [], 'a', 'given').ok, true);
+  assert.deepEqual(miss([], 'a', 'vertical'), [false, 'wrong-source', 'rs.given.vertical']);
+  assert.deepEqual(miss([], 'a', 'common-side'), [false, 'wrong-source', 'rs.given.common']);
+  assert.deepEqual(miss([], 'a', 'sas'), [false, 'too-early', 'rs.fact.theorem']);
+  assert.deepEqual(miss([], 'a', 'cp-sides'), [false, 'goal-as-known', 'rs.fact.cp']);
+  assert.deepEqual(miss([], 'c', 'given'), [false, 'wrong-source', 'rs.seen.given']);
+  assert.deepEqual(miss([], 'c', 'alternate'), [false, 'wrong-source', 'rs.vertical.alternate']);
+  assert.deepEqual(miss([], 'c', 'common-angle'), [false, 'wrong-source', 'rs.vertical.common']);
+  const d3 = ['a', 'c', 'b'];
+  assert.equal(checkReason(P, d3, 'cong', 'sas').ok, true);
+  assert.deepEqual(miss(d3, 'cong', 'asa'), [false, 'wrong-theorem', 'rs.cong.asa1']);
+  assert.deepEqual(miss(d3, 'cong', 'sss'), [false, 'wrong-theorem', 'rs.cong.sss2']);
+  assert.deepEqual(miss(d3, 'cong', 'given'), [false, 'wrong-source', 'rs.cong.given']);
+  assert.deepEqual(miss(d3, 'cong', 'cp-angles'), [false, 'wrong-source', 'rs.cong.cp']);
+  const d4 = [...d3, 'cong'];
+  assert.equal(checkReason(P, d4, 'goal', 'cp-sides').ok, true);
+  assert.deepEqual(miss(d4, 'goal', 'cp-angles'), [false, 'wrong-source', 'rs.concl.otherCp']);
+  assert.deepEqual(checkReason(P, d4, 'goal', 'cp-angles').vars, { these: 'צלעות', those: 'זוויות' });
+  assert.deepEqual(miss(d4, 'goal', 'given'), [false, 'goal-as-known', 'rs.concl.given']);
+  assert.deepEqual(miss(d4, 'goal', 'sas'), [false, 'wrong-source', 'rs.concl.theorem']);
+  assert.deepEqual(miss(d4, 'goal', 'vertical'), [false, 'wrong-source', 'rs.other']);
+});
+test('a fact given in words accepts the definition and "given"; another definition is wrong-word', () => {
+  const W = xsas(); W.just.a = [{ reasons: ['midpoint', 'given'], needs: [] }]; W.roles.a = 'given-words';
+  assert.equal(checkReason(W, [], 'a', 'midpoint').ok, true); assert.equal(checkReason(W, [], 'a', 'given').ok, true);
+  const x = checkReason(W, [], 'a', 'median'); assert.deepEqual([x.kind, x.textKey], ['wrong-word', 'rs.words.otherDef']);
+  assert.deepEqual(x.vars, { word: 'אמצע' });
+});
+test('an over-determined proof: both theorems are right, each on its own premises', () => {
+  const O = over();
+  assert.deepEqual([...required(O)].sort(), ['a', 'b', 'cong', 'g', 'k']);
+  assert.equal(checkReason(O, ['a', 'b', 'k'], 'cong', 'sss').ok, true);  assert.equal(checkReason(O, ['a', 'b', 'k'], 'cong', 'sas').ok, false);
+  assert.equal(checkReason(O, ['a', 'g', 'k'], 'cong', 'sas').ok, true);  assert.equal(checkReason(O, ['a', 'g', 'k'], 'cong', 'sss').ok, false);
+  assert.equal(classify(O, ['a', 'g', 'k'], O.facts.cong).c, 'ok');       assert.equal(classify(O, ['a', 'k'], O.facts.cong).c, 'early');
+  assert.equal(checkReason(O, ['a', 'g', 'k'], 'cong', 'sss').textKey, 'rs.cong.sss2');
+  assert.equal(checkReason(O, ['a', 'b', 'k'], 'cong', 'sas').textKey, 'rs.cong.noAngle');
+});
+test('checkMatching: any consistent order', () => {
+  assert.equal(checkMatching(P, ['A', 'O', 'C'], ['B', 'O', 'D']).ok, true);
+  assert.equal(checkMatching(P, ['C', 'A', 'O'], ['D', 'B', 'O']).ok, true);
+  assert.equal(checkMatching(P, ['B', 'O', 'D'], ['A', 'O', 'C']).ok, true);
+  assert.equal(checkMatching(P, ['A', 'O', 'C'], ['D', 'O', 'B']).kind, 'wrong-matching');
+  assert.equal(checkMatching(P, ['A', 'O', 'C'], ['O', 'B', 'D']).textKey, 'st.matchingShared');
+});
