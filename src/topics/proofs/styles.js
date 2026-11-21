@@ -19,7 +19,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-m{display:inline-block;direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-weight:600;font-variant-numeric:tabular-nums}
 #root .pf-sign{display:inline-block;width:1.03em;height:.72em;vertical-align:baseline;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;margin-inline:.02em .07em}
 #root .pf-sign-cong,#root .pf-sign-match{margin-inline:.3em}
-#root .pf-ic{display:block;width:1em;height:1em;flex:none}
+/* (the profile page's CSS, loaded site-wide, has its own .pf-ic / .pf-go / .pf-chip / .pf-x: what it sets is reset here) */
+#root .pf .pf-ic{display:block;width:1em;height:1em;flex:none;border-radius:0;background:none}
+#root .pf :where(.pf-ic){color:inherit}
 #root .pf-gl{display:block;width:20px;height:14px;flex:none}
 #root .pf-gl.pf-c1{stroke:var(--pf-p1)}
 #root .pf-gl.pf-c2{stroke:var(--pf-p2)}
@@ -38,18 +40,20 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-sg.pf-c2{stroke:var(--pf-p2)}
 #root .pf-sg.pf-c3{stroke:var(--pf-p3)}
 #root .pf-sg.is-goal{stroke:var(--pf-goal);stroke-width:2.4;stroke-dasharray:5.5 4.5}
-#root .pf-sg.is-dim{opacity:.58}
+#root .pf-sg.is-dim{opacity:.42}
+#root .pf-sg.is-focus{stroke-width:3}
 #root .pf-sg.is-sel{stroke:var(--pf-goal);stroke-width:4.6;opacity:1}
 #root .pf-tri{fill:var(--a-500);fill-opacity:0;stroke:none;transition:fill-opacity .4s ease}
-#root .pf-tri.is-on{fill-opacity:.11}
-#root .pf-tri.is-sel{fill-opacity:.28}
-#root .pf-tri-goal{fill:var(--a-500);fill-opacity:.045;stroke:var(--pf-goal);stroke-width:1.6;stroke-dasharray:4 4;stroke-linejoin:round;stroke-linecap:round;pointer-events:none}
+#root .pf-tri.is-on{fill-opacity:.09}
+#root .pf-tri.is-sel{fill-opacity:.17}
+#root .pf-tri-goal{fill:var(--a-500);fill-opacity:.055;stroke:none;pointer-events:none}
+#root .pf-tri-echo{fill:none;stroke:var(--pf-goal);stroke-width:1.4;stroke-dasharray:3.5 4.5;stroke-linecap:round;stroke-linejoin:round;opacity:.8;pointer-events:none}
 #root .pf-mk{fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;transition:opacity .3s ease;animation:pf-mark .25s var(--ease-out) backwards}
 #root .pf-mk.pf-c1{stroke:var(--pf-p1)}
 #root .pf-mk.pf-c2{stroke:var(--pf-p2)}
 #root .pf-mk.pf-c3{stroke:var(--pf-p3)}
 #root .pf-mk.is-goal{stroke:var(--pf-goal);stroke-width:2;stroke-dasharray:3.5 3.5}
-#root .pf-mk.is-dim{opacity:.58}
+#root .pf-mk.is-focus{stroke-width:2.8}
 #root .pf-mk.is-sel{stroke:var(--pf-goal);stroke-width:3.4;stroke-dasharray:none;opacity:1}
 #root .pf-arc.is-quiet{fill:none;stroke:var(--line-strong);stroke-width:1.8;stroke-linecap:round;pointer-events:none}
 #root .pf-arc.is-quiet.is-sel{stroke:var(--pf-goal);stroke-width:3.4}
@@ -82,7 +86,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 
 /* ── head ── */
 #root .pf-head{flex:none;display:flex;align-items:center;gap:8px;height:44px;padding-inline:4px 14px}
-#root .pf-back{flex:none;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:transparent;box-shadow:none;color:var(--ink-2);font-size:20px}
+#root .pf-back{flex:none;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:transparent;box-shadow:none;color:var(--a-700);font-size:20px}
 #root .pf-head-t{flex:0 1 auto;min-width:0;font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #root .pf-pill{flex:none;padding:2px 9px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.78rem;font-weight:600;line-height:1.5}
 #root .pf-dots{flex:none;display:flex;gap:5px;margin-inline-start:auto}
@@ -92,11 +96,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 
 /* ── strip ── */
 #root .pf-strip{flex:none;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;padding:3px 14px;border-bottom:1px solid var(--line);font-size:.84rem;color:var(--ink-3)}
-#root .pf-strip-given{flex:1 1 auto;min-width:0;max-width:100%;display:flex;align-items:center;gap:6px;height:30px;overflow-x:auto;overscroll-behavior-x:contain;white-space:nowrap;scrollbar-width:none}
-#root .pf-strip-given::-webkit-scrollbar{display:none}
-#root .pf-strip-goal{flex:none;display:flex;align-items:center;gap:6px;height:30px}
+#root .pf-strip-given{flex:1 1 auto;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-height:30px;padding-block:2px}
+#root .pf-strip-goal{flex:0 1 auto;min-width:0;max-width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-height:30px;padding-block:2px}
 #root .pf-strip-k{flex:none;font-weight:600}
-#root .pf-fc{flex:none;display:inline-flex;align-items:center;gap:5px;height:26px;padding-inline:10px;border-radius:999px;border:1.5px solid transparent;background:var(--surface-3);color:var(--ink);font-size:.88rem}
+#root .pf-fc{flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:1px 10px;border-radius:13px;line-height:1.35;border:1.5px solid transparent;background:var(--surface-3);color:var(--ink);font-size:.88rem}
 #root .pf-fc .pf-ic{font-size:13px}
 #root .pf-fc.is-used{color:var(--ink-2)}
 #root .pf-fc.is-used .pf-ic{color:var(--ok-600)}
@@ -124,7 +127,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-row-ok{color:var(--ok-600);font-size:16px}
 #root .pf-row-full{padding:0 32px 8px;font-size:.88rem;color:var(--ink-2)}
 #root .pf-row-full b{font-weight:600;color:var(--ink)}
-#root .pf-swap{flex:none;display:grid;place-items:center;width:40px;height:40px;margin-inline-start:auto;border:0;border-radius:50%;background:transparent;box-shadow:none;color:var(--ink-3);font-size:18px}
+#root .pf-swap{flex:none;display:grid;place-items:center;width:40px;height:40px;margin-inline-start:auto;border:0;border-radius:50%;background:transparent;box-shadow:none;color:var(--a-700);font-size:18px}
 #root .pf-swap + .pf-dots{margin-inline-start:0}
 @keyframes pf-row{from{opacity:0;transform:translateY(8px)}}
 
@@ -150,7 +153,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-rungs i.is-on{background:var(--a-500)}
 #root .pf-ask-e .pf-x span{display:none}
 #root .pf-x{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:40px;min-height:40px;padding-inline:8px;border:0;background:transparent;box-shadow:none;color:var(--ink-3);font-size:.86rem;font-weight:500}
-#root .pf-x .pf-ic{font-size:15px}
+#root .pf-x .pf-ic{font-size:15px;color:var(--a-600)}
 #root .pf-hint{margin-top:4px;padding-inline-start:10px;border-inline-start:3px solid var(--a-300);font-size:.92rem;line-height:1.45;color:var(--ink-2);animation:pf-row .25s var(--ease-out) backwards}
 #root .pf-why{padding-inline-start:10px;border-inline-start:3px solid var(--ok-200);font-size:.9rem;line-height:1.45;color:var(--ink-2);animation:pf-row .25s var(--ease-out) backwards}
 @keyframes pf-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -168,11 +171,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-chip.is-yes{opacity:1;border-color:var(--ok-500);background:var(--ok-50);color:var(--ok-800);text-decoration:none}
 #root .pf-tile{font-size:1.04rem;box-shadow:0 2px 0 var(--line-strong)}
 #root .pf-go-row{display:flex;gap:8px;margin-top:8px}
-#root .pf-go{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding-inline:22px;border:0;border-radius:999px;background:var(--pf-btn);box-shadow:var(--sh-accent);color:#fff;font-size:1rem;font-weight:700}
+#root .pf-go{flex:1;width:auto;height:auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding-inline:22px;border:0;border-radius:999px;background:var(--pf-btn);box-shadow:var(--sh-accent);color:#fff;font-size:1rem;font-weight:700}
 #root .pf-go.is-soft{background:var(--a-50);box-shadow:inset 0 0 0 1.5px var(--a-300);color:var(--a-800)}
 #root .pf-go.is-quiet{flex:0 0 auto;background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink-2);font-weight:600}
 #root .pf-go:disabled{opacity:.6}
 #root .pf-go .pf-ic{font-size:18px}
+#root .pf-go span{display:inline}
 #root .pf-qed{min-height:52px;font-size:1.2rem}
 
 /* ── fb ── */
@@ -202,7 +206,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .pf-tap-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #root .pf-listb{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding-inline:10px;border:0;border-radius:12px;background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink-2);font-size:.86rem;font-weight:600}
 #root .pf-listb.is-open{background:var(--surface-3)}
-#root .pf-listb .pf-ic{font-size:17px}
+#root .pf-listb .pf-ic{font-size:17px;color:var(--a-600)}
 #root .pf-parts{display:flex;flex-direction:column;gap:8px}
 #root .pf-parts-t{display:block;margin-bottom:4px;font-size:.78rem;font-weight:600;color:var(--ink-3)}
 #root .pf-parts-c{display:flex;flex-wrap:wrap;gap:6px}
@@ -248,44 +252,101 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 @keyframes pf-grow{from{transform:scaleY(.2);opacity:.4}}
 
 /* ── team ── */
-#root .pf-team{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;max-width:var(--page-w);margin:6px auto 0;padding:6px 12px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-2);font-size:.78rem;line-height:1.45;color:var(--ink-2)}
+#root .pf-team{flex:none;width:100%;max-width:560px;margin:6px auto 0;padding:0 16px;font-size:.72rem;line-height:1.4;color:var(--ink-3);text-align:center}
+#root .pf-topic{display:flex;flex-direction:column;min-height:calc(100dvh - var(--pf-top))}
 #root .pf-topic > *{min-width:0}
-#root .pf-topic > .hdr{padding:14px 16px 6px;gap:8px}
-#root .pf-topic > .hdr h1{font-size:1.25rem}
-#root .pf-topic > .pf-ch{margin-top:2px}
-#root .pf-ch > .sub-tabs{margin:4px 0 10px}
-#root .pf-team-t{font-size:.76rem;font-weight:700;color:var(--ink-3)}
-#root .pf-topic > .pf-team{width:calc(100% - 32px)}
 
 /* ── landing ── */
-#root .pf-in-proof > .pf-team,#root .pf-in-proof > .hdr,#root .pf-ch-open > .sub-tabs{display:none}
+#root .pf-in-proof > .pf-team,#root .pf-in-proof > .hdr,#root .pf-in-proof > .pf-path{display:none}
 #root .pf-in-proof > .pf-ch-open{max-width:none;margin:0;padding:0}
-#root .pf-ch .sub-tab:disabled{opacity:.45}
-#root .pf-locked{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:-4px;font-size:.82rem;color:var(--ink-3)}
-#root .pf-locked .pf-ic{font-size:14px}
-#root .pf-land{margin-top:12px;text-align:center}
-#root .pf-land-h{margin-top:0;font-size:clamp(1.9rem,8.6vw,2.7rem);font-weight:800;line-height:1.1;color:var(--ink)}
-#root .pf-land-a{max-width:30ch;margin:8px auto 0;font-size:1.02rem;line-height:1.55;color:var(--ink-2);text-wrap:balance}
-#root .pf-land-fig{height:clamp(170px,30dvh,250px);margin-top:10px}
-#root .pf-steps{list-style:none;display:flex;align-items:flex-end;justify-content:center;gap:10px;margin:14px 0 0;padding:0 0 22px;direction:rtl}
-#root .pf-st{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;width:64px}
-#root .pf-st-bar{display:grid;place-items:center;width:100%;border-radius:8px 8px 3px 3px;background:var(--surface-3);box-shadow:inset 0 0 0 1.5px var(--line);color:#fff;font-size:14px}
-#root .pf-st.is-done .pf-st-bar{background:var(--a-500);box-shadow:none}
-#root .pf-st.is-here .pf-st-bar{background:var(--a-100);box-shadow:inset 0 0 0 2px var(--a-500)}
-#root .pf-st-n{font-size:.84rem;font-weight:600;color:var(--ink-3)}
-#root .pf-st.is-done .pf-st-n,#root .pf-st.is-here .pf-st-n{color:var(--ink)}
-#root .pf-st-here{position:absolute;top:100%;margin-top:3px;white-space:nowrap;font-size:.74rem;font-weight:700;color:var(--a-700)}
-#root .pf-land-stats{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;margin-top:6px;font-size:.9rem;color:var(--ink-2)}
-#root .pf-land-go{position:sticky;bottom:0;display:flex;margin:18px -16px 0;padding:12px 16px max(14px,env(safe-area-inset-bottom,0px));background:linear-gradient(to top,var(--bg) 62%,transparent)}
-#root .pf-land-go .pf-go{min-height:54px;font-size:1.08rem}
-#root .pf-ch:not(.pf-ch-open){padding-bottom:0}
+#root .pf-in-proof > .pf-ch-card{flex:1;display:flex;flex-direction:column;justify-content:center;width:100%;margin:0 auto;padding:16px}
+#root .pf-mast{--pf-wm:clamp(4.6rem,22vw,8.6rem);flex:1 1 auto;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:0;width:100%;max-width:560px;margin:0 auto;padding:4px 16px 0;border:0;border-radius:0;background:none;box-shadow:none;text-align:center}
+#root .pf-mast .pf-wm{flex:none;margin:-.06em 0 0;padding:0;font-size:var(--pf-wm);font-weight:800;line-height:.86;white-space:nowrap;color:var(--a-600);background:linear-gradient(180deg,var(--a-300) 0%,var(--a-600) 80%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#root .pf-mast-fig{flex:1 1 136px;height:auto;min-height:136px;max-height:270px;margin-top:calc(var(--pf-wm) * -.17);padding:0 6px;animation:pf-row .35s var(--ease-out) backwards}
+#root .pf-mast-fig::before{display:none}
+#root .pf-path{flex:none;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:0;width:100%;max-width:560px;margin:2px auto 0;padding:0 16px;overflow:visible;border:0;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;-webkit-mask-image:none;mask-image:none;scroll-snap-type:none}
+#root .pf-pt{position:relative}
+#root .pf-pt::before{content:"";position:absolute;inset-inline-start:19px;top:41px;bottom:-4px;width:2px;border-radius:2px;background:var(--line)}
+#root .pf-pt:last-child::before{display:none}
+#root .pf-pt.is-passed::before{background:var(--a-300)}
+#root .pf-pt-row{display:flex;align-items:center;gap:8px;min-height:44px}
+#root .pf-path .ch-btn{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;min-height:44px;margin:0;padding:0;border:0;border-radius:14px;background:transparent;box-shadow:none;color:var(--ink-2);font-size:1.02rem;font-weight:600;line-height:1.2;text-align:start;white-space:normal;scroll-snap-align:none}
+#root .pf-path .ch-btn::before{content:none}
+#root .pf-pt-n{position:relative;z-index:1;flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink-2);font-size:1rem;font-weight:700;font-variant-numeric:tabular-nums;transition:transform .18s var(--ease-out)}
+#root .pf-path .ch-btn:active .pf-pt-n{transform:scale(.94)}
+#root .pf-pt.is-began .pf-pt-n{background:var(--a-50);box-shadow:inset 0 0 0 1.5px var(--a-300);color:var(--a-800)}
+#root .pf-pt.is-open .pf-pt-n{background:var(--a-600);box-shadow:var(--sh-accent);color:#fff}
+#root .pf-pt-name{min-width:0}
+#root .pf-pt.is-open .pf-pt-name{color:var(--ink);font-size:1.24rem;font-weight:800}
+#root .pf-pt-next{flex:none;padding:2px 9px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.74rem;font-weight:700;line-height:1.5;white-space:nowrap}
+#root .pf-pt-ok{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ok-600);color:#fff;font-size:13px}
+#root .pf-pt-lv{flex:none;display:flex;align-items:flex-end;gap:3px;height:16px;direction:rtl}
+#root .pf-pt-lv i{display:block;width:5px;border-radius:2px;background:var(--line-strong)}
+#root .pf-pt-lv i.is-on{background:var(--a-500)}
+#root .pf-pt-lv i.is-here{background:var(--a-300)}
+#root .pf-pt-open{padding-block:0 10px;padding-inline:52px 0;animation:pf-row .25s var(--ease-out) backwards}
+#root .pf-pt-about{margin:-3px 0 9px;font-size:.92rem;line-height:1.45;color:var(--ink-2);text-align:start;text-wrap:pretty}
+#root .pf-tabs{display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:6px;margin:0}
+#root .pf-tabs .sub-tab{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:40px;margin:0;padding:6px 4px;font-size:.86rem;white-space:nowrap}
+#root .pf-tabs .sub-tab .pf-ic{font-size:13px}
+#root .pf-tabs .sub-tab.pf-is-done .pf-ic{color:var(--ok-600)}
+#root .pf-tabs .sub-tab:disabled{opacity:.5}
+#root .pf-locked{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:.78rem;line-height:1.4;color:var(--ink-3);text-align:start}
+#root .pf-locked .pf-ic{font-size:13px;color:var(--a-600)}
+#root .pf-land-stats{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:6px;font-size:.8rem;color:var(--ink-2)}
+#root .pf-land-go{position:sticky;bottom:0;z-index:5;flex:none;display:flex;flex-direction:column;gap:4px;width:100%;max-width:560px;margin:auto auto 0;padding:4px 16px max(12px,env(safe-area-inset-bottom,0px));background:var(--bg)}
+#root .pf-land-go::before{content:"";position:absolute;inset:auto 0 100% 0;height:22px;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
+#root .pf-land-what{font-size:.8rem;font-weight:600;line-height:1.4;color:var(--ink-3);text-align:center}
+#root .pf-land-go .pf-go{flex:none;width:100%;min-height:52px;font-size:1.1rem}
+@media (max-height:600px){
+  #root .pf-mast{--pf-wm:clamp(3.6rem,17vw,6rem)}
+  #root .pf-mast-fig{flex-basis:124px;min-height:124px}
+}
+
+/* ── warm ── */
+#root .pf-warm-mid{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;padding:10px 16px;text-align:start;animation:pf-row .25s var(--ease-out) backwards}
+#root .pf-warm-k{padding:2px 10px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.78rem;font-weight:600;line-height:1.5}
+#root .pf-warm-q{font-size:1.16rem;font-weight:600;line-height:1.45;color:var(--ink);text-wrap:balance}
+#root .pf-warm-st{font-size:1.55rem;line-height:1.3;color:var(--ink)}
+#root .pf-warm-sent{padding:6px 12px;border-radius:12px;background:var(--a-50);color:var(--a-900);font-size:1.08rem;line-height:1.45}
+#root .pf-warm .pf-fb{margin-bottom:8px}
+#root .pf-warm .pf-why{margin-bottom:8px}
+#root .pf-warm .pf-chips{margin-top:0}
+#root .pf-warm-tap{display:flex;align-items:center;gap:8px}
+#root .pf-warm-picked{flex:1;min-width:0;display:flex;align-items:center;gap:6px;font-size:1.05rem}
+#root .pf-warm-picked .pf-slot{height:26px}
+#root .pf-warm-tap .pf-go{flex:0 0 auto}
 
 /* ── rescue ── */
-#root .pf-rescue{display:flex;flex-direction:column;gap:10px;max-width:440px;margin:26px auto 0;padding:22px 20px;border-radius:22px;background:var(--surface);box-shadow:var(--sh-2);text-align:center}
+#root .pf-rescue{display:flex;flex-direction:column;gap:10px;width:100%;max-width:440px;margin:0 auto;padding:22px 20px;border-radius:22px;background:var(--surface);box-shadow:var(--sh-2);text-align:center}
 #root .pf-rescue-k{font-size:.84rem;font-weight:700;color:var(--a-700)}
 #root .pf-rescue-t{font-size:1.2rem;font-weight:700;line-height:1.45;color:var(--ink);text-wrap:balance}
 #root .pf-rescue-b{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 #root .pf-rescue-b .pf-go{flex:none;width:100%}
+
+/* ── lab ── (the dev lab's review sheet; never on a student's screen) */
+#root .pf-lab-sheet{max-width:1100px;margin:0 auto;padding:16px;color:var(--ink);text-align:start}
+#root .pf-lab-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:.86rem}
+#root .pf-lab-nav a,#root .pf-lab-nav button{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:0;border-radius:999px;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink);font:inherit;text-decoration:none}
+#root .pf-lab-h{margin:14px 0 6px;font-size:1.3rem;font-weight:800;line-height:1.3}
+#root .pf-lab-p{max-width:70ch;margin-bottom:12px;font-size:.92rem;line-height:1.55;color:var(--ink-2)}
+#root .pf-lab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+#root .pf-lab-card{break-inside:avoid;page-break-inside:avoid}
+#root section.pf-lab-card{padding:12px 14px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+#root .pf-lab-id{font-size:.82rem;font-weight:700;color:var(--a-800);text-align:left}
+#root .pf-lab-fig{height:190px}
+#root .pf-lab-k{margin-top:10px;font-size:.8rem;font-weight:700;color:var(--ink-3)}
+#root .pf-lab-w{display:flex;flex-direction:column;gap:1px;margin-top:6px;font-size:.86rem;line-height:1.45}
+#root .pf-lab-w span{color:var(--ink-2)}
+#root .pf-lab-texts td:first-child{width:34%;white-space:normal;font-size:.8rem;color:var(--ink-3)}
+#root .pf-lab-sheet .pf-table th:first-child,#root .pf-lab-sheet .pf-table td:first-child{white-space:normal}
+@media print{
+  #root .pf-lab-nav{display:none}
+  #root .pf-lab-sheet{max-width:none;padding:0}
+  #root .pf-lab-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #root section.pf-lab-card{border-color:#999}
+  #root .pf-lab-sheet .pf-mk{animation:none}
+}
 
 /* ── wide screens and phones on their side: the drawing beside the rows ── */
 @media (min-width:900px),(orientation:landscape) and (max-height:500px){
@@ -300,15 +361,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 @media (max-height:600px) and (max-width:899px) and (orientation:portrait){
   #root .pf-head{height:40px}
   #root .pf-stage{height:150px}
-  #root .pf-strip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-block:2px}
+  #root .pf-strip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-block:2px;padding-inline-end:34px;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 30px);mask-image:linear-gradient(to right,transparent 0,#000 30px)}
   #root .pf-strip::-webkit-scrollbar{display:none}
-  #root .pf-strip-goal{order:-1}
-  #root .pf-strip-given{flex:0 0 auto;max-width:none;overflow:visible}
+  #root .pf-strip-goal{order:-1;flex:none;flex-wrap:nowrap;max-width:none}
+  #root .pf-strip-given{flex:0 0 auto;flex-wrap:nowrap;max-width:none}
+  #root .pf-strip .pf-fc{flex:none;white-space:nowrap}
   #root .pf-strip-goal{position:sticky;inset-inline-start:0;z-index:1;padding-inline-end:8px;background:var(--surface)}
   #root .pf-intro{font-size:.84rem}
 }
 @media (prefers-reduced-motion: reduce){
-  #root .pf-row.is-new,#root .pf-hint,#root .pf-why,#root .pf-hintb.is-nudge{animation:none}
+  #root .pf-row.is-new,#root .pf-hint,#root .pf-why,#root .pf-hintb.is-nudge,#root .pf-mast-fig,#root .pf-pt-open,#root .pf-warm-mid,#root .pf-end-card,#root .pf-prev,#root .pf-note.pf-fb{animation:none}
+  #root .pf-pt-n{transition:none}
 }
 `;
 export default css;

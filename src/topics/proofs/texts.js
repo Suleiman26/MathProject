@@ -218,6 +218,8 @@ export const T = {
   'lbl.sample': 'כך נראית הוכחה',
   'ui.teamNote': 'העמוד מוסתר מתלמידים. המתמטיקה והניסוחים מחכים לאישור.',
   'ui.rescue2Btn': 'נעבור יחד',
+  'lbl.nextUp': 'הבא בתור',
+  'btn.these': 'אלה השניים',
   'ui.planOk': 'נכון: החלקים האלה נמצאים במשולשים {t1}, {t2}. נוכיח קודם שהמשולשים חופפים.',
 
   /* ── one line per type on its landing ── */
@@ -238,7 +240,7 @@ export const NEW_DRAFTS = [
   'about.read-given', 'about.congruent-parts', 'about.prove-congruence', 'about.then-conclusion',
   'lbl.title', 'lbl.whatClaim', 'lbl.pickTile', 'lbl.tapTwo', 'lbl.tapSecond', 'lbl.matchOrder', 'lbl.chooser', 'lbl.goalCong', 'lbl.sameSeg', 'lbl.walkIntro',
   'lbl.proofDone', 'lbl.cleanN', 'lbl.cleanAria', 'lbl.figure', 'lbl.leanGiven', 'lbl.leanSeen', 'lbl.leanRows', 'lbl.here',
-  'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn',
+  'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn', 'lbl.nextUp', 'btn.these',
   'ui.planOk', 'say.ask',
 ];
 

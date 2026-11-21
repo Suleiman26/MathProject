@@ -1,17 +1,19 @@
 'use client';
-/* The proofs section: one proof type. Landing (screen A), the level tabs, the proof flow, mastery
-   (saved on the device), the rescue cards (screen F), and the open proof that survives a refresh.
+/* The proofs section: one proof type. Its part of the landing (screen A: what the type is about, the
+   level tabs and the start button; the path of the four types around it comes from Topic.jsx as
+   `path`), the warm-up (screen B), the proof flow, mastery (saved on the device), the rescue cards
+   (screen F), and the open proof that survives a refresh.
    Mastery does not depend on the answer tracker: record() is called here with the decision states. */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { useAccount, accountApi } from '@/lib/account';
-import { present, decisionsOf, targets } from './core.js';
+import { present, decisionsOf } from './core.js';
 import { snapshot, restore } from './session.js';
-import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, useForce as clearForce, dots, lessHelp, leftRecord } from './mastery.js';
+import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord } from './mastery.js';
 import { TYPES, TABS } from './types/index.js';
 import { T, fill } from './texts.js';
 import ProofScreen from './ProofScreen.jsx';
-import ProofFigure from './ProofFigure.jsx';
+import Warmup from './Warmup.jsx';
 import { IcLock, IcCheck } from './signs.jsx';
 
 const store = () => { try { return window.localStorage; } catch { return null; } };
@@ -22,16 +24,18 @@ const firstWho = () => { try { const s = JSON.parse(window.localStorage.getItem(
 export function readOpen() { try { const o = JSON.parse(window.sessionStorage.getItem(OPEN_KEY)); return o && typeof o === 'object' && typeof o.snap === 'string' ? o : null; } catch { return null; } }
 const dropOpen = () => { try { window.sessionStorage.removeItem(OPEN_KEY); } catch { /* private mode */ } };
 
-export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
+export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, devWarm }) {
   const { account } = useAccount();
   const [who, setWho] = useState(firstWho);
   const [state, setState] = useState(() => load(store(), firstWho()));
   const stateRef = useRef(state), whoRef = useRef(who);
   const ts = typeState(state, type.id);
-  const [tab, setTab] = useState(() => Math.max(1, Math.min(3, ts.level)));
+  // a first visit opens on the warm-up tab (it never blocks: the student can tap רמה 1 and start there)
+  const [tab, setTab] = useState(() => (ts.done > 0 || ts.walked || ts.warm.done ? Math.max(1, Math.min(3, ts.level)) : 0));
   const [open, setOpen] = useState(null);      // { key, problem, view, level, variant, counted, walk, restored }
   const [end, setEnd] = useState(null);
   const [rescue, setRescue] = useState(devRescue || null);
+  const [warm, setWarm] = useState(devWarm ? { key: 1, only: devWarm === true ? null : devWarm, then: 'land' } : null);   // { key, only, then:'proof'|'land' }
   const live = useRef(null), last = useRef(null), sitting = useRef(0), nextRescue = useRef(null), alive = useRef(true), n = useRef(0);
 
   const commit = (next) => { stateRef.current = next; setState(next); save(store(), whoRef.current, next); };
@@ -70,7 +74,7 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
     return () => { on = false; };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (onOpen) onOpen(!!open); }, [open, onOpen]);
+  useEffect(() => { if (onOpen) onOpen(!!open || !!warm || !!rescue); }, [open, warm, rescue, onOpen]);
 
   /* ── start a proof ── */
   function startProof(level, opts = {}) {
@@ -91,6 +95,20 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
     setEnd(null); setRescue(null); setTab(level);
     setOpen({ key: ++n.current, problem, view, level, variant, counted, walk: !!opts.walk, restored: null });
   }
+
+  /* ── the warm-up (§7.1): never blocks, never counts; `only` = one kind, two tasks (rescue step 1) ── */
+  function startWarm(opts = {}) {
+    setEnd(null); setRescue(null); setOpen(null); setTab(0);
+    setWarm({ key: ++n.current, only: opts.only || null, then: opts.then || 'land' });
+  }
+  function onWarmDone(res) {
+    const w = warm, t = typeState(stateRef.current, type.id);
+    putType(warmed(t, res));
+    setWarm(null);
+    if (w && w.then === 'proof') startProof(Math.max(1, Math.min(3, t.level)));
+    else setTab(Math.max(1, Math.min(3, t.level)));
+  }
+  function onWarmLeave() { setWarm(null); setTab(Math.max(1, Math.min(3, typeState(stateRef.current, type.id).level))); }
 
   /* ── every action: keep the proof for a refresh ── */
   function onState(s) {
@@ -150,36 +168,45 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
 
   /* ── what is on screen ── */
   const level = Math.min(3, ts.level), passed = ts.level >= 4;
-  const sample = useMemo(() => { try { return type.remake({ template: type.templates[0].id, seed: 20261121, level: 1, variant: 'A', meta: null }); } catch { return null; } }, [type]);
-  const sampleMarks = useMemo(() => (sample ? [...sample.canon.filter((f) => f !== 'cong' && !targets(sample).includes(f)).map((fact, i) => ({ fact, style: 'on', delay: 500 + i * 420 })), ...targets(sample).map((fact) => ({ fact, style: 'goal' }))] : []), [sample]);
-  const began = ts.done > 0 || ts.walked;
+  const began = ts.done > 0 || ts.walked || ts.warm.done;
   const lockedNext = level < 3 ? level + 1 : null;
   const idx = TYPES.findIndex((x) => x.id === type.id), prev = idx > 0 ? TYPES[idx - 1] : null;
 
   const tabs = (
-    <div className="sub-tabs">
+    <div className="sub-tabs pf-tabs">
       {TABS.map((name, i) => {
-        const locked = i > level;
-        return <button type="button" key={name} className={`sub-tab${i === tab ? ' active' : ''}`} disabled={locked} onClick={() => setTab(i)}>{name}</button>;
+        const locked = i > level, done = !locked && ((i === 0 ? began : i < level) || passed);
+        return (
+          <button type="button" key={name} className={`sub-tab${i === tab ? ' active' : ''}${done ? ' pf-is-done' : ''}`} disabled={locked} onClick={() => setTab(i)}>
+            {locked ? <IcLock /> : done ? <IcCheck /> : null}{name}
+          </button>
+        );
       })}
     </div>
   );
+  const frame = (inner, body) => <>{path ? path({ state, inner }) : inner}{body}</>;
+
+  if (warm) {
+    return frame(tabs, (
+      <div className="content pf-ch pf-ch-open">
+        <Warmup key={warm.key} type={type} kinds={type.warm} only={warm.only} onDone={onWarmDone} onLeave={onWarmLeave} />
+      </div>
+    ));
+  }
 
   if (open) {
-    return (
+    return frame(tabs, (
       <div className="content pf-ch pf-ch-open">
-        {tabs}
         <ProofScreen key={open.key} type={type} problem={open.problem} view={open.view} level={open.level} levelName={TABS[open.level]} dots={dots(ts, open.level)}
           restored={open.restored} end={end} onEnd={onEnd} onLeave={onLeave} onSwap={end ? null : onSwap} onState={onState} />
       </div>
-    );
+    ));
   }
 
   if (rescue) {
-    const go = () => (rescue.step === 2 ? startProof(level, { walk: true }) : startProof(level));
-    return (
-      <div className="content pf-ch">
-        {tabs}
+    const go = () => (rescue.step === 1 ? startWarm({ only: rescue.warm || 'W1', then: 'proof' }) : rescue.step === 2 ? startProof(level, { walk: true }) : startProof(level));
+    return frame(tabs, (
+      <div className="content pf-ch pf-ch-card">
         <div className="pf-rescue">
           {rescue.step !== 1 && <span className="pf-rescue-k">{T['lbl.rescueCard']}</span>}
           <p className="pf-rescue-t">
@@ -195,40 +222,28 @@ export default function ProofChapter({ type, onOpen, onGoType, devRescue }) {
           </div>
         </div>
       </div>
-    );
+    ));
   }
 
-  const tabLevel = Math.max(1, tab);
-  return (
-    <div className="content pf-ch">
+  // the main button starts what the open tab says: the warm-up (a first visit), or a proof at that level
+  const viaWarm = tab === 0;
+  const goLevel = Math.min(Math.max(1, tab), level);
+  const k = dots(ts, level).filter((d) => d === true).length;
+  const inner = (
+    <>
+      <p className="pf-pt-about">{T[`about.${type.id}`]}</p>
       {tabs}
       {lockedNext && <p className="pf-locked"><IcLock /><span>{TABS[lockedNext]}: {fill('ui.locked', { n: level })}</span></p>}
-      <section className="pf-land">
-        <h2 className="pf-land-h">{type.name}</h2>
-        <p className="pf-land-a">{T[`about.${type.id}`]}</p>
-        {sample && <div className="pf-stage pf-land-fig"><ProofFigure problem={sample} marks={sampleMarks} label={T['lbl.sample']} /></div>}
-        <ol className="pf-steps" aria-label={T['lbl.order']}>
-          {TABS.map((name, i) => {
-            const done = (i === 0 ? began || ts.warm.done : i < level) || passed, here = !passed && i === level;
-            return (
-              <li key={name} className={`pf-st${done ? ' is-done' : ''}${here ? ' is-here' : ''}`}>
-                <span className="pf-st-bar" style={{ height: `${14 + i * 9}px` }}>{done && <IcCheck />}</span>
-                <span className="pf-st-n">{name}</span>
-                {here && <span className="pf-st-here">{T['lbl.here']}</span>}
-              </li>
-            );
-          })}
-        </ol>
-        {began && <div className="pf-land-stats">
-          <span className="pf-dots is-big" aria-hidden="true">{dots(ts, level).map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
-          <span>{fill('lbl.cleanN', { k: dots(ts, level).filter((d) => d === true).length })}</span>
-          <span className="pf-end-sep" aria-hidden="true" />
-          <span>{fill('lbl.done', { n: ts.done })}</span>
-        </div>}
-      </section>
-      <div className="pf-land-go">
-        <button type="button" className="pf-go" onClick={() => startProof(Math.min(tabLevel, level))}>{began ? T['btn.continue'] : T['btn.start']}{tab >= 1 && began ? ` · ${TABS[Math.min(tabLevel, level)]}` : ''}</button>
-      </div>
-    </div>
+      {ts.done > 0 && <p className="pf-land-stats">
+        <span className="pf-dots is-big" role="img" aria-label={fill('lbl.cleanN', { k })}>{dots(ts, level).map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
+        <span>{fill('lbl.done', { n: ts.done })}</span>
+      </p>}
+    </>
   );
+  return frame(inner, (
+    <div className="content pf-ch pf-land-go">
+      <p className="pf-land-what"><span>{type.button}</span><span aria-hidden="true"> · </span><span>{TABS[viaWarm ? 0 : goLevel]}</span></p>
+      <button type="button" className="pf-go" onClick={() => (viaWarm ? startWarm({ then: began ? 'land' : 'proof' }) : startProof(goLevel))}>{began ? T['btn.continue'] : T['btn.start']}</button>
+    </div>
+  ));
 }
