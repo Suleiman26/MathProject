@@ -1,7 +1,7 @@
 'use client';
 /* The proofs section: the end of a proof (spec §7.7). A small result line (the tracker's "win"
-   node when the proof is clean), the four dots, the quiet "proofs completed" line, a level-up
-   ladder when a level was earned, and the proof as a notebook page: נתון / צ"ל and a real
+   node when the proof is clean: session.endClean, the one mastery rule), the four dots, the quiet "proofs completed" line, a level-up
+   ladder when a level was earned, and the proof as a notebook page: נתון / צ״ל and a real
    two-column table טענה | נימוק with the full reason wording, ending in מ.ש.ל. */
 import React, { useEffect, useState } from 'react';
 import { REASONS } from './reasons.js';
@@ -9,7 +9,7 @@ import { targets } from './core.js';
 import { T, fill } from './texts.js';
 import { St, Tx, IcCheck, IcBook } from './signs.jsx';
 
-export default function EndCard({ problem, rows, clean, counted = true, dots = [], done = 0, lessHelp, event, levelName, typeName, newLevel, round, onMore, onFinish }) {
+export default function EndCard({ problem, rows, clean, filled = true, counted = true, dots = [], done = 0, lessHelp, event, levelName, typeName, newLevel, round, onMore, onFinish }) {
   // the result line mounts one frame after the card: a small new node of its own (tracker rule: a
   // new node with more than 40 descendants is not read as feedback)
   const [shown, setShown] = useState(false);
@@ -23,7 +23,7 @@ export default function EndCard({ problem, rows, clean, counted = true, dots = [
         <div className="prf-end-top">
           {shown && (clean
             ? <div className="banner prf-end"><span className="prf-end-seal"><IcCheck /></span><span>{T['ui.endClean']}</span></div>
-            : <div className="prf-end is-helped"><span className="prf-end-seal"><IcCheck /></span><span>{T['ui.endHelped']}</span></div>)}
+            : <div className="prf-end is-helped"><span className="prf-end-seal"><IcCheck /></span><span>{T[filled ? 'ui.endHelped' : 'ui.endSlips']}</span></div>)}
           {up && (
             <div className="prf-lvup">
               <span className="prf-ladder" aria-hidden="true">

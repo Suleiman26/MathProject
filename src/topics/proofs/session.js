@@ -10,10 +10,10 @@
             · { t:'cancel' } · { t:'next' } (walk-through) · { t:'qed' }
    Effects: { t:'fb', cls:'ok'|'err'|'note', key, vars, kind? } · { t:'mark', fact } · { t:'question', parts }
             · { t:'why', key, vars } · { t:'filled', fact, reason } · { t:'hint', rung, key, vars, parts }
-            · { t:'end', clean }
+            · { t:'end', clean } (clean = endClean(s), the mastery rule)
    fb.cls → the tracker (spec §10.4): 'ok' only for right on the first try; a right second try is 'note'. */
 import { classify, checkReason, checkMatching, isDone, roleOf, acceptedReasons, partsOf, show, whyOf, congOf, required, norm } from './core.js';
-import { RULES } from './mastery.js';
+import { RULES, isClean } from './mastery.js';
 import { LABELS, T } from './texts.js';
 import { REASONS, DEFS } from './reasons.js';
 
@@ -231,7 +231,7 @@ function onQed(s0) {
   if (s0.ended || s0.pending || !isDone(s0.problem, s0.done)) return same(s0);
   const s = clone(s0);
   s.ended = true; s.cur = null;
-  return { s, fx: [{ t: 'end', clean: !s.decisions.some((d) => d.state === 'filled') }] };
+  return { s, fx: [{ t: 'end', clean: endClean(s) }] };
 }
 
 /** A new proof in progress. */
@@ -267,6 +267,9 @@ export function summary(s) {
   for (const d of s.decisions) out[d.state] += 1;
   return out;
 }
+/** Is the proof clean? The one mastery rule (spec §8): no filled decision and solo ≥ 80% (mastery.isClean).
+    The end card, the tracker's win and the new dot all read this. */
+export const endClean = (s) => isClean(summary(s));
 /** "הוכחה אחרת" is free only before the first non-solo decision. */
 export const canSwapFree = (s) => s.nonSolo === 0;
 /** Is the proof ready for "מ.ש.ל"? */

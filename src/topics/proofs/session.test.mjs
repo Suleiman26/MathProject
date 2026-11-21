@@ -3,7 +3,8 @@
    double taps (Review Focus 2), the end, and the saved open proof. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { start, act, summary, canSwapFree, snapshot, restore } from './session.js';
+import { start, act, summary, canSwapFree, snapshot, restore, endClean } from './session.js';
+import { isClean } from './mastery.js';
 import { canonRows, present } from './core.js';
 import { xsas } from './fixtures.mjs';
 import { seeded, makeR } from '../new/core.js';
@@ -87,7 +88,7 @@ test('Level 1 walk-through: the app writes rows on "next"; the one gap is the th
   o = act(s, { t: 'next' }); s = o.s; assert.equal(s.cur.label, 'נימוק · משפט חפיפה'); assert.deepEqual(act(s, { t: 'next' }).fx, []);
   o = act(s, { t: 'reason', id: 'asa' }); assert.ok(o.fx.some((f) => f.t === 'hint' && f.rung === 1));      // autoHint
   o = act(o.s, { t: 'reason', id: 'sas' }); s = o.s; assert.equal(s.decisions.length, 1);
-  o = act(s, { t: 'next' }); s = o.s; assert.deepEqual(act(s, { t: 'qed' }).fx, [{ t: 'end', clean: true }]);
+  o = act(s, { t: 'next' }); s = o.s; assert.deepEqual(act(s, { t: 'qed' }).fx, [{ t: 'end', clean: false }]);   // its one decision was missed: not clean (the mastery rule)
 });
 test('Level 1-B fill: given rows arrive written; the gaps come in order; a statement gap among options', () => {
   const R = makeR(seeded(4)), view = present(P, 1, 'B', { counted: 2, R });
@@ -99,7 +100,7 @@ test('Level 1-B fill: given rows arrive written; the gaps come in order; a state
   let o = act(s, { t: 'statement', st: wrong }); assert.equal(o.fx[0].cls, 'err');
   o = act(o.s, { t: 'statement', st: P.facts.goal }); o = act(o.s, { t: 'reason', id: 'cp-sides' });
   assert.deepEqual(summary(o.s), { n: 4, solo: 3, helped: 0, missed: 1, filled: 0 });
-  assert.deepEqual(act(o.s, { t: 'qed' }).fx, [{ t: 'end', clean: true }]);
+  assert.deepEqual(act(o.s, { t: 'qed' }).fx, [{ t: 'end', clean: false }]);   // 3 of 4 solo is under 80%: not clean
 });
 test('Level 3: the congruence row is a vertex matching (one decision, its own label)', () => {
   let s = start(P, { ...V, mode: 'tap' });
@@ -123,4 +124,20 @@ test('snapshot / restore: an open proof survives a refresh', () => {
   assert.equal(act(back, { t: 'reason', id: 'given' }).s.decisions.at(-1).state, 'missed');
   assert.equal(restore(snapshot(s), () => null), null);
   assert.equal(restore(JSON.stringify({ v: 1, id: P.id, state: { done: 'x' } }), () => xsas()), null);
+});
+test('clean at the end is the mastery rule (review I1): 2 of 8 decisions missed is not clean, 2 of 10 is', () => {
+  const V8 = { ...V, pre: ['b'], steps: V.steps.filter((x) => x.fact !== 'b') };
+  let s = start(P, V8);
+  s = act(s, { t: 'statement', st: P.facts.a }).s; s = act(s, { t: 'reason', id: 'vertical' }).s; s = act(s, { t: 'reason', id: 'given' }).s;   // missed
+  s = act(s, { t: 'statement', st: P.facts.c }).s; s = act(s, { t: 'reason', id: 'given' }).s; s = act(s, { t: 'reason', id: 'vertical' }).s;   // missed
+  for (const [f, r] of [['cong', 'sas'], ['goal', 'cp-sides']]) { s = act(s, { t: 'statement', st: P.facts[f] }).s; s = act(s, { t: 'reason', id: r }).s; }
+  const sum = summary(s); assert.deepEqual(sum, { n: 8, solo: 6, helped: 0, missed: 2, filled: 0 });
+  assert.equal(isClean(sum), false); assert.equal(endClean(s), false);
+  assert.deepEqual(act(s, { t: 'qed' }).fx, [{ t: 'end', clean: false }]);
+  let t = start(P, V);
+  t = act(t, { t: 'statement', st: P.facts.a }).s; t = act(t, { t: 'reason', id: 'vertical' }).s; t = act(t, { t: 'reason', id: 'given' }).s;
+  t = act(t, { t: 'statement', st: P.facts.c }).s; t = act(t, { t: 'reason', id: 'given' }).s; t = act(t, { t: 'reason', id: 'vertical' }).s;
+  for (const [f, r] of [['b', 'given'], ['cong', 'sas'], ['goal', 'cp-sides']]) { t = act(t, { t: 'statement', st: P.facts[f] }).s; t = act(t, { t: 'reason', id: r }).s; }
+  assert.deepEqual(summary(t), { n: 10, solo: 8, helped: 0, missed: 2, filled: 0 });
+  assert.deepEqual(act(t, { t: 'qed' }).fx, [{ t: 'end', clean: true }]);
 });

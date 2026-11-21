@@ -95,6 +95,7 @@ export const T = {
   'ui.filledSt': 'מילאנו את הצעד הזה יחד: {st}.',
   'ui.endClean': 'מ.ש.ל. הוכחה נקייה.',
   'ui.endHelped': 'מ.ש.ל. ההוכחה הושלמה. היה צעד שמילאנו יחד, ולכן היא לא נספרת כנקייה. הרמה לא יורדת.',
+  'ui.endSlips': 'מ.ש.ל. ההוכחה הושלמה. בכמה צעדים היה צריך רמז או ניסיון נוסף, ולכן היא לא נספרת כנקייה. הרמה לא יורדת.',
   'ui.levelUp': 'עליתם רמה. {{type}} · רמה {{n}}',
   'ui.typeDone': 'בניתם הוכחות שלמות לבד. {{type}} · רמה 3 הושלמה.',
   'ui.lessHelp': 'הפעם נעזרתם פחות מבפעם הקודמת.',
@@ -242,6 +243,7 @@ export const NEW_DRAFTS = [
   'lbl.proofDone', 'lbl.cleanN', 'lbl.cleanAria', 'lbl.figure', 'lbl.leanGiven', 'lbl.leanSeen', 'lbl.leanRows', 'lbl.here',
   'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn', 'lbl.nextUp', 'btn.these',
   'ui.planOk', 'say.ask',
+  'ui.endSlips',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

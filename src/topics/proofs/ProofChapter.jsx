@@ -156,7 +156,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     sitting.current += 1;
     nextRescue.current = out.rescue;
     setEnd({
-      clean: r.clean, counted: o.counted && !o.walk, dots: dots(out.ts, o.level), done: out.ts.done, lessHelp: less, event: out.event, newLevel: out.ts.level,
+      clean: r.clean, filled: r.summary.filled > 0, counted: o.counted && !o.walk, dots: dots(out.ts, o.level), done: out.ts.done, lessHelp: less, event: out.event, newLevel: out.ts.level,
       round: sitting.current % RULES.ROUND === 0, typeName: type.name, levelName: TABS[o.level],
       onMore: () => {
         if (nextRescue.current) { const rs = nextRescue.current; nextRescue.current = null; setOpen(null); setEnd(null); setRescue(rs); return; }
