@@ -1,0 +1,877 @@
+<title>מסלול ההוכחות</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Math&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f5f2;--surface:#ffffff;--surface-2:#fafaf8;--surface-3:#f2f1ee;
+  --line:#e7e5e0;--line-strong:#d6d3cc;--ink:#1c1b19;--ink-2:#4f4d48;--ink-3:#8a877f;
+  --a-50:#fff7ed;--a-100:#ffedd5;--a-200:#fed7aa;--a-300:#fdba74;--a-500:#f97316;--a-600:#ea580c;--a-700:#c2410c;
+  --btn-bg:#c2410c;--btn-ink:#ffffff;--wm-1:#fdba74;--wm-2:#ea580c;
+  --ok-50:#f0fdf4;--ok-500:#22c55e;--ok-700:#15803d;
+  --bad-50:#fef2f2;--bad-500:#ef4444;--bad-700:#b91c1c;
+  --p1:#0284c7;--p2:#7c3aed;--p3:#0d9488;
+  --glow:rgb(253 186 116 / .38);--shade:rgb(28 27 25 / .10);--frame:#1c1b19;
+  --font:"Rubik",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --math:"Rubik","Noto Sans Math","STIX Two Math","Apple Symbols","Segoe UI Symbol",system-ui,sans-serif;
+  --ease:cubic-bezier(.23,1,.32,1);
+  --gl:max(16px, env(safe-area-inset-left,0px));--gr:max(16px, env(safe-area-inset-right,0px));
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141311;--surface:#1d1c19;--surface-2:#22211d;--surface-3:#2a2824;
+    --line:#33312c;--line-strong:#4a473f;--ink:#f1efea;--ink-2:#c6c2b9;--ink-3:#918d84;
+    --a-50:#27190f;--a-100:#382111;--a-200:#5b3214;--a-300:#a2501a;--a-500:#fb923c;--a-600:#fb923c;--a-700:#fdba74;
+    --btn-bg:#f97316;--btn-ink:#1c1b19;--wm-1:#7c3a12;--wm-2:#f97316;
+    --ok-50:#10261a;--ok-500:#22c55e;--ok-700:#86efac;
+    --bad-50:#2d1515;--bad-500:#ef4444;--bad-700:#fca5a5;
+    --p1:#38bdf8;--p2:#a78bfa;--p3:#2dd4bf;
+    --glow:rgb(249 115 22 / .16);--shade:rgb(0 0 0 / .45);--frame:#3a3832;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141311;--surface:#1d1c19;--surface-2:#22211d;--surface-3:#2a2824;
+  --line:#33312c;--line-strong:#4a473f;--ink:#f1efea;--ink-2:#c6c2b9;--ink-3:#918d84;
+  --a-50:#27190f;--a-100:#382111;--a-200:#5b3214;--a-300:#a2501a;--a-500:#fb923c;--a-600:#fb923c;--a-700:#fdba74;
+  --btn-bg:#f97316;--btn-ink:#1c1b19;--wm-1:#7c3a12;--wm-2:#f97316;
+  --ok-50:#10261a;--ok-500:#22c55e;--ok-700:#86efac;
+  --bad-50:#2d1515;--bad-500:#ef4444;--bad-700:#fca5a5;
+  --p1:#38bdf8;--p2:#a78bfa;--p3:#2dd4bf;
+  --glow:rgb(249 115 22 / .16);--shade:rgb(0 0 0 / .45);--frame:#3a3832;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.6;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.pg{direction:rtl;text-align:start;padding-left:var(--gl);padding-right:var(--gr);padding-block:0 72px;overflow-x:clip;
+  background:radial-gradient(900px 520px at 50% -120px,var(--glow),transparent 70%) no-repeat}
+.pg *{font-family:inherit}
+.w{max-width:680px;margin-inline:auto}
+h1,h2,h3,h4,p,ol,ul{margin:0}
+p,li,q{text-wrap:pretty}
+h2,h3,h4{text-wrap:balance}
+ol,ul{padding:0;list-style:none}
+.m{font-family:var(--math);direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-weight:600;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
+a{color:inherit}
+svg{direction:ltr}
+
+/* ── hero ── */
+.hero{--wm:clamp(5rem,23vw,12rem);padding-block:max(28px, env(safe-area-inset-top,0px)) 8px}
+.kick{font-size:.86rem;font-weight:500;color:var(--ink-3)}
+.wm{font-size:var(--wm);font-weight:800;line-height:.86;margin-top:10px;white-space:nowrap;
+  background:linear-gradient(180deg,var(--wm-1) 0%,var(--wm-2) 78%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fig.hero-fig{display:block;max-width:500px;width:100%;margin:calc(var(--wm) * -.3) auto 0;position:relative}
+.hero h2{font-size:clamp(1.7rem,7.4vw,2.6rem);font-weight:800;line-height:1.15;margin-top:6px}
+.hero h2 span{display:block;color:var(--a-600)}
+.lead{margin-top:16px;color:var(--ink-2);font-size:1.06rem;max-width:34ch}
+.lead + .lead{margin-top:10px}
+.hero-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:24px}
+.pill{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 22px;border-radius:999px;border:0;background:var(--btn-bg);color:var(--btn-ink);font-weight:600;text-decoration:none;transition:transform .18s var(--ease)}
+.pill:active{transform:scale(.97)}
+.trust{font-size:.95rem;color:var(--ink-2)}
+.trust b{font-size:1.5rem;font-weight:800;color:var(--ink);margin-inline-end:4px}
+
+/* ── sections ── */
+.sec{padding-top:76px}
+.sec > .w > h2, .sec > h2{font-size:clamp(1.6rem,6.6vw,2.2rem);font-weight:800;line-height:1.2}
+.sub{color:var(--ink-2);margin-top:10px;max-width:38ch}
+.h3{font-size:1.1rem;font-weight:700;margin-top:40px}
+
+/* levels staircase */
+.lv-list{margin-top:26px}
+.lv-list li{display:grid;grid-template-columns:76px 1fr;gap:4px 14px;padding-block:16px;border-top:1px solid var(--line)}
+.lv-list li:last-child{border-bottom:1px solid var(--line)}
+.lv-n{font-weight:700;color:var(--a-600);font-size:.98rem;padding-top:1px}
+.lv-t{font-weight:600}
+.lv-d{grid-column:2;color:var(--ink-2);font-size:.96rem}
+.lv-bar{grid-column:2;height:6px;border-radius:6px;background:var(--surface-3);margin-top:8px;overflow:hidden;direction:rtl}
+.lv-bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--a-600),var(--a-300))}
+.cap{font-size:.84rem;color:var(--ink-3);margin-top:10px}
+
+/* rule numbers */
+.rule li{display:grid;grid-template-columns:92px 1fr;gap:14px;align-items:baseline;padding-block:14px}
+.rule li + li{border-top:1px solid var(--line)}
+.rule b{font-size:2rem;font-weight:800;line-height:1;color:var(--ink);white-space:nowrap}
+.rule b small{font-size:.9rem;font-weight:600;color:var(--ink-3)}
+.rule p{color:var(--ink-2);font-size:.98rem}
+.rule p strong{color:var(--ink);font-weight:600}
+
+/* map */
+.map{margin-top:22px}
+.unit{position:relative;padding-inline-start:54px;padding-bottom:30px}
+.unit::before{content:"";position:absolute;inset-inline-start:17px;top:6px;bottom:-6px;width:2px;background:var(--a-200)}
+.unit:last-child::before{background:linear-gradient(var(--a-200),transparent)}
+.node{position:absolute;inset-inline-start:0;top:0;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:var(--btn-ink);background:var(--btn-bg);box-shadow:0 0 0 5px var(--bg)}
+.unit h3{font-size:1.14rem;font-weight:700;line-height:1.3;padding-top:4px}
+.unit .g{font-size:.84rem;color:var(--ink-3);font-weight:500}
+.types{margin-top:8px}
+.types li{display:flex;align-items:center;gap:10px;min-height:46px;padding-block:8px;border-bottom:1px solid var(--line)}
+.types .tn{flex:1;font-size:.98rem;line-height:1.35}
+.types .tn small{display:block;font-size:.78rem;font-weight:600;color:var(--a-600)}
+.types .no{font-size:.8rem;color:var(--ink-3);width:1.5em;font-variant-numeric:tabular-nums}
+.pips{display:inline-flex;align-items:center;gap:3px;direction:rtl;flex:none}
+.pips i{display:block;height:8px;width:14px;border-radius:3px;background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.pips i:first-child{width:8px;border-radius:50%}
+.pips i.f{background:var(--a-500);box-shadow:none}
+.pips i.h{background:var(--a-200);box-shadow:inset 0 0 0 1px var(--a-300)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.84rem;color:var(--ink-3);margin-top:18px;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+/* ── the demo (phone) ── */
+.demo-wrap{margin-top:26px;margin-left:calc(var(--gl) * -1);margin-right:calc(var(--gr) * -1)}
+.dev{background:var(--surface);border-block:1px solid var(--line);position:relative}
+@media (min-width:560px){
+  .demo-wrap{margin-inline:auto;max-width:412px}
+  .dev{border:10px solid var(--frame);border-radius:46px;box-shadow:0 40px 80px -40px var(--shade)}
+  .dev .bar{border-radius:36px 36px 0 0}
+  .dev .tray{border-radius:0 0 36px 36px}
+}
+.bar{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;background:var(--surface)}
+.bar-t{flex:1;min-width:0}
+.bar-t b{display:block;font-weight:700;font-size:1.02rem;line-height:1.25}
+.bar-t span{font-size:.8rem;color:var(--ink-3)}
+.clean{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.72rem;color:var(--ink-3)}
+.clean .d{display:flex;gap:4px;direction:rtl}
+.clean i{width:9px;height:9px;border-radius:50%;background:var(--surface-3);box-shadow:inset 0 0 0 1.5px var(--line-strong);transition:background .3s,box-shadow .3s,transform .4s var(--ease)}
+.clean i.on{background:var(--a-500);box-shadow:none}
+.clean i.new{transform:scale(1.35)}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 12px;padding:4px;border-radius:14px;background:var(--surface-3)}
+.tabs button{min-height:44px;border:0;border-radius:10px;background:transparent;font-weight:600;font-size:.95rem;color:var(--ink-2);transition:background .2s,color .2s}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--a-700);box-shadow:0 1px 2px var(--shade)}
+.desc{padding:10px 16px 2px;font-size:.92rem;color:var(--ink-2);min-height:3.2em}
+.task{padding:4px 16px 10px;font-size:.98rem}
+.stage{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:0 12px 10px}
+.fig{display:block;width:100%;max-width:300px;height:auto;margin-inline:auto;-webkit-user-select:none;user-select:none}
+.facts{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:center;font-size:.86rem;color:var(--ink-3)}
+.facts > span{display:inline-flex;align-items:center;gap:6px}
+.fc{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 10px;border-radius:999px;background:var(--surface-3);color:var(--ink);font-size:.92rem;transition:opacity .3s,background .3s,color .3s}
+.fc.used{opacity:.5}
+.fc.used .m{text-decoration:line-through;text-decoration-thickness:1px}
+.fc.goal{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink-2)}
+.fc.goal.open{background:var(--a-100);box-shadow:inset 0 0 0 1.5px var(--a-300);color:var(--a-700)}
+.fc svg{width:13px;height:13px;flex:none}
+
+/* figure */
+.sg{stroke:var(--ink);stroke-width:2;stroke-linecap:round;fill:none;transition:stroke .3s,stroke-width .3s}
+.tri{fill:var(--a-500);fill-opacity:0;transition:fill-opacity .5s}
+.lb{font:600 15px var(--math);fill:var(--ink);stroke:var(--surface);stroke-width:5px;paint-order:stroke;stroke-linejoin:round;text-anchor:middle;pointer-events:none}
+.mk{opacity:0;transition:opacity .35s;stroke-width:2.2;stroke-linecap:round;fill:none;pointer-events:none}
+.mk-a{stroke:var(--p1)}.mk-b{stroke:var(--p2)}.mk-goal{stroke:var(--a-600)}
+.arc{fill:none;stroke-width:2.2;stroke-linecap:round;opacity:0;transition:opacity .35s;pointer-events:none}
+.arc.c{stroke:var(--p3)}
+.arc.q{stroke:var(--bad-500);stroke-dasharray:3 4}
+.on-a .mk-a,.on-b .mk-b,.on-goal .mk-goal,.on-c .arc.c,.on-q .arc.q{opacity:1}
+.on-a .sg[data-p="AO"],.on-a .sg[data-p="OB"]{stroke:var(--p1)}
+.on-b .sg[data-p="CO"],.on-b .sg[data-p="OD"]{stroke:var(--p2)}
+.on-goal .sg[data-p="AC"],.on-goal .sg[data-p="BD"]{stroke:var(--a-600);stroke-width:2.6}
+.on-cong .tri{fill-opacity:.13}
+.sg.sel{stroke:var(--a-600);stroke-width:4}
+.arc.sel{opacity:1;stroke:var(--a-600);stroke-width:3.4;stroke-dasharray:none}
+.tri.sel{fill-opacity:.24}
+.hit{fill:transparent;stroke:transparent;pointer-events:all}
+.hit.s{stroke-width:22;stroke-linecap:round;fill:none}
+.tri{pointer-events:all}
+.tap .hit,.tap .tri{cursor:pointer}
+.qm{font:700 13px var(--font);fill:var(--bad-500);opacity:0;transition:opacity .3s;text-anchor:middle;pointer-events:none}
+.on-q .qm{opacity:1}
+@keyframes pfPulse{0%,100%{stroke-width:2}50%{stroke-width:6}}
+@keyframes pfPulseO{0%,100%{opacity:1;stroke-width:2.2}50%{opacity:1;stroke-width:6}}
+@keyframes pfPulseT{0%,100%{fill-opacity:.13}50%{fill-opacity:.4}}
+.sg.pulse{animation:pfPulse .8s ease-in-out 2}
+.arc.pulse{opacity:1;stroke:var(--a-600);animation:pfPulseO .8s ease-in-out 2}
+.tri.pulse{animation:pfPulseT .8s ease-in-out 2}
+@keyframes pfSnap{0%{fill-opacity:.13}40%{fill-opacity:.42}100%{fill-opacity:.2}}
+.won .tri{animation:pfSnap 1s var(--ease) both}
+
+/* rows */
+.rows{padding:6px 16px 18px;min-height:250px}
+.row{display:flex;gap:12px;align-items:flex-start;padding-block:11px;border-bottom:1px solid var(--line);position:relative}
+.row .n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.82rem;font-weight:700;color:var(--ink-3);box-shadow:inset 0 0 0 1.5px var(--line-strong);margin-top:1px;transition:background .3s,color .3s,box-shadow .3s}
+.row .b{flex:1;min-width:0}
+.row .st{font-size:1.14rem;line-height:1.35;display:flex;align-items:center;gap:8px;justify-content:flex-start;color:var(--ink-2)}
+.row .why{font-size:.92rem;color:var(--ink-2);margin-top:2px}
+.row .why em{font-style:normal;font-size:.76rem;color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line-strong);border-radius:6px;padding:1px 6px;margin-inline-start:6px}
+.row .why.gap{display:inline-block;color:var(--ink-3);border-bottom:1.5px dashed var(--line-strong);padding-inline:2px 18px}
+.row.is-done .n{background:var(--ok-50);color:var(--ok-700);box-shadow:inset 0 0 0 1.5px var(--ok-500)}
+.row.is-done .st{color:var(--ink)}
+.row.is-active .n{background:var(--a-100);color:var(--a-700);box-shadow:inset 0 0 0 1.5px var(--a-500)}
+.row.is-active .st{color:var(--ink)}
+.row.is-active .why.gap{color:var(--a-700);border-color:var(--a-500)}
+.row.is-active::before{content:"";position:absolute;inset-inline-start:-16px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--a-500)}
+.row.is-ghost .ph{height:12px;width:46%;border-radius:6px;background:var(--surface-3);margin-top:8px}
+.row.is-new{animation:pfRow .45s var(--ease)}
+@keyframes pfRow{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.kz{flex:none;font-size:.8rem;font-weight:700;color:var(--ink-3);width:24px;height:24px;display:grid;place-items:center;border-radius:6px;background:var(--surface-3);margin-top:2px}
+.gl{width:20px;height:14px;flex:none}
+.tl li{display:flex;gap:12px;align-items:center;padding-block:13px;border-bottom:1px solid var(--line);color:var(--ink-3)}
+.tl li.cur{color:var(--ink);font-weight:600}
+.tl li.ok{color:var(--ink-2)}
+.tl .n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.82rem;font-weight:700;box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+.tl li.cur .n{background:var(--a-100);color:var(--a-700);box-shadow:inset 0 0 0 1.5px var(--a-500)}
+.tl li.ok .n{background:var(--ok-50);color:var(--ok-700);box-shadow:inset 0 0 0 1.5px var(--ok-500)}
+
+/* tray */
+.tray{position:sticky;bottom:0;z-index:6;background:var(--surface-2);border-top:1px solid var(--line);box-shadow:0 -14px 28px -22px var(--shade);padding:12px 14px max(14px, env(safe-area-inset-bottom,0px));max-height:54vh;max-height:54svh;overflow-y:auto;overscroll-behavior:contain}
+.ask{font-size:.98rem;line-height:1.45;color:var(--ink)}
+.ask .k{font-size:.8rem;font-weight:600;color:var(--a-700);margin-inline-end:6px}
+.ask .q{color:var(--ink-2);margin-inline-start:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{min-height:44px;padding:6px 14px;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--surface);font-size:.95rem;font-weight:500;line-height:1.25;text-align:center;transition:transform .15s var(--ease),border-color .2s,opacity .2s,background .2s}
+.chip:active{transform:scale(.96)}
+.chip.tile{font-size:1.04rem;padding-inline:14px;border-style:solid;box-shadow:0 2px 0 var(--line-strong)}
+.chip[disabled]{opacity:.38;text-decoration:line-through;cursor:default}
+.chip.dim{opacity:.38}
+.chip.yes{border-color:var(--ok-500);background:var(--ok-50);color:var(--ok-700)}
+.chip.shake{animation:pfShake .4s cubic-bezier(.36,.07,.19,.97)}
+@keyframes pfShake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+.grp{display:flex;flex-direction:column;gap:3px;min-width:0}
+.grp small{font-size:.74rem;font-weight:600;color:var(--ink-3)}
+.grp > span{display:flex;flex-wrap:wrap;gap:6px}
+.lv3 .chips{gap:8px 14px}
+.lv3 .chip{padding:6px 11px;font-size:.92rem}
+.fb{display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding:9px 12px;border-radius:12px;font-size:.94rem;line-height:1.45;animation:pfRow .35s var(--ease)}
+.fb svg{flex:none;width:18px;height:18px;margin-top:2px}
+.fb.ok{background:var(--ok-50);color:var(--ok-700)}
+.fb.bad{background:var(--bad-50);color:var(--bad-700)}
+.fb.note{background:var(--surface-3);color:var(--ink)}
+.hl{margin-top:8px;padding-inline-start:12px;border-inline-start:3px solid var(--a-300);font-size:.94rem;color:var(--ink-2);animation:pfRow .35s var(--ease)}
+.hl b{color:var(--a-700);font-weight:600}
+.foot{display:flex;gap:8px;align-items:center;margin-top:12px}
+.hb{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:12px;border:0;background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-strong);font-weight:600;font-size:.92rem;color:var(--ink-2)}
+.hb .r{display:inline-flex;gap:3px}
+.hb .r i{width:6px;height:6px;border-radius:50%;background:var(--line-strong)}
+.hb .r i.on{background:var(--a-500)}
+.hb[disabled]{cursor:default;color:var(--ink-3)}
+.hb .fill{position:absolute;inset:0;background:var(--a-100);transform-origin:right;transform:scaleX(0);animation:pfFill 4s linear both;z-index:0}
+.hb > *:not(.fill){position:relative;z-index:1}
+@keyframes pfFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.lk{min-height:44px;padding:0 12px;border:0;background:transparent;font-size:.9rem;font-weight:500;color:var(--ink-3);text-decoration:underline;text-underline-offset:3px}
+.go{min-height:48px;padding:0 22px;border-radius:999px;border:0;background:var(--btn-bg);color:var(--btn-ink);font-weight:600}
+.go:active{transform:scale(.97)}
+
+/* level-up */
+.win{text-align:center;padding:10px 6px 6px;animation:pfRow .5s var(--ease)}
+.medal{position:relative;width:92px;height:92px;margin:2px auto 8px}
+.medal svg{width:92px;height:92px;display:block}
+.medal .ring{fill:none;stroke:var(--a-500);stroke-width:4;stroke-linecap:round;stroke-dasharray:252;stroke-dashoffset:252;animation:pfRing 1s .15s var(--ease) forwards;transform:rotate(-90deg);transform-origin:46px 46px}
+.medal .ring0{fill:none;stroke:var(--surface-3);stroke-width:4}
+.medal rect{fill:var(--line-strong)}
+.medal rect.on{fill:var(--a-500)}
+.medal rect.nw{fill:var(--a-500);transform-origin:center bottom;transform-box:fill-box;animation:pfGrow .6s .7s var(--ease) both}
+@keyframes pfRing{to{stroke-dashoffset:0}}
+@keyframes pfGrow{from{transform:scaleY(.2);fill:var(--line-strong)}to{transform:scaleY(1)}}
+.sp{position:absolute;top:50%;left:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:var(--a-500);opacity:0;animation:pfSp .9s .85s var(--ease) both;transform:rotate(calc(var(--i) * 36deg)) translateY(-40px)}
+@keyframes pfSp{0%{opacity:0;transform:rotate(calc(var(--i) * 36deg)) translateY(-40px) scale(1)}25%{opacity:.9}100%{opacity:0;transform:rotate(calc(var(--i) * 36deg)) translateY(-66px) scale(.3)}}
+.win .qed{font-size:.8rem;font-weight:600;color:var(--ink-3)}
+.win h4{font-size:1.5rem;font-weight:800;line-height:1.2;margin-top:2px}
+.win p{color:var(--ink-2);font-size:.95rem;margin-top:4px}
+.win .go{margin-top:14px}
+.win .tiny{font-size:.76rem;color:var(--ink-3);margin-top:10px}
+
+/* notes under the demo */
+.notes{margin-top:30px}
+.notes li{position:relative;padding-inline-start:20px;padding-block:7px;color:var(--ink-2)}
+.notes li::before{content:"";position:absolute;inset-inline-start:2px;top:1.05em;width:8px;height:2px;border-radius:2px;background:var(--a-500)}
+.notes li b{color:var(--ink);font-weight:600}
+.say li{padding-block:13px;border-top:1px solid var(--line)}
+.say li:last-child{border-bottom:1px solid var(--line)}
+.say span{display:block;font-size:.86rem;color:var(--ink-3)}
+.say q{display:block;quotes:none;font-weight:500;margin-top:2px}
+.rungs{display:grid;gap:0;margin-top:14px}
+.rungs li{display:grid;grid-template-columns:34px 1fr;gap:12px;padding-block:12px;border-top:1px solid var(--line)}
+.rungs li:last-child{border-bottom:1px solid var(--line)}
+.rungs .rn{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.9rem;color:var(--a-700);box-shadow:inset 0 0 0 1.5px var(--a-300)}
+.rungs b{font-weight:600}
+.rungs p{font-size:.95rem;color:var(--ink-2)}
+.ph-list li{display:grid;grid-template-columns:72px 1fr;gap:14px;padding-block:16px;border-top:1px solid var(--line)}
+.ph-list li:last-child{border-bottom:1px solid var(--line)}
+.ph-list .pn{font-weight:700;color:var(--a-600)}
+.ph-list b{font-weight:600}
+.ph-list p{font-size:.96rem;color:var(--ink-2);margin-top:2px}
+.qs li{padding-block:22px;border-top:1px solid var(--line)}
+.qs li:last-child{border-bottom:1px solid var(--line)}
+.qs .qn{font-size:.84rem;font-weight:600;color:var(--a-600)}
+.qs h3{font-size:1.14rem;font-weight:700;line-height:1.35;margin-top:2px}
+.qs p{color:var(--ink-2);font-size:.98rem;margin-top:8px}
+.qs p b{color:var(--ink);font-weight:600}
+.end{margin-top:44px;font-size:.84rem;color:var(--ink-3)}
+:focus-visible{outline:3px solid var(--a-300);outline-offset:2px}
+
+/* hero figure draws itself once */
+@keyframes pfIn{from{opacity:0}to{opacity:1}}
+.hero-fig .mk-a{animation:pfIn .5s .5s both}
+.hero-fig .mk-b{animation:pfIn .5s 1s both}
+.hero-fig .arc.c{animation:pfIn .5s 1.5s both}
+.hero-fig .tri{animation:pfHeroT .9s 2.1s both}
+.hero-fig .mk-goal{animation:pfIn .6s 2.8s both}
+@keyframes pfHeroT{from{fill-opacity:0}to{fill-opacity:.16}}
+.hero-fig .lb{stroke:none}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .medal .ring{stroke-dashoffset:0}
+  .sp{display:none}
+}
+</style>
+
+<div class="pg" dir="rtl" lang="he">
+
+<header class="hero w">
+  <p class="kick">mathix · גאומטריה · כיתות ח–ט · תוכנית לאישור</p>
+  <h1 class="wm">הוכחות</h1>
+  <svg class="hero-fig fig on-a on-b on-c on-goal on-cong" id="heroFig" viewBox="0 0 320 196" role="img" aria-label="שני קטעים נחתכים ושני משולשים חופפים, עם סימוני שוויון"></svg>
+  <h2>כל תלמיד מוצא את הדרך. <span>גם מי שנתקע מול דף ריק.</span></h2>
+  <p class="lead">בהתחלה ההוכחה כמעט כתובה, והתלמיד רק משלים. אחר כך הוא מסדר אותה בעצמו. בסוף הוא בונה אותה לבד.</p>
+  <p class="lead">המסך תמיד אותו מסך. רק מי שעושה את העבודה מתחלף: קודם האתר, אחר כך יחד, בסוף התלמיד.</p>
+  <div class="hero-row">
+    <a class="pill" href="#demo">לנסות את ההדגמה</a>
+    <span class="trust"><b>20</b>סוגי הוכחות, 3 רמות לכל סוג</span>
+  </div>
+</header>
+
+<section class="sec w" id="path">
+  <h2>המסלול</h2>
+  <p class="sub">שש תחנות, בסדר של תכנית הלימודים של משרד החינוך. בכל תחנה כמה סוגי הוכחות. כל סוג מתקדם בנפרד.</p>
+
+  <p class="h3">לכל סוג הוכחה: חימום ושלוש רמות</p>
+  <ol class="lv-list">
+    <li><span class="lv-n">חימום</span><span class="lv-t">לפני שמוכיחים</span>
+      <span class="lv-d">משימות של חצי דקה: לסמן את הנתון בציור, להבחין בין "ידוע" ל"רק נראה כך", לזהות משפט חפיפה. שלוש נכונות ברצף, וממשיכים.</span></li>
+    <li><span class="lv-n">רמה 1</span><span class="lv-t">ההוכחה כתובה. משלימים</span>
+      <span class="lv-d">כל השורות במקום. חסרים נימוק אחד עד שלושה, ובוחרים מתוך 3–4 אפשרויות.</span>
+      <span class="lv-bar"><i style="width:22%"></i></span></li>
+    <li><span class="lv-n">רמה 2</span><span class="lv-t">מסדרים לבד</span>
+      <span class="lv-d">השורות מעורבבות, ויש ביניהן שורות מטעות. מסדרים, ובוחרים נימוק לכל שורה מתוך 8.</span>
+      <span class="lv-bar"><i style="width:60%"></i></span></li>
+    <li><span class="lv-n">רמה 3</span><span class="lv-t">בונים לבד</span>
+      <span class="lv-d">אין שורות מוכנות. בונים כל טענה בנגיעה בציור, ובוחרים נימוק מכל הרשימה.</span>
+      <span class="lv-bar"><i style="width:100%"></i></span></li>
+  </ol>
+  <p class="cap">הפס הכתום: כמה מהעבודה התלמיד עושה בעצמו (המחשה, לא מדידה).</p>
+
+  <p class="h3">מתי עולים רמה</p>
+  <ul class="rule" style="margin-top:8px">
+    <li><b>3 <small>מתוך 4</small></b><p><strong>שלוש הוכחות נקיות מתוך ארבע האחרונות.</strong> "נקייה": לכל היותר טעות אחת, ובלי הכפתור "הראה לי".</p></li>
+    <li><b>80%</b><p><strong>וגם 80% מהצעדים נכונים בניסיון הראשון</strong>, באותן ארבע הוכחות.</p></li>
+    <li><b>2</b><p><strong>שתי הוכחות ראשונות בלי אף טעות: קופצים רמה מיד.</strong> תלמיד חזק לא מחכה.</p></li>
+    <li><b>0</b><p><strong>לא יורדים רמה, אף פעם.</strong> מי שמתקשה (פחות מחצי נכון בשתי הוכחות) מקבל הוכחה אחת עם יותר עזרה. הרמה נשארת.</p></li>
+    <li><b>6</b><p><strong>שש הוכחות באותה רמה בלי לעלות?</strong> לא נותנים עוד מאותו דבר. חוזרים לחימום קצר על הדבר שנכשל, ואז מנסים שוב.</p></li>
+  </ul>
+  <p class="cap">המספרים הם נקודת פתיחה מהמחקר. אחרי שיהיו נתונים אמיתיים של תלמידים נכוון אותם.</p>
+
+  <p class="h3">התחנות וסוגי ההוכחות</p>
+  <div class="legend">
+    <span><span class="pips"><i class="f"></i><i class="f"></i><i class="f"></i><i></i></span> חימום ושלוש רמות (מימין לשמאל)</span>
+    <span>הצבע: דוגמה לתלמידה באמצע כיתה ח</span>
+  </div>
+  <div class="map" id="map"></div>
+  <p class="cap">כלל פשוט: תלמיד לא פוגש נימוק חדש והוכחה ארוכה יותר באותו זמן. כל סוג מוסיף דבר אחד בלבד.</p>
+</section>
+
+<section class="sec" id="demo">
+  <div class="w">
+    <h2>כך זה ייראה</h2>
+    <p class="sub">הוכחה אחת של כיתה ח, בארבע הרמות. הכול עובד: געו, טעו בכוונה, בקשו רמז.</p>
+  </div>
+
+  <div class="demo-wrap">
+    <div class="dev" id="dev">
+      <div class="bar">
+        <div class="bar-t"><b>חפיפה ואז מסקנה</b><span>תחנה 2 · חפיפת משולשים</span></div>
+        <div class="clean" aria-label="הוכחות נקיות מתוך ארבע האחרונות"><span class="d" id="clean"></span><span id="cleanT">2 נקיות</span></div>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" data-lv="0" aria-selected="false">חימום</button>
+        <button role="tab" data-lv="1" aria-selected="true">רמה 1</button>
+        <button role="tab" data-lv="2" aria-selected="false">רמה 2</button>
+        <button role="tab" data-lv="3" aria-selected="false">רמה 3</button>
+      </div>
+      <p class="desc" id="desc"></p>
+      <p class="task">הקטעים <bdi dir="ltr" class="m">AB</bdi>, <bdi dir="ltr" class="m">CD</bdi> נחתכים בנקודה <bdi dir="ltr" class="m">O</bdi>.</p>
+      <div class="stage">
+        <svg class="fig" id="fig" viewBox="0 0 320 196" role="img" aria-label="הציור: שני קטעים נחתכים בנקודה O, והמשולשים AOC ו-BOD"></svg>
+        <div class="facts" id="facts"></div>
+      </div>
+      <div class="rows" id="rows"></div>
+      <div class="tray" id="tray" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="w">
+    <ul class="notes">
+      <li><b>הציור לא נעלם.</b> הוא נשאר למעלה בזמן הגלילה, וכל שורה מצביעה אליו.</li>
+      <li><b>סימון מופיע בציור רק אחרי נימוק נכון.</b> קו אחד, שני קווים, קשת. צבע ומספר קווים יחד, כך שזה ברור גם בלי צבע.</li>
+      <li><b>אין הקלדה.</b> לא מקלידים סימנים ולא משפטים. נוגעים ובוחרים.</li>
+      <li><b>אין וי ואיקס בלבד.</b> כל טעות מקבלת משפט אחד שאומר איזו טעות זו.</li>
+      <li><b>חגיגה אחת, בסוף ההוכחה.</b> לא קונפטי על כל שורה.</li>
+    </ul>
+    <p class="cap">בהדגמה עולים רמה אחרי הוכחה אחת. באתר: לפי הכלל שלמעלה. ניסוחי הנימוקים "נתון", "צלע משותפת", "זווית משותפת" ו"צלעות / זוויות מתאימות במשולשים חופפים" מקובלים בכיתות, אבל לא נמצאו מילה במילה במסמך רשמי. הם מחכים לאישור של סולימאן.</p>
+
+    <p class="h3">סולם הרמזים: שלוש שלבות, תמיד אותן שלוש</p>
+    <ol class="rungs">
+      <li><span class="rn">1</span><div><b>רמז: איפה להסתכל</b><p>החלק המתאים מהבהב בציור, ומשפט קצר אחד. חינם.</p></div></li>
+      <li><span class="rn">2</span><div><b>עוד רמז: איזה כלל</b><p>שם הרעיון, ורוב הנימוקים הלא קשורים מתעמעמים. חינם.</p></div></li>
+      <li><span class="rn">3</span><div><b>הראה לי</b><p>האתר ממלא את הצעד. נפתח רק 4 שניות אחרי הרמז השני, כדי שלא ירוצו לתשובה. ההוכחה כבר לא נספרת כ"נקייה".</p></div></li>
+    </ol>
+    <p class="cap">טעות פעמיים באותו צעד: האתר מסביר וממלא אותו, כמו "הראה לי".</p>
+
+    <p class="h3">מה האתר אומר כשטועים</p>
+    <ul class="say" style="margin-top:12px">
+      <li><span>השתמש במה שצריך להוכיח</span><q>זה מה שצריך להוכיח — אי אפשר להשתמש בו לפני שהוכחנו אותו.</q></li>
+      <li><span>לקח עובדה מהמראה של הציור</span><q>נראה שווה בציור, אבל זה לא נתון ועוד לא הוכח.</q></li>
+      <li><span>טענה נכונה, נימוק לא נכון</span><q>הטענה נכונה. הנימוק לא מתאים — מאיפה אנחנו יודעים את זה?</q></li>
+      <li><span>נכון, אבל מוקדם מדי</span><q>נכון, אבל מוקדם מדי. לחפיפה צריך שלושה שוויונות — יש כרגע שניים.</q></li>
+      <li><span>משפט חפיפה לא מתאים</span><q>יש לנו רק זוג זוויות אחד. במשפט ז.צ.ז צריך שני זוגות זוויות.</q></li>
+      <li><span>השתמש במשפט ההפוך</span><q>זה המשפט ההפוך: הוא אומר "אם… אז…" בכיוון השני.</q></li>
+      <li><span>התאמת קודקודים לא נכונה</span><q>בדוק את הסדר: הקודקוד A מתאים לקודקוד B.</q></li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec w" id="build">
+  <h2>איך נבנה את זה</h2>
+
+  <p class="h3">איפה זה יושב באתר</p>
+  <ul class="notes" style="margin-top:10px">
+    <li><b>נושא חדש בשם "הוכחות"</b>, בעולם הגאומטריה (הכתום), בכתובת משלו.</li>
+    <li><b>כל סוג הוכחה הוא לשונית פרק, כל רמה היא לשונית משנה.</b> כך האתר כבר סופר נכון ולא נכון לכל סוג ולכל רמה, בלי שום שינוי במסד הנתונים. זה מופיע גם במסך המנהל.</li>
+    <li><b>תלמיד רשום:</b> ההתקדמות בחשבון. <b>אורח:</b> נשמרת במכשיר, ועוברת לחשבון בהרשמה.</li>
+    <li><b>מוסתר עד אישור:</b> נכנסים רק מקישור. לא בקטלוג, לא בגוגל.</li>
+    <li><b>לא נוגעים בקוד של סולימאן.</b> הכול בתיקייה חדשה, עם בדיקות אוטומטיות לכל הוכחה (כל שוויון נבדק מול הקואורדינטות של הציור).</li>
+  </ul>
+
+  <p class="h3">סדר הבנייה</p>
+  <ol class="ph-list" style="margin-top:12px">
+    <li><span class="pn">שלב 1</span><div><b>ארבעה סוגים, מלוטשים עד הסוף</b><p>סוגים 3, 4, 6, 8 (כיתה ח, חפיפה). יחד איתם נבנה כל המנוע: ציור שנוגעים בו, שורות טענה ונימוק, רשימת הנימוקים, רמזים, כלל העלייה. בודקים באייפון לפני שמראים.</p></div></li>
+    <li><span class="pn">שלב 2</span><div><b>שאר כיתה ח</b><p>סוגים 1, 2, 5, 7, 9, 10, 11. המנוע כבר קיים, מוסיפים תוכן.</p></div></li>
+    <li><span class="pn">שלב 3</span><div><b>כיתה ט</b><p>סוגים 12 עד 20: מקבילים, טרפז, מקבילית, מלבן, מעוין, ריבוע, התיכון ליתר.</p></div></li>
+    <li><span class="pn">שלב 4</span><div><b>הגימור</b><p>תרגול מעורב ביום אחר (רק אז הסוג נחשב "שולט"), תצוגת בועות של אותה הוכחה (צורת כתיבה שמשרד החינוך מבקש), התקדמות שעוברת בין מכשירים, תחנה במסילה בדף הבית.</p></div></li>
+  </ol>
+
+  <p class="h3">מה סולימאן צריך לבדוק ולאשר</p>
+  <ul class="notes" style="margin-top:10px">
+    <li><b>ניסוחים שלא אושרו.</b> "נתון", "צלע משותפת", "זווית משותפת", "צלעות / זוויות מתאימות במשולשים חופפים שוות", הגדרות חוצה זווית, תיכון וגובה, "כלל המעבר", חיבור וחיסור קטעים. שאר הניסוחים מצוטטים מרשימת המשפטים של משרד החינוך.</li>
+    <li><b>הדגל ז.ז.צ.</b> בפרק הקיים "4. חפיפה" מופיע "ז.ז.צ" כמשפט חפיפה. לפי משרד החינוך קודם מוצאים את הזווית השלישית (סכום זוויות במשולש), ורק אז משתמשים במשפט ז.צ.ז. במסלול ההוכחות נלך בדרך של המשרד. מה לעשות בפרק הקיים: החלטה שלו.</li>
+    <li><b>צ.צ.ז ו"ניצב ויתר".</b> בפנים או בחוץ? התכנית המעודכנת לכיתה ח מדברת על שלושה משפטים ועוד ניצב ויתר. צ.צ.ז מופיע רק ברשימה מ־2015.</li>
+    <li><b>סדר הקודקודים בחפיפה.</b> ההצעה: מקבלים כל סדר שההתאמה בו נכונה, ומסבירים בעדינות כשהיא לא.</li>
+    <li><b>טרפז.</b> האם ברמה הבסיסית חייבים להראות גם שהזוג השני לא מקביל?</li>
+    <li><b>המספרים של כלל העלייה</b> (3 מתוך 4, 80%), וכל הוכחה והוכחה לפני שהיא עולה לאתר.</li>
+  </ul>
+  <p class="cap">מה לא נבדק במחקר: ספרי הלימוד המודפסים, מאגר שאלות המיצ"ב, והתכנית המעודכנת לכיתה ט (הקובץ לא נמצא). כיתה ט נשענת על תכנית ההוראה תשפ"ז ועל רשימת המשפטים מ־2015.</p>
+</section>
+
+<section class="sec w" id="ask">
+  <h2>שלוש שאלות אליך</h2>
+  <p class="sub">רק מה שמשנה את מה שנבנה. לכל שאלה יש המלצה.</p>
+  <ol class="qs" style="margin-top:22px">
+    <li><span class="qn">שאלה 1</span>
+      <h3>במה מתחילים: ארבעה סוגים של חפיפה בכיתה ח, או כל כיתה ח בבת אחת?</h3>
+      <p><b>ההמלצה: ארבעה סוגים.</b> חפיפה היא המקום שבו משרד החינוך מתחיל ללמד הוכחה, ושם תלמידים נשברים. ארבעה סוגים מלוטשים יראו מהר אם הרעיון עובד על תלמידים אמיתיים, לפני שכותבים עוד 16.</p></li>
+    <li><span class="qn">שאלה 2</span>
+      <h3>הרמות נעולות עד שמרוויחים אותן, או שכל תלמיד בוחר רמה בעצמו?</h3>
+      <p><b>ההמלצה: נעולות, עם קפיצה מהירה.</b> תלמיד חלש שבוחר רמה 3 נתקע שוב מול דף ריק, וזה בדיוק מה שרצינו למנוע. תלמיד חזק לא סובל: שתי הוכחות מושלמות, והוא ברמה הבאה. ואף אחד לא יורד רמה.</p></li>
+    <li><span class="qn">שאלה 3</span>
+      <h3>מתי תלמידים רואים את זה: מיד כשהשלב הראשון מוכן, או רק אחרי שסולימאן אישר?</h3>
+      <p><b>ההמלצה: מוסתר עד אישור.</b> כמו המודול "חדש": נכנסים רק מקישור, סולימאן עובר על כל הוכחה וכל ניסוח, ורק אז זה נכנס לקטלוג ולמסילה. טעות אחת בנימוק מלמדת תלמיד משהו לא נכון.</p></li>
+  </ol>
+  <p class="end">נכתב על סמך שלושה דוחות מחקר: איך מלמדים הוכחה, תכנית הלימודים, והתאמה לקוד של האתר. שום דבר עוד לא נבנה ושום קובץ באתר לא שונה.</p>
+</section>
+
+</div>
+
+<script>
+/* the map (kept separate so it shows even if the demo script fails) */
+(function(){
+  var L=function(s){return '<bdi dir="ltr">'+s+'</bdi>';};
+  var units=[
+    {n:1,name:'נימוק אחד',g:'כיתות ז–ח',t:[[1,'למה זה נכון? נימוק אחד',0],[2,'שרשרת של שניים או שלושה נימוקים',0],[3,'קוראים את הנתון: ממילים לשוויון',4,1]]},
+    {n:2,name:'חפיפת משולשים',g:'כיתה ח',t:[[4,'מחפיפה נתונה לשוויונות',4,1],[5,'איזה משפט חפיפה מתאים?',3],[6,'הוכחת חפיפה ישירה',2,1],[7,'חפיפה עם נתון נסתר',1],[8,'חפיפה ואז מסקנה',1,1,1]]},
+    {n:3,name:'משולש שווה שוקיים',g:'כיתות ח–ט',t:[[9,'משתמשים במשפטי שווה שוקיים',0],[10,'מוכיחים שמשולש הוא שווה שוקיים',0],[11,'משולשים עם חלקים משותפים',0]]},
+    {n:4,name:'צלעות, זוויות ומשולש '+L('30°-60°-90°'),g:'כיתה ט',t:[[12,'מול הצלע הגדולה, הזווית הגדולה',0],[13,'משולש '+L('30°-60°-90°')+' והמשפט ההפוך',0]]},
+    {n:5,name:'ישרים מקבילים: המשפט ההפוך',g:'כיתה ט',t:[[14,'מוכיחים שישרים מקבילים',0],[15,'מוכיחים שמרובע הוא טרפז',0]]},
+    {n:6,name:'מרובעים',g:'כיתה ט',t:[[16,'משתמשים בתכונות המקבילית',0],[17,'מוכיחים שמרובע הוא מקבילית',0],[18,'מלבן, מעוין, ריבוע',0],[19,'התיכון ליתר',0],[20,'שאלה מלאה בסעיפים',0]]}
+  ];
+  var h='';
+  units.forEach(function(u){
+    h+='<div class="unit"><span class="node">'+u.n+'</span><h3>'+u.name+' <span class="g">· '+u.g+'</span></h3><ul class="types">';
+    u.t.forEach(function(t){
+      var p='';for(var i=0;i<4;i++)p+='<i'+(i<t[2]?' class="f"':(i===t[2]&&t[2]>0?' class="h"':''))+'></i>';
+      var tag=t[4]?'שלב 1 · ההוכחה שבהדגמה':(t[3]?'שלב 1':'');
+      h+='<li><span class="no">'+t[0]+'</span><span class="tn">'+t[1]+(tag?'<small>'+tag+'</small>':'')+'</span><span class="pips" aria-hidden="true">'+p+'</span></li>';
+    });
+    h+='</ul></div>';
+  });
+  var el=document.getElementById('map');if(el)el.innerHTML=h;
+})();
+</script>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s);};
+var M=function(s){return '<bdi dir="ltr" class="m">'+s+'</bdi>';};
+
+/* ── the drawing: exact coordinates, O is the middle of AB and of CD ── */
+var P={A:[62,40],B:[258,156],C:[104,170],D:[216,26],O:[160,98]};
+var SEG={AO:['A','O'],OB:['O','B'],CO:['C','O'],OD:['O','D'],AC:['A','C'],BD:['B','D']};
+var ANG={AOC:['O','A','C',20],BOD:['O','B','D',20],OAC:['A','O','C',18],OBD:['B','O','D',18]};
+var KIND={AO:'seg',OB:'seg',CO:'seg',OD:'seg',AC:'seg',BD:'seg',AOC:'ang',BOD:'ang',OAC:'ang',OBD:'ang',tAOC:'tri',tBOD:'tri'};
+var NAME={AO:'AO',OB:'OB',CO:'CO',OD:'OD',AC:'AC',BD:'BD',AOC:'∢AOC',BOD:'∢BOD',OAC:'∢OAC',OBD:'∢OBD',tAOC:'△AOC',tBOD:'△BOD'};
+var f=function(n){return Math.round(n*10)/10;};
+function un(a,b){var dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy);return [dx/l,dy/l];}
+function ticks(a,b,n){var d=un(P[a],P[b]),mx=(P[a][0]+P[b][0])/2,my=(P[a][1]+P[b][1])/2,s='';
+  for(var i=0;i<n;i++){var o=(i-(n-1)/2)*4.6,cx=mx+d[0]*o,cy=my+d[1]*o;
+    s+='<line x1="'+f(cx-d[1]*6)+'" y1="'+f(cy+d[0]*6)+'" x2="'+f(cx+d[1]*6)+'" y2="'+f(cy-d[0]*6)+'"/>';}
+  return s;}
+function arcD(v,a,b,r){var x=un(P[v],P[a]),y=un(P[v],P[b]),cr=x[0]*y[1]-x[1]*y[0];
+  return 'M'+f(P[v][0]+x[0]*r)+' '+f(P[v][1]+x[1]*r)+'A'+r+' '+r+' 0 0 '+(cr>0?1:0)+' '+f(P[v][0]+y[0]*r)+' '+f(P[v][1]+y[1]*r);}
+function pts(a){return a.map(function(k){return P[k].join(',');}).join(' ');}
+function buildFig(live){
+  var s='';
+  s+='<polygon class="tri" data-p="tAOC" points="'+pts(['A','O','C'])+'"/><polygon class="tri" data-p="tBOD" points="'+pts(['B','O','D'])+'"/>';
+  Object.keys(SEG).forEach(function(k){var a=P[SEG[k][0]],b=P[SEG[k][1]];s+='<line class="sg" data-p="'+k+'" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'"/>';});
+  s+='<g class="mk mk-a">'+ticks('A','O',1)+ticks('O','B',1)+'</g>';
+  s+='<g class="mk mk-b">'+ticks('C','O',2)+ticks('O','D',2)+'</g>';
+  s+='<g class="mk mk-goal">'+ticks('A','C',3)+ticks('B','D',3)+'</g>';
+  Object.keys(ANG).forEach(function(k){var g=ANG[k];s+='<path class="arc '+(k==='AOC'||k==='BOD'?'c':'q')+'" data-p="'+k+'" d="'+arcD(g[0],g[1],g[2],g[3])+'"/>';});
+  if(live)s+='<text class="qm" x="86" y="70">?</text><text class="qm" x="234" y="133">?</text>';
+  s+='<text class="lb" x="50" y="36">A</text><text class="lb" x="270" y="170">B</text><text class="lb" x="95" y="188">C</text><text class="lb" x="225" y="21">D</text><text class="lb" x="160" y="82">O</text>';
+  if(live){
+    Object.keys(SEG).forEach(function(k){var a=P[SEG[k][0]],b=P[SEG[k][1]],d=un(a,b),ca=SEG[k][0]==='O'?28:12,cb=SEG[k][1]==='O'?28:12;
+      s+='<line class="hit s" data-p="'+k+'" x1="'+f(a[0]+d[0]*ca)+'" y1="'+f(a[1]+d[1]*ca)+'" x2="'+f(b[0]-d[0]*cb)+'" y2="'+f(b[1]-d[1]*cb)+'"/>';});
+    s+='<path class="hit" data-p="AOC" d="'+arcD('O','A','C',30)+'L160 98Z"/><path class="hit" data-p="BOD" d="'+arcD('O','B','D',30)+'L160 98Z"/>';
+    ['OAC','OBD'].forEach(function(k){var g=ANG[k],x=un(P[g[0]],P[g[1]]),y=un(P[g[0]],P[g[2]]),bx=x[0]+y[0],by=x[1]+y[1],l=Math.hypot(bx,by);
+      s+='<circle class="hit" data-p="'+k+'" cx="'+f(P[g[0]][0]+bx/l*20)+'" cy="'+f(P[g[0]][1]+by/l*20)+'" r="16"/>';});
+  }
+  return s;
+}
+var hero=$('#heroFig');if(hero)hero.innerHTML=buildFig(false);
+var fig=$('#fig');if(!fig)return;
+fig.innerHTML=buildFig(true);
+
+/* ── the proof ── */
+var STEPS={
+  a:{s:'AO = OB',r:'given',kind:'צ',parts:['AO','OB']},
+  c:{s:'∢AOC = ∢BOD',r:'vert',kind:'ז',parts:['AOC','BOD']},
+  b:{s:'CO = OD',r:'given',kind:'צ',parts:['CO','OD']},
+  cong:{s:'△AOC ≅ △BOD',r:'sas',parts:['tAOC','tBOD']},
+  goal:{s:'AC = BD',r:'cpS',parts:['AC','BD']}
+};
+var ORDER=['a','c','b','cong','goal'];
+var R={given:'נתון',common:'צלע משותפת',commonA:'זווית משותפת',vert:'זוויות קודקודיות',alt:'זוויות מתחלפות בין ישרים מקבילים',corr:'זוויות מתאימות בין ישרים מקבילים',sas:'צ.ז.צ',asa:'ז.צ.ז',sss:'צ.צ.צ',cpS:'צלעות מתאימות במשולשים חופפים',cpA:'זוויות מתאימות במשולשים חופפים',none:'אי אפשר לדעת'};
+var FULL={given:'נתון',vert:'זוויות קודקודיות שוות זו לזו',sas:'משפט חפיפה צ.ז.צ',cpS:'צלעות מתאימות במשולשים חופפים שוות'};
+var WHY={
+  a:'זה כתוב בנתון. בציור: קו אחד על כל קטע.',
+  b:'זה כתוב בנתון. בציור: שני קווים על כל קטע.',
+  c:'שני ישרים נחתכים בנקודה '+M('O')+', והזוויות האלה זו מול זו.',
+  cong:'צלע, הזווית שביניהן, צלע. ההתאמה: '+M('A ↔ B')+', '+M('O ↔ O')+', '+M('C ↔ D')+'.',
+  goal:'הצלע '+M('AC')+' מול הזווית בנקודה '+M('O')+', וכך גם '+M('BD')+'. אלה צלעות מתאימות.'
+};
+var H1={
+  a:['התחילו ממה שנתון. הסתכלו על שני הקטעים שמהבהבים.',['AO','OB']],
+  c:['הסתכלו על הנקודה '+M('O')+'. שני ישרים נחתכים שם.',['AOC','BOD']],
+  b:['יש עוד נתון שלא השתמשנו בו.',['CO','OD']],
+  cong:['בציור מסומנים שלושה שוויונות. מה הם אומרים על שני המשולשים?',['tAOC','tBOD']],
+  goal:['המשולשים חופפים. הסתכלו על שתי הצלעות שמהבהבות.',['AC','BD']]
+};
+var H2={
+  a:'השוויון '+M('AO = OB')+' כתוב בנתון. הנימוק שלו: <b>נתון</b>.',
+  c:'שתי זוויות זו מול זו בין שני ישרים נחתכים הן <b>זוויות קודקודיות</b>, והן שוות.',
+  b:'השוויון '+M('CO = OD')+' כתוב בנתון. הנימוק שלו: <b>נתון</b>.',
+  cong:'הזווית נמצאת בין שתי הצלעות השוות. זה המשפט <b>צ.ז.צ</b>.',
+  goal:'אחרי שהוכחנו חפיפה: <b>צלעות מתאימות במשולשים חופפים</b> שוות.'
+};
+var KEEP={a:['given','vert','common'],b:['given','vert','common'],c:['vert','alt','given'],cong:['sas','asa','sss'],goal:['cpS','given','sas']};
+var L1OPT={c:['alt','vert','given','common'],cong:['asa','sas','sss','cpS'],goal:['given','sas','cpS','vert']};
+var L2BANK=['given','common','vert','alt','sas','asa','sss','cpS'];
+var L3BANK=[['כתוב בשאלה',['given']],['רואים בציור',['common','commonA','vert']],['בין ישרים מקבילים',['alt','corr']],['משפטי חפיפה',['sas','asa','sss']],['במשולשים חופפים',['cpS','cpA']]];
+var R3={alt:'זוויות מתחלפות',corr:'זוויות מתאימות',cpS:'צלעות מתאימות',cpA:'זוויות מתאימות'};
+var TILES=['goal','x1','b','cong','a','x2','c'];
+var XT={x1:'∢OAC = ∢OBD',x2:'AO = CO'};
+var GENERIC='הטענה נכונה. הנימוק לא מתאים — מאיפה אנחנו יודעים את זה?';
+function wrongReason(k,r){
+  var thm=(r==='sas'||r==='asa'||r==='sss'),cp=(r==='cpS'||r==='cpA'),par=(r==='alt'||r==='corr');
+  if(k==='a'||k==='b'){
+    if(r==='vert')return 'אלה קטעים, לא זוויות. את השוויון הזה יודעים מהנתון.';
+    if(r==='common')return 'צלע משותפת היא אותה צלע בשני המשולשים. כאן אלה שני קטעים שונים.';
+    if(thm)return 'משפט חפיפה בא רק אחרי שלושה שוויונות. את השוויון הזה יודעים מהנתון.';
+    if(cp)return 'עוד לא הוכחנו חפיפה — אי אפשר להשתמש בה כנימוק.';
+    return GENERIC;}
+  if(k==='c'){
+    if(r==='given')return 'זה לא כתוב בנתון. חפשו בציור: שני ישרים נחתכים בנקודה '+M('O')+'.';
+    if(par)return 'הנימוק הזה דורש ישרים מקבילים, ואין כאן נתון כזה.';
+    if(r==='common'||r==='commonA')return 'אלה שתי זוויות שונות, זו מול זו. אין כאן חלק משותף.';
+    if(thm)return 'משפט חפיפה בא רק אחרי שלושה שוויונות. זה אחד מהם.';
+    if(cp)return 'עוד לא הוכחנו חפיפה — אי אפשר להשתמש בה כנימוק.';
+    return GENERIC;}
+  if(k==='cong'){
+    if(r==='asa')return 'יש לנו רק זוג זוויות אחד. במשפט ז.צ.ז צריך שני זוגות זוויות.';
+    if(r==='sss')return 'יש רק שני זוגות צלעות. הזוג השלישי, '+M('AC')+' מול '+M('BD')+', הוא מה שצריך להוכיח.';
+    if(r==='given')return 'החפיפה לא נתונה. מוכיחים אותה משלושת השוויונות.';
+    if(cp)return 'זה נימוק למה שנובע מהחפיפה, לא לחפיפה עצמה.';
+    return 'כדי לומר שמשולשים חופפים צריך משפט חפיפה. איזה שלושה שוויונות יש לנו?';}
+  if(r==='given')return 'זה לא נתון — זה מה שצריך להוכיח. הוא נובע מהחפיפה.';
+  if(thm)return 'משפט החפיפה כבר הוכיח שהמשולשים חופפים. עכשיו צריך נימוק למה הצלעות שוות.';
+  if(r==='cpA')return 'כמעט. אבל '+M('AC')+', '+M('BD')+' הן צלעות, לא זוויות.';
+  return GENERIC;
+}
+var IC={
+  ok:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.6 3.6L15.5 6.5"/></svg>',
+  bad:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l8 8M14 6l-8 8"/></svg>',
+  note:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 9v5"/><circle cx="10" cy="5.8" r=".6" fill="currentColor"/></svg>',
+  lock:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2.5" y="6.2" width="9" height="6" rx="1.6"/><path d="M4.6 6V4.4a2.4 2.4 0 014.8 0V6"/></svg>',
+  chk:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.4l2.6 2.6L11 4.4"/></svg>'
+};
+function glyph(k){
+  var c={a:'var(--p1)',b:'var(--p2)',c:'var(--p3)',goal:'var(--a-600)'}[k];if(!c)return '';
+  var d={a:'M10 2v10',b:'M8 2v10M12 2v10',c:'M5 12a8 8 0 0 1 10 0',goal:'M6 2v10M10 2v10M14 2v10'}[k];
+  return '<svg class="gl" viewBox="0 0 20 14" fill="none" stroke="'+c+'" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="'+d+'"/></svg>';
+}
+var DESC=[
+  '<b>חימום.</b> משימות של חצי דקה, לפני שמתחילים להוכיח.',
+  '<b>רמה 1.</b> ההוכחה כתובה. משלימים רק את הנימוקים החסרים.',
+  '<b>רמה 2.</b> מסדרים את השורות ובוחרים נימוק לכל אחת. יש שורות מטעות.',
+  '<b>רמה 3.</b> בונים כל שורה בנגיעה בציור. הנימוק: מכל הרשימה.'
+];
+
+var S={},tm={};
+var isDone=function(k){return S.rows.some(function(r){return r.k===k&&r.done;});};
+function cur(){
+  if(S.pend)return S.pend;
+  if(S.lv===1){var r=S.rows.filter(function(r){return !r.done;})[0];return r?r.k:null;}
+  return ORDER.filter(function(k){return !isDone(k);})[0]||null;
+}
+function init(lv){
+  clearTimeout(tm.lock);clearTimeout(tm.end);clearTimeout(tm.q);
+  S={lv:lv,rows:[],marks:{},sel:[],phase:'',pend:null,wrong:{},nw:0,rung:0,narrow:false,lock:0,fb:null,hint:'',assisted:false,used:{},won:false,q:false,tdone:false,tried:{},fresh:null};
+  if(lv===0)S.phase='t1';
+  if(lv===1){S.rows=ORDER.map(function(k){return {k:k,done:k==='a'||k==='b'};});S.marks.a=S.marks.b=1;S.used.a=S.used.b=1;S.phase='reason';}
+  if(lv===2)S.phase='tile';
+  if(lv===3)S.phase='build';
+  render();
+}
+function pulse(parts){
+  parts.forEach(function(p){[].forEach.call(fig.querySelectorAll('[data-p="'+p+'"]:not(.hit)'),function(el){
+    el.classList.remove('pulse');void el.getBoundingClientRect();el.classList.add('pulse');
+    setTimeout(function(){el.classList.remove('pulse');},1800);});});
+}
+function flashQ(){S.q=true;clearTimeout(tm.q);tm.q=setTimeout(function(){S.q=false;paint();},2600);}
+
+function paint(){
+  var c='fig lv'+S.lv;Object.keys(S.marks).forEach(function(m){c+=' on-'+m;});
+  if(S.q)c+=' on-q';if(S.won)c+=' won';
+  if((S.lv===3&&S.phase!=='end'&&S.phase!=='end0')||(S.lv===0&&S.phase==='t1'&&!S.tdone))c+=' tap';
+  fig.setAttribute('class',c);
+  [].forEach.call(fig.querySelectorAll('[data-p]:not(.hit)'),function(el){el.classList.toggle('sel',S.sel.indexOf(el.getAttribute('data-p'))>-1);});
+}
+function renderFacts(){
+  var g=function(k){return '<span class="fc'+(S.used[k]?' used':'')+'">'+M(STEPS[k].s)+(S.used[k]?IC.chk:'')+'</span>';};
+  var open=!!S.marks.goal;
+  $('#facts').innerHTML='<span>נתון '+g('a')+g('b')+'</span><span>צריך להוכיח <span class="fc goal'+(open?' open':'')+'">'+M('AC = BD')+(open?IC.chk:IC.lock)+'</span></span>';
+}
+function renderRows(){
+  var el=$('#rows'),h='';
+  if(S.lv===0){
+    var T=['מסמנים את הנתון בציור','ידוע, או רק נראה כך?','איזה משפט חפיפה מתאים?'],n=S.phase==='end'?4:+S.phase.slice(1);
+    h='<ol class="tl">';T.forEach(function(t,i){var st=i+1<n?'ok':(i+1===n?'cur':'');h+='<li class="'+st+'"><span class="n">'+(i+1)+'</span>'+t+'</li>';});
+    el.innerHTML=h+'</ol>';return;
+  }
+  var ak=(S.phase==='reason')?cur():null;
+  h='<ol>';
+  S.rows.forEach(function(r,i){
+    var s=STEPS[r.k],cls=r.done?'is-done':(r.k===ak?'is-active':'is-wait');if(S.fresh===r.k)cls+=' is-new';
+    h+='<li class="row '+cls+'"><span class="n">'+(i+1)+'</span><div class="b"><div class="st">'+M(s.s)+(r.done?glyph(r.k):'')+'</div>'+
+      (r.done?'<div class="why">'+FULL[s.r]+(r.assisted?'<em>בעזרה</em>':'')+'</div>':'<div class="why gap">'+(r.k===ak?'מה הנימוק?':'נימוק')+'</div>')+
+      '</div>'+(r.done&&s.kind?'<span class="kz" title="'+(s.kind==='צ'?'צלע':'זווית')+'">'+s.kind+'</span>':'')+'</li>';
+  });
+  for(var i=S.rows.length;i<5;i++)h+='<li class="row is-ghost"><span class="n">'+(i+1)+'</span><div class="b"><div class="ph"></div></div></li>';
+  el.innerHTML=h+'</ol>';S.fresh=null;
+}
+function fbHTML(){return S.fb?'<div class="fb '+S.fb.t+'">'+IC[S.fb.t]+'<span>'+S.fb.h+'</span></div>':'';}
+function hintBtn(){
+  if(S.lv===0||S.phase==='end'||S.phase==='end0'||S.phase==='match'||!cur())return '';
+  var lab=['רמז','עוד רמז','הראה לי'][Math.min(S.rung,2)],dots='<span class="r">';
+  for(var i=0;i<3;i++)dots+='<i'+(i<S.rung?' class="on"':'')+'></i>';dots+='</span>';
+  var left=S.lock?Math.max(0,S.lock-Date.now()):0;
+  return '<button class="hb" data-act="hint"'+(left?' disabled':'')+'>'+(left?'<span class="fill" style="animation-delay:-'+(4000-left)+'ms"></span>':'')+'<span>'+lab+'</span>'+dots+'</button>';
+}
+function chip(r,k){
+  var dis=S.wrong[r],dim=S.narrow&&KEEP[k].indexOf(r)<0;
+  return '<button class="chip'+(dim?' dim':'')+'" data-r="'+r+'"'+(dis||dim?' disabled':'')+'>'+(S.lv===3&&R3[r]||R[r])+'</button>';
+}
+function winHTML(){
+  if(S.lv===0)return medal(0)+'<h4>החימום מאחוריך</h4><p>שלוש משימות, שלוש נכונות. עכשיו מוכיחים.</p><button class="go" data-act="go" data-lv="1">לרמה 1</button>';
+  if(S.assisted)return '<p class="qed">מ.ש.ל.</p><h4>ההוכחה הושלמה</h4><p>היה כאן צעד שמילאנו יחד, אז ההוכחה הזו לא נספרת כ"נקייה". הרמה לא יורדת.</p><button class="go" data-act="again">עוד הוכחה כזו</button>';
+  if(S.lv===3)return medal(3)+'<p class="qed">מ.ש.ל.</p><h4>בנית הוכחה שלמה לבד</h4><p>חפיפה ואז מסקנה · רמה 3 הושלמה. נשאר: שתי הוכחות בתרגול מעורב, ביום אחר.</p><button class="go" data-act="go" data-lv="0">מההתחלה</button><p class="tiny">בהדגמה עולים אחרי הוכחה אחת.</p>';
+  return medal(S.lv)+'<p class="qed">מ.ש.ל.</p><h4>עלית רמה</h4><p>חפיפה ואז מסקנה · רמה '+(S.lv+1)+'<br>3 הוכחות נקיות מתוך 4 האחרונות</p><button class="go" data-act="go" data-lv="'+(S.lv+1)+'">לרמה '+(S.lv+1)+'</button><p class="tiny">בהדגמה עולים אחרי הוכחה אחת.</p>';
+}
+function medal(lv){
+  var b='',hs=[14,22,30];
+  for(var i=0;i<3;i++)b+='<rect x="'+(29+i*12)+'" y="'+(62-hs[i])+'" width="8" height="'+hs[i]+'" rx="2.5" class="'+(i<lv?'on':(i===lv?'nw':''))+'"/>';
+  var sp='';for(var j=0;j<10;j++)sp+='<i class="sp" style="--i:'+j+'"></i>';
+  return '<div class="medal"><svg viewBox="0 0 92 92" aria-hidden="true"><circle class="ring0" cx="46" cy="46" r="40"/><circle class="ring" cx="46" cy="46" r="40"/>'+b+'</svg>'+sp+'</div>';
+}
+function renderTray(){
+  var el=$('#tray'),h='',k=cur(),p=S.phase;el.className='tray lv'+S.lv;
+  if(p==='end'){el.innerHTML='<div class="win">'+winHTML()+'</div>';return;}
+  if(p==='end0'){el.innerHTML=fbHTML();return;}
+  if(S.lv===0){
+    if(p==='t1')h='<p class="ask"><span class="k">משימה 1 מתוך 3</span>נתון: '+M('AO = OB')+'. געו בציור בשני הקטעים האלה.</p>';
+    if(p==='t2')h='<p class="ask"><span class="k">משימה 2 מתוך 3</span>הטענה '+M('∢OAC = ∢OBD')+': ידועה, או רק נראית כך בציור?</p><div class="chips">'+
+      ['known','looks'].map(function(r){return '<button class="chip'+(S.tdone&&r==='looks'?' yes':'')+'" data-o="'+r+'"'+(S.wrong[r]||S.tdone?' disabled':'')+'>'+(r==='known'?'ידועה':'רק נראית כך')+'</button>';}).join('')+'</div>';
+    if(p==='t3')h='<p class="ask"><span class="k">משימה 3 מתוך 3</span>בציור מסומנים שלושה שוויונות. איזה משפט חפיפה מתאים להם?</p><div class="chips">'+
+      ['asa','sas','sss','none'].map(function(r){return '<button class="chip'+(S.tdone&&r==='sas'?' yes':'')+'" data-o="'+r+'"'+(S.wrong[r]||S.tdone?' disabled':'')+'>'+R[r]+'</button>';}).join('')+'</div>';
+    h+=fbHTML();
+    if(S.tdone)h+='<div class="foot"><button class="go" data-act="next">'+(p==='t3'?'סיום':'הבא')+'</button></div>';
+    el.innerHTML=h;return;
+  }
+  if(p==='reason'){
+    var idx=S.rows.map(function(r){return r.k;}).indexOf(k)+1;
+    h='<p class="ask"><span class="k">שורה '+idx+'</span>'+M(STEPS[k].s)+'<span class="q">מה הנימוק?</span></p><div class="chips">';
+    if(S.lv===1)h+=L1OPT[k].map(function(r){return chip(r,k);}).join('');
+    else if(S.lv===2)h+=L2BANK.map(function(r){return chip(r,k);}).join('');
+    else L3BANK.forEach(function(g){h+='<span class="grp"><small>'+g[0]+'</small><span>'+g[1].map(function(r){return chip(r,k);}).join('')+'</span></span>';});
+    h+='</div>';
+  }
+  if(p==='tile'){
+    h='<p class="ask"><span class="k">שורה '+(S.rows.length+1)+'</span>איזו טענה באה עכשיו? געו בה.</p><div class="chips">';
+    TILES.forEach(function(t){if(STEPS[t]&&S.rows.some(function(r){return r.k===t;}))return;
+      h+='<button class="chip tile" data-t="'+t+'"'+(S.tried[t]?' disabled':'')+'>'+M(STEPS[t]?STEPS[t].s:XT[t])+'</button>';});
+    h+='</div>';
+  }
+  if(p==='build'){
+    h='<p class="ask"><span class="k">שורה '+(S.rows.length+1)+'</span>געו בציור בשני חלקים שווים: שני קטעים, שתי זוויות או שני משולשים.</p>';
+    if(S.sel.length)h+='<p class="hl">בחרתם: '+M(NAME[S.sel[0]])+'. עכשיו געו בחלק השווה לו.</p>';
+  }
+  if(p==='match'){
+    h='<p class="ask"><span class="k">התאמת קודקודים</span>בחרתם שני משולשים. בחפיפה כותבים קודקודים מתאימים באותו מקום. איזה קודקוד מתאים לקודקוד '+M('A')+'?</p><div class="chips">'+
+      ['B','O','D'].map(function(v){return '<button class="chip tile" data-v="'+v+'"'+(S.wrong[v]?' disabled':'')+'>'+M(v)+'</button>';}).join('')+'</div>';
+  }
+  h+=fbHTML();
+  if(S.hint)h+='<p class="hl">'+S.hint+'</p>';
+  var back=(p==='reason'&&S.lv>1)||p==='match'?'<button class="lk" data-act="back">ביטול</button>':'';
+  var hb=hintBtn();
+  if(hb||back)h+='<div class="foot">'+hb+back+'</div>';
+  el.innerHTML=h;
+}
+function renderTop(){
+  [].forEach.call(document.querySelectorAll('#tabs button'),function(b){b.setAttribute('aria-selected',String(+b.getAttribute('data-lv')===S.lv));});
+  $('#desc').innerHTML=DESC[S.lv];
+  var clean=S.won&&!S.assisted&&S.lv>0,d=[1,1,0,clean?1:0],h='';
+  d.forEach(function(v,i){h+='<i class="'+(v?'on':'')+(i===3&&clean?' new':'')+'"></i>';});
+  $('#clean').innerHTML=h;$('#cleanT').textContent=clean?'3 נקיות מתוך 4':'2 נקיות מתוך 3';
+}
+function render(){paint();renderFacts();renderRows();renderTray();renderTop();}
+
+function resetStep(){S.pend=null;S.sel=[];S.wrong={};S.nw=0;S.rung=0;S.narrow=false;S.lock=0;S.hint='';clearTimeout(tm.lock);}
+function completeStep(k,assisted){
+  var row=S.rows.filter(function(r){return r.k===k;})[0];
+  if(!row){row={k:k};S.rows.push(row);S.fresh=k;}
+  row.done=true;row.assisted=assisted;if(assisted)S.assisted=true;
+  S.marks[k]=1;if(k==='a'||k==='b')S.used[k]=1;
+  resetStep();
+  S.fb={t:assisted?'note':'ok',h:(assisted?'מילאנו את הצעד הזה יחד. ':'נכון. ')+(assisted&&k!=='a'&&k!=='b'?'הנימוק: '+FULL[STEPS[k].r]+'. ':'')+WHY[k]};
+  if(k==='goal'){S.phase='end0';render();pulse(STEPS[k].parts);tm.end=setTimeout(function(){S.phase='end';S.won=true;S.fb=null;render();},1500);}
+  else{S.phase=S.lv===1?'reason':(S.lv===2?'tile':'build');render();pulse(STEPS[k].parts);}
+}
+function unmet(k){
+  if(k==='cong'){var n=['a','b','c'].filter(isDone).length;if(n<3)return {t:'note',h:'נכון, אבל מוקדם מדי. לחפיפה צריך שלושה שוויונות — '+(n?'יש כרגע '+['','אחד','שניים'][n]+'.':'עוד אין אף אחד.')};}
+  if(k==='goal'&&!isDone('cong'))return {t:'bad',h:'זה מה שצריך להוכיח — אי אפשר להשתמש בו לפני שהוכחנו אותו.'};
+  return null;
+}
+function shake(sel){var b=$('#tray '+sel);if(b){b.classList.add('shake');}}
+function pickReason(r){
+  var k=cur();if(!k)return;
+  if(STEPS[k].r===r){completeStep(k,false);return;}
+  S.wrong[r]=1;S.nw++;
+  if(S.nw>=2){completeStep(k,true);return;}
+  S.fb={t:'bad',h:wrongReason(k,r)};
+  if(S.lv===1&&S.rung===0){S.rung=1;S.hint=H1[k][0];}
+  render();if(S.lv===1)pulse(H1[k][1]);
+}
+function tapTile(t){
+  if(t==='x1'){if(isDone('cong'))S.fb={t:'note',h:'נכון, אחרי החפיפה זה באמת ידוע. אבל לא צריך את זה כדי להגיע למה שצריך להוכיח.'};else{S.fb={t:'bad',h:'נראה שווה בציור, אבל זה לא נתון ועוד לא הוכח.'};flashQ();}S.tried.x1=1;render();return;}
+  if(t==='x2'){S.fb={t:'bad',h:'זה לא נתון, וגם לא נראה כך בציור. בנתון כתוב '+M('AO = OB')+': אותיות אחרות.'};S.tried.x2=1;render();return;}
+  var u=unmet(t);if(u){S.fb=u;render();shake('[data-t="'+t+'"]');return;}
+  S.pend=t;S.rows.push({k:t,done:false});S.fresh=t;S.phase='reason';S.fb=null;S.wrong={};S.nw=0;render();
+}
+function formStatement(){
+  var x=S.sel[0],y=S.sel[1],k=ORDER.filter(function(k){var p=STEPS[k].parts;return p.indexOf(x)>-1&&p.indexOf(y)>-1;})[0];
+  if(!k){
+    var both=(x==='OAC'||x==='OBD')&&(y==='OAC'||y==='OBD');
+    if(both&&isDone('cong'))S.fb={t:'note',h:'נכון, אחרי החפיפה זה באמת ידוע. אבל לא צריך את זה כדי להגיע למה שצריך להוכיח.'};
+    else if(both){S.fb={t:'bad',h:'נראה שווה בציור, אבל זה לא נתון ועוד לא הוכח.'};flashQ();}
+    else if(KIND[x]==='seg')S.fb={t:'bad',h:'מהציור אי אפשר לדעת שהקטעים '+M(x)+', '+M(y)+' שווים. זה לא נתון ולא הוכח.'};
+    else S.fb={t:'bad',h:'אין נימוק שאומר שהזוויות '+M(NAME[x])+', '+M(NAME[y])+' שוות.'};
+    S.sel=[];render();return;}
+  if(isDone(k)){S.fb={t:'note',h:'השורה הזו כבר כתובה.'};S.sel=[];render();return;}
+  var u=unmet(k);if(u){S.fb=u;S.sel=[];render();return;}
+  S.pend=k;S.wrong={};S.nw=0;S.fb=null;
+  if(k==='cong')S.phase='match';else{S.rows.push({k:k,done:false});S.fresh=k;S.phase='reason';}
+  render();
+}
+function onPart(id){
+  if(S.lv===0){
+    if(S.phase!=='t1'||S.tdone||KIND[id]!=='seg')return;
+    if(id==='AO'||id==='OB'){
+      var i=S.sel.indexOf(id);if(i>-1)S.sel.splice(i,1);else S.sel.push(id);S.fb=null;
+      if(S.sel.length===2){S.sel=[];S.marks.a=1;S.used.a=1;S.tdone=true;S.fb={t:'ok',h:'נכון. מה שנתון, מסמנים בציור: קו אחד על כל קטע.'};}
+    }else S.fb={t:'bad',h:'זה הקטע '+M(id)+'. בנתון כתובים הקטעים '+M('AO')+', '+M('OB')+'.'};
+    render();return;
+  }
+  if(S.lv!==3||S.phase==='end'||S.phase==='end0')return;
+  if(S.phase==='reason'||S.phase==='match'){S.rows=S.rows.filter(function(r){return r.done;});resetStep();S.phase='build';}
+  var kd=KIND[id],j=S.sel.indexOf(id);
+  if(j>-1)S.sel.splice(j,1);else if(S.sel.length&&KIND[S.sel[0]]!==kd)S.sel=[id];else S.sel.push(id);
+  S.fb=null;S.hint='';
+  if(S.sel.length===2)formStatement();else render();
+}
+function doHint(){
+  var k=cur();if(!k)return;
+  if(S.rung===0){S.rung=1;S.hint=H1[k][0];render();pulse(H1[k][1]);return;}
+  if(S.rung===1){S.rung=2;S.hint=H2[k];S.narrow=true;S.lock=Date.now()+4000;clearTimeout(tm.lock);tm.lock=setTimeout(function(){S.lock=0;renderTray();},4050);render();return;}
+  if(S.lock&&Date.now()<S.lock)return;
+  S.rows=S.rows.filter(function(r){return r.done||r.k===k;});
+  completeStep(k,true);
+}
+function l0pick(o){
+  if(S.tdone)return;
+  if(S.phase==='t2'){
+    if(o==='looks'){S.tdone=true;S.fb={t:'ok',h:'נכון. זה נראה שווה בציור, אבל זה לא נתון. בהוכחה משתמשים רק במה שידוע.'};}
+    else{S.wrong[o]=1;S.fb={t:'bad',h:'נראה שווה בציור, אבל זה לא נתון. חפשו אותו בשורת הנתון: הוא לא שם.'};}
+  }else{
+    if(o==='sas'){S.tdone=true;S.fb={t:'ok',h:'נכון: צלע, הזווית שביניהן, צלע.'};}
+    else{S.wrong[o]=1;S.fb={t:'bad',h:o==='asa'?'מסומן רק זוג זוויות אחד. במשפט ז.צ.ז צריך שניים.':(o==='sss'?'מסומנים רק שני זוגות צלעות. במשפט צ.צ.צ צריך שלושה.':'יש שלושה סימונים: צלע, זווית, צלע. והזווית נמצאת בין שתי הצלעות.')};}
+  }
+  render();
+}
+function l0next(){
+  S.tdone=false;S.fb=null;S.wrong={};S.sel=[];
+  if(S.phase==='t1'){S.phase='t2';S.marks.b=1;S.used.b=1;clearTimeout(tm.q);S.q=true;}
+  else if(S.phase==='t2'){S.phase='t3';S.q=false;S.marks.c=1;}
+  else{S.phase='end';S.won=true;S.marks.cong=1;}
+  render();
+}
+
+fig.addEventListener('click',function(e){var t=e.target.closest('[data-p]');if(t)onPart(t.getAttribute('data-p'));});
+$('#tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(b)init(+b.getAttribute('data-lv'));});
+$('#tray').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b||b.disabled)return;
+  var a=b.getAttribute('data-act');
+  if(b.hasAttribute('data-r'))return pickReason(b.getAttribute('data-r'));
+  if(b.hasAttribute('data-t'))return tapTile(b.getAttribute('data-t'));
+  if(b.hasAttribute('data-o'))return l0pick(b.getAttribute('data-o'));
+  if(b.hasAttribute('data-v')){
+    var v=b.getAttribute('data-v');
+    if(v==='B'){S.rows.push({k:'cong',done:false});S.fresh='cong';S.phase='reason';S.wrong={};S.nw=0;S.fb={t:'ok',h:'נכון. '+M('A ↔ B')+', '+M('O ↔ O')+', '+M('C ↔ D')+'. לכן כותבים '+M('△AOC ≅ △BOD')+'.'};}
+    else{S.wrong[v]=1;S.fb={t:'bad',h:v==='O'?'הנקודה '+M('O')+' שייכת לשני המשולשים, והיא מתאימה לעצמה. בדקו את הסדר: מול הקטע '+M('AO')+' נמצא הקטע השווה לו, '+M('OB')+'.':'בדקו את הסדר. הקטע '+M('AO')+' שווה לקטע '+M('OB')+', ולכן הקודקוד '+M('A')+' מתאים לקודקוד '+M('B')+'.'};}
+    return render();
+  }
+  if(a==='hint')return doHint();
+  if(a==='next')return l0next();
+  if(a==='back'){S.rows=S.rows.filter(function(r){return r.done;});resetStep();S.fb=null;S.phase=S.lv===2?'tile':'build';return render();}
+  if(a==='go')return init(+b.getAttribute('data-lv'));
+  if(a==='again')return init(S.lv);
+});
+init(1);
+})();
+</script>
