@@ -23,6 +23,7 @@ Exit code 1 when anything fails. Stop the dev server afterwards (`lsof -i :5198`
 | walk the tree | grade → topic → chapter rows open; the chapter row is `aria-selected=true` (desktop) |
 | preview loads the chapter | an iframe shows `/topics/powers-roots` with chapter button "2. חוקי חזקות" active |
 | guard on | `MP.adminFrame === true` inside the frame and the pill does not say "נספר" |
+| preview toggle טלפון / מחשב (desktop only) | "מחשב" shows the same frame (no reload) at `innerWidth` 1280, scaled to fit its box; a real mouse click at the scaled spot of a button in the page reaches it; `mp:cpl-dev = "desk"` is saved; "טלפון" brings it back to 375 |
 | report form · scope question / sub / chapter / topic / grade / site | form opens from "דווח", scope chosen (behind "רמה אחרת" when needed), reason chip, sentence, "שליחה" → the `admin_fix_add` request body matches design §8 (topic, section, the `איפה:` line, `סוג:`, `מה לתקן:`, the question block with exponents + `הוקלד:` + `האתר ענה:`, the `קישור:` with `ch`/`sub` pointing at the live site, the last line `נשלח מבקרת התוכן · <device> · גרסה <sha>`, the PIN token, an author from PEOPLE, nothing of the signed-in student). A missing version alone is a WARN. |
 | phone: requests sheet | "בקשות N" opens a sheet, "סגירה" closes it |
 | ✓ the chapter | `admin_content_check {topic:"powers-roots", section:"2. חוקי חזקות", author}` |
@@ -65,6 +66,7 @@ but make the test immune to copy changes.
 | toast "הבא ›" | `[data-cpl=toast-next]` | a "הבא" button inside `role=status` or a toast, else a button "הבא ›" |
 | progress card "לאשר תיקון / הבא לבדיקה" | `[data-cpl=next]` | button with that text |
 | phone "בקשות N" | `[data-cpl=requests]` | button starting with "בקשות" |
+| preview size toggle | `[data-cpl=dev-desk]`, `[data-cpl=dev-phone]` (exist) | buttons "מחשב" / "טלפון" |
 | close a sheet | `[data-cpl=close]` | button "סגירה" (aria-label) |
 
 The walk target and the "next" target are constants at the top of `run.mjs` (`T`): change them there if a

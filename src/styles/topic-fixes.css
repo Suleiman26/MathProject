@@ -418,6 +418,8 @@ html[data-page="equation-solver"] #root .wx-banner :is(.wx-ex, .wx-x) { color: v
 html[data-page="equation-solver"] #root .eqx-eq { display: inline-flex; align-items: center; gap: 0; direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 html[data-page="equation-solver"] #root .eqx-is { display: inline-block; margin: 0 .45em; font-weight: 800; color: var(--a-600, #0d9488); }
 html[data-page="equation-solver"] #root .eqx-eq.hot .eqx-is { color: #c2410c; transform: scale(1.15); }
+/* the "=" chip and the full stop stay on the line of the word before them (desktop QA S7) */
+html[data-page="equation-solver"] #root .eqx-nw { white-space: nowrap; }
 html[data-page="equation-solver"] #root .eqx-sign { display: inline-flex; align-items: center; justify-content: center; min-width: 1.6em; padding: 0 .3em; border-radius: 8px; background: #fff7ed; color: #c2410c; font-weight: 800; }
 html[data-page="equation-solver"] #root .eqx-vs { display: grid; gap: 8px; margin-top: 14px; }
 html[data-page="equation-solver"] #root .eqx-vs > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--a-50, #f0fdfa) 60%, #fff); font-size: .95rem; color: var(--ink-2); }
@@ -581,6 +583,21 @@ html[data-page="ratio-percent"] .rp-legend { display: flex; flex-wrap: wrap; jus
 html[data-page="ratio-percent"] .rp-legend > span { display: inline-flex; align-items: center; gap: 6px; }
 html[data-page="ratio-percent"] .rp-mi { display: block; flex: none; }
 html[data-page="ratio-percent"] .rp-packs-i .rp-pack { max-width: 112px; align-items: center; justify-content: center; }
+/* desktop QA S5: from 768px the pictures may grow to 520px, each in proportion to its own size
+   (--rp-w = the drawing's width in SVG units, set on the svg); phones keep the 320px cap above */
+@media (min-width: 768px) {
+  html[data-page="ratio-percent"] .rp-vis { max-width: 520px; }
+  html[data-page="ratio-percent"] .rp-vis > svg { max-width: min(520px, calc(var(--rp-w, 228px) * 2)) !important; }
+  html[data-page="ratio-percent"] .rp-legend { gap: 8px 22px; margin-top: 12px; font-size: 1rem; }
+  html[data-page="ratio-percent"] .rp-legend .rp-mi { height: 26px !important; width: auto !important; }
+}
+/* desktop QA S6: chapter 3 rule line. Each rule on its own line; "X%" and "1 + X/100" read left to right
+   (isolated, never broken), the fraction stacked and centred on the "1 +" */
+html[data-page="ratio-percent"] .info .rp-rule { display: block; margin-top: 6px; }
+html[data-page="ratio-percent"] .info .rp-rule + .rp-rule { margin-top: 2px; }
+html[data-page="ratio-percent"] .info .rp-mult { display: inline-flex !important; align-items: center; gap: 5px; vertical-align: middle; white-space: nowrap; direction: ltr; unicode-bidi: isolate; margin: 0 4px 0 7px; }
+html[data-page="ratio-percent"] .info .rp-mult .frac { margin: 0 2px; }
+html[data-page="ratio-percent"] .info .rp-mult :is(.frac-num, .frac-den) { font-size: 16px; padding: 1px 6px; line-height: 1.2; }
 /* ratio-percent proportion in any order (fixes board #87): "x is in a denominator, you may flip" note */
 html[data-page="ratio-percent"] .pq-flip { margin: 10px auto 0; max-width: 520px; padding: 10px 14px; border-radius: 12px; background: #f0fdfa; border: 1.5px solid #99f6e4; color: #134e4a; font-size: .95rem; line-height: 1.6; text-align: center; }
 html[data-page="ratio-percent"] .pq-flip > b { color: #0f766e; }

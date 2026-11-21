@@ -43,7 +43,7 @@ export default function EqLesson({ onStart }) {
     <>
       <div className="card wx-lesson">
         <div className="card-t">מה זו משוואה?</div>
-        <p>משוואה היא שני ביטויים שכתובים בצורה שונה, אבל יש להם אותו ערך. בין שני הביטויים כותבים את סימן השוויון <b className="eqx-sign">=</b>.</p>
+        <p>משוואה היא שני ביטויים שכתובים בצורה שונה, אבל יש להם אותו ערך. בין שני הביטויים כותבים את סימן <span className="eqx-nw">השוויון <b className="eqx-sign">=</b>.</span></p>
         <div className="eqx-vs">
           <div><span>ביטוי אלגברי, בלי סימן שוויון</span><b><Ex s="x+3" /></b></div>
           <div className="on"><span>משוואה: יש סימן שוויון</span><b><Eq s="x+3=10" hot /></b></div>

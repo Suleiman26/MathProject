@@ -448,6 +448,44 @@ async function runPanel(browserType, engine, vpName) {
       return `MP.adminFrame true · pill "${t}"`;
     });
 
+    /* 4b. desktop only: "טלפון / מחשב". מחשב = the same frame (no reload) at a 1280px viewport, scaled to the
+       column; a real mouse click at the scaled spot reaches the page; remembered; back to טלפון = 375 again */
+    if (!phone && f) await step(run, "preview toggle טלפון / מחשב (1280 scaled, taps land, remembered)", async () => {
+      await f.evaluate(() => { window.__cplMark = 1; });
+      const desk = await first(page, ["[data-cpl=dev-desk]", (p) => p.getByRole("button", { name: "מחשב", exact: true })], { what: "the 'מחשב' toggle" });
+      await desk.click();
+      await f.waitForFunction(() => innerWidth === 1280, null, { timeout: 8000 }).catch(() => {});
+      await sleep(500);
+      const iw = await f.evaluate(() => innerWidth);
+      if (iw !== 1280) throw new Error("the page inside is " + iw + "px wide, not 1280");
+      if (!(await f.evaluate(() => window.__cplMark === 1))) throw new Error("the frame reloaded when switching");
+      const fit = await page.evaluate(() => {
+        const fr = document.querySelector('iframe[title^="תצוגה חיה"]'), scr = fr.parentElement;
+        const a = fr.getBoundingClientRect(), b = scr.getBoundingClientRect();
+        return { fw: a.width, fh: a.height, sw: b.width, sh: b.height, k: +getComputedStyle(scr).getPropertyValue("--k"), x: a.x, y: a.y };
+      });
+      if (Math.abs(fit.fw - fit.sw) > 2 || fit.fh > fit.sh + 2) throw new Error("the scaled page does not fit its box: " + JSON.stringify(fit));
+      // a real click at the scaled position of a button inside the page
+      const target = await f.evaluate(() => {
+        const b = [...document.querySelectorAll("#root :is(.ch-btn, .sub-tab-btn, .sub-tab, button)")].find((x) => { const r = x.getBoundingClientRect(); return r.width > 20 && r.top > 0 && r.bottom < innerHeight; });
+        if (!b) return null;
+        window.__cplHit = 0; b.addEventListener("click", (e) => { window.__cplHit++; e.preventDefault(); e.stopPropagation(); }, { capture: true, once: true });
+        const r = b.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, t: b.textContent.trim().slice(0, 30) };
+      });
+      if (!target) throw new Error("no button inside the page to click");
+      await page.mouse.click(fit.x + target.x * fit.k, fit.y + target.y * fit.k);
+      await sleep(250);
+      if (!(await f.evaluate(() => window.__cplHit === 1))) throw new Error("a click at the scaled spot did not reach '" + target.t + "'");
+      await shot(page, "preview-desktop");
+      const ls = await page.evaluate(() => localStorage.getItem("mp:cpl-dev"));
+      if (ls !== "desk") throw new Error("not remembered (mp:cpl-dev = " + ls + ")");
+      await (await first(page, ["[data-cpl=dev-phone]", (p) => p.getByRole("button", { name: "טלפון", exact: true })], { what: "the 'טלפון' toggle" })).click();
+      await f.waitForFunction(() => innerWidth === 375, null, { timeout: 8000 }).catch(() => {});
+      const back = await f.evaluate(() => innerWidth);
+      if (back !== 375) throw new Error("back to טלפון: the page is " + back + "px wide");
+      return `1280 × k ${fit.k.toFixed(2)} in a ${Math.round(fit.sw)}px box · click reached "${target.t}" · remembered · back to 375`;
+    });
+
     /* 5. answer wrong, then report at every scope */
     if (f) await step(run, "answer a question in the frame (wrong, to freeze 'הוקלד' + 'לא נכון')", async () => {
       const r = await answer(f, false);
