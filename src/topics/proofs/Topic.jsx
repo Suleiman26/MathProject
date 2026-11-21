@@ -46,6 +46,7 @@ export default function App({ devRescue }) {
     const nextUp = all.findIndex((ts) => ts.level < 4);              // the recommended order is 1 → 4
     return (
       <nav className="ch-btns prf-path" aria-label={T['lbl.order']}>
+        <p className="prf-path-k" aria-hidden="true">{T['lbl.order']}</p>{/* shown from 768 px only */}
         {TYPES.map((t, i) => {
           const ts = all[i], passed = ts.level >= 4, lv = Math.min(3, ts.level), open = ch === i;
           const began = ts.done > 0 || ts.walked || ts.warm.done;

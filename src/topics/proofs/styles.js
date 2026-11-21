@@ -300,6 +300,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-land-go::before{content:"";position:absolute;inset:auto 0 100% 0;height:22px;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
 #root .prf-land-what{font-size:.8rem;font-weight:600;line-height:1.4;color:var(--ink-3);text-align:center}
 #root .prf-land-go .prf-go{flex:none;width:100%;min-height:52px;font-size:1.1rem}
+#root .prf-path-k{display:none}
 @media (max-height:600px){
   #root .prf-mast{--prf-wm:clamp(3.6rem,17vw,6rem)}
   #root .prf-mast-fig{flex-basis:124px;min-height:124px}
@@ -350,8 +351,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-lab-sheet .prf-mk{animation:none}
 }
 
-/* ── wide screens and phones on their side: the drawing beside the rows ── */
-@media (min-width:900px),(orientation:landscape) and (max-height:500px){
+/* ── phones on their side (and very short windows): the drawing beside the rows ── */
+@media (orientation:landscape) and (max-height:500px){
   #root .prf-screen{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:20px;max-width:1120px;margin-inline:auto;padding-inline:16px;background:transparent}
   #root .prf-head{grid-column:1 / -1}
   #root .prf-figcol{align-self:center}
@@ -360,7 +361,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-tray{max-height:52dvh}
 }
 /* short phones (an iPhone SE in Safari shows about 550px): one-line strip with the goal first, a lower drawing */
-@media (max-height:600px) and (max-width:899px) and (orientation:portrait){
+@media (max-height:600px) and (max-width:767px) and (orientation:portrait){
   #root .prf-head{height:40px}
   #root .prf-stage{height:150px}
   #root .prf-strip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-block:2px;padding-inline-end:34px;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 30px);mask-image:linear-gradient(to right,transparent 0,#000 30px)}
@@ -374,6 +375,224 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 @media (prefers-reduced-motion: reduce){
   #root .prf-row.is-new,#root .prf-hint,#root .prf-why,#root .prf-hintb.is-nudge,#root .prf-mast-fig,#root .prf-pt-open,#root .prf-warm-mid,#root .prf-end-card,#root .prf-prev,#root .prf-note.prf-fb{animation:none}
   #root .prf-pt-n{transition:none}
+}
+
+/* ══ tablets and computers (from 768 px wide, taller than a phone on its side) ══
+   Everything above is the phone design and stays as it is. From here up the screens get their own
+   layout: panels that size to what is in them (no tall empty card with a button at its foot), the start
+   button with the content, a large coloured drawing and bigger type. 768–1023: one centred column.
+   From 1024: two columns, the work on the right and the drawing on the left (RTL). */
+@media (min-width:768px) and (min-height:501px){
+  /* landing: the poster (wordmark + drawing) and the path */
+  #root .prf-topic:not(.prf-in-proof) > .prf-mast,#root .prf-in-proof > .prf-mast{position:relative;isolation:isolate;container-type:inline-size}
+  #root .prf-topic:not(.prf-in-proof) > .prf-mast::before,#root .prf-in-proof > .prf-mast::before{content:"";position:absolute;z-index:-1;inset:18% -6% -4%;pointer-events:none;background:radial-gradient(closest-side,color-mix(in srgb,var(--a-200) 55%,transparent),color-mix(in srgb,var(--a-100) 22%,transparent) 55%,transparent)}
+  #root .prf-mast .prf-wm{position:relative;z-index:0}
+  #root .prf-mast-fig{position:relative;z-index:1;flex:none;width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:320 / 196;margin-top:calc(var(--prf-wm) * -.1);padding:0;animation:prf-rise .6s var(--ease-out) backwards}
+  #root .prf-mast-fig .prf-sg{stroke-width:2.3;stroke:color-mix(in srgb,var(--a-900) 70%,var(--ink))}
+  #root .prf-mast-fig .prf-sg.prf-c1{stroke:var(--prf-p1)}
+  #root .prf-mast-fig .prf-sg.prf-c2{stroke:var(--prf-p2)}
+  #root .prf-mast-fig .prf-sg.prf-c3{stroke:var(--prf-p3)}
+  #root .prf-mast-fig .prf-sg.is-goal{stroke:var(--prf-goal)}
+  #root .prf-mast-fig .prf-tri{fill-opacity:.1}
+  #root .prf-mast-fig .prf-lb{font-size:13px}
+  #root .prf-mast-fig .prf-fig > line.prf-sg{animation:prf-mark .45s var(--ease-out) backwards}
+  #root .prf-mast-fig .prf-fig > line.prf-sg:nth-of-type(2){animation-delay:.08s}
+  #root .prf-mast-fig .prf-fig > line.prf-sg:nth-of-type(3){animation-delay:.16s}
+  #root .prf-mast-fig .prf-fig > line.prf-sg:nth-of-type(4){animation-delay:.24s}
+  #root .prf-mast-fig .prf-fig > line.prf-sg:nth-of-type(5){animation-delay:.32s}
+  #root .prf-mast-fig .prf-fig > line.prf-sg:nth-of-type(n+6){animation-delay:.4s}
+  #root .prf-path-k{display:block;margin:0 0 10px;font-size:.84rem;font-weight:700;color:var(--a-700)}
+  #root .prf-path .ch-btn{flex:0 1 auto;min-height:48px;font-size:1.1rem}
+  #root .prf-pt-row{min-height:52px;gap:12px}
+  #root .prf-pt::before{inset-inline-start:21px;top:47px}
+  #root .prf-pt-n{width:44px;height:44px;font-size:1.06rem}
+  #root .prf-pt.is-open .prf-pt-name{font-size:1.7rem;line-height:1.15}
+  #root .prf-pt-lv{margin-inline-start:auto}
+  #root .prf-pt-open{padding-inline:56px 0;padding-block:2px 14px}
+  #root .prf-pt-about{margin:0 0 14px;font-size:1.06rem;line-height:1.5;color:var(--ink-2)}
+  #root .prf-tabs{gap:8px}
+  #root .prf-tabs .sub-tab{min-height:44px;font-size:.95rem}
+  #root .prf-locked{margin-top:10px;font-size:.86rem}
+  #root .prf-land-stats{margin-top:10px;font-size:.88rem}
+  #root .prf-land-go{position:relative;bottom:auto;z-index:auto;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px 18px;padding:0;background:none}
+  #root .prf-land-go::before{content:none}
+  #root .prf-land-go .prf-go{width:auto;min-width:220px;min-height:56px;padding-inline:40px;font-size:1.14rem}
+  #root .prf-land-what{order:2;font-size:.9rem;text-align:start}
+  @media (hover:hover){
+    #root .prf-path .ch-btn:hover .prf-pt-name{color:var(--ink)}
+    #root .prf-path .ch-btn:hover .prf-pt-n{box-shadow:inset 0 0 0 1.5px var(--a-500)}
+    #root .prf-pt.is-open .ch-btn:hover .prf-pt-n{box-shadow:var(--sh-accent)}
+  }
+
+  /* every proof screen: the work sits on one sheet that is as tall as what is in it */
+  #root .prf-in-proof > .prf-ch-open{max-width:none;margin:0;padding:0}
+  #root .prf-screen{font-size:17px;background:transparent}
+  #root .prf-head{height:auto;min-height:56px;padding-block:6px;padding-inline:0 4px;gap:10px}
+  #root .prf-back{margin-inline-start:-8px}
+  #root .prf-head-t{font-size:1.3rem;font-weight:800}
+  #root .prf-pill{padding:3px 11px;font-size:.84rem}
+  #root .prf-dots{gap:6px}
+  #root .prf-dots i{width:11px;height:11px}
+  #root .prf-work{flex:0 1 auto;justify-content:flex-start;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:var(--surface);box-shadow:var(--sh-2)}
+  #root .prf-strip{flex-direction:column;align-items:stretch;row-gap:6px;padding:12px 20px 12px;font-size:.92rem;background:var(--surface-2)}
+  #root .prf-strip-given,#root .prf-strip-goal{gap:6px 8px;min-height:34px}
+  #root .prf-strip-k{min-width:2.8em}
+  #root .prf-fc{min-height:32px;padding:3px 12px;border-radius:16px;font-size:1rem}
+  #root .prf-rows{flex:0 1 auto;padding:10px 20px 12px}
+  #root .prf-intro{font-size:1.02rem;padding-block:4px 6px}
+  #root .prf-plan{font-size:.92rem;padding:4px 12px}
+  #root .prf-row-b{min-height:50px;gap:12px;padding:6px 2px}
+  #root .prf-row-n{width:26px;height:26px;font-size:.84rem}
+  #root .prf-row-st{font-size:1.16rem}
+  #root .prf-row-r{font-size:.95rem}
+  #root .prf-row-full{padding:0 40px 10px;font-size:.96rem}
+  #root .prf-row:last-child{border-bottom:0}
+  #root .prf-tray{min-height:0;max-height:none;overflow:visible;gap:10px;padding:16px 20px 20px;border-top:1px solid var(--line);box-shadow:none}
+  #root .prf-tray .prf-prev{position:relative;top:auto;box-shadow:inset 0 0 0 1.5px var(--a-300)}
+  #root .prf-ask{min-height:48px}
+  #root .prf-ask-k{font-size:.86rem}
+  #root .prf-ask-st{font-size:1.36rem}
+  #root .prf-ask-r{font-size:1rem}
+  #root .prf-ask-q{font-size:1.04rem}
+  #root .prf-ask-k + .prf-ask-q,#root .prf-ask-q:first-child{font-size:1.1rem}
+  #root .prf-ask-sent{font-size:1.04rem;padding:6px 12px}
+  #root .prf-ask-e .prf-x span{display:inline}
+  #root .prf-hintb{min-height:44px;font-size:.94rem;padding-inline:14px}
+  #root .prf-hint,#root .prf-why{font-size:1rem}
+  #root .prf-fb{font-size:1rem;padding:9px 14px}
+  #root .prf-chips{gap:10px}
+  #root .prf-chip{min-height:52px;font-size:1.02rem;border-radius:14px}
+  #root .prf-tile{font-size:1.14rem}
+  #root .prf-go-row .prf-go{flex:0 1 auto;min-width:200px;min-height:52px;font-size:1.06rem}
+  #root .prf-go-row{justify-content:flex-start}
+  #root .prf-qed{min-height:56px;font-size:1.24rem}
+  #root .prf-tap-q{font-size:1.04rem}
+  #root .prf-prev-st{font-size:1.28rem}
+  #root .prf-partc{font-size:1.04rem}
+  /* the end of a proof: the result and the notebook page on the same sheet, the buttons right under it */
+  #root .prf-end-card{flex:0 1 auto;border-top:0;background:transparent}
+  #root .prf-end-scroll{flex:0 1 auto;padding:20px 20px 8px}
+  #root .prf-end{font-size:1.24rem;padding:13px 16px}
+  #root .prf-end.is-helped{font-size:1.04rem}
+  #root .prf-lvup{font-size:1.1rem;padding:12px 16px}
+  #root .prf-end-stats,#root .prf-end-line{font-size:.98rem}
+  #root .prf-page{margin-top:18px}
+  #root .prf-page-h{font-size:.92rem}
+  #root .prf-page-in{padding:16px 20px 18px;box-shadow:none;background:var(--surface-2)}
+  #root .prf-page-l{font-size:1.04rem}
+  #root .prf-table{font-size:1rem}
+  #root .prf-table th{font-size:.88rem}
+  #root .prf-end-btns{justify-content:flex-start;padding:12px 20px 20px;border-top:0;background:transparent}
+  #root .prf-end-btns .prf-go{flex:0 1 auto;min-width:220px}
+  #root .prf-end-btns .prf-go.is-quiet{min-width:0}
+  /* the warm-up: the question, then its answers, on the same sheet */
+  #root .prf-warm-mid{flex:none;justify-content:flex-start;overflow:visible;gap:10px;padding:22px 20px 18px}
+  #root .prf-warm-k{font-size:.86rem;padding:3px 12px}
+  #root .prf-warm-q{font-size:1.36rem}
+  #root .prf-warm-st{font-size:1.8rem}
+  #root .prf-warm-sent{font-size:1.16rem;padding:8px 14px}
+  #root .prf-warm-picked{font-size:1.16rem}
+  /* the rescue card: words, not a floating phone card */
+  #root .prf-rescue{max-width:520px;gap:14px;padding:0;border-radius:0;background:none;box-shadow:none;text-align:start}
+  #root .prf-rescue-k{font-size:.9rem}
+  #root .prf-rescue-t{font-size:clamp(1.5rem,2.4vw,2rem);font-weight:800;line-height:1.3}
+  #root .prf-rescue-b{flex-direction:row;flex-wrap:wrap;gap:10px;margin-top:10px}
+  #root .prf-rescue-b .prf-go{width:auto;min-width:220px;min-height:56px;font-size:1.1rem}
+  #root .prf-rescue-b .prf-go.is-quiet{min-width:0}
+}
+
+/* 768–1023 (a tablet held upright): one centred column */
+@media (min-width:768px) and (max-width:1023px) and (min-height:501px){
+  #root .prf-topic:not(.prf-in-proof){padding-block:4px 0}
+  #root .prf-topic:not(.prf-in-proof) > .prf-mast{--prf-wm:min(31cqw,17dvh);flex:none;max-width:600px}
+  #root .prf-mast-fig{width:min(100%,500px);margin-inline:auto}
+  #root .prf-path{max-width:600px;margin-top:14px}
+  /* the start button stays in reach while the path scrolls (as on a phone, but as a pill with its line beside it) */
+  #root .prf-land-go{position:sticky;bottom:0;z-index:5;justify-content:center;max-width:none;margin:8px 0 0;padding:14px 16px max(16px,env(safe-area-inset-bottom,0px));background:var(--bg)}
+  #root .prf-land-go::before{content:"";position:absolute;inset:auto 0 100% 0;height:28px;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
+  /* a proof: the drawing on top, then the sheet; the tray follows the rows and the rows scroll when they fill the screen */
+  #root .prf-screen{max-width:720px;margin-inline:auto;padding-inline:24px 24px}
+  #root .prf-stage{height:clamp(240px,34dvh,380px)}
+  #root .prf-work{margin-bottom:20px}
+  #root .prf-rows{min-height:60px}
+  #root .prf-tray{flex:none;max-height:46dvh;overflow-y:auto}
+  #root .prf-end-card{min-height:0}
+  #root .prf-end-scroll{overflow-y:auto}
+  #root .prf-warm-mid{overflow-y:auto;flex:0 1 auto}
+  /* the rescue card under the poster */
+  #root .prf-in-proof:has(> .prf-ch-card){justify-content:center;padding-bottom:40px}
+  #root .prf-in-proof:has(> .prf-ch-card) > .hdr{display:flex;flex:none;--prf-wm:min(31cqw,17dvh);max-width:600px}
+  #root .prf-in-proof > .prf-ch-card{flex:none;max-width:600px;margin:8px auto 0;padding:0 16px}
+}
+
+/* from 1024: two columns */
+@media (min-width:1024px) and (min-height:501px){
+  #root .prf-topic{width:100%;max-width:1360px;margin-inline:auto}
+  #root .prf-topic.prf-in-proof{max-width:1480px}
+  #root .prf-topic:not(.prf-in-proof){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.24fr);grid-template-rows:minmax(0,1fr) auto auto auto minmax(0,1fr);grid-template-areas:". mast" "team mast" "path mast" "go mast" ". mast";column-gap:clamp(40px,5.5vw,104px);padding:12px clamp(24px,4vw,56px) 28px}
+  #root .prf-topic:not(.prf-in-proof) > .prf-team{grid-area:team;width:auto;max-width:none;margin:0 0 22px;padding:0;text-align:start;font-size:.8rem}
+  #root .prf-topic:not(.prf-in-proof) > .prf-mast{grid-area:mast;align-self:center;--prf-wm:min(31cqw,22dvh);max-width:none;margin:0;padding:0}
+  #root .prf-topic:not(.prf-in-proof) > .prf-path{grid-area:path;max-width:none;margin:0;padding:0}
+  #root .prf-topic:not(.prf-in-proof) > .prf-land-go{grid-area:go;max-width:none;margin:28px 0 0;padding:0 56px 0 0}
+  #root .prf-pt.is-open .prf-pt-name{font-size:clamp(1.7rem,2.3vw,2.2rem)}
+
+  /* a proof: the work on the right, the drawing large and sticky on the left */
+  #root .prf-screen{display:grid;grid-template-columns:minmax(0,600px) minmax(0,780px);justify-content:center;grid-template-rows:auto minmax(0,1fr);grid-template-areas:"head fig" "work fig";column-gap:clamp(32px,4vw,72px);max-width:none;height:auto;min-height:calc(100dvh - var(--prf-top));overflow:visible;padding:4px clamp(24px,3.5vw,56px) 40px}
+  #root .prf-head{grid-area:head}
+  #root .prf-figcol{grid-area:fig;position:sticky;top:var(--prf-top);align-self:start;padding-top:66px}
+  #root .prf-stage{width:100%;height:auto;max-height:calc(100dvh - var(--prf-top) - 90px);aspect-ratio:320 / 196}
+  #root .prf-work{grid-area:work;align-self:start;max-width:640px}
+  #root .prf-rows{overflow:visible}
+  /* the rescue card beside the poster */
+  #root .prf-in-proof:has(> .prf-ch-card){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.24fr);grid-template-areas:"card mast";align-items:center;column-gap:clamp(40px,5.5vw,104px);padding:12px clamp(24px,4vw,56px) 28px}
+  #root .prf-in-proof:has(> .prf-ch-card) > .hdr{display:flex;grid-area:mast;--prf-wm:min(31cqw,22dvh);max-width:none;margin:0;padding:0}
+  #root .prf-in-proof > .prf-ch-card{grid-area:card;padding:0}
+  #root .prf-in-proof > .prf-ch-card .prf-rescue{margin:0}
+}
+@media (min-width:1024px) and (max-width:1279px) and (min-height:501px){
+  #root .prf-screen{grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);column-gap:32px;padding-inline:24px}
+}
+/* big screens (1600 and up): the same two columns, larger */
+@media (min-width:1600px) and (min-height:960px){
+  #root .prf-topic{max-width:1600px}
+  #root .prf-topic:not(.prf-in-proof){grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
+  #root .prf-in-proof:has(> .prf-ch-card){grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
+  #root .prf-team{font-size:.86rem}
+  #root .prf-path-k{font-size:.92rem}
+  #root .prf-path .ch-btn{font-size:1.24rem}
+  #root .prf-pt-row{min-height:60px}
+  #root .prf-pt-n{width:50px;height:50px;font-size:1.16rem}
+  #root .prf-pt::before{inset-inline-start:24px;top:55px}
+  #root .prf-pt-open{padding-inline:62px 0;padding-block:4px 18px}
+  #root .prf-pt.is-open .prf-pt-name{font-size:2.5rem}
+  #root .prf-pt-about{font-size:1.2rem}
+  #root .prf-tabs{gap:10px}
+  #root .prf-tabs .sub-tab{min-height:50px;font-size:1.04rem}
+  #root .prf-locked{font-size:.94rem}
+  #root .prf-topic:not(.prf-in-proof) > .prf-land-go{padding-inline-start:62px;margin-top:34px}
+  #root .prf-land-go .prf-go{min-width:260px;min-height:62px;font-size:1.24rem}
+  #root .prf-land-what{font-size:1rem}
+  #root .prf-screen{grid-template-columns:minmax(0,660px) minmax(0,820px);font-size:18px}
+  #root .prf-work{max-width:none}
+  #root .prf-head-t{font-size:1.44rem}
+  #root .prf-fc{font-size:1.08rem}
+  #root .prf-intro{font-size:1.1rem}
+  #root .prf-row-b{min-height:56px}
+  #root .prf-row-st{font-size:1.28rem}
+  #root .prf-row-r{font-size:1.02rem}
+  #root .prf-ask-st{font-size:1.5rem}
+  #root .prf-ask-k + .prf-ask-q,#root .prf-ask-q:first-child{font-size:1.2rem}
+  #root .prf-chip{min-height:58px;font-size:1.1rem}
+  #root .prf-tile{font-size:1.24rem}
+  #root .prf-fb,#root .prf-hint,#root .prf-why{font-size:1.08rem}
+  #root .prf-warm-q{font-size:1.5rem}
+  #root .prf-page-l,#root .prf-table{font-size:1.1rem}
+  #root .prf-rescue{max-width:600px}
+  #root .prf-rescue-t{font-size:2.5rem}
+}
+@keyframes prf-rise{from{opacity:0;transform:translateY(14px) scale(.97)}}
+@media (prefers-reduced-motion: reduce){
+  #root .prf-mast-fig,#root .prf-mast-fig .prf-fig > line.prf-sg{animation:none}
 }
 `;
 export default css;
