@@ -119,6 +119,11 @@ test("left out: decorative graphics, navigation, lesson boxes, action buttons �
   assert.equal(html('<div><div class="sub-tabs"><button class="sub-tab active">א</button></div><div class="info-box">הסבר</div>שאלה</div>'), "שאלה");
   assert.equal(html('<div>שאלה<button class="btn mp-new">תרגיל חדש ↺</button><button class="btn">✓ בדוק</button></div>'), "שאלה");
   assert.match(html('<div><button class="choice-btn">כאשר x &gt; 0</button></div>'), /\[כאשר x > 0\]/);  // "כאשר" is not "אשר"
+  // answer choices are never dropped as "actions", whatever the label (review M1)
+  assert.equal(html('<div><button class="choice-btn">חדשים</button><button class="choice-btn">x = 3</button><button class="choice-btn selected">עוד 2</button></div>'),
+    "[חדשים] [x = 3] [עוד 2 · נבחר]\nנבחר: עוד 2 · האתר ענה: עוד לא נבדק");
+  assert.match(html('<div><button class="eq-choice">אישור</button><button class="nw-choice">פחות מ־5</button><button aria-pressed="false">המשך הסדרה</button></div>'), /\[אישור\] \[פחות מ־5\] \[המשך הסדרה\]/);
+  assert.equal(html('<div>שאלה<button class="btn">שאלה חדשה</button></div>'), "שאלה");  // still an action outside a choice
   assert.equal(html('<div><canvas data-engine="three.js r187"></canvas></div>'), "[ציור תלת־ממד]");
 });
 test("a step card with a right answer", () => {

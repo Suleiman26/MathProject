@@ -34,7 +34,10 @@ const STEP_LABEL = parse(".step-label, .phase-title, .card-t, .section-title, .t
 /* left out: navigation (chapters, sub-tabs, levels), lesson boxes, the runtime's own small parts */
 const NAV = parse(".ch-btn, .nav-btn, .ph, .sub-tab, .sub-tab-btn, .sub-btn, .tab, .diff-btn, .ch-btns, .sub-tabs, .sub-btns, .info, .info-box, .mp-fold, .mp-more, .mp-confetti, .mp-boot");
 /* action buttons (check, new question, hint, next…) are not part of the question; whole words only ("כאשר" is not "אשר") */
-const ACTION = /(?:^|[\s✓✔])(?:בדוק|בדקו|בדיקה|אשר|אישור|רמז|הבנתי|המשך|הבא|התחל|התחילו|מתחילים|איפוס|דלג|פשט|נקה|ניקוי|עוד|פחות|נסה שוב|נסו שוב)(?=$|[\s!.,:?✓›‹←→])|חדש|↺|למה זה נכון|הצג פתרון|פתרון מלא/;
+const ACTION = /(?:^|[\s✓✔])(?:בדוק|בדקו|בדיקה|אשר|אישור|רמז|הבנתי|המשך|הבא|התחל|התחילו|מתחילים|איפוס|דלג|פשט|נקה|ניקוי|עוד|פחות|נסה שוב|נסו שוב|חדש|חדשה)(?=$|[\s!.,:?✓›‹←→])|↺|למה זה נכון|הצג פתרון|פתרון מלא/;
+/* an answer choice is never an action, whatever its label says ("עוד 2", "אישור", "חדשים" are answers too) */
+const CHOICE = /^(?:[a-z0-9]+-)?choice(?:-btn)?$/;
+const isChoice = (n, c) => c.some((x) => CHOICE.test(x)) || attr(n, "aria-pressed") != null || attr(n, "aria-checked") != null || attr(n, "role") === "radio";
 const CHOICE_ON = /^(selected|sel|picked|chosen|on|active|is-on|nw-on)$/;
 const GRAPHIC = new Set(["SVG", "CANVAS", "IMG"]);
 /* the proofs section draws ∢ △ ≅ ↔ as small SVGs (src/topics/proofs/signs.jsx) */
@@ -193,7 +196,7 @@ function leaf(n, opts, st) {
   }
   if (t === "BUTTON" || attr(n, "role") === "button") {
     const label = inline(n, opts, null);
-    if (!label || has(n, "mp-check") || has(n, "mp-new") || ACTION.test(label)) return "";
+    if (!label || has(n, "mp-check") || has(n, "mp-new") || (!isChoice(n, c) && ACTION.test(label))) return "";
     const right = any(n, OK) || c.includes("correct") || c.includes("right");
     const wrong = any(n, BAD) || c.includes("wrong");
     const on = c.some((x) => CHOICE_ON.test(x)) || attr(n, "aria-pressed") === "true" || attr(n, "aria-checked") === "true";
