@@ -70,25 +70,33 @@ function corresponds(fig, st, F, t1, t2) {
   }
   return null;
 }
-/** Why a drawing (a family base or a whole problem) lies; [] = honest. */
-export function lies(base) {
-  const out = [], fig = base.figure, facts = base.facts;
+/** Why a drawing (a family base or a whole problem) lies; [] = honest. With { quick:true } it stops
+    at the first reason (and measures the letters last), for rejection sampling. */
+export function lies(base, { quick = false } = {}) {
+  try { return liesOf(base, quick); } catch (e) { if (e === STOP) return ['(stopped at the first reason)']; throw e; }
+}
+const STOP = Symbol('stop');
+function liesOf(base, quick) {
+  const found = [], fig = base.figure, facts = base.facts;
+  const out = { push: (...m) => { found.push(...m); if (quick && found.length) throw STOP; } };
   // 1. every listed fact is true in the coordinates
   for (const [id, f] of Object.entries(facts)) if (!holds(fig, f, 1e-6)) out.push(`fact ${id} is false`);
-  // 2. same-kind tappable parts that are not a fact look clearly different
+  const right = new Set(Object.values(facts).filter((f) => f.kind === 'ang' && f.right).flatMap((f) => [angKey(fig, f.x), angKey(fig, f.y)]));
+  // 2. same-kind tappable parts that are not a fact look clearly different (a pair that is exactly
+  //    equal is not a lie: it is true, and the checker answers it as "true, no reason in our list")
   const keys = new Set(Object.values(facts).map((f) => norm(fig, f)));
   const segs = fig.segs || [], angs = fig.angles || [];
   for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
     const st = { kind: 'seg', x: segs[i], y: segs[j] };
-    if (!keys.has(norm(fig, st)) && relDiff(measure(fig, segs[i]), measure(fig, segs[j])) < MIN_LEN) out.push(`${segs[i]} looks equal to ${segs[j]}`);
+    if (!keys.has(norm(fig, st)) && relDiff(measure(fig, segs[i]), measure(fig, segs[j])) < MIN_LEN && !holds(fig, st)) out.push(`${segs[i]} looks equal to ${segs[j]}`);
   }
   for (let i = 0; i < angs.length; i++) for (let j = i + 1; j < angs.length; j++) {
     const st = { kind: 'ang', x: angs[i], y: angs[j] };
     if (angKey(fig, angs[i]) === angKey(fig, angs[j])) continue;
-    if (!keys.has(norm(fig, st)) && Math.abs(measure(fig, angs[i]) - measure(fig, angs[j])) < MIN_DEG) out.push(`∢${angKey(fig, angs[i])} looks equal to ∢${angKey(fig, angs[j])}`);
+    if (right.has(angKey(fig, angs[i])) && right.has(angKey(fig, angs[j]))) continue;     // both known to be 90°
+    if (!keys.has(norm(fig, st)) && Math.abs(measure(fig, angs[i]) - measure(fig, angs[j])) < MIN_DEG && !holds(fig, st)) out.push(`∢${angKey(fig, angs[i])} looks equal to ∢${angKey(fig, angs[j])}`);
   }
   // 3. no angle near 90° unless it is a right-angle fact; no triangle near isosceles
-  const right = new Set(Object.values(facts).filter((f) => f.kind === 'ang' && f.right).flatMap((f) => [angKey(fig, f.x), angKey(fig, f.y)]));
   const allAngs = [...angs, ...(fig.tris || []).flatMap((t) => t.map((v, i) => ({ v, r: [t[(i + 1) % 3], t[(i + 2) % 3]] })))];
   for (const a of allAngs) if (!right.has(angKey(fig, a)) && Math.abs(measure(fig, a) - 90) < RIGHT_GAP) out.push(`∢${angKey(fig, a)} looks right`);
   for (const t of fig.tris || []) {
@@ -110,13 +118,13 @@ export function lies(base) {
   }
   // 5. letters: none on a line, all inside, none over a tap target's centre
   out.push(...labelErrors(layout(fig)));
-  return out;
+  return found;
 }
 
 /** Build until the drawing is honest. */
 export function honest(build, R, tries = 200) {
   let last = [];
-  for (let i = 0; i < tries; i++) { const b = build(R); last = lies(b); if (!last.length) return b; }
+  for (let i = 0; i < tries; i++) { const b = build(R); if (!lies(b, { quick: true }).length) return b; last = lies(b); }
   throw new Error(`honest: no honest drawing in ${tries} tries (${last.slice(0, 3).join('; ')})`);
 }
 

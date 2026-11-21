@@ -1,7 +1,8 @@
 /* The proofs section: from a figure (maths coordinates, y up) to a screen layout (pixels of a
    `0 0 W H` viewBox, y down): parts, invisible hit shapes, marks (ticks / arcs / a square),
    point labels placed by measuring (never on a line), the chooser for near taps, and the rigid
-   motion of the ending. Pure: no React, no window. */
+   motion of the ending. Pure: no React, no window.
+   L.segs = every drawn segment ({ id, n, a, b, tap }); `tap:false` for fig.plain (drawn, not tappable). */
 import { add, sub, mul, dot, unit, dist, distPointSeg, textW, TH } from '../new/chapters/geometry/geo.js';
 import { segKey, triKey, angKey, kindOf, congOf } from './core.js';
 import { T } from './texts.js';
@@ -90,7 +91,9 @@ export function layout(fig, W = 320, H = 196) {
   const pts = {};
   for (const n of names) pts[n] = [ox + (raw[n][0] - x0) * s, oy + (y1 - raw[n][1]) * s];
 
-  const segs = (fig.segs || []).map((sg) => ({ id: partId(sg), n: [sg[0], sg[1]], a: pts[sg[0]], b: pts[sg[1]] }));
+  // fig.segs are drawn and tappable; fig.plain are drawn only (no hit shape)
+  const segs = [...(fig.segs || []).map((sg) => [sg, true]), ...(fig.plain || []).map((sg) => [sg, false])]
+    .map(([sg, tap]) => ({ id: partId(sg), n: [sg[0], sg[1]], a: pts[sg[0]], b: pts[sg[1]], tap }));
   const tris = (fig.tris || []).map((t) => ({ id: partId(t), n: [...t], pts: t.map((q) => pts[q]) }));
   const angles = (fig.angles || []).map((a) => {
     const v = pts[a.v], u1 = unit(sub(pts[a.r[0]], v)), u2 = unit(sub(pts[a.r[1]], v));
@@ -101,6 +104,7 @@ export function layout(fig, W = 320, H = 196) {
   const degree = (n) => segs.filter((g) => g.n.includes(n)).length + angles.filter((a) => a.vn === n).length;
   const hits = [];
   for (const g of segs) {
+    if (!g.tap) continue;
     const d = unit(sub(g.b, g.a)), len = dist(g.a, g.b);
     let ca = degree(g.n[0]) >= 3 ? PULL_BUSY : PULL, cb = degree(g.n[1]) >= 3 ? PULL_BUSY : PULL;
     if (ca + cb > len - 8) { const k = Math.max(0, len - 8) / (ca + cb); ca *= k; cb *= k; }
@@ -162,7 +166,7 @@ function inTri(p, [a, b, c]) {
     angle is near (its middle). */
 export function partsNear(L, p, r = 22) {
   const c = [];
-  for (const g of L.segs) { const d = distPointSeg(p, g.a, g.b); if (d <= r) c.push([g.id, d]); }
+  for (const g of L.segs) { if (!g.tap) continue; const d = distPointSeg(p, g.a, g.b); if (d <= r) c.push([g.id, d]); }
   for (const a of L.angles) {
     const dv = dist(p, a.v);
     if (dv > WEDGE + r / 2) continue;

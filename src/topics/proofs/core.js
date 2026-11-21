@@ -56,7 +56,7 @@ export function measure(fig, part) {
   if (kindOf(part) === 'ang') return angle(P[part.r[0]], P[part.v], P[part.r[1]]);
   throw new Error('proofs core: a triangle has no single measure');
 }
-const near = (a, b, tol) => Math.abs(a - b) <= tol * Math.max(1, Math.abs(a), Math.abs(b));
+const near = (a, b, tol) => Math.abs(a - b) <= tol * Math.max(Math.abs(a), Math.abs(b)) + 1e-12;   // relative
 /** True in the coordinates (relative tolerance). A right-angle statement also needs 90°. */
 export function holds(fig, st, tol = 1e-6) {
   if (st.kind === 'seg' || st.kind === 'ang') {
