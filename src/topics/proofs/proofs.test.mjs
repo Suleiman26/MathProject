@@ -34,7 +34,7 @@ test('type 3 has the 14 templates of §6.4', () => {
 });
 for (const type of TYPES) for (const level of [1, 2, 3]) for (const variant of ['A', 'B']) {
   test(`${type.id} L${level}-${variant}: ${RUNS} problems`, () => {
-    const R = makeR(seeded(12345)); const seen = {}; let avoid = { recent: [], last: null };
+    const R = makeR(seeded(12345)); const seen = {}, drawn = {}; let avoid = { recent: [], last: null };
     for (let i = 0; i < RUNS; i++) {
       const p = type.make(R, level, variant, avoid, { counted: i % 4, words: ['midpoint', 'bisector', 'median', 'altitude'] });
       assert.deepEqual(lies(p), [], p.id);                                             // §6.6 tests 1–5
@@ -51,10 +51,12 @@ for (const type of TYPES) for (const level of [1, 2, 3]) for (const variant of [
       if (variant === 'B' && type.n >= 3) assert.notEqual(p.family, '2');             // family 2 is for entry proofs only
       if (variant === 'A') assert.ok(p.givenText.every((g) => g.form === 'eq') || type.n === 1);
       assert.ok(!(avoid.last && avoid.last.family === p.family && avoid.last.theorem === p.theorem && p.theorem), 'same family + theorem twice in a row');
+      drawn[p.template] = (drawn[p.template] || 0) + 1;
       (seen[p.template] ||= new Set()).add(JSON.stringify([Object.keys(p.figure.points), Object.values(p.figure.points).map((q) => q.map(Math.round))]));
       avoid = { recent: [p.template, ...avoid.recent].slice(0, 6), last: { family: p.family, theorem: p.theorem } };
     }
-    for (const [tpl, set] of Object.entries(seen)) assert.ok(set.size >= 12, `${tpl}: only ${set.size} different instances`);   // 7
+    // 7: a full run keeps the strict 12; a quick pass (RUNS < 3000) draws some templates fewer than 12 times, so the bar follows the draws
+    for (const [tpl, set] of Object.entries(seen)) { const need = RUNS >= 3000 ? 12 : Math.min(12, Math.max(1, Math.floor(drawn[tpl] * 0.6))); assert.ok(set.size >= need, `${tpl}: only ${set.size} different instances in ${drawn[tpl]} draws (need ${need})`); }
   });
 }
 test('variety: in 200 draws of type 3 no family maps to a single theorem', () => {
