@@ -19,7 +19,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-m{display:inline-block;direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-weight:600;font-variant-numeric:tabular-nums}
 #root .prf-sign{display:inline-block;width:1.03em;height:.72em;vertical-align:baseline;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;margin-inline:.02em .07em}
 #root .prf-sign-cong,#root .prf-sign-match{margin-inline:.3em}
-/* (the profile page's CSS, loaded site-wide, has its own .prf-ic / .prf-go / .prf-chip / .prf-x: what it sets is reset here) */
+/* the icon slot: a plain inline glyph (no box, no fill), whatever the button around it sets */
 #root .prf .prf-ic{display:block;width:1em;height:1em;flex:none;border-radius:0;background:none}
 #root .prf :where(.prf-ic){color:inherit}
 #root .prf-gl{display:block;width:20px;height:14px;flex:none}
@@ -193,6 +193,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-tap{display:flex;flex-direction:column;gap:8px;margin-top:4px}
 #root .prf-tap-q{font-size:.95rem;font-weight:500;color:var(--ink)}
 #root .prf-prev{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 8px 6px 12px;border-radius:14px;background:var(--a-50);box-shadow:inset 0 0 0 1.5px var(--a-300);animation:prf-row .2s var(--ease-out) backwards}
+/* the preview + "להוסיף שורה" stay pinned at the top of the tray while the parts list scrolls under it (review M8) */
+#root .prf-tray .prf-prev{position:sticky;top:0;z-index:2;box-shadow:inset 0 0 0 1.5px var(--a-300),0 8px 14px -12px rgb(28 27 25 / .35)}
 #root .prf-prev-st{flex:1;min-width:0;font-size:1.14rem;color:var(--a-900);text-align:left}
 #root .prf-prev-eq{margin-inline:.25em;color:var(--a-700)}
 #root .prf-slot{display:inline-block;width:1.15em;height:1.3em;margin-inline:1px;vertical-align:-.28em;border-radius:6px;border:1.5px dashed var(--a-300);background:var(--surface);font-style:normal;text-align:center;line-height:1.25em}

@@ -1,6 +1,6 @@
 /* Type 1 "קוראים את הנתון" (spec §6.5, §7.3): a figure + two sentences → two rows, each the equality
-   the sentence gives, with its reason. No row needs another. 10 templates:
-     1-a/b/c/d/i/j a triangle with two lines from two of its vertices (families/cevian.js, clearly
+   the sentence gives, with its reason. No row needs another. 9 templates:
+     1-a/b/c/d/j a triangle with two lines from two of its vertices (families/cevian.js, clearly
      not isosceles) · 1-e/f family X (midpoints) · 1-g family K (two bisectors along the diagonal) ·
      1-h a "bent" kite: one bisector + one plain equality (accepts נתון only).
    A sentence in words accepts its definition and נתון (role given-words); a plain equality accepts
@@ -15,6 +15,8 @@
      CB = CD (side-side-angle: no congruence), so the kite is truly not symmetric and AB = AD is a
      visibly false "bisector → equal segments" tile.
    - 1-d "D אמצע הצלע BC": the point is named, no line AD is drawn.
+   - 1-i (median + altitude, E on AB) is dropped (review M4): the vertices are random, so it made the very
+     problems of 1-c (median + altitude, E on AC) and drew that pair twice as often. Ids are kept (1-j stays 1-j).
    make(R, level, variant, avoid, ctx) → problem (§10.1); ctx.only pins a template. Pure. */
 import { seeded, makeR } from '../../new/core.js';
 import { T } from '../texts.js';
@@ -28,7 +30,7 @@ const C = (lines) => ({ family: 'cevian', lines });
 const TPL = {
   '1-a': C(['bisector', 'median']), '1-b': C(['altitude', 'bisector']), '1-c': C(['median', 'altitude']),
   '1-d': C(['midpoint', 'bisector']), '1-e': { family: 'X' }, '1-f': { family: 'X' }, '1-g': { family: 'K' },
-  '1-h': { family: 'K' }, '1-i': C(['median', 'altitude']), '1-j': C(['altitude', 'altitude']),
+  '1-h': { family: 'K' }, '1-j': C(['altitude', 'altitude']),
 };
 const TEMPLATES = Object.entries(TPL).map(([id, t]) => ({ id, family: t.family, variant: id, theorem: null }));
 // what a wrong reading of a word gives for the same line (§6.5): median → the angle equality, bisector and altitude → the segment equality
@@ -129,7 +131,7 @@ function assembleProblem(t, seed, level, variant, base, r) {
     family: t.family, theorem: null, figure: base.figure, facts, just, roles, cue,
     given: [], target, canon: [...target], text: [base.text], givenText, meta: null,
   };
-  // wrong tiles: the wrong reading of each word first (1-i: "a median is not a bisector"), then letter-swaps to four
+  // wrong tiles: the wrong reading of each word first (1-c: "a median is not a bisector"), then letter-swaps to four
   const wrong = [], traps = {}, used = new Set(Object.values(facts).map((f) => norm(p.figure, f)));
   for (const s of sentences) for (const w of s.wrong || []) {
     const key = norm(p.figure, w.st);

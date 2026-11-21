@@ -247,8 +247,8 @@ test('type 2: remake rebuilds the same problem', () => {
 });
 
 /* ── Task 18: type 1 ── */
-test('type 1: 10 templates; the word is true, the other words are false with the right message', () => {
-  const t = typeById('read-given'); assert.equal(t.templates.length, 10); assert.equal(t.button, '1. קוראים את הנתון'); assert.deepEqual(t.warm, ['W1', 'W7']);
+test('type 1: 9 templates (1-i was a copy of 1-c, review M4); the word is true, the other words are false with the right message', () => {
+  const t = typeById('read-given'); assert.equal(t.templates.length, 9); assert.ok(!t.templates.some((x) => x.id === '1-i')); assert.equal(t.button, '1. קוראים את הנתון'); assert.deepEqual(t.warm, ['W1', 'W7']);
   const R = makeR(seeded(21));
   for (const tpl of t.templates) for (let i = 0; i < 300; i++) {
     const p = t.make(R, 2, 'B', { recent: [], last: null }, { only: tpl.id });
@@ -268,7 +268,7 @@ test('type 1: accepted reasons follow the form of the sentence', () => {
   assert.equal(checkReason(h, [], eq, 'given').ok, true); assert.equal(checkReason(h, [], eq, 'bisector').ok, false); assert.equal(h.just[eq][0].reasons.length, 1);
   const b = mk('1-b'), alt = b.target.find((f) => b.facts[f].right); assert.equal(checkReason(b, [], alt, 'altitude').ok, true); assert.match(show(b.facts[alt]), / = 90°$/);
   const d = mk('1-d'); assert.ok(d.target.some((f) => d.just[f][0].reasons.includes('midpoint')));
-  const i9 = mk('1-i'); assert.ok(i9.tiles.wrong.some((w) => w.why === 'word' && w.st.kind === 'ang'));
+  const c3 = mk('1-c'); assert.ok(c3.tiles.wrong.some((w) => w.why === 'word' && w.st.kind === 'ang'));        // a median is not a bisector
 });
 test('type 1: the sentences say exactly what the statements say (spec §6.5 wording)', () => {
   const t = typeById('read-given'), R = makeR(seeded(23));
@@ -313,7 +313,7 @@ test('type 1: remake rebuilds the same problem', () => {
   const t = typeById('read-given'), R = makeR(seeded(27));
   for (let i = 0; i < 30; i++) { const p = t.make(R, 2, 'B', { recent: [], last: null }, {}), q = t.remake(p); assert.equal(q.id, p.id); assert.deepEqual(q.facts, p.facts); assert.deepEqual(q.tiles, p.tiles); assert.deepEqual(q.figure, p.figure); assert.deepEqual(q.givenText, p.givenText); }
 });
-test('all four types are present, in order', () => { assert.deepEqual(TYPES.map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה']); assert.equal(TYPES.reduce((n, t) => n + t.templates.length, 0), 63); });
+test('all four types are present, in order', () => { assert.deepEqual(TYPES.map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה']); assert.equal(TYPES.reduce((n, t) => n + t.templates.length, 0), 62); });
 
 /* ── wiring (plan Task 20) ── */
 test('wiring: registered, coral, hidden from the home lists', async () => {
