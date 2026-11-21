@@ -22,7 +22,7 @@ export const CATEGORIES = [
 ];
 
 export const TOPICS = [
-  { cat: "alg", slug: "equation-solver", name: "משוואות", grades: "כיתה ז׳–ח׳", g: ["7", "8"], icon: "equation", color: "teal" },
+  { cat: "alg", slug: "equation-solver", name: "משוואות ליניאריות", grades: "כיתה ז׳–ח׳", g: ["7", "8"], icon: "equation", color: "teal" },
   { cat: "alg", slug: "equations-advanced", name: "משוואות מתקדמות", grades: "כיתה ח׳–ט׳", g: ["8", "9"], icon: "fraction", color: "indigo" },
   { cat: "alg", slug: "inequalities", name: "אי־שוויונות", grades: "כיתה ח׳–ט׳", g: ["8", "9"], icon: "inequality", color: "pink" },
   { cat: "alg", slug: "quadratic-solver", name: "משוואות ריבועיות", grades: "כיתה ט׳", g: ["9"], icon: "square", color: "blue" },

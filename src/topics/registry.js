@@ -4,7 +4,7 @@ export const TOPICS = {
   "angles-parallel": {"title": "זוויות וישרים מקבילים", "topic": "teal", "file": "angles-parallel.html"},
   "circle": {"title": "מעגל — כיתה ח׳", "topic": "sky", "file": "circle.html"},
   "directed-numbers": {"title": "מספרים מכוונים — כיתה ז׳", "topic": "teal", "file": "directed-numbers.html"},
-  "equation-solver": {"title": "פתרון משוואות", "topic": "teal", "file": "equation-solver.html"},
+  "equation-solver": {"title": "משוואות ליניאריות", "topic": "teal", "file": "equation-solver.html"},
   "equations-advanced": {"title": "משוואות מתקדמות — כיתות ח׳-ט׳", "topic": "indigo", "file": "equations-advanced.html"},
   "inequalities": {"title": "תרגול אי-שוויונות", "topic": "pink", "file": "inequalities.html"},
   "intersection": {"title": "חיתוך בין פונקציות — כיתה ט׳", "topic": "blue", "file": "intersection.html"},

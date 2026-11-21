@@ -266,7 +266,7 @@ function App(){
   return(
     <div>
       <div className="hdr">
-        <h1>פתרון משוואות בנעלם אחד</h1>
+        <h1>משוואות ליניאריות</h1>
         <span className="hdr-sub">כיתה ז׳</span>
         <div className="ch-nav">
           <button className={`ch-btn ${ch===1?'active':''}`} onClick={()=>setCh(1)}>1. ביטוי אלגברי</button>

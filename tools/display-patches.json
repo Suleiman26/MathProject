@@ -199,6 +199,12 @@
       "old": "      </div>\n    </div>\n",
       "new": "      </div>}\n    </div>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board item #91: topic renamed to משוואות ליניאריות",
+      "old": "        <h1>פתרון משוואות בנעלם אחד</h1>\n",
+      "new": "        <h1>משוואות ליניאריות</h1>\n",
+      "count": 1
     }
   ],
   "triangles": [
