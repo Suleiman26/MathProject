@@ -48,9 +48,9 @@ const CASES = [
       const i = all(".card input")[0]; if (i) { await type(i, 3); await check(); }` },
   { name: "fractions-pie", slug: "directed-numbers", ch: "7. שברים", act: `
       const i = all(".card .frac input"); await type(i[0], 5); await type(i[1], 6); await check();` },
-  { name: "equations-denominator", slug: "equations-advanced", ch: "1 — לינארית עם מכנה", act: `
+  { name: "equations-denominator", slug: "equations-advanced", ch: "4 — לינארית עם מכנה", act: `
       await type(all(".eq-card input")[0], 3); await check();` },
-  { name: "equation-solver-practice", slug: "equation-solver", ch: "2. פתרון משוואות", act: `
+  { name: "equation-solver-practice", slug: "equation-solver", ch: "4. פתרון משוואות", act: `
       const i = all("input")[0]; if (i) { await type(i, 4); await check(); }` },
   { name: "triangles-drawing-choice", slug: "triangles", ch: "3. משולשים מיוחדים", act: `
       // a WRONG pick on purpose (so the fixture shows the picked choice): the hypotenuse is the longest side

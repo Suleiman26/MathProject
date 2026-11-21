@@ -1,6 +1,7 @@
 'use client';
 /* One chapter of the "חדש" module (board #84): explanation + practice, drawn from the
-   chapter's data (./core.js describes the shapes). All chapters share this screen. */
+   chapter's data (./core.js describes the shapes). All chapters share this screen: in the
+   module pages (./Module.jsx) and inside other topics (./Mount.jsx). */
 import React, { useRef, useState } from 'react';
 import { boxesOf, emptyValue, isEmpty, checkAll, deck } from './core';
 import { M, Rich } from './rich';
@@ -193,7 +194,9 @@ function Practice({ ch }) {
   );
 }
 
-export default function Chapter({ ch }) {
+/* staff: the "חדש" module shows the team where the chapter is recommended to live; a chapter
+   that already lives in its topic (board #84, 2026-11-21) does not */
+export default function Chapter({ ch, staff = false }) {
   const seenKey = `mp-new-seen-${ch.id}`;
   const [tab, setTab] = useState(() => { try { return localStorage.getItem(seenKey) ? 'practice' : 'learn'; } catch (e) { return 'learn'; } });
   function go(t) {
@@ -203,10 +206,12 @@ export default function Chapter({ ch }) {
   }
   return (
     <div className="content nw">
-      <div className="nw-place">
-        <span className="nw-place-t">הערה לצוות · כיתה {ch.grade}</span>
-        <span className="nw-place-b"><b>המלצה למיקום:</b> {ch.place}</span>
-      </div>
+      {staff && (
+        <div className="nw-place">
+          <span className="nw-place-t">הערה לצוות · כיתה {ch.grade}</span>
+          <span className="nw-place-b"><b>המלצה למיקום:</b> {ch.place}</span>
+        </div>
+      )}
       <div className="sub-tabs">
         <button className={`sub-tab ${tab === 'learn' ? 'active' : ''}`} onClick={() => go('learn')}>הסבר ודוגמאות</button>
         <button className={`sub-tab ${tab === 'practice' ? 'active' : ''}`} onClick={() => go('practice')}>תרגול</button>

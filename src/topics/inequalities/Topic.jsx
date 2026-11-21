@@ -5,6 +5,9 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// Chapter 4 (fixes board #84, Sulaiman 2026-11-21) comes from the "חדש" module: src/topics/new/ (Mount.jsx, chapters/).
+import NewChapter from '../new/Mount';
+import quadInequality from '../new/chapters/equations/quad-inequality.js';
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useEffect,useRef} = React;
@@ -873,11 +876,13 @@ function App(){
         <button className={`ch-btn ${chapter===1?'active':''}`} onClick={()=>setChapter(1)}>1. אי-שוויון פשוט</button>
         <button className={`ch-btn ${chapter===2?'active':''}`} onClick={()=>setChapter(2)}>2. ציר מספרים</button>
         <button className={`ch-btn ${chapter===3?'active':''}`} onClick={()=>setChapter(3)}>3. מערכת אי-שוויונות</button>
+        <button className={`ch-btn ${chapter===4?'active':''}`} onClick={()=>setChapter(4)}>4. אי-שוויון ריבועי</button>
       </div>
     </div>
     {chapter===1 && <Ch1/>}
     {chapter===2 && <Ch2/>}
     {chapter===3 && <Ch3/>}
+    {chapter===4 && <NewChapter ch={quadInequality}/>}
   </div>;
 }
 

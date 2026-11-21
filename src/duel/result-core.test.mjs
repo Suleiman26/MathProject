@@ -115,7 +115,7 @@ test("reviewItems: wrong ones first, then unreached; choice indexes become the c
   assert.equal(r.items[1].right, "−8"); assert.equal(r.items[1].given, "8");
   assert.equal(r.items[2].given, null); assert.equal(r.items[2].wrong, false);
   assert.equal(r.items[2].href, "/topics/equation-solver");
-  assert.equal(r.items[2].label, "משוואות");                           // no chapter → the topic's name
+  assert.equal(r.items[2].label, "משוואות ליניאריות");                 // no chapter → the topic's name (renamed 2026-11-21, board #91)
   assert.equal(r.items[0].label, "כפל וחילוק");
   assert.equal(reviewItems(st({ result: { review } }), 1).items.length, 1);
   assert.deepEqual(reviewItems(st({ result: { review: null } })).items, []);

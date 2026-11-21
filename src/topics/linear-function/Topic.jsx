@@ -5,6 +5,9 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// Chapter 3 (fixes board #84, Sulaiman 2026-11-21) comes from the "חדש" module: src/topics/new/ (Mount.jsx, chapters/).
+import NewChapter from '../new/Mount';
+import functionsIntro from '../new/chapters/data/functions-intro.js';
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useRef,useCallback,useEffect,useMemo}=React;
@@ -618,7 +621,7 @@ function Chapter3(){
 
   return(
     <div className="card">
-      <div className="task-title">שלב 4 — חישוב שיפוע משתי נקודות</div>
+      <div className="task-title">שלב 5 — חישוב שיפוע משתי נקודות</div>
       <div className="task-desc">
         בגרף מוצגות שתי נקודות. לחצו על אחת הנקודות (או ברשימה למטה) כדי לסמן אותה כנקודה 1,
         ולאחר מכן על השנייה כדי לסמנה כנקודה 2. אז חשבו את השיפוע.
@@ -932,7 +935,7 @@ function ChapterIdEq(){
   function next(){setQ(genQ());setVals({m:'',b:''});setFeedback(null);}
   return(
     <div className="card">
-      <div className="task-title">שלב 6 — זיהוי שיפוע וחיתוך ממשוואה</div>
+      <div className="task-title">שלב 7 — זיהוי שיפוע וחיתוך ממשוואה</div>
       <div className="task-desc">נתונה משוואת ישר. זהו את השיפוע m ואת נקודת החיתוך עם ציר ה-y.</div>
       <div className="formula-box" style={{direction:'ltr',justifyContent:'center',fontSize:'1.3rem',fontWeight:700}}>
         {eqStr(q.m,q.b)}
@@ -1026,7 +1029,7 @@ function ChapterRearrangeIdEq(){
 
   return(
     <div className="card">
-      <div className="task-title">שלב 7 — סידור משוואה וזיהוי שיפוע וחיתוך</div>
+      <div className="task-title">שלב 8 — סידור משוואה וזיהוי שיפוע וחיתוך</div>
       <div className="task-desc">
         המשוואה הבאה אינה בצורה y = mx + b. בצעו את אותה פעולה על שני האגפים (בדיוק כמו בפתרון
         משוואות) עד שתגיעו לצורה הזו, ואז זהו את השיפוע m ואת נקודת החיתוך עם ציר ה-y.
@@ -1131,7 +1134,7 @@ function Chapter5(){
 
   return(
     <div className="card">
-      <div className="task-title">שלב 8 — משוואת ישר לפי שיפוע ונקודה</div>
+      <div className="task-title">שלב 9 — משוואת ישר לפי שיפוע ונקודה</div>
       {step===1&&<>
         <div className="task-desc">
           שיפוע: <strong>m = {q.m_n}</strong> &nbsp;|&nbsp; עובר דרך: <strong dir="ltr">({q.px}, {q.py})</strong><br/>
@@ -1195,7 +1198,7 @@ function Chapter6(){
 
   return(
     <div className="card">
-      <div className="task-title">שלב 9 — משוואת ישר דרך שתי נקודות</div>
+      <div className="task-title">שלב 10 — משוואת ישר דרך שתי נקודות</div>
       <div className="task-desc">נתונות: <strong dir="ltr">A({q.x1},{q.y1})</strong> ו-<strong dir="ltr">B({q.x2},{q.y2})</strong></div>
       <div className="svg-wrap">
         <Grid>
@@ -1255,13 +1258,14 @@ const CHAPTERS=[
   {label:'0. מערכת הצירים',comp:Chapter0},
   {label:'1. קריאת נקודות',comp:Chapter1},
   {label:'2. סימון נקודות',comp:Chapter2},
-  {label:'3. קו ישר ושיפוע',comp:ChapterSlopeIntro},
-  {label:'4. חישוב שיפוע',comp:Chapter3},
-  {label:'5. משוואת y=mx+b',comp:ChapterLineEqIntro},
-  {label:'6. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},
-  {label:'7. סידור וזיהוי',comp:ChapterRearrangeIdEq},
-  {label:'8. ישר מ-m ונקודה',comp:Chapter5},
-  {label:'9. ישר מ-2 נקודות',comp:Chapter6},
+  {label:'3. מבוא לפונקציות',comp:()=><NewChapter ch={functionsIntro}/>},
+  {label:'4. קו ישר ושיפוע',comp:ChapterSlopeIntro},
+  {label:'5. חישוב שיפוע',comp:Chapter3},
+  {label:'6. משוואת y=mx+b',comp:ChapterLineEqIntro},
+  {label:'7. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},
+  {label:'8. סידור וזיהוי',comp:ChapterRearrangeIdEq},
+  {label:'9. ישר מ-m ונקודה',comp:Chapter5},
+  {label:'10. ישר מ-2 נקודות',comp:Chapter6},
 ];
 
 function App(){

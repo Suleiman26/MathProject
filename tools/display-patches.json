@@ -17,6 +17,42 @@
       "old": "  function applySide(terms){\n    if(opType==='+')return[...terms,rqMkTerm(addType,k)];\n    if(opType==='−')return[...terms,rqMkTerm(addType,-k)];\n",
       "new": "  /* Fixes board #75: the inverse operation cancels its term right away on the side where it\n     meets its opposite (y − 2x + 2x → y); only the other side is left for the student to simplify. */\n  function addTerm(terms,num){\n    const i=terms.findIndex(t=>t.type===addType&&t.den===1&&t.num===-num);\n    if(i<0)return[...terms,rqMkTerm(addType,num)];\n    const rest=terms.filter((_,j)=>j!==i);\n    return rest.length?rest:[rqMkTerm('const',0)];\n  }\n  function applySide(terms){\n    if(opType==='+')return addTerm(terms,k);\n    if(opType==='−')return addTerm(terms,-k);\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board #84: intro to functions moved from חדש",
+      "old": "  {label:'3. קו ישר ושיפוע',comp:ChapterSlopeIntro},\n  {label:'4. חישוב שיפוע',comp:Chapter3},\n  {label:'5. משוואת y=mx+b',comp:ChapterLineEqIntro},\n  {label:'6. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},\n  {label:'7. סידור וזיהוי',comp:ChapterRearrangeIdEq},\n  {label:'8. ישר מ-m ונקודה',comp:Chapter5},\n  {label:'9. ישר מ-2 נקודות',comp:Chapter6},\n",
+      "new": "  {label:'3. מבוא לפונקציות',comp:()=><NewChapter ch={functionsIntro}/>},\n  {label:'4. קו ישר ושיפוע',comp:ChapterSlopeIntro},\n  {label:'5. חישוב שיפוע',comp:Chapter3},\n  {label:'6. משוואת y=mx+b',comp:ChapterLineEqIntro},\n  {label:'7. זיהוי שיפוע וחיתוך',comp:ChapterIdEq},\n  {label:'8. סידור וזיהוי',comp:ChapterRearrangeIdEq},\n  {label:'9. ישר מ-m ונקודה',comp:Chapter5},\n  {label:'10. ישר מ-2 נקודות',comp:Chapter6},\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 4 — חישוב שיפוע משתי נקודות</div>\n",
+      "new": "      <div className=\"task-title\">שלב 5 — חישוב שיפוע משתי נקודות</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 6 — זיהוי שיפוע וחיתוך ממשוואה</div>\n",
+      "new": "      <div className=\"task-title\">שלב 7 — זיהוי שיפוע וחיתוך ממשוואה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 7 — סידור משוואה וזיהוי שיפוע וחיתוך</div>\n",
+      "new": "      <div className=\"task-title\">שלב 8 — סידור משוואה וזיהוי שיפוע וחיתוך</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 8 — משוואת ישר לפי שיפוע ונקודה</div>\n",
+      "new": "      <div className=\"task-title\">שלב 9 — משוואת ישר לפי שיפוע ונקודה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: step numbers follow the inserted chapter",
+      "old": "      <div className=\"task-title\">שלב 9 — משוואת ישר דרך שתי נקודות</div>\n",
+      "new": "      <div className=\"task-title\">שלב 10 — משוואת ישר דרך שתי נקודות</div>\n",
+      "count": 1
     }
   ],
   "equation-solver": [
@@ -228,6 +264,24 @@
       "why": "Fixes board item #90: chapter 2 opens with an explanation of equations and a worked example",
       "old": "      </div>}\n",
       "new": "        </>}\n      </div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: like terms, distributive law and word problems moved from חדש",
+      "old": "function loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c===1||c===2)return c}catch(e){}return done>0?2:1}\n",
+      "new": "function loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c>=1&&c<=5)return c}catch(e){}return done>0?2:1}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: like terms, distributive law and word problems moved from חדש",
+      "old": "          <button className={`ch-btn ${ch===2?'active':''}`} onClick={()=>setCh(2)}>2. פתרון משוואות</button>\n",
+      "new": "          <button className={`ch-btn ${ch===3?'active':''}`} onClick={()=>setCh(3)}>2. כינוס איברים דומים</button>\n          <button className={`ch-btn ${ch===4?'active':''}`} onClick={()=>setCh(4)}>3. חוק הפילוג</button>\n          <button className={`ch-btn ${ch===2?'active':''}`} onClick={()=>setCh(2)}>4. פתרון משוואות</button>\n          <button className={`ch-btn ${ch===5?'active':''}`} onClick={()=>setCh(5)}>5. שאלות מילוליות</button>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: like terms, distributive law and word problems moved from חדש",
+      "old": "      {ch===2&&<div className=\"content wx\">\n",
+      "new": "      {ch===3&&<NewChapter ch={likeTerms}/>}\n      {ch===4&&<NewChapter ch={distributive}/>}\n      {ch===5&&<NewChapter ch={wordsLinear}/>}\n      {ch===2&&<div className=\"content wx\">\n",
       "count": 1
     }
   ],
@@ -1081,6 +1135,42 @@
       "old": "      {showLevels&&(\n",
       "new": "      {(sub==='alef'||sub==='bet')&&<SMExamples kind={sub}/>}\n      {showLevels&&(\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board #84: short multiplication, factoring and algebraic fractions moved from חדש",
+      "old": "  const [tab, setTab] = useState(1);\n  const tabs = [\n    { k:1, label:'1 — לינארית עם מכנה' },\n    { k:2, label:'2 — ריבועית עם מכנה' },\n    { k:3, label:'3 — כפל מקוצר' },\n    { k:5, label:'4 — הכל יחד' },   // 'common factor' moved to the quadratic equations topic (c = 0)\n",
+      "new": "  const [tab, setTab] = useState(6);\n  const tabs = [\n    { k:6, label:'1 — חוק הפילוג המורחב וכפל מקוצר' },   // 6–8: from the \"חדש\" module (board #84)\n    { k:7, label:'2 — פירוק לגורמים' },\n    { k:8, label:'3 — שברים אלגבריים' },\n    { k:1, label:'4 — לינארית עם מכנה' },\n    { k:2, label:'5 — ריבועית עם מכנה' },\n    { k:3, label:'6 — כפל מקוצר' },\n    { k:5, label:'7 — הכל יחד' },   // 'common factor' moved to the quadratic equations topic (c = 0)\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: short multiplication, factoring and algebraic fractions moved from חדש",
+      "old": "    </div>);\n}\n\n\n",
+      "new": "      {tab===6&&<NewChapter ch={shortMult}/>}\n      {tab===7&&<NewChapter ch={factoring}/>}\n      {tab===8&&<NewChapter ch={algFractions}/>}\n    </div>);\n}\n\n\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: sub-chapter numbers follow the inserted chapters",
+      "old": "      <div className=\"section-title\">תת-פרק 1 — משוואה לינארית עם נעלם במכנה</div>\n",
+      "new": "      <div className=\"section-title\">תת-פרק 4 — משוואה לינארית עם נעלם במכנה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: sub-chapter numbers follow the inserted chapters",
+      "old": "      <div className=\"section-title\">תת-פרק 2 — משוואה ריבועית עם נעלם במכנה</div>\n",
+      "new": "      <div className=\"section-title\">תת-פרק 5 — משוואה ריבועית עם נעלם במכנה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: sub-chapter numbers follow the inserted chapters",
+      "old": "      <div className=\"section-title\">תת-פרק 3 — נוסחאות כפל מקוצר</div>\n",
+      "new": "      <div className=\"section-title\">תת-פרק 6 — נוסחאות כפל מקוצר</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: sub-chapter numbers follow the inserted chapters",
+      "old": "      <div className=\"section-title\">תת-פרק 5 — הכל יחד</div>\n",
+      "new": "      <div className=\"section-title\">תת-פרק 7 — הכל יחד</div>\n",
+      "count": 1
     }
   ],
   "quadratic-solver": [
@@ -1280,6 +1370,30 @@
       "why": "Fixes board item #65: the root sign covers everything under it (shared Root component)",
       "old": "function Root({children}){return <span className=\"qs-rad\"><svg className=\"qs-rad-s\" viewBox=\"0 0 14 30\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M1 17 L3.5 16 L7 27 L13 1\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinejoin=\"round\" strokeLinecap=\"round\" vectorEffect=\"non-scaling-stroke\"/></svg><span className=\"qs-rad-b\">{children}</span></span>}\n",
       "new": "function Root({children}){return <MpRoot row>{children}</MpRoot>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: quadratic word problems moved from חדש",
+      "old": "const QS_CH=['1. משוואה פשוטה','2. גורם משותף','3. בידוד x²','4. נוסחת השורשים','5. סיכום ותרגול'];\n",
+      "new": "const QS_CH=['1. משוואה פשוטה','2. גורם משותף','3. בידוד x²','4. נוסחת השורשים','5. סיכום ותרגול','6. שאלות מילוליות'];\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: quadratic word problems moved from חדש",
+      "old": "  const{t,B}=QS_LESSON[ch];\n  return(\n    <div className=\"app\">\n",
+      "new": "  const{t,B}=QS_LESSON[ch]||{};\n  return(\n    <div className=\"app\">\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: quadratic word problems moved from חדש",
+      "old": "      {ch>1&&<div className=\"sub-tabs\">\n",
+      "new": "      {ch===6&&<NewChapter ch={wordsQuadratic}/>}\n      {ch>1&&ch<6&&<div className=\"sub-tabs\">\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: quadratic word problems moved from חדש",
+      "old": "      {ch>1&&!learned[ch]&&<div className=\"qs-lock\">התרגול נפתח אחרי שקוראים את ההסבר ולוחצים ״הבנתי״.</div>}\n      {(ch===1||tab==='learn')&&<Lesson ch={ch} learned={!!learned[ch]} onOk={()=>ok(ch)} onGo={go}/>}\n      {ch>1&&tab==='practice'&&learned[ch]&&<>\n",
+      "new": "      {ch>1&&ch<6&&!learned[ch]&&<div className=\"qs-lock\">התרגול נפתח אחרי שקוראים את ההסבר ולוחצים ״הבנתי״.</div>}\n      {ch<6&&(ch===1||tab==='learn')&&<Lesson ch={ch} learned={!!learned[ch]} onOk={()=>ok(ch)} onGo={go}/>}\n      {ch>1&&ch<6&&tab==='practice'&&learned[ch]&&<>\n",
       "count": 1
     }
   ],
@@ -1564,6 +1678,18 @@
       "why": "Fixes board item #75: inverse operation auto-simplifies the side where it cancels a number",
       "old": "    {!solvedInfo && <div className=\"hint\">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), והיא נכתבת על שני האגפים. אחר כך לוחצים על איברים מאותה משפחה (מספרים עם מספרים, x עם x) באותו צד, ורק אז מופיע ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}\n",
       "new": "    {!solvedInfo && <div className=\"hint\">כמו במשוואה: בוחרים פעולה (למשל − 4 או ÷ 3), והיא נכתבת על שני האגפים. בצד שבו הפעולה מבטלת מספר, המחשב מפשט לבד. בצד השני לוחצים על איברים מאותה משפחה (מספרים עם מספרים, x עם x), ורק אז מופיע ״פשט״. כפל או חילוק במספר שלילי הופכים את הסימן.</div>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: quadratic inequality moved from חדש",
+      "old": "      </div>\n    </div>\n    {chapter===1 && <Ch1/>}\n",
+      "new": "        <button className={`ch-btn ${chapter===4?'active':''}`} onClick={()=>setChapter(4)}>4. אי-שוויון ריבועי</button>\n      </div>\n    </div>\n    {chapter===1 && <Ch1/>}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: quadratic inequality moved from חדש",
+      "old": "  </div>;\n}\n\n\n",
+      "new": "    {chapter===4 && <NewChapter ch={quadInequality}/>}\n  </div>;\n}\n\n\n",
       "count": 1
     }
   ],
@@ -1909,6 +2035,66 @@
       "old": "          <bdi dir=\"ltr\">x = <Fr n=\"−b ± √(b²−4ac)\" d=\"2a\" /></bdi>\n",
       "new": "          <bdi dir=\"ltr\">x = <Fr n={<>−b ± <Root>b²−4ac</Root></>} d=\"2a\" /></bdi>\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board #84: parabola shifts moved from חדש",
+      "old": "const SECTIONS = [Section1, Section2, Section3, Section4, Section5, Section6, Section7, Section8, Section9, Section10];\nconst SECTION_NAMES = [\n  'השפעת מקדמים', 'ציר סימטריה', 'קודקוד מגרף', 'קודקוד ממשוואה',\n",
+      "new": "const SectionShifts = () => <NewChapter ch={parabolaShifts} />;\nconst SECTIONS = [Section1, SectionShifts, Section2, Section3, Section4, Section5, Section6, Section7, Section8, Section9, Section10];\nconst SECTION_NAMES = [\n  'השפעת מקדמים', 'הזזות של פרבולה', 'ציר סימטריה', 'קודקוד מגרף', 'קודקוד ממשוואה',\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">2 — ציר הסימטריה</div>\n",
+      "new": "        <div className=\"section-title\">3 — ציר הסימטריה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">3 — מציאת הקודקוד מגרף</div>\n",
+      "new": "        <div className=\"section-title\">4 — מציאת הקודקוד מגרף</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">4 — מציאת הקודקוד מהמשוואה</div>\n",
+      "new": "        <div className=\"section-title\">5 — מציאת הקודקוד מהמשוואה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">5 — שרטוט פרבולה דרך קודקוד ונקודה נוספת</div>\n",
+      "new": "        <div className=\"section-title\">6 — שרטוט פרבולה דרך קודקוד ונקודה נוספת</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">6 — חיתוך עם ציר y ושרטוט</div>\n",
+      "new": "        <div className=\"section-title\">7 — חיתוך עם ציר y ושרטוט</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">7 — חיתוך עם ציר x (שורשים)</div>\n",
+      "new": "        <div className=\"section-title\">8 — חיתוך עם ציר x (שורשים)</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">8 — תחומי עלייה וירידה</div>\n",
+      "new": "        <div className=\"section-title\">9 — תחומי עלייה וירידה</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">9 — תחומי חיוביות ושליליות</div>\n",
+      "new": "        <div className=\"section-title\">10 — תחומי חיוביות ושליליות</div>\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: section numbers follow the inserted chapter",
+      "old": "        <div className=\"section-title\">10 — חקירה מלאה</div>\n",
+      "new": "        <div className=\"section-title\">11 — חקירה מלאה</div>\n",
+      "count": 1
     }
   ],
   "intersection": [
@@ -1994,6 +2180,18 @@
       "why": "Fixes board item #57: like terms are combined only after the student selects terms of the same family on the same side (tap terms, then 'פשט'), like in quadratic-solver",
       "old": "        onClick={()=>toggleSel(t.id)}\n",
       "new": "        onClick={()=>showSimplify&&toggleSel(t.id)}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: two parabolas moved from חדש",
+      "old": "  const labels=['ישר–ישר','ישר–פרבולה'];\n",
+      "new": "  const labels=['ישר–ישר','ישר–פרבולה','פרבולה–פרבולה'];\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board #84: two parabolas moved from חדש",
+      "old": "    {ch===1?<Ch1 key=\"c1\"/>:<Ch2 key=\"c2\"/>}\n",
+      "new": "    {ch===1?<Ch1 key=\"c1\"/>:ch===2?<Ch2 key=\"c2\"/>:<NewChapter ch={twoParabolas}/>}\n",
       "count": 1
     }
   ],

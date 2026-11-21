@@ -220,7 +220,7 @@ export function validateChapter(ch) {
       else if (!it.fig) errs.push(`${w}: unknown lesson item`);
     });
   });
-  if (!Array.isArray(ch.gens) || ch.gens.length < 2) errs.push('needs at least 2 generators');
+  if (!Array.isArray(ch.gens) || !ch.gens.length) errs.push('needs a generator');   // (a chapter split in two topics may keep one, board #84)
   (ch.gens || []).forEach((g) => { if (!g.id || typeof g.make !== 'function' || typeof g.verify !== 'function') errs.push(`generator ${g.id || '?'}: needs id, make, verify`); });
   return errs;
 }

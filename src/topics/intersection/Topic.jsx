@@ -5,6 +5,9 @@
 // Removed: the old ReactDOM.createRoot(...).render(<App/>) line.
 import React from 'react';
 import ReactDOM from 'react-dom';
+// Chapter 3 (fixes board #84, Sulaiman 2026-11-21) comes from the "חדש" module: src/topics/new/ (Mount.jsx, chapters/).
+import NewChapter from '../new/Mount';
+import twoParabolas from '../new/chapters/equations/two-parabolas.js';
 // ===== BEGIN ORIGINAL =====
 
 const {useState,useRef,useEffect,useCallback}=React;
@@ -916,7 +919,7 @@ function Ch2(){
 /* ═══════ Main App ═══════ */
 function App(){
   const [ch,setCh]=useState(1);
-  const labels=['ישר–ישר','ישר–פרבולה'];
+  const labels=['ישר–ישר','ישר–פרבולה','פרבולה–פרבולה'];
   return <div>
     <div className="hdr">
       <div className="hdr-title">חיתוך בין פונקציות</div>
@@ -924,7 +927,7 @@ function App(){
         {labels.map((l,i)=><button key={i} className={`ch-btn ${ch===i+1?'active':''}`} onClick={()=>setCh(i+1)}>{i+1}. {l}</button>)}
       </div>
     </div>
-    {ch===1?<Ch1 key="c1"/>:<Ch2 key="c2"/>}
+    {ch===1?<Ch1 key="c1"/>:ch===2?<Ch2 key="c2"/>:<NewChapter ch={twoParabolas}/>}
   </div>;
 }
 
