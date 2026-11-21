@@ -23,6 +23,8 @@ export const CATEGORIES = [
 
 export const TOPICS = [
   { cat: "alg", slug: "equation-solver", name: "משוואות ליניאריות", grades: "כיתה ז׳–ח׳", g: ["7", "8"], icon: "equation", color: "teal" },
+  // board #84 (2026-11-21): a topic of its own, after the linear equations (the chapter of the "חדש" module)
+  { cat: "alg", slug: "systems", name: "מערכת משוואות", grades: "כיתה ח׳", g: ["8"], icon: "system", color: "indigo" },
   { cat: "alg", slug: "equations-advanced", name: "משוואות מתקדמות", grades: "כיתה ח׳–ט׳", g: ["8", "9"], icon: "fraction", color: "indigo" },
   { cat: "alg", slug: "inequalities", name: "אי־שוויונות", grades: "כיתה ח׳–ט׳", g: ["8", "9"], icon: "inequality", color: "pink" },
   { cat: "alg", slug: "quadratic-solver", name: "משוואות ריבועיות", grades: "כיתה ט׳", g: ["9"], icon: "square", color: "blue" },
@@ -32,6 +34,8 @@ export const TOPICS = [
   { cat: "num", slug: "directed-numbers", name: "יסודות החשבון", grades: "כיתה ז׳", g: ["7"], icon: "numberline", color: "teal" },
   { cat: "num", slug: "ratio-percent", name: "יחס ואחוזים", grades: "כיתה ז׳", g: ["7"], icon: "percent", color: "teal" },
   { cat: "num", slug: "powers-roots", name: "חזקות ושורשים", grades: "כיתה ח׳–ט׳", g: ["8", "9"], icon: "root", color: "violet" },
+  // board #84 (2026-11-21): new topic from the "חדש" module (suggested in the area of numbers)
+  { cat: "num", slug: "statistics", name: "סטטיסטיקה והסתברות", grades: "כיתה ז׳–ט׳", g: ["7", "8", "9"], icon: "chart", color: "orange" },
   { cat: "geo", slug: "angles-parallel", name: "זוויות ומקבילים", grades: "כיתה ז׳", g: ["7"], icon: "parallel", color: "teal" },
   { cat: "geo", slug: "triangles", name: "משולשים", grades: "כיתה ז׳–ח׳", g: ["7", "8"], icon: "triangle", color: "sky" },
   { cat: "geo", slug: "quadrilaterals", name: "מרובעים", grades: "כיתה ח׳", g: ["8"], icon: "quad", color: "cyan" },
