@@ -7,6 +7,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 // Chapter 1, "from words to an algebraic expression" (fixes board #70), lives in ./WordsChapter.jsx + ./words.js.
 import WordsChapter from './WordsChapter';
+// Chapter 2's explanation before the practice (fixes board #90) lives in ./EqLesson.jsx.
+import EqLesson from './EqLesson';
 // ===== BEGIN ORIGINAL =====
 
 const { useState, useMemo, useEffect, useRef } = React;
@@ -188,11 +190,15 @@ function OpBox({opType,opVal,opIsX,onOpType,onOpVal,onToggleX,v='x'}){
 /* Fixes board #70: chapter 1 (the unknown, algebraic expressions, stories) comes before solving.
    A student who already solved equations here comes back to the solver; the last chapter is remembered. */
 const CH_KEY='mp-equation-solver-ch';
+const EQ_SEEN='mp-equation-solve-seen';
 function loadCh(done){try{const c=parseInt(localStorage.getItem(CH_KEY),10);if(c===1||c===2)return c}catch(e){}return done>0?2:1}
 function App(){
   const[done,setDone]=useState(loadDone);
   const[ch,setChState]=useState(()=>loadCh(done));
   function setCh(c){setChState(c);try{localStorage.setItem(CH_KEY,String(c))}catch(e){}}
+  /* Fixes board #90: chapter 2 opens with an explanation (what an equation is, the balance, inverse operations, a worked example) until the student goes to practice once */
+  const[eqTab,setEqTabState]=useState(()=>{try{if(localStorage.getItem(EQ_SEEN))return'practice'}catch(e){}return'learn'});
+  function setEqTab(t){setEqTabState(t);if(t==='practice'){try{localStorage.setItem(EQ_SEEN,'1')}catch(e){}}try{window.scrollTo({top:0,behavior:'instant'})}catch(e){}}
   const introSeen=useRef(done>=X_ROUNDS);
   const[app,setApp]=useState(()=>{const eq=genEq();return{initial:eq,current:eq,history:[],v:pickLetter(done,null),counted:false,intro:false}});
   const[opType,setOpType]=useState('+');
@@ -266,7 +272,7 @@ function App(){
   return(
     <div>
       <div className="hdr">
-        <h1>פתרון משוואות בנעלם אחד</h1>
+        <h1>משוואות ליניאריות</h1>
         <span className="hdr-sub">כיתה ז׳</span>
         <div className="ch-nav">
           <button className={`ch-btn ${ch===1?'active':''}`} onClick={()=>setCh(1)}>1. ביטוי אלגברי</button>
@@ -274,7 +280,12 @@ function App(){
         </div>
       </div>
       {ch===1&&<WordsChapter/>}
-      {ch===2&&<div className="content">
+      {ch===2&&<div className="content wx">
+        <div className="sub-tabs">
+          <button className={`sub-tab ${eqTab==='learn'?'active':''}`} onClick={()=>setEqTab('learn')}>הסבר ודוגמה</button>
+          <button className={`sub-tab ${eqTab==='practice'?'active':''}`} onClick={()=>setEqTab('practice')}>תרגול</button>
+        </div>
+        {eqTab==='learn'?<EqLesson onStart={()=>setEqTab('practice')}/>:<>
 
         {solved!==null&&(
           <div className="banner">
@@ -339,6 +350,7 @@ function App(){
           <button className="btn bp" onClick={newEq}>משוואה חדשה 🎲</button>
           <button className="btn" onClick={resetEq}>התחל מחדש ↺</button>
         </div>
+        </>}
       </div>}
     </div>
   );
