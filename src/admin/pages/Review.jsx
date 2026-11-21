@@ -26,7 +26,7 @@ import {
 } from "./review/model";
 import { listFixes, addFix, commentFix, listChecks, markChecked, unmarkChecked, takeSnapshot, readPlace, checksShared } from "@/admin/review/data";
 
-const LS_SEL = "mp:cpl-sel", LS_HINT = "mp:cpl-hint";
+const LS_SEL = "mp:cpl-sel", LS_HINT = "mp:cpl-hint", LS_DEV = "mp:cpl-dev";
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
@@ -64,6 +64,9 @@ export default function Review() {
   const [left, setLeft] = useState(false);
   const [urls, setUrls] = useState({});
   const [view, setView] = useState(null);
+  const [dev, setDevState] = useState("phone");  // the preview: "phone" (375, default) | "desk" (1280, scaled)
+  useEffect(() => { if (lsGet(LS_DEV) === "desk") setDevState("desk"); }, []);
+  const setDev = useCallback((d) => { setDevState(d); lsSet(LS_DEV, d); }, []);
   const urlsAt = useRef(0);
   const toastT = useRef(0);
 
@@ -399,7 +402,7 @@ export default function Review() {
 
       <Stage frame={frame} sel={sel} grades={grades || []} names={names} colors={colors} ctx={ctx} crumbs={crumbs} seen={seenHere}
         onNewQ={onNewQ} onReport={(lvl) => openReport(typeof lvl === "string" ? lvl : sel.slug ? "question" : sel.lvl)} onPick={(n) => choose(n, { go: false })}
-        onBack={() => setStep("tree")} left={left} onReturn={() => { setLeft(false); frameSlug.current = null; choose({ ...sel }); }} place={place} />
+        onBack={() => setStep("tree")} left={left} onReturn={() => { setLeft(false); frameSlug.current = null; choose({ ...sel }); }} place={place} dev={dev} setDev={setDev} />
 
       <aside className="cpl-insp" aria-label="בקשות והערות">
         <Inspector sel={node} ctx={ctx} grades={grades || []} names={names} seen={seenHere} flash={flash} busyCheck={busyCheck}

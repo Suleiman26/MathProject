@@ -83,7 +83,10 @@
 .adm-root .cpl-list-tabs { display: none !important; }
 .adm-root .cpl-tctl { display: grid; gap: 10px; }
 .adm-root .cpl-hint { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--cpl-c50); color: var(--cpl-c700); font-size: 12.5px; line-height: 1.5; }
-.adm-root .cpl-hint span { flex: 1 1 auto; min-width: 0; }
+.adm-root .cpl-hint > span { flex: 1 1 auto; min-width: 0; text-wrap: pretty; }
+/* a few words that must not be split across lines (the hint's steps, the progress count) */
+.adm-root .cpl-nw { white-space: nowrap; }
+.adm-root .cpl-prog-l { display: grid; gap: 1px; justify-items: start; }
 .adm-root .cpl-hint button { flex: none; border: 0; background: transparent; color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; padding: 8px 4px; cursor: pointer; }
 .adm-root .cpl-prog { display: flex; align-items: flex-end; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--sh-1); }
 .adm-root .cpl-prog-t { flex: 1 1 auto; min-width: 0; display: grid; gap: 7px; font-size: 12.5px; color: var(--ink-2); }
@@ -147,6 +150,19 @@
 .adm-root .cpl-iso.wait i { background: var(--ink-3); box-shadow: none; }
 .adm-root .cpl-iso.bad { background: var(--bad-600); color: #fff; font-weight: 700; box-shadow: none; }
 .adm-root .cpl-iso.bad svg { width: 15px; height: 15px; }
+.adm-root .cpl-iso-s { display: none; }
+
+/* "טלפון / מחשב": which width the page inside is shown at (desktop QA S1) */
+.adm-root .cpl-dev { flex: none; display: inline-flex; padding: 3px; gap: 2px; border-radius: 11px; background: var(--surface-3); }
+.adm-root .cpl-dev button {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--ink-2); font: 500 12.5px/1 inherit; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.adm-root .cpl-dev button svg { width: 16px; height: 16px; }
+.adm-root .cpl-dev button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--sh-1); }
+@media (hover: hover) and (pointer: fine) { .adm-root .cpl-dev button[aria-pressed="false"]:hover { color: var(--ink); background: rgb(255 255 255 / .5); } }
+.adm-root .cpl-chrome { display: none; }
 .adm-root .cpl-canvas {
   position: relative; flex: 1 1 auto; min-height: 0; border-radius: 20px; overflow: hidden; padding: 14px;
   display: flex; align-items: flex-start; justify-content: center;
@@ -172,6 +188,31 @@
 .adm-root .cpl-fail b { font-size: 16px; color: var(--ink); }
 .adm-root .cpl-fail-a { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
 /* grade / site selected: pick a topic */
+/* desktop view (from 700px): the same iframe at a 1280px viewport, shrunk by --k (set from the column width
+   in Stage.jsx) so the whole width fits. A transform keeps taps and typing landing where they look. */
+@media (min-width: 700px) {
+  .adm-root .cpl-canvas.desk { padding: 12px; }
+  .adm-root .cpl-phone.desk {
+    width: 100%; max-width: none; height: 100%; max-height: none; flex: 1 1 auto; padding: 0; border-radius: 14px;
+    background: var(--surface); box-shadow: var(--sh-2, var(--sh-1)), 0 24px 50px -30px rgb(0 0 0 / .35), inset 0 0 0 1px var(--line);
+  }
+  .adm-root .cpl-phone.desk .cpl-island { display: none; }
+  .adm-root .cpl-phone.desk .cpl-chrome {
+    display: flex; align-items: center; gap: 6px; flex: none; height: 30px; padding: 0 12px; direction: ltr;
+    border-bottom: 1px solid var(--line); background: var(--surface-2); border-radius: 14px 14px 0 0;
+  }
+  .adm-root .cpl-chrome i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); flex: none; }
+  .adm-root .cpl-chrome span {
+    flex: 0 1 340px; margin-inline: auto; height: 20px; padding: 0 10px; border-radius: 6px; background: var(--surface); color: var(--ink-3);
+    font: 500 11px/20px ui-monospace, Menlo, monospace; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .adm-root .cpl-phone.desk .cpl-scr { padding-top: 0; border-radius: 0 0 14px 14px; }
+  .adm-root .cpl-phone.desk .cpl-scr iframe {
+    position: absolute; top: 0; left: 0; width: 1280px; max-width: none; height: calc(100% / var(--k, 1));
+    transform: scale(var(--k, 1)); transform-origin: 0 0;
+  }
+  .adm-root .cpl-phone.desk :is(.cpl-shim, .cpl-fail) { inset: 0; }
+}
 .adm-root .cpl-pick { width: 100%; max-width: 520px; padding: 18px 6px; overflow: auto; max-height: 100%; }
 .adm-root .cpl-pick h3 { margin: 0; font-size: 22px; font-weight: 700; }
 .adm-root .cpl-pick p { margin: 4px 0 14px; color: var(--ink-3); font-size: 13px; }
@@ -317,8 +358,13 @@
   .adm-root .cpl-rep.on { transform: none; opacity: 1; }
 }
 @media (min-width: 1100px) and (max-width: 1320px) {
-  .adm-root .cpl { grid-template-columns: 260px minmax(0, 1fr) 340px; }
-  .adm-root .cpl-ttl p, .adm-root .cpl-top-tabs { display: none !important; }
+  /* desktop QA S3/S4: the switcher stays (only the subtitle goes); a little more room for the list column,
+     and the guard pill says the short "לא נספר" so the breadcrumb keeps its room */
+  .adm-root .cpl { grid-template-columns: 280px minmax(0, 1fr) 328px; }
+  .adm-root .cpl-ttl p { display: none !important; }
+  .adm-root .cpl-iso-l { display: none; }
+  .adm-root .cpl-iso-s { display: inline; }
+  .adm-root .cpl-pvbar .cpl-b.ghost { padding: 0 8px; }
 }
 
 /* ── phone and tablet: the list, then the page edge to edge, one bottom bar ── */
@@ -430,9 +476,39 @@
   .adm-root .cpl-rep .fa-btn, .adm-root .cpl-items .fa-btn { min-height: 44px; }
   .adm-root .cpl-rep .fa-link input, .adm-root .cpl-rep .fa-link .abtn, .adm-root .cpl-items .fa-link input, .adm-root .cpl-items .fa-link .abtn { height: 44px; }
 }
+/* tablet / small laptop (700–1099, desktop QA S2): the same list → page flow, but the list, the header and
+   the bottom bar keep a 720px column in the middle, and the two sheets open as centred dialogs */
 @media (max-width: 1099px) and (min-width: 700px) {
   .adm-root .cpl[data-step="pv"] .cpl-canvas { background: var(--surface-3); justify-content: center; }
   .adm-root .cpl[data-step="pv"] .cpl-phone { max-width: 600px; }
+  .adm-root .cpl[data-step="pv"] .cpl-phone.desk { max-width: none; }
+  .adm-root .cpl-top { padding-inline: max(16px, calc((100% - 720px) / 2)); }
+  .adm-root .cpl-tree { padding-inline: max(16px, calc((100% - 720px) / 2)); }
+  .adm-root .cpl-pbar { padding-inline: max(12px, calc((100% - 720px) / 2)); }
+  .adm-root .cpl-pvh { padding-inline: 12px; }
+
+  .adm-root .cpl-rep, .adm-root .cpl[data-sheet="1"] .cpl-insp {
+    left: 50%; right: auto; top: 50%; bottom: auto; width: min(640px, calc(100% - 48px)); max-height: min(86vh, 860px); max-height: min(86dvh, 860px);
+    border-radius: 20px; border: 1px solid var(--line); box-shadow: 0 30px 80px -24px rgb(0 0 0 / .4);
+  }
+  .adm-root .cpl-rep { transform: translate(-50%, calc(-50% + 18px)); opacity: 0; transition: transform 260ms var(--ease-out), opacity 180ms ease; }
+  .adm-root .cpl-rep.on { transform: translate(-50%, -50%); opacity: 1; }
+  .adm-root .cpl[data-sheet="1"] .cpl-insp { transform: translate(-50%, -50%); padding-bottom: 0; animation: cpl-pop 240ms var(--ease-out); }
+  .adm-root .cpl-rep::before, .adm-root .cpl[data-sheet="1"] .cpl-insp::before { display: none; }
+  .adm-root .cpl[data-sheet="1"] .cpl-panel { border-radius: 20px; }
+  .adm-root .cpl-rep-f { padding-bottom: 12px; }
+}
+@keyframes cpl-pop { from { transform: translate(-50%, calc(-50% + 18px)); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+@media (max-width: 699px) {
+  .adm-root .cpl-pvh .cpl-dev { display: none; }
+}
+@media (max-width: 1099px), (pointer: coarse) {
+  .adm-root .cpl-dev { padding: 0; background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .adm-root .cpl-dev button { height: 44px; min-width: 44px; padding: 0 12px; border-radius: 11px; }
+  .adm-root .cpl-dev button[aria-pressed="true"] { background: var(--ink); color: #fff; box-shadow: none; }
+}
+@media (max-width: 900px) and (min-width: 700px) {
+  .adm-root .cpl-pvh .cpl-dev span { display: none; }
 }
 @media (max-width: 430px) {
   .adm-root .cpl-pvh .cpl-b.sm span { display: none; }

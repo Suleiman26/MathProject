@@ -26,13 +26,13 @@ export function TreeControls({ ctx, hint, onHint, onNext, q, setQ, onSearchEnter
     <div className="cpl-tctl">
       {hint && (
         <div className="cpl-hint">
-          <span>בוחרים פרק ← פותרים כמה שאלות ← <b>✓ תקין</b> או <b>דווח</b> עם משפט אחד.</span>
+          <span><span className="cpl-nw">בוחרים פרק</span> <span className="cpl-nw">← פותרים כמה שאלות</span> <span className="cpl-nw">← <b>✓ תקין</b> או <b>דווח</b></span> עם משפט אחד.</span>
           <button type="button" onClick={onHint}>הבנתי</button>
         </div>
       )}
       <div className="cpl-prog">
         <div className="cpl-prog-t">
-          <span>{loading ? "טוען…" : <><b>{p.ok}</b> מתוך {p.n} פרקים נבדקו{p.chg ? <> · <span className="cpl-rv">{p.chg} {p.chg === 1 ? "מחכה" : "מחכים"} לאישור שלך</span></> : null}</>}</span>
+          <span className="cpl-prog-l">{loading ? "טוען…" : <><span className="cpl-nw"><b>{p.ok}</b> מתוך {p.n} פרקים נבדקו</span>{p.chg ? <span className="cpl-rv">{p.chg} {p.chg === 1 ? "מחכה" : "מחכים"} לאישור שלך</span> : null}</>}</span>
           <span className="cpl-bar" aria-hidden="true"><i style={{ width: (p.n ? (p.ok / p.n) * 100 : 0) + "%" }} /><i className="c" style={{ width: (p.n ? (p.chg / p.n) * 100 : 0) + "%" }} /></span>
           {localChecks && <small className="cpl-local">הסימונים ✓ נשמרים כרגע רק במכשיר הזה</small>}
         </div>
