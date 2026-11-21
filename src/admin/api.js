@@ -54,6 +54,7 @@ const HARD = { "pythagoras.html": 0.52, "similar-triangles.html": 0.55, "quadrat
 const CH = ["פרק א׳", "פרק ב׳", "פרק ג׳", "פרק ד׳"];
 const LS = "mp:demo-catalog";
 const LSF = "mp:demo-fixes";
+const LSC = "mp:demo-checks";
 const load = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const listOf = { grade: "grades", category: "categories", topic: "topics", plan: "plans" };
@@ -231,6 +232,29 @@ const demo = {
   admin_contact_done: () => ({ ok: true }),
   admin_account_reset: () => ({ error: "preview" }),
   admin_fix_delete({ item_id }) { save(LSF, demo.admin_fixes().filter((x) => x.id !== item_id)); return { ok: true }; },
+  // content review "✓ checked" (preview): rows kept in this browser, same answers as the database functions
+  admin_content_checks() {
+    const rows = load(LSC) || [], last = new Map();
+    rows.forEach((r) => {   // rows are kept oldest first, so the last one per chapter is its latest ✓
+      const k = r.topic + "\u0000" + r.section, p = last.get(k);
+      last.set(k, { ...r, times: (p ? p.times : 0) + 1 });
+    });
+    return [...last.values()].sort((a, b) => (a.topic + a.section).localeCompare(b.topic + b.section));
+  },
+  admin_content_check({ topic, section, author }) {
+    const t = String(topic || "").trim(), s = String(section || "").trim();
+    if (!t || !s) return { error: "empty" };
+    const rows = load(LSC) || [];
+    const r = { id: Math.max(0, ...rows.map((x) => x.id)) + 1, topic: t, section: s, author: String(author || "").trim().slice(0, 40) || "צוות", created_at: new Date().toISOString() };
+    save(LSC, [...rows, r]);
+    return r;
+  },
+  admin_content_uncheck({ topic, section }) {
+    const rows = load(LSC) || [], t = String(topic || "").trim(), s = String(section || "").trim();
+    const keep = rows.filter((r) => !(r.topic === t && r.section === s));
+    save(LSC, keep);
+    return { ok: true, deleted: rows.length - keep.length };
+  },
 };
 
 /* ── public API ──────────────────────────────────────────────────────────── */
@@ -246,6 +270,18 @@ export async function call(fn, args, tok) {
     throw e;
   }
 }
+
+/* content review "✓ checked" per chapter (supabase/migrations/20261121100000_content_checks.sql).
+   Pass the shell's run (useAdmin().run): it adds the PIN token and signs out on "unauthorized".
+   topic = registry slug, section = the exact chapter-button text. */
+export const contentChecks = {
+  /** → [{ id, topic, section, author, created_at, times }]: the latest ✓ of every checked chapter */
+  list: (run) => run("admin_content_checks", {}),
+  /** → { id, topic, section, author, created_at } or { error: "empty" | "long" } */
+  check: (run, { topic, section, author }) => run("admin_content_check", { topic, section, author }),
+  /** → { ok: true, deleted } */
+  uncheck: (run, { topic, section }) => run("admin_content_uncheck", { topic, section }),
+};
 
 /* site-wide switches (e.g. the math keypad); everyone may read them */
 export async function getSetting(k, fallback) {
