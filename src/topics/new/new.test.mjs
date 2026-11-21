@@ -1,10 +1,17 @@
 /* node --test src/topics/new/new.test.mjs
    The "חדש" module (board #84): every chapter keeps the contract, and every generator is
    run thousands of times: the question must be well-formed, its own independent verify()
-   must agree with the answer, and the answer checker must accept exactly the right answers. */
+   must agree with the answer, and the answer checker must accept exactly the right answers.
+   Since 2026-11-21 most chapters live in real topics (./placed.js): they are all still tested
+   here, and the last tests check that every chapter is in exactly one place. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import CHAPTERS from './chapters/index.js';
+import { readFileSync } from 'node:fs';
+import CHAPTERS, { ALL } from './chapters/index.js';
+import { PLACED } from './placed.js';
+import STATISTICS from '../statistics/chapters.js';
+import SYSTEMS from '../systems/chapters.js';
+import wordProblems, { wordsLinear, wordsQuadratic } from './chapters/equations/word-problems.js';
 import { seeded, makeR, validate, validateChapter, boxesOf, checkAll, checkBox, parseNum, num, fracStr, poly, sum, deck } from './core.js';
 
 const RUNS = Number(process.env.RUNS || 3000);
@@ -26,12 +33,12 @@ test('helpers', () => {
 });
 
 test('chapters: unique ids and names', () => {
-  assert.ok(CHAPTERS.length > 0);
-  assert.equal(new Set(CHAPTERS.map((c) => c.id)).size, CHAPTERS.length);
-  assert.equal(new Set(CHAPTERS.map((c) => c.name)).size, CHAPTERS.length);
+  assert.equal(ALL.length, 22);
+  assert.equal(new Set(ALL.map((c) => c.id)).size, ALL.length);
+  assert.equal(new Set(ALL.map((c) => c.name)).size, ALL.length);
 });
 
-for (const ch of CHAPTERS) {
+for (const ch of ALL) {
   test(`chapter ${ch.id}: contract`, () => { assert.deepEqual(validateChapter(ch), []); });
   for (const g of ch.gens) {
     test(`chapter ${ch.id} / ${g.id}: ${RUNS} questions`, () => {
@@ -62,10 +69,45 @@ for (const ch of CHAPTERS) {
   });
 }
 
+/* the word problems live in two topics (board #84): the two halves together are the whole chapter */
+test('word problems: the linear and the quadratic half make the whole chapter', () => {
+  for (const half of [wordsLinear, wordsQuadratic]) assert.deepEqual(validateChapter(half), []);
+  assert.deepEqual([...wordsLinear.gens, ...wordsQuadratic.gens].map((g) => g.id).sort(), wordProblems.gens.map((g) => g.id).sort());
+  assert.ok(wordsQuadratic.gens.every((g) => g.id === 'quadratic-story'));
+  assert.ok(wordsLinear.lesson.every((card) => !wordsQuadratic.lesson.slice(1).includes(card)));
+});
+
 test('home list of chapters (src/home/chapters.js, chapterInfo.js) matches the chapter buttons', async () => {
   const { CHAPTERS: HOME } = await import('../../home/chapters.js');
   const { CHAPTER_INFO } = await import('../../home/chapterInfo.js');
-  const names = CHAPTERS.map((c, i) => `${i + 1}. ${c.name}`);
-  assert.deepEqual(HOME.new, names);
-  assert.deepEqual(Object.keys(CHAPTER_INFO.new), names);
+  for (const [slug, list] of [['new', CHAPTERS], ['statistics', STATISTICS]]) {
+    const names = list.map((c, i) => `${i + 1}. ${c.name}`);
+    assert.deepEqual(HOME[slug], names, slug);
+    assert.deepEqual(Object.keys(CHAPTER_INFO[slug]), names, slug);
+  }
+  assert.deepEqual(HOME.systems, []);   // one chapter: no chapter buttons
+  assert.equal(SYSTEMS.length, 1);
+});
+
+test('every chapter is in exactly one place: the "חדש" module or a real topic (placed.js)', async () => {
+  const { CHAPTERS: HOME } = await import('../../home/chapters.js');
+  const { CHAPTER_INFO } = await import('../../home/chapterInfo.js');
+  const placed = new Set(PLACED.map((p) => p.id));
+  for (const c of ALL) assert.equal(placed.has(c.id) + CHAPTERS.includes(c), 1, c.id);
+  assert.deepEqual(STATISTICS.map((c) => c.id), PLACED.filter((p) => p.topic === 'statistics').map((p) => p.id));
+  for (const p of PLACED) {
+    assert.ok(ALL.some((c) => c.id === p.id), `${p.id}: no such chapter`);
+    if (p.chapter) {
+      assert.ok((HOME[p.topic] || []).includes(p.chapter), `${p.topic}: no chapter button "${p.chapter}" in src/home/chapters.js`);
+      assert.ok(CHAPTER_INFO[p.topic] && CHAPTER_INFO[p.topic][p.chapter], `${p.topic}: no line for "${p.chapter}" in chapterInfo.js`);
+    } else assert.deepEqual(HOME[p.topic], [], `${p.topic}: a one-chapter topic has no chapter buttons`);
+    // the topic's page really shows it: its code imports the chapter's file and has the button text
+    const dir = new URL(`../${p.topic}/`, import.meta.url);
+    const code = ['Topic.jsx', 'chapters.js'].map((f) => { try { return readFileSync(new URL(f, dir), 'utf8'); } catch (e) { return ''; } }).join('\n');
+    assert.ok(code.includes(`/${p.id}.js'`), `${p.topic} does not import ${p.id}.js`);
+    if (p.chapter && p.topic !== 'statistics') {
+      const label = p.chapter.replace(/^\d+(\.| —) /, '');
+      assert.ok(code.includes(label), `${p.topic}: no button "${label}"`);
+    }
+  }
 });
