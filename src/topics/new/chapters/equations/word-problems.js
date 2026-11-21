@@ -339,7 +339,7 @@ const quadratic = {
   },
 };
 
-export default {
+const full = {
   id: 'word-problems',
   name: 'שאלות מילוליות',
   grade: 'ז׳–ט׳',
@@ -393,4 +393,24 @@ export default {
     ] },
   ],
   gens: [linear, geometry, percent, motion, quadratic],
+};
+export default full;
+
+/* Board #84 (Sulaiman, 2026-11-21: "put the chapters at the places you suggested"): the chapter lives in
+   two topics. "משוואות ליניאריות" gets the linear stories (numbers, geometry, percent, motion) and
+   "משוואות ריבועיות" the stories that lead to a quadratic equation (grade 9). Same generators, same
+   lesson cards, only split. */
+export const wordsLinear = {
+  ...full,
+  grade: 'ז׳–ח׳',
+  lesson: full.lesson.slice(0, 3),
+  gens: [linear, geometry, percent, motion],
+};
+export const wordsQuadratic = {
+  ...full,
+  id: 'word-problems-quad',
+  grade: 'ט׳',
+  about: 'סיפורים על שטח ועל מכפלה שמובילים למשוואה ריבועית: פותרים ובודקים איזה פתרון מתאים לסיפור',
+  lesson: [full.lesson[0], full.lesson[3]],
+  gens: [quadratic],
 };
