@@ -191,7 +191,7 @@ function onReason(s0, id) {
 function onMatching(s0, tri1, order) {
   if (s0.ended || !s0.cur || s0.cur.kind !== 'statement') return same(s0);
   const p = s0.problem, st = { kind: 'cong', map: tri1.map((u, i) => [u, order[i]]) };
-  const m = checkMatching(p, tri1, order);
+  const m = checkMatching(p, tri1, order, s0.done);
   if (m.ok) return onStatement(s0, st, true);
   const k = 'M:' + tri1.map((u, i) => u + order[i]).join(',');
   if (s0.cur.wrong.includes(k)) return same(s0);

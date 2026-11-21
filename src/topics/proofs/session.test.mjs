@@ -106,7 +106,7 @@ test('Level 3: the congruence row is a vertex matching (one decision, its own la
   let s = start(P, { ...V, mode: 'tap' });
   for (const [f, r] of [['a', 'given'], ['c', 'vertical'], ['b', 'given']]) { s = act(s, { t: 'statement', st: P.facts[f] }).s; s = act(s, { t: 'reason', id: r }).s; }
   let o = act(s, { t: 'matching', tri1: ['A', 'O', 'C'], order: ['D', 'O', 'B'] });
-  assert.deepEqual([o.fx[0].cls, o.fx[0].key, o.s.cur.label], ['err', 'st.matching', 'התאמת קודקודים']);
+  assert.deepEqual([o.fx[0].cls, o.fx[0].key, o.s.cur.label], ['err', 'st.matchingSide', 'התאמת קודקודים']);
   o = act(o.s, { t: 'matching', tri1: ['B', 'O', 'D'], order: ['A', 'O', 'C'] });
   assert.deepEqual([o.s.decisions.at(-1).label, o.s.decisions.at(-1).state, o.s.pending.fact], ['התאמת קודקודים', 'missed', 'cong']);
 });

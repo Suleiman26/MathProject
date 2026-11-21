@@ -131,33 +131,62 @@ export const acceptedReasons = (p, id) => [...new Set((p.just[id] || []).flatMap
 export const canonRows = (p) => p.canon.map((fact) => ({ fact, st: p.facts[fact], reason: p.just[fact][0].reasons[0] }));
 
 /* ── vertex matching ──────────────────────────────────────────────────────── */
-/* What to say when a matching is wrong: a shared vertex not matched to itself, or the first vertex
-   whose partner is wrong, explained by a side pair that shows the right partner. */
-function matchingMiss(p, pairs) {
+/* What to say when a matching is wrong (review I4). A shared vertex not matched to itself; otherwise the
+   first vertex whose partner is wrong AND that can be explained ONLY by what is known already (the given and the rows
+   written: never a consequence the congruence will prove), with an argument that is valid:
+     1. a known equal-angle pair at that vertex and its partner ("∢ABC = ∢DEF, so B matches E");
+     2. two known side pairs that meet at that vertex (their common ends match);
+     3. one known side pair from that vertex whose other end the student already matched right.
+   Nothing known fits → a general sentence that is always true (no vertex named).
+   `facts` = the fact ids the sentence cites (tests). */
+function matchingMiss(p, pairs, done = []) {
   const id = congOf(p), M = p.facts[id].map, fig = p.figure;
   const t1 = M.map((m) => m[0]), t2 = M.map((m) => m[1]);
   const mine = pairs.map((m) => m[0]);
   const fwd = triKey(mine) === triKey(t1) || triKey(mine) !== triKey(t2);
   const F = Object.fromEntries(M.map(([u, v]) => (fwd ? [u, v] : [v, u])));
   const shared = t1.filter((q) => t2.includes(q));
-  for (const [u, v] of pairs) if (shared.includes(u) && F[u] === u && v !== u) return { textKey: 'st.matchingShared', vars: { p: u } };
-  const bad = pairs.find(([u, v]) => F[u] !== v) || pairs[0];
-  const pt = bad[0], q = F[pt];
-  const others = pairs.map((m) => m[0]).filter((r) => r !== pt && F[r]);
-  let s1 = pt + others[0], s2 = q + F[others[0]];
-  for (const r of others) {                     // prefer a side pair that is a fact of the problem
-    const st = { kind: 'seg', x: pt + r, y: q + F[r] }, fid = findFact(p, st);
-    if (fid) { const f = p.facts[fid]; const first = segKey(f.x) === segKey(pt + r); s1 = first ? f.x : f.y; s2 = first ? f.y : f.x; break; }
+  for (const [u, v] of pairs) if (shared.includes(u) && F[u] === u && v !== u) return { textKey: 'st.matchingShared', vars: { p: u }, facts: [] };
+  const plain = { textKey: 'st.matchingPlain', vars: {}, facts: [] };
+  const T1 = fwd ? t1 : t2, T2 = fwd ? t2 : t1;                                        // the student's first triangle, its partner
+  if (pairs.some(([u]) => !F[u])) return plain;
+  const right = (u) => pairs.some(([a, b]) => a === u && b === F[u]);
+  const known = [...new Set([...(p.given || []), ...done])].filter((f) => p.facts[f] && p.facts[f].kind !== 'cong');
+  const angAt = (tri, v) => ({ v, r: tri.filter((x) => x !== v) });
+  // a known fact, oriented so its first part is in T1 and maps onto the second: { f, kind, a, b, st }
+  const oriented = (f) => {
+    const st = p.facts[f];
+    for (const [x, y] of [[st.x, st.y], [st.y, st.x]]) {
+      if (st.kind === 'seg') {
+        if ([...x].every((c) => T1.includes(c)) && segKey([...x].map((c) => F[c]).join('')) === segKey(y)) return { f, kind: 'seg', a: x, b: y, st: { kind: 'seg', x, y } };
+      } else if (T1.includes(x.v) && F[x.v] === y.v && angKey(fig, x) === angKey(fig, angAt(T1, x.v)) && angKey(fig, y) === angKey(fig, angAt(T2, y.v))) {
+        return { f, kind: 'ang', a: x, b: y, st: { kind: 'ang', x, y } };
+      }
+    }
+    return null;
+  };
+  const facts = known.map(oriented).filter(Boolean);
+  // the first wrong vertex that the known facts explain
+  for (const [pt] of pairs.filter(([u, v]) => F[u] !== v)) {
+    const q = F[pt];
+    const ang = facts.find((k) => k.kind === 'ang' && k.a.v === pt);
+    if (ang) return { textKey: 'st.matchingAng', vars: { st: show(ang.st), p: pt, q }, facts: [ang.f] };
+    const sides = facts.filter((k) => k.kind === 'seg' && k.a.includes(pt) && segKey(k.a) !== segKey(k.b));
+    if (sides.length >= 2) return { textKey: 'st.matchingTwo', vars: { st1: show(sides[0].st), st2: show(sides[1].st), p: pt, q }, facts: [sides[0].f, sides[1].f] };
+    for (const k of sides) {
+      const r = [...k.a].find((c) => c !== pt);
+      if (r && right(r)) return { textKey: 'st.matchingSide', vars: { st: show(k.st), r, s: F[r], p: pt, q }, facts: [k.f] };
+    }
   }
-  return { textKey: 'st.matching', vars: { s1, s2, p: pt, q } };
+  return plain;
 }
 /** Level 3 vertex matching: ok when every (tri1[i], ordered[i]) is a pair of the congruence, read in
-    one direction (either triangle may come first). */
-export function checkMatching(p, tri1, ordered) {
+    one direction (either triangle may come first). `done` = the rows written (for the explanation). */
+export function checkMatching(p, tri1, ordered, done = []) {
   const M = p.facts[congOf(p)].map, pairs = tri1.map((u, i) => [u, ordered[i]]);
   const has = (u, v) => M.some((m) => m[0] === u && m[1] === v);
   if (pairs.every(([u, v]) => has(u, v)) || pairs.every(([u, v]) => has(v, u))) return { ok: true };
-  return { ok: false, kind: 'wrong-matching', ...matchingMiss(p, pairs) };
+  return { ok: false, kind: 'wrong-matching', ...matchingMiss(p, pairs, done) };
 }
 
 /* ── family T: what an isosceles triangle gives (lead ruling on review I3) ── */
@@ -198,13 +227,13 @@ export function classify(p, done, st) {
     const cid = congOf(p);
     if (cid) {
       const [a, b] = partsOf(p.facts[cid]).map(triKey), [x, y] = partsOf(st).map(triKey);
-      if ((a === x && b === y) || (a === y && b === x)) return { c: 'false', kind: 'wrong-matching', ...matchingMiss(p, st.map) };
+      if ((a === x && b === y) || (a === y && b === x)) return { c: 'false', kind: 'wrong-matching', ...matchingMiss(p, st.map, done) };
     }
   }
   if (holds(p.figure, st)) return { c: 'unprovable', textKey: 'st.unprovable', vars: {} };
   if (st.kind === 'seg') return { c: 'false', kind: 'false-statement', textKey: 'st.falseSeg', vars: { x: st.x, y: st.y } };
   if (st.kind === 'ang') return { c: 'false', kind: 'false-statement', textKey: 'st.falseAng', vars: { x: showPart(st.x), y: showPart(st.y) } };
-  return { c: 'false', kind: 'false-statement', textKey: 'st.matching', ...matchingMiss(p, st.map) };
+  return { c: 'false', kind: 'false-statement', ...matchingMiss(p, st.map, done) };
 }
 
 /* ── check a reason (§9.2 "Reason chosen") ────────────────────────────────── */

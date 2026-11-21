@@ -63,7 +63,8 @@ test('classify: every case of §10.2', () => {
   r = classify(P, [], { kind: 'seg', x: 'AD', y: 'CB' }); assert.deepEqual([r.c, r.textKey], ['unprovable', 'st.unprovable']);
   r = classify(P, [], { kind: 'seg', x: 'AO', y: 'CO' }); assert.deepEqual([r.c, r.kind, r.textKey], ['false', 'false-statement', 'st.falseSeg']);
   r = classify(P, ['a', 'b', 'c'], { kind: 'cong', map: [['A', 'D'], ['O', 'O'], ['C', 'B']] }); assert.deepEqual([r.c, r.kind], ['false', 'wrong-matching']);
-  assert.deepEqual(r.vars, { s1: 'AO', s2: 'OB', p: 'A', q: 'B' });
+  assert.deepEqual([r.textKey, r.vars], ['st.matchingSide', { st: 'AO = OB', r: 'O', s: 'O', p: 'A', q: 'B' }]);        // AO = OB is given and O ↔ O is right
+  r = classify(P, [], { kind: 'cong', map: [['A', 'D'], ['O', 'O'], ['C', 'B']] }); assert.equal(r.textKey, 'st.matchingSide');   // the given is known before it is written
   r = classify(P, ['a', 'b', 'c'], { kind: 'cong', map: [['A', 'O'], ['O', 'B'], ['C', 'D']] }); assert.equal(r.textKey, 'st.matchingShared');
   assert.equal(classify(P, ['a', 'b', 'c'], { kind: 'cong', map: [['C', 'D'], ['A', 'B'], ['O', 'O']] }).c, 'ok');
 });
@@ -179,4 +180,42 @@ test('whyOf: the why-line of each role', () => {
   assert.deepEqual(whyOf(P, 'cong', 'sas'), { key: 'why.sas', vars: { m1: 'A ↔ B', m2: 'O ↔ O', m3: 'C ↔ D' } });
   assert.deepEqual(whyOf(P, 'goal'), { key: 'why.concl-side', vars: { x: 'AC', y: 'BD' } });
   assert.equal(whyOf(P, 'e1').key, 'why.concl-angle');
+});
+
+/* ── review I4: the wrong-matching sentence cites only what is known, with a valid argument ── */
+import { typeById } from './types/index.js';
+import { congOf } from './core.js';
+import { fill } from './texts.js';
+const PERMS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+test('wrong matching, 3-2-ASA: B matches E because of the given angle, never "AB = DE" (a consequence)', () => {
+  const t = typeById('prove-congruence'), R = makeR(seeded(61)); let review = 0;
+  for (let i = 0; i < 120; i++) {
+    const p = t.make(R, 3, 'A', { recent: [], last: null }, { only: '3-2-ASA' });
+    const M = p.facts[congOf(p)].map, [A, B, C] = M.map((m) => m[0]), [D, E, Fv] = M.map((m) => m[1]);
+    const r = checkMatching(p, [A, B, C], [D, Fv, E], []);                 // the student writes △ABC ≅ △DFE
+    assert.ok(r.facts.length && r.facts.every((f) => p.given.includes(f)), `${p.id}: ${r.textKey}`);
+    assert.doesNotMatch(fill(r.textKey, r.vars), new RegExp(`${A}${B} = ${D}${E}|${B}${A} = ${E}${D}|${A}${C} = ${D}${Fv}|${C}${A} = ${Fv}${D}`));
+    if (['aB', 'sBC', 'aC'].every((g) => p.given.includes(g))) {          // the review's case: given ∢B, BC, ∢C
+      review++; assert.deepEqual([r.textKey, r.vars.p, r.vars.q, r.facts], ['st.matchingAng', B, E, ['aB']]);
+    }
+  }
+  assert.ok(review >= 10, `only ${review} review cases`);
+});
+test('wrong matching, every type 3 / 4 template: cited facts are given or written, the vertex named is right', () => {
+  const R = makeR(seeded(62)); let n = 0; const keys = {};
+  for (const type of [typeById('prove-congruence'), typeById('then-conclusion')]) for (const tpl of type.templates) for (let i = 0; i < 12; i++) {
+    const p = type.make(R, 3, tpl.id.includes('-2-') ? 'A' : 'B', { recent: [], last: null }, { only: tpl.id });
+    const M = p.facts[congOf(p)].map, t1 = M.map((m) => m[0]), t2 = M.map((m) => m[1]);
+    const rows = p.canon.filter((f) => f !== congOf(p) && !(p.consequences || []).includes(f)), done = rows.slice(0, R.int(0, rows.length));
+    for (const q of PERMS) {
+      const order = q.map((k) => t2[k]); if (q.join('') === '012') continue;
+      const r = checkMatching(p, t1, order, done); assert.equal(r.ok, false); n++;
+      keys[r.textKey] = (keys[r.textKey] || 0) + 1;
+      fill(r.textKey, r.vars);
+      for (const f of r.facts) assert.ok(p.given.includes(f) || done.includes(f), `${p.id}: cites ${f}, not known`);
+      if (r.vars.q) { const F = Object.fromEntries(M); assert.equal(F[r.vars.p], r.vars.q, `${p.id}: ${r.vars.p} ↔ ${r.vars.q}`); assert.notEqual(order[t1.indexOf(r.vars.p)], r.vars.q); }
+      if (r.vars.r) assert.equal(order[t1.indexOf(r.vars.r)], r.vars.s, 'the vertex used as already right is right');
+    }
+  }
+  assert.ok(n > 1000); for (const k of ['st.matchingAng', 'st.matchingSide', 'st.matchingShared']) assert.ok(keys[k] > 0, k);
 });

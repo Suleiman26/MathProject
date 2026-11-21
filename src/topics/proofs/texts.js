@@ -62,7 +62,10 @@ export const T = {
   'st.word.altitude': 'גובה יוצר זווית ישרה עם הצלע. הוא לא בהכרח מגיע לאמצע שלה.',
   'st.partner': 'בכתיבת החפיפה {p} כתובה במקום {{place}}, וגם {q}. לכן הקודקוד {p} מתאים לקודקוד {q}.',
   'st.notAsked': 'נכון, אבל לא על זה שאלו.',
-  'st.matching': 'בדקו את הסדר. הקטע {s1} שווה לקטע {s2}, ולכן הקודקוד {p} מתאים לקודקוד {q}.',
+  'st.matchingAng': 'בדקו את הסדר. ידוע כבר: {st}. לכן הקודקוד {p} מתאים לקודקוד {q}.',
+  'st.matchingTwo': 'בדקו את הסדר. ידוע כבר: {st1}, {st2}. הקודקוד {p} נמצא על שתי הצלעות האלה, ולכן הוא מתאים לקודקוד {q}.',
+  'st.matchingSide': 'בדקו את הסדר. ידוע כבר: {st}, והקודקוד {r} מתאים לקודקוד {s}. לכן הקודקוד {p} מתאים לקודקוד {q}.',
+  'st.matchingPlain': 'בדקו את הסדר. חלקים עם אותו סימון מתאימים זה לזה, ובאותו סדר.',
   'st.matchingShared': 'הנקודה {p} שייכת לשני המשולשים, והיא מתאימה לעצמה.',
   'st.kinds': 'בוחרים שני חלקים מאותו סוג: שני קטעים, שתי זוויות או שני משולשים.',
 
@@ -249,7 +252,7 @@ export const NEW_DRAFTS = [
   'lbl.proofDone', 'lbl.cleanN', 'lbl.cleanAria', 'lbl.figure', 'lbl.leanGiven', 'lbl.leanSeen', 'lbl.leanRows', 'lbl.here',
   'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn', 'lbl.nextUp', 'btn.these',
   'ui.planOk', 'say.ask',
-  'ui.endSlips', 'st.isoLater',
+  'ui.endSlips', 'st.isoLater', 'st.matchingAng', 'st.matchingTwo', 'st.matchingSide', 'st.matchingPlain',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;
