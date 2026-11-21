@@ -174,6 +174,106 @@ function PeopleVis({total, filled, color1='#8b5cf6'}){
   </svg>;
 }
 
+/* Ratio pictures (Sulaiman, fixes board #88): one small drawing per context. Each icon draws
+   itself in its own w×h box; k=1 is the first quantity, k=2 the second. */
+const RP_STAR=(()=>{const p=[];for(let i=0;i<10;i++){const r=i%2?5:12,a=-Math.PI/2+i*Math.PI/5;p.push(`${(14+r*Math.cos(a)).toFixed(1)},${(14.5+r*Math.sin(a)).toFixed(1)}`);}return p.join(' ');})();
+const RP_ICON={
+  pencil:{w:22,h:44,draw:(k,c)=><>
+    <rect x={7} y={3} width={8} height={5} rx={2} fill="#f9a8d4"/><rect x={7} y={7.5} width={8} height={3} fill="#94a3b8"/>
+    <rect x={7} y={10.5} width={8} height={23.5} fill={c}/><rect x={9.6} y={10.5} width={2.2} height={23.5} fill="#fff" opacity={.28}/>
+    <polygon points="7,34 15,34 11,42" fill="#fcd9a8"/><polygon points="9.8,38.8 12.2,38.8 11,42" fill="#334155"/></>},
+  marble:{w:28,h:28,draw:(k,c)=><>
+    <circle cx={14} cy={14} r={11} fill={c}/><path d="M6.5 16 Q12 9 21.5 12.5" stroke="#fff" strokeWidth={2.2} fill="none" opacity={.35} strokeLinecap="round"/>
+    <circle cx={10} cy={9.5} r={3} fill="#fff" opacity={.75}/></>},
+  bulb:{w:28,h:38,draw:(k,c)=><>
+    {k===1&&<circle cx={14} cy={22} r={13} fill="#fde047" opacity={.35}/>}
+    <rect x={10} y={4} width={8} height={8} rx={1.5} fill="#64748b"/>
+    <circle cx={14} cy={21} r={9} fill={k===1?'#facc15':'#f1f5f9'} stroke={k===1?'#eab308':'#94a3b8'} strokeWidth={1.5}/>
+    <path d="M10.5 22 l1.7 -3 l1.8 3 l1.8 -3 l1.7 3" stroke={k===1?'#b45309':'#94a3b8'} strokeWidth={1.3} fill="none"/></>},
+  seat:{w:30,h:30,draw:(k,c)=><>
+    <rect x={6} y={3} width={18} height={15} rx={4} fill={c}/><rect x={3} y={15} width={24} height={9} rx={3} fill={c}/>
+    <rect x={3} y={15} width={24} height={9} rx={3} fill="#000" opacity={k===1?.15:.04}/>
+    <rect x={5} y={24} width={3} height={4} fill="#94a3b8"/><rect x={22} y={24} width={3} height={4} fill="#94a3b8"/></>},
+  day:{w:34,h:34,draw:k=><>
+    <rect x={1.5} y={1.5} width={31} height={31} rx={6} fill="#fff" stroke="#e2e8f0" strokeWidth={1.5}/>
+    {k===1?<g stroke="#f59e0b" strokeWidth={2} strokeLinecap="round">
+      {[0,45,90,135,180,225,270,315].map(d=>{const a=d*Math.PI/180;return<line key={d} x1={17+9*Math.cos(a)} y1={17+9*Math.sin(a)} x2={17+12*Math.cos(a)} y2={17+12*Math.sin(a)}/>;})}
+      <circle cx={17} cy={17} r={6} fill="#fbbf24" stroke="none"/></g>
+    :<g><g fill="#94a3b8"><circle cx={12.5} cy={15} r={5}/><circle cx={19} cy={12.5} r={6.5}/><circle cx={24} cy={16} r={4.5}/><rect x={12.5} y={14} width={11.5} height={6.5}/></g>
+      <g stroke="#3b82f6" strokeWidth={2} strokeLinecap="round"><line x1={13} y1={24} x2={11.5} y2={28}/><line x1={18.5} y1={24} x2={17} y2={28}/><line x1={24} y1={24} x2={22.5} y2={28}/></g></g>}</>},
+  hoop:{w:28,h:28,draw:(k,c)=><>
+    <circle cx={14} cy={14} r={11} fill={k===1?'#f97316':'#e2e8f0'} stroke={k===1?'#9a3412':'#94a3b8'} strokeWidth={1.5}/>
+    <g stroke={k===1?'#7c2d12':'#94a3b8'} strokeWidth={1.2} fill="none"><line x1={14} y1={3} x2={14} y2={25}/><line x1={3} y1={14} x2={25} y2={14}/>
+      <path d="M6.5 6.5 Q12 14 6.5 21.5"/><path d="M21.5 6.5 Q16 14 21.5 21.5"/></g></>},
+  answer:{w:28,h:28,draw:(k,c)=><>
+    <circle cx={14} cy={14} r={11.5} fill={c}/>
+    {k===1?<path d="M8.5 14.5 L12.5 18.5 L20 10" stroke="#fff" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+      :<path d="M10 10 L18 18 M18 10 L10 18" stroke="#fff" strokeWidth={3} fill="none" strokeLinecap="round"/>}</>},
+  flower:{w:28,h:38,draw:k=><>
+    <line x1={14} y1={18} x2={14} y2={37} stroke="#16a34a" strokeWidth={2.5}/><ellipse cx={18.5} cy={29} rx={4.5} ry={2} fill="#22c55e" transform="rotate(-30 18.5 29)"/>
+    {k===1?<><circle cx={14} cy={12} r={8} fill="#e11d48"/><path d="M14 8.5 a3.5 3.5 0 1 1 -3.3 4.6 M14 6 a6 6 0 0 1 5.6 8" stroke="#9f1239" strokeWidth={1.4} fill="none" strokeLinecap="round"/></>
+      :<>{Array.from({length:10},(_,i)=><ellipse key={i} cx={14} cy={5.5} rx={2.6} ry={4.6} fill="#facc15" transform={`rotate(${i*36} 14 12)`}/>)}<circle cx={14} cy={12} r={4.4} fill="#78350f"/></>}</>},
+  car:{w:30,h:44,draw:(k,c)=><>
+    <rect x={3} y={9} width={3} height={7} rx={1} fill="#1e293b"/><rect x={24} y={9} width={3} height={7} rx={1} fill="#1e293b"/>
+    <rect x={3} y={28} width={3} height={7} rx={1} fill="#1e293b"/><rect x={24} y={28} width={3} height={7} rx={1} fill="#1e293b"/>
+    <rect x={5} y={3} width={20} height={38} rx={7} fill={c}/>
+    <rect x={8} y={11} width={14} height={7} rx={2} fill="#1e293b" opacity={.8}/><rect x={8.5} y={31} width={13} height={5} rx={2} fill="#1e293b" opacity={.8}/>
+    <rect x={8} y={19} width={14} height={11} rx={2} fill="#fff" opacity={.18}/></>},
+  fish:{w:32,h:22,draw:(k,c)=><>
+    <polygon points="22,11 30,4.5 30,17.5" fill={c}/><ellipse cx={14} cy={11} rx={10.5} ry={7} fill={c}/>
+    <path d="M13 6 Q16 11 13 16" stroke="#fff" strokeWidth={1.3} fill="none" opacity={.5}/><circle cx={8.5} cy={9.5} r={1.7} fill="#0f172a"/></>},
+  sticker:{w:28,h:28,draw:k=>k===1
+    ?<polygon points={RP_STAR} fill="#facc15" stroke="#ca8a04" strokeWidth={1.4} strokeLinejoin="round"/>
+    :<path d="M14 24 C4 17 3 11 6 7.5 C9 4.5 13 6 14 9 C15 6 19 4.5 22 7.5 C25 11 24 17 14 24 Z" fill="#ec4899" stroke="#be185d" strokeWidth={1.4} strokeLinejoin="round"/>},
+  tree:{w:28,h:38,draw:k=><>
+    <rect x={12} y={26} width={4} height={10} rx={1} fill="#92400e"/>
+    {k===1?<g fill="#166534"><polygon points="14,2 22,13 6,13"/><polygon points="14,8 24,20 4,20"/><polygon points="14,14 26,28 2,28"/></g>
+      :<g fill="#65a30d"><circle cx={14} cy={11} r={8}/><circle cx={8.5} cy={18} r={6.5}/><circle cx={19.5} cy={18} r={6.5}/><circle cx={14} cy={20} r={6}/></g>}</>},
+  balloon:{w:26,h:42,draw:(k,c)=><>
+    <path d="M13 27 Q10 33 13.5 36 Q16 39 13 42" stroke="#94a3b8" strokeWidth={1.2} fill="none"/>
+    <polygon points="10.8,28 15.2,28 13,24.5" fill={c}/><ellipse cx={13} cy={13.5} rx={9.5} ry={11.5} fill={c}/>
+    <ellipse cx={9.5} cy={9} rx={2.2} ry={3.6} fill="#fff" opacity={.5} transform="rotate(20 9.5 9)"/></>},
+};
+function RatioIcon({icon,k,c,h=20}){
+  const I=RP_ICON[icon];
+  return<svg className="rp-mi" viewBox={`0 0 ${I.w} ${I.h}`} style={{height:h,width:h*I.w/I.h}} aria-hidden="true">{I.draw(k,c)}</svg>;
+}
+/* the whole picture: `filled` icons of the first kind, then the rest of the second kind, in balanced rows,
+   on a small scene (aquarium, parking lot, calendar, ...) */
+function RatioVis({ctx,total,filled}){
+  const I=RP_ICON[ctx.icon];
+  const per=ctx.perRow||(total<=10?total:Math.ceil(total/Math.ceil(total/10)));
+  const rows=Math.ceil(total/per), gx=I.w+4, gy=I.h+(ctx.rowGap||6);
+  const pad=ctx.scene?10:2, head=ctx.scene==='cinema'?24:ctx.scene==='calendar'?20:0;
+  const W=per*gx-4+pad*2, H=head+rows*gy-(ctx.rowGap||6)+pad*2;
+  const at=i=>{const col=i%per,row=Math.floor(i/per);return[pad+(ctx.rtl?per-1-col:col)*gx,head+pad+row*gy];};
+  const scene=ctx.scene==='aquarium'?<><rect x={0} y={0} width={W} height={H} rx={12} fill="#e0f2fe" stroke="#7dd3fc" strokeWidth={2}/>
+      <rect x={1} y={H-8} width={W-2} height={7} rx={4} fill="#fde68a"/>
+      {[0.18,0.52,0.83].map(f=><circle key={f} cx={W*f} cy={6} r={2.5} fill="none" stroke="#7dd3fc" strokeWidth={1.2}/>)}</>
+    :ctx.scene==='parking'?<><rect x={0} y={0} width={W} height={H} rx={12} fill="#475569"/>
+      {Array.from({length:rows},(_,r)=>Array.from({length:per+1},(_,c)=><line key={r+'-'+c} x1={pad-2+c*gx} y1={pad+r*gy} x2={pad-2+c*gx} y2={pad+r*gy+I.h} stroke="#fff" strokeWidth={1.5} opacity={.8}/>))}</>
+    :ctx.scene==='cinema'?<><path d={`M${W*0.1} 12 Q${W/2} 2 ${W*0.9} 12`} stroke="#94a3b8" strokeWidth={4} fill="none" strokeLinecap="round"/>
+      <text x={W/2} y={22} textAnchor="middle" fontSize="9" fill="#64748b">מסך</text></>
+    :ctx.scene==='calendar'?<>{['א','ב','ג','ד','ה','ו','ש'].slice(0,per).map((d,i)=><text key={d} x={pad+(per-1-i)*gx+I.w/2} y={pad+9} textAnchor="middle" fontSize="11" fontWeight="700" fill="#64748b">{d}</text>)}</>
+    :ctx.scene==='wire'?<>{Array.from({length:rows},(_,r)=><path key={r} d={`M2 ${pad+r*gy+5} Q${W/2} ${pad+r*gy+11} ${W-2} ${pad+r*gy+5}`} stroke="#334155" strokeWidth={1.5} fill="none"/>)}</>
+    :ctx.scene==='grass'?<>{Array.from({length:rows},(_,r)=><rect key={r} x={0} y={pad+r*gy+I.h-4} width={W} height={6} rx={3} fill="#bbf7d0"/>)}</>
+    :ctx.scene==='sheet'?<rect x={1} y={1} width={W-2} height={H-2} rx={10} fill="#fff" stroke="#cbd5e1" strokeWidth={1.5} strokeDasharray="5 4"/>
+    :ctx.scene==='jar'?<rect x={1} y={1} width={W-2} height={H-2} rx={16} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth={2}/>
+    :null;
+  return<div className="rp-vis">
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',maxWidth:Math.min(Math.round(W*1.4),320),height:'auto',display:'block',margin:'0 auto'}}
+      role="img" aria-label={`${filled} ${ctx.label1} ו-${total-filled} ${ctx.label2}`}>
+      {scene}
+      {Array.from({length:total},(_,i)=>{const[x,y]=at(i),k=i<filled?1:2;
+        return<g key={i} transform={`translate(${x} ${y})`} data-k={k}>{I.draw(k,k===1?ctx.color1:ctx.color2)}</g>;})}
+    </svg>
+    <div className="rp-legend">
+      <span><RatioIcon icon={ctx.icon} k={1} c={ctx.color1}/>{ctx.label1}</span>
+      <span><RatioIcon icon={ctx.icon} k={2} c={ctx.color2}/>{ctx.label2}</span>
+    </div>
+  </div>;
+}
+
 /* Glass */
 function GlassVis({pct, color='#3b82f6'}){
   const gh=100, gw=50, fillH=gh*(pct/100);
@@ -246,15 +346,43 @@ function Fb({fb}){
 }
 
 /* ═══════ Chapter 1: Ratio ═══════ */
-function genRatio(){
-  const contexts = [
-    {type:'pie',label1:'שוקולד',label2:'וניל',color1:'#92400e',color2:'#fef3c7'},
-    {type:'pie',label1:'תות',label2:'מנגו',color1:'#dc2626',color2:'#fdba74'},
-    {type:'bar',label1:'אדום',label2:'כחול',color1:'#ef4444',color2:'#3b82f6'},
-    {type:'people',label1:'בנים',label2:'בנות',color1:'#3b82f6'},
-    {type:'bar',label1:'תפוחים',label2:'תפוזים',color1:'#16a34a',color2:'#f97316'},
-  ];
-  const ctx = pick(contexts);
+/* 15 contexts, each with its own picture (Sulaiman, fixes board #88: more variety; chocolate/vanilla and
+   boys/girls stay, the fruit pairs are gone). q = the question sentence; T = the total, A/B = the two amounts.
+   t1/t2 = text colour when the drawing colour is too light to read. */
+const RATIO_CTXS = [
+  {type:'pie',label1:'שוקולד',label2:'וניל',color1:'#92400e',color2:'#fef3c7'},
+  {type:'people',label1:'בנים',label2:'בנות',color1:'#3b82f6'},
+  {type:'icons',icon:'pencil',label1:'עפרונות אדומים',label2:'עפרונות כחולים',color1:'#dc2626',color2:'#2563eb',perRow:12,
+    q:(T,A,B)=><>בקלמר יש {T} עפרונות: {A} ו-{B}.</>},
+  {type:'icons',icon:'marble',scene:'jar',label1:'גולות כחולות',label2:'גולות ירוקות',color1:'#2563eb',color2:'#16a34a',
+    q:(T,A,B)=><>בצנצנת יש {T} גולות: {A} ו-{B}.</>},
+  {type:'icons',icon:'bulb',scene:'wire',label1:'נורות דולקות',label2:'נורות כבויות',color1:'#facc15',color2:'#94a3b8',t1:'#a16207',t2:'#475569',
+    q:(T,A,B)=><>בשרשרת האורות יש {T} נורות: {A} ו-{B}.</>},
+  {type:'icons',icon:'seat',scene:'cinema',label1:'מושבים תפוסים',label2:'מושבים פנויים',color1:'#7c3aed',color2:'#e2e8f0',t2:'#64748b',
+    q:(T,A,B)=><>באולם הקולנוע יש {T} מושבים: {A} ו-{B}.</>},
+  {type:'icons',icon:'day',scene:'calendar',perRow:7,rtl:true,rowGap:3,label1:'ימים שמשיים',label2:'ימים גשומים',color1:'#f59e0b',color2:'#3b82f6',t1:'#b45309',
+    q:(T,A,B)=><>במשך {T} ימים היו {A} ו-{B}.</>},
+  {type:'icons',icon:'hoop',label1:'קליעות',label2:'החטאות',color1:'#f97316',color2:'#94a3b8',t1:'#c2410c',t2:'#64748b',
+    q:(T,A,B)=><>נועה זרקה {T} זריקות לסל: {A} ו-{B}.</>},
+  {type:'icons',icon:'answer',label1:'תשובות נכונות',label2:'תשובות שגויות',color1:'#16a34a',color2:'#dc2626',
+    q:(T,A,B)=><>בחידון של {T} שאלות היו {A} ו-{B}.</>},
+  {type:'icons',icon:'flower',label1:'ורדים',label2:'חמניות',color1:'#e11d48',color2:'#facc15',t2:'#a16207',
+    q:(T,A,B)=><>בזר יש {T} פרחים: {A} ו-{B}.</>},
+  {type:'icons',icon:'car',scene:'parking',label1:'מכוניות כחולות',label2:'מכוניות אדומות',color1:'#3b82f6',color2:'#ef4444',
+    q:(T,A,B)=><>בחניון יש {T} מכוניות: {A} ו-{B}.</>},
+  {type:'icons',icon:'fish',scene:'aquarium',label1:'דגים כתומים',label2:'דגים כחולים',color1:'#f97316',color2:'#2563eb',t1:'#c2410c',rowGap:8,
+    q:(T,A,B)=><>באקווריום יש {T} דגים: {A} ו-{B}.</>},
+  {type:'icons',icon:'sticker',scene:'sheet',label1:'מדבקות כוכב',label2:'מדבקות לב',color1:'#facc15',color2:'#ec4899',t1:'#a16207',t2:'#db2777',
+    q:(T,A,B)=><>בדף יש {T} מדבקות: {A} ו-{B}.</>},
+  {type:'icons',icon:'tree',scene:'grass',label1:'עצי אורן',label2:'עצי אלון',color1:'#166534',color2:'#65a30d',t2:'#4d7c0f',
+    q:(T,A,B)=><>בפארק יש {T} עצים: {A} ו-{B}.</>},
+  {type:'icons',icon:'balloon',label1:'בלונים אדומים',label2:'בלונים צהובים',color1:'#ef4444',color2:'#facc15',t2:'#a16207',
+    q:(T,A,B)=><>במסיבה יש {T} בלונים: {A} ו-{B}.</>},
+];
+function genRatio(prev){
+  // a new exercise never repeats the context just seen
+  let ctx = pick(RATIO_CTXS);
+  while(prev&&ctx===prev) ctx = pick(RATIO_CTXS);
   // generate ratio that can be simplified
   const simpleRatios = [[2,3],[3,4],[1,2],[1,3],[2,5],[3,5],[1,4],[3,7],[2,7],[4,5]];
   const [sa,sb] = pick(simpleRatios);
@@ -306,9 +434,10 @@ function Ch1Ratio(){
       else{setChain([...chain,[v1,v2]]);setS1('');setS2('');setFb('more');}
     } else setFb(same?'same':'err');
   };
-  const reset=()=>{const e=genRatio();setEx(e);setStep(1);setR1('');setR2('');setS1('');setS2('');setChain([]);setFb(null);};
+  const reset=()=>{const e=genRatio(ex.ctx);setEx(e);setStep(1);setR1('');setR2('');setS1('');setS2('');setChain([]);setFb(null);};
 
   const vis = ex.ctx.type==='pie'?<PieVis total={ex.total} filled={ex.a} color1={ex.ctx.color1} color2={ex.ctx.color2}/>
+    :ex.ctx.type==='icons'?<RatioVis ctx={ex.ctx} total={ex.total} filled={ex.a}/>
     :ex.ctx.type==='bar'?<BarVis total={ex.total} filled={ex.a} color1={ex.ctx.color1} color2={ex.ctx.color2}/>
     :<PeopleVis total={ex.total} filled={ex.a} color1={ex.ctx.color1}/>;
   const cur = chain.length?chain[chain.length-1]:null;
@@ -320,9 +449,11 @@ function Ch1Ratio(){
     <div className="card">
       <div className="card-t">יחס</div>
       <div className="vis-wrap">{vis}</div>
-      <p className="q-text">
+      {ex.ctx.q?<p className="q-text">
+        {ex.ctx.q(<b>{ex.total}</b>,<b style={{color:ex.ctx.t1||ex.ctx.color1}}>{ex.a} {ex.ctx.label1}</b>,<b style={{color:ex.ctx.t2||ex.ctx.color2}}>{ex.b} {ex.ctx.label2}</b>)}
+      </p>:<p className="q-text">
         מתוך <b>{ex.total}</b> — <b style={{color:ex.ctx.color1||'#0f766e'}}>{ex.a} {ex.ctx.label1}</b> ו-<b>{ex.b} {ex.ctx.label2}</b>
-      </p>
+      </p>}
 
       {/* Step 1 */}
       <div className={`step-card ${step>1?'done':''}`}>
@@ -374,9 +505,14 @@ const RA_KINDS=['grid','groups','table'];
 function genRatioAmount(kind){
   const ctxs=[
     {l1:'בנים',l2:'בנות',unit:'ילדים',pack:'קבוצה',packs:'קבוצות',c1:'#3b82f6',c2:'#ec4899'},
-    {l1:'עפרונות אדומים',l2:'עפרונות כחולים',unit:'עפרונות',pack:'חבילה',packs:'חבילות',c1:'#ef4444',c2:'#3b82f6'},
-    {l1:'תפוחים',l2:'תפוזים',unit:'פירות',pack:'סלסלה',packs:'סלסלות',c1:'#16a34a',c2:'#f97316'},
+    {l1:'עפרונות אדומים',l2:'עפרונות כחולים',unit:'עפרונות',pack:'חבילה',packs:'חבילות',c1:'#ef4444',c2:'#3b82f6',icon:'pencil'},
     {l1:'כדורים צהובים',l2:'כדורים סגולים',unit:'כדורים',pack:'שקית',packs:'שקיות',c1:'#eab308',c2:'#8b5cf6'},
+    // more variety, no fruit (#88); icon = the small drawing shown inside each pack
+    {l1:'בלונים אדומים',l2:'בלונים צהובים',unit:'בלונים',pack:'צרור',packs:'צרורות',c1:'#ef4444',c2:'#ca8a04',icon:'balloon',i2:'#facc15'},
+    {l1:'גולות כחולות',l2:'גולות ירוקות',unit:'גולות',pack:'שקית',packs:'שקיות',c1:'#2563eb',c2:'#16a34a',icon:'marble'},
+    {l1:'ורדים',l2:'חמניות',unit:'פרחים',pack:'זר',packs:'זרים',c1:'#e11d48',c2:'#ca8a04',icon:'flower'},
+    {l1:'מדבקות כוכב',l2:'מדבקות לב',unit:'מדבקות',pack:'דף',packs:'דפים',c1:'#ca8a04',c2:'#db2777',icon:'sticker'},
+    {l1:'דגים כתומים',l2:'דגים כחולים',unit:'דגים',pack:'אקווריום',packs:'אקווריומים',c1:'#ea580c',c2:'#2563eb',icon:'fish'},
   ];
   const ctx=pick(ctxs);
   const [a,b]=pick([[1,2],[2,3],[1,3],[3,4],[2,5],[3,5],[1,4],[3,2],[4,3],[5,2]]);
@@ -416,10 +552,12 @@ function RatioTable({h1,h2,rows,mult}){
   </div>;
 }
 
-function PackVis({a,b,c1,c2,n=1}){
-  return <div className="rp-packs">{Array.from({length:n},(_,i)=><span key={i} className="rp-pack">
-    {Array.from({length:a},(_,j)=><i key={'a'+j} style={{background:c1}}/>)}
-    {Array.from({length:b},(_,j)=><i key={'b'+j} style={{background:c2}}/>)}
+function PackVis({a,b,c1,c2,n=1,icon,i2}){
+  // with an icon (#88) each item is its small drawing instead of a dot
+  const item=(k,j)=>icon?<RatioIcon key={k+"-"+j} icon={icon} k={k} c={k===1?c1:(i2||c2)} h={18}/>:<i key={(k===1?'a':'b')+j} style={{background:k===1?c1:c2}}/>;
+  return <div className={'rp-packs'+(icon?' rp-packs-i':'')}>{Array.from({length:n},(_,i)=><span key={i} className="rp-pack">
+    {Array.from({length:a},(_,j)=>item(1,j))}
+    {Array.from({length:b},(_,j)=>item(2,j))}
   </span>)}</div>;
 }
 
@@ -488,7 +626,7 @@ function Ch1Amount(){
       {ex.kind==='groups'&&<>
         <div className="card-t">חלוקה ל{c.packs}</div>
         <p className="q-text">בכל {c.pack} יש <b style={{color:c.c1}}>{ex.a} {c.l1}</b> ו-<b style={{color:c.c2}}>{ex.b} {c.l2}</b>. בסך הכל יש <b>{ex.total}</b> {c.unit}.</p>
-        <PackVis a={ex.a} b={ex.b} c1={c.c1} c2={c.c2} n={gStep>1?ex.k:1}/>
+        <PackVis a={ex.a} b={ex.b} c1={c.c1} c2={c.c2} n={gStep>1?ex.k:1} icon={c.icon} i2={c.i2}/>
         <div className={`step-card ${gStep>1?'done':''}`}>
           <div className="step-label">שלב א׳ — כמה {c.packs} יש?</div>
           {gStep===1?<><div className="ans-row">
