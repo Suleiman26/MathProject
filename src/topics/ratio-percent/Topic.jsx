@@ -261,7 +261,7 @@ function RatioVis({ctx,total,filled}){
     :ctx.scene==='jar'?<rect x={1} y={1} width={W-2} height={H-2} rx={16} fill="#f1f5f9" stroke="#cbd5e1" strokeWidth={2}/>
     :null;
   return<div className="rp-vis">
-    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',maxWidth:Math.min(Math.round(W*1.4),320),height:'auto',display:'block',margin:'0 auto'}}
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',maxWidth:Math.min(Math.round(W*1.4),320),'--rp-w':W+'px',height:'auto',display:'block',margin:'0 auto'}}
       role="img" aria-label={`${filled} ${ctx.label1} ו-${total-filled} ${ctx.label2}`}>
       {scene}
       {Array.from({length:total},(_,i)=>{const[x,y]=at(i),k=i<filled?1:2;
@@ -1140,8 +1140,8 @@ function Ch5(){
   return <div className="content">
     <div className="info">
       <b>עלייה/ירידה באחוזים</b> — במקום לחשב את האחוז בנפרד ואז לחבר או להחסיר, אפשר להכפיל
-      ישירות במכפיל: עלייה של X% — מכפיל <span style={{direction:'ltr',display:'inline-block'}}>1 + <Frac n="X" d={100} style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/></span>.
-      ירידה של X% — מכפיל <span style={{direction:'ltr',display:'inline-block'}}>1 − <Frac n="X" d={100} style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/></span>.
+      ישירות במכפיל: <span className="rp-rule">עלייה של <span dir="ltr">X%</span> — מכפיל <span dir="ltr" className="rp-mult">1 + <Frac n="X" d={100} style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/></span>.</span>
+      <span className="rp-rule">ירידה של <span dir="ltr">X%</span> — מכפיל <span dir="ltr" className="rp-mult">1 − <Frac n="X" d={100} style={{fontFamily:"'Segoe UI',Tahoma,sans-serif"}}/></span>.</span>
     </div>
     <div className="example-box">
       <div className="ex-title">לדוגמה:</div>

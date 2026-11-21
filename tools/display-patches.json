@@ -3189,6 +3189,18 @@
       "old": "    {ch===1?<Ch1 key=\"c1\"/>:ch===2?<Ch2 key=\"c2\"/>:ch===3?<Ch3 key=\"c3\"/>:ch===4?<Ch4 key=\"c4\"/>:<Ch5 key=\"c5\"/>}\n",
       "new": "    {ch===1?<Ch1 key=\"c1\"/>:ch===2?<Ch2Parts key=\"c2\"/>:<Ch5 key=\"c3\"/>}\n",
       "count": 1
+    },
+    {
+      "why": "QA S6: formula display LTR",
+      "old": "      ישירות במכפיל: עלייה של X% — מכפיל <span style={{direction:'ltr',display:'inline-block'}}>1 + <Frac n=\"X\" d={100} style={{fontFamily:\"'Segoe UI',Tahoma,sans-serif\"}}/></span>.\n      ירידה של X% — מכפיל <span style={{direction:'ltr',display:'inline-block'}}>1 − <Frac n=\"X\" d={100} style={{fontFamily:\"'Segoe UI',Tahoma,sans-serif\"}}/></span>.\n",
+      "new": "      ישירות במכפיל: <span className=\"rp-rule\">עלייה של <span dir=\"ltr\">X%</span> — מכפיל <span dir=\"ltr\" className=\"rp-mult\">1 + <Frac n=\"X\" d={100} style={{fontFamily:\"'Segoe UI',Tahoma,sans-serif\"}}/></span>.</span>\n      <span className=\"rp-rule\">ירידה של <span dir=\"ltr\">X%</span> — מכפיל <span dir=\"ltr\" className=\"rp-mult\">1 − <Frac n=\"X\" d={100} style={{fontFamily:\"'Segoe UI',Tahoma,sans-serif\"}}/></span>.</span>\n",
+      "count": 1
+    },
+    {
+      "why": "QA S5: picture width as a CSS variable so desktop can show it bigger (up to 520px)",
+      "old": "    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',maxWidth:Math.min(Math.round(W*1.4),320),height:'auto',display:'block',margin:'0 auto'}}\n",
+      "new": "    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',maxWidth:Math.min(Math.round(W*1.4),320),'--rp-w':W+'px',height:'auto',display:'block',margin:'0 auto'}}\n",
+      "count": 1
     }
   ],
   "directed-numbers": [
