@@ -267,10 +267,17 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     }
   }
   const given = p.givenText || [];
-  // types 1–2: the tray names the sentence being read (type 1) or the asked part "AB = ▢" (type 2)
+  // type 2, Level 1: the letters of the active part and of its partner carry the row's pair colour in the given congruence
+  const lit = s.view.letters && askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' && cong ? (() => {
+    const f = p.facts[askFact], t1 = p.facts[cong].map.map((m) => m[0]);
+    return { at: (f.kind === 'seg' ? [...f.x] : [f.x.v]).map((q) => t1.indexOf(q)), color: f.mark ? PAIR[f.mark.color] : undefined };
+  })() : null;
+  // types 1–2: the tray names the sentence being read (type 1), or the given congruence and the asked part "AB = ▢" (type 2:
+  // on a phone the strip scrolls, and the congruence is what the student reads from)
   if (head && !planQ && !isDone && askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong') {
     const g = tn === 1 && given.find((x) => x.facts.includes(askFact));
     if (g) head.sent = g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />;
+    if (tn === 2 && cong) head.sent = <>{lit ? <CongSt st={p.facts[cong]} at={lit.at} color={lit.color} /> : <St st={p.facts[cong]} />} <span className="pf-fc-note">{T['lbl.byOrder']}</span></>;
     if (tn === 2 && !head.st) head.lead = <Ask part={p.facts[askFact].x} className="pf-ask-st" />;
   }
   if (cur && !planQ && !leans && !isDone && !(mode === 'walk' && body && body.t === 'action')) {
@@ -279,11 +286,6 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
 
   const tapping = mode === 'tap' && !end && !planQ && !!cur && cur.kind === 'statement' && !leans && !isDone;
   const leave = () => onLeave && onLeave({ nonSolo: s.nonSolo, decisions: s.decisions, ended: s.ended });
-  // type 2, Level 1: the letters of the active part and of its partner carry the row's pair colour in the given congruence
-  const lit = s.view.letters && askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' && cong ? (() => {
-    const f = p.facts[askFact], t1 = p.facts[cong].map.map((m) => m[0]);
-    return { at: (f.kind === 'seg' ? [...f.x] : [f.x.v]).map((q) => t1.indexOf(q)), color: f.mark ? PAIR[f.mark.color] : undefined };
-  })() : null;
 
   return (
     <div className={`pf-screen pf-mode-${mode}${end ? ' is-ended' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>

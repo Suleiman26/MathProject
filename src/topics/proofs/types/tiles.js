@@ -49,9 +49,9 @@ const letters = (s) => (typeof s === 'string' ? [...s] : [s.v, ...s.r]);
 /**
  * §7.5 (3): a false look-alike of one of the problem's given facts (letters swapped), tested false in
  * the coordinates and not a fact. → { tile:{ st, why:'letter-swap', for? }, trap:[normKey, trap] } | null
- * `from` = the fact ids to swap from (default: base.given).
+ * `from` = the fact ids to swap from (default: base.given); `skip` = normal forms already used.
  */
-export function letterSwap(base, R, from = base.given) {
+export function letterSwap(base, R, from = base.given, skip = new Set()) {
   const fig = base.figure, cands = [];
   for (const g of from) {
     const f = base.facts[g];
@@ -59,7 +59,7 @@ export function letterSwap(base, R, from = base.given) {
     const parts = f.kind === 'seg' ? fig.segs : fig.angles;
     for (const q of parts || []) {
       const st = { kind: f.kind, x: structuredClone(f.x), y: structuredClone(q) };
-      if (norm(fig, st) === norm(fig, f) || findFact(base, st) || holds(fig, st, 1e-6)) continue;
+      if (norm(fig, st) === norm(fig, f) || skip.has(norm(fig, st)) || findFact(base, st) || holds(fig, st, 1e-6)) continue;
       const share = letters(q).filter((l) => letters(f.y).includes(l)).length;
       cands.push({ st, share, given: g });
     }

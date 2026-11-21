@@ -249,6 +249,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 
 /* ── team ── */
 #root .pf-team{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;max-width:var(--page-w);margin:6px auto 0;padding:6px 12px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface-2);font-size:.78rem;line-height:1.45;color:var(--ink-2)}
+#root .pf-topic > *{min-width:0}
 #root .pf-topic > .hdr{padding:14px 16px 6px;gap:8px}
 #root .pf-topic > .hdr h1{font-size:1.25rem}
 #root .pf-topic > .pf-ch{margin-top:2px}

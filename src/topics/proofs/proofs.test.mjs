@@ -242,3 +242,72 @@ test('type 2: remake rebuilds the same problem', () => {
   const t = typeById('congruent-parts'), R = makeR(seeded(18));
   for (let i = 0; i < 30; i++) { const p = t.make(R, 2, 'B', { recent: [], last: null }, {}), q = t.remake(p); assert.equal(q.id, p.id); assert.deepEqual(q.facts, p.facts); assert.deepEqual(q.tiles, p.tiles); assert.deepEqual(q.figure, p.figure); assert.deepEqual(q.target, p.target); }
 });
+
+/* ── Task 18: type 1 ── */
+test('type 1: 10 templates; the word is true, the other words are false with the right message', () => {
+  const t = typeById('read-given'); assert.equal(t.templates.length, 10); assert.equal(t.button, '1. קוראים את הנתון'); assert.deepEqual(t.warm, ['W1', 'W7']);
+  const R = makeR(seeded(21));
+  for (const tpl of t.templates) for (let i = 0; i < 300; i++) {
+    const p = t.make(R, 2, 'B', { recent: [], last: null }, { only: tpl.id });
+    assert.equal(p.template, tpl.id); assert.equal(p.target.length, 2);
+    for (const f of p.target) { assert.equal(holds(p.figure, p.facts[f]), true); assert.equal(classify(p, [], p.facts[f]).c, 'ok'); assert.equal(checkReason(p, [], f, 'given').ok, true); assert.deepEqual(p.just[f][0].needs, []); }
+    for (const w of p.tiles.wrong.filter((x) => x.why === 'word')) { const c = classify(p, [], w.st); assert.deepEqual([c.c, c.kind], ['false', 'wrong-word']); assert.ok(/^st\.word\./.test(c.textKey)); assert.equal(holds(p.figure, w.st), false); }
+    assert.ok(p.tiles.wrong.length === 4, `${p.id}: ${p.tiles.wrong.length} wrong tiles`);
+    assert.equal(p.givenText.flatMap((g) => g.facts).length, 2);
+  }
+});
+test('type 1: accepted reasons follow the form of the sentence', () => {
+  const t = typeById('read-given'), R = makeR(seeded(22)), mk = (id) => t.make(R, 2, 'B', { recent: [], last: null }, { only: id });
+  const a = mk('1-a'), bis = a.target.find((f) => a.facts[f].kind === 'ang'), med = a.target.find((f) => a.facts[f].kind === 'seg');
+  assert.equal(checkReason(a, [], bis, 'bisector').ok, true); assert.equal(checkReason(a, [], med, 'median').ok, true);
+  assert.deepEqual([checkReason(a, [], med, 'bisector').kind, checkReason(a, [], med, 'bisector').textKey], ['wrong-word', 'rs.words.otherDef']);
+  const h = mk('1-h'), eq = h.target.find((f) => h.facts[f].kind === 'seg');
+  assert.equal(checkReason(h, [], eq, 'given').ok, true); assert.equal(checkReason(h, [], eq, 'bisector').ok, false); assert.equal(h.just[eq][0].reasons.length, 1);
+  const b = mk('1-b'), alt = b.target.find((f) => b.facts[f].right); assert.equal(checkReason(b, [], alt, 'altitude').ok, true); assert.match(show(b.facts[alt]), / = 90°$/);
+  const d = mk('1-d'); assert.ok(d.target.some((f) => d.just[f][0].reasons.includes('midpoint')));
+  const i9 = mk('1-i'); assert.ok(i9.tiles.wrong.some((w) => w.why === 'word' && w.st.kind === 'ang'));
+});
+test('type 1: the sentences say exactly what the statements say (spec §6.5 wording)', () => {
+  const t = typeById('read-given'), R = makeR(seeded(23));
+  for (const tpl of t.templates) for (let i = 0; i < 40; i++) {
+    const p = t.make(R, 1, 'B', { recent: [], last: null }, { only: tpl.id });
+    for (const g of p.givenText) {
+      const f = p.facts[g.facts[0]];
+      if (g.form === 'eq') { assert.equal(tpl.id, '1-h'); assert.equal(p.just[g.facts[0]][0].reasons.join(), 'given'); continue; }
+      if (g.key === 'gv.bisector') { const [, v, ] = [...g.vars.a.slice(1)]; assert.equal(f.kind, 'ang'); assert.equal(f.x.v, g.vars.a[2]); assert.ok(g.vars.l.includes(f.x.v)); assert.ok([...f.x.r, ...f.y.r].every((q) => g.vars.a.includes(q) || g.vars.l.includes(q))); assert.ok(v); }
+      if (g.key === 'gv.median' || g.key === 'gv.altitude') { const foot = g.vars.l[1]; assert.ok(f.kind === (g.key === 'gv.median' ? 'seg' : 'ang')); if (f.kind === 'seg') assert.deepEqual([f.x, f.y].map((s) => s.replace(foot, '')).sort().join(''), [...g.vars.s].sort().join('')); else { assert.equal(f.right, true); assert.equal(f.x.v, foot); } }
+      if (g.key === 'gv.midSide' || g.key === 'gv.midpoint') { assert.equal(f.kind, 'seg'); assert.ok(f.x.includes(g.vars.p) && f.y.includes(g.vars.p)); }
+      if (g.key === 'gv.bisect2') assert.equal(g.facts.length, 2);
+    }
+    if (tpl.id === '1-d') assert.ok(!p.figure.plain.some((s) => p.givenText.some((g) => g.key === 'gv.midSide' && s.includes(g.vars.p))), '1-d draws no line to the midpoint');
+  }
+});
+test('type 1: 1-h is not symmetric (AB ≠ AD), 1-g is (two bisectors along a diagonal force it)', () => {
+  const t = typeById('read-given'), R = makeR(seeded(24));
+  for (let i = 0; i < 100; i++) {
+    const h = t.make(R, 2, 'B', { recent: [], last: null }, { only: '1-h' }), [tA, tB] = h.figure.tris;
+    assert.equal(holds(h.figure, { kind: 'seg', x: tA[0] + tA[1], y: tB[0] + tB[1] }), false);
+    assert.ok(h.tiles.wrong.some((w) => w.why === 'word' && w.st.kind === 'seg'));
+    const g = t.make(R, 2, 'B', { recent: [], last: null }, { only: '1-g' }), [gA, gB] = g.figure.tris;
+    assert.equal(holds(g.figure, { kind: 'seg', x: gA[0] + gA[1], y: gB[0] + gB[1] }), true);
+  }
+});
+test('type 1: hints and the drawing point at the sentence\'s line, never at the answer', () => {
+  const t = typeById('read-given'), R = makeR(seeded(25));
+  const p = t.make(R, 2, 'B', { recent: [], last: null }, { only: '1-a' }), view = present(p, 2, 'B', { R });
+  const h = act(start(p, view), { t: 'hint' }).fx.find((f) => f.t === 'hint');
+  assert.equal(h.parts.length, 1); assert.equal(typeof h.parts[0], 'string'); assert.ok(p.figure.plain.includes(h.parts[0]));
+});
+test('decisions: type 1 = 1, 2, 4, 4, 4', () => {
+  const t = typeById('read-given'), R = makeR(seeded(26));
+  const n = (l, v) => decisionsOf(present(t.make(R, l, v, { recent: [], last: null }, {}), l, v, { counted: 2, R }));
+  assert.deepEqual([n(1, 'A'), n(1, 'B'), n(2, 'A'), n(2, 'B'), n(3, 'B')], [1, 2, 4, 4, 4]);
+  const p = t.make(R, 2, 'A', { recent: [], last: null }, {}), v = present(p, 2, 'A', { R }); assert.deepEqual([v.tiles.filter((x) => x.fact).length, v.tiles.filter((x) => !x.fact).length, v.chipsN], [2, 2, 6]);
+  const q = t.make(R, 2, 'B', { recent: [], last: null }, {}), w = present(q, 2, 'B', { R }); assert.deepEqual([w.tiles.length, w.chipsN], [6, 6]);
+  for (const f of q.target) { const o = optionsFor(q, f, 3, R); assert.equal(o.length, 3); assert.equal(o.filter((x) => classify(q, [], x).c === 'ok').length, 1); }
+});
+test('type 1: remake rebuilds the same problem', () => {
+  const t = typeById('read-given'), R = makeR(seeded(27));
+  for (let i = 0; i < 30; i++) { const p = t.make(R, 2, 'B', { recent: [], last: null }, {}), q = t.remake(p); assert.equal(q.id, p.id); assert.deepEqual(q.facts, p.facts); assert.deepEqual(q.tiles, p.tiles); assert.deepEqual(q.figure, p.figure); assert.deepEqual(q.givenText, p.givenText); }
+});
+test('all four types are present, in order', () => { assert.deepEqual(TYPES.map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה']); assert.equal(TYPES.reduce((n, t) => n + t.templates.length, 0), 63); });

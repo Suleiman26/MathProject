@@ -2,7 +2,7 @@
    with two lines from two of its vertices. Each line has a word (bisector / median / altitude /
    midpoint); `gives` is what the word means, `others` what the other two words would give for the
    same line (the wrong tiles of type 1), each visibly false (≥ 8% / ≥ 6°).
-   build(R, { lines:[{ word, from:0|1|2 }, …], names? }) → { figure, lines:{ AD:{ word, gives, others, from, foot, side } } }
+   build(R, { lines:[{ word, from:0|1|2, draw? }, …], names? }) → { figure, lines:{ AD:{ word, gives, others, from, foot, side, drawn } } }
    The first line's foot is D, the second's E. */
 import { triFromAngles, dist, sub, add, mul, dot } from '../../new/chapters/geometry/geo.js';
 import { place, rename, lies, S, Ang, G } from './kit.js';
@@ -38,8 +38,10 @@ export function _draw(R, spec) {
     lineSets.push([p, f, q]);
     const gives = statementOf(ln.word, v, f, [p, q]);
     const main = ln.word === 'midpoint' ? 'median' : ln.word;
-    const others = KINDS.filter((k) => k !== main).map((k) => statementOf(k, v, f, [p, q]));
-    lines[v + f] = { word: ln.word, gives, others, from: v, foot: f, side: p + q };
+    // { draw:false } (only for 'midpoint'): the point is named, no line is drawn, so the other words have nothing to say
+    const drawn = !(ln.draw === false && ln.word === 'midpoint');
+    const others = drawn ? KINDS.filter((k) => k !== main).map((k) => statementOf(k, v, f, [p, q])) : [];
+    lines[v + f] = { word: ln.word, gives, others, from: v, foot: f, side: p + q, drawn };
     for (const st of [gives, ...others]) if (st.kind === 'ang') angles.push(st.x, st.y);
   });
   // sides cut by a foot are drawn as their two pieces (tappable: the statements use them); the
@@ -49,7 +51,7 @@ export function _draw(R, spec) {
     const f = footed[s] || footed[s[1] + s[0]];
     if (f) drawn.push(s[0] + f, f + s[1]); else plain.push(s);
   }
-  for (const l of Object.values(lines)) plain.push(l.from + l.foot);
+  for (const l of Object.values(lines)) if (l.drawn) plain.push(l.from + l.foot);
   const seen = new Set(), uniq = angles.filter((g) => { const k = `${g.v}${[...g.r].sort().join('')}`; if (seen.has(k)) return false; seen.add(k); return true; });
   const figure = { points: place(P, R), lines: lineSets, segs: drawn, plain, angles: uniq, tris: [['A', 'B', 'C']], motion: null };
   return { figure, lines };
