@@ -1330,19 +1330,22 @@ html[data-page="triangles"] #root .iso-pop-also { font-size: .88rem; color: var(
   html[data-page="triangles"] #root .iso-pop, html[data-page="triangles"] #root .iso-pop-card { transition: none; animation: none; }
 }
 
-/* inequalities ch 3: the common range is built by tapping signs (fixes board #98) */
+/* inequalities ch 3: the common range is built by tapping signs (fixes board #98).
+   Sized to fit the narrowest phone card (~262px inside at 375px); #root beats the site's input min-width. */
 html[data-page="inequalities"] .iq-rb { display: grid; gap: 12px; justify-items: center; margin-top: 10px; }
 html[data-page="inequalities"] .iq-rb-modes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-html[data-page="inequalities"] .iq-rb-row { display: flex; align-items: center; justify-content: center; gap: 6px; direction: ltr; }
-html[data-page="inequalities"] .iq-rb-n { width: 58px; height: 46px; padding: 0 4px; text-align: center; font-size: 20px; font-weight: 700; border-radius: 12px; font-variant-numeric: tabular-nums; }
-html[data-page="inequalities"] .iq-rb-signs { display: grid; grid-template-columns: repeat(2, 36px); gap: 4px; }
-html[data-page="inequalities"] .iq-rb-s { width: 36px; height: 36px; padding: 0; border-radius: 10px; border: 1.5px solid var(--a-200, #fbcfe8); background: var(--surface, #fff); color: var(--a-800, #9d174d); font-size: 19px; font-weight: 700; cursor: pointer; transition: transform 100ms ease-out, background-color 120ms ease-out; }
-html[data-page="inequalities"] .iq-rb-s:active { transform: scale(.94); }
-html[data-page="inequalities"] .iq-rb-s.active { background: var(--a-600, #db2777); border-color: var(--a-600, #db2777); color: #fff; }
-html[data-page="inequalities"] .iq-rb-x { font-size: 24px; font-weight: 800; font-style: italic; color: var(--a-800, #9d174d); padding: 0 2px; }
-html[data-page="inequalities"] .iq-rb-eq { font-size: 22px; font-weight: 700; color: var(--ink, #1c1b19); }
-@media (max-width: 360px) {
-  html[data-page="inequalities"] .iq-rb-n { width: 50px; }
-  html[data-page="inequalities"] .iq-rb-signs { grid-template-columns: repeat(2, 32px); }
-  html[data-page="inequalities"] .iq-rb-s { width: 32px; height: 32px; }
+html[data-page="inequalities"] .iq-rb-row { display: flex; align-items: center; justify-content: center; gap: 4px; direction: ltr; max-width: 100%; }
+html[data-page="inequalities"] #root .iq-rb-n { flex: none; width: 46px; min-width: 0; height: 46px; padding: 0 2px; text-align: center; font-size: 18px; font-weight: 700; border-radius: 12px; font-variant-numeric: tabular-nums; }
+html[data-page="inequalities"] .iq-rb-signs { flex: none; display: grid; grid-template-columns: repeat(2, 32px); gap: 4px; }
+html[data-page="inequalities"] #root .iq-rb-s { width: 32px; height: 32px; min-width: 0; min-height: 0; padding: 0; border-radius: 9px; border: 1.5px solid var(--a-200, #fbcfe8); background: var(--surface, #fff); color: var(--a-800, #9d174d); font-size: 18px; font-weight: 700; box-shadow: none; cursor: pointer; transition: transform 100ms ease-out, background-color 120ms ease-out; }
+html[data-page="inequalities"] #root .iq-rb-s:active { transform: scale(.94); }
+html[data-page="inequalities"] #root .iq-rb-s.active { background: var(--a-600, #db2777); border-color: var(--a-600, #db2777); color: #fff; }
+html[data-page="inequalities"] .iq-rb-x { flex: none; width: 18px; text-align: center; font-size: 22px; font-weight: 800; font-style: italic; color: var(--a-800, #9d174d); }
+html[data-page="inequalities"] .iq-rb-eq { font-size: 22px; font-weight: 700; color: var(--ink, #1c1b19); padding: 0 4px; }
+@media (min-width: 560px) {
+  html[data-page="inequalities"] .iq-rb-row { gap: 8px; }
+  html[data-page="inequalities"] #root .iq-rb-n { width: 64px; height: 50px; font-size: 20px; }
+  html[data-page="inequalities"] .iq-rb-signs { grid-template-columns: repeat(2, 40px); gap: 5px; }
+  html[data-page="inequalities"] #root .iq-rb-s { width: 40px; height: 40px; font-size: 20px; border-radius: 11px; }
+  html[data-page="inequalities"] .iq-rb-x { width: 26px; font-size: 26px; }
 }

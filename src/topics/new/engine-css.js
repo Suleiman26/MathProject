@@ -75,6 +75,8 @@ export const NW_CSS = `/* ── math ── */
 #root .nw-rows--table .nw-lbl{justify-self:stretch;font-weight:600}
 #root .nw-rows--table .nw-row:last-child :is(.nw-lbl,.nw-line){border-bottom:0;background:var(--a-50)}
 #root .nw-rows--table .nw-row:last-child .nw-lbl{font-weight:700}
+#root .nw-rows--table .nw-line{border-radius:0;background:transparent;box-shadow:none;margin:0;width:auto}
+#root .nw-rows--table .nw-row:last-child .nw-line{background:var(--a-50)}
 #root .nw-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 10px;direction:rtl;font-size:clamp(1.2rem,5.4vw,1.5rem);max-width:100%;padding:12px 10px;border-radius:14px;background:color-mix(in srgb,var(--a-50) 75%,#fff);width:100%}
 #root .nw-grp{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 6px;direction:ltr;max-width:100%}
 #root .nw-unit{font-size:1rem;font-weight:600;color:var(--ink-2)}
@@ -144,7 +146,7 @@ export const NW_CSS = `/* ── math ── */
 #root .nw-coin-side.t>.nw-m{color:#1d4ed8}
 #root .nw-coin-of{font-size:.85rem;color:var(--ink-3);text-align:center}
 #root .nw-coin-bar{position:relative;height:16px;border-radius:999px;background:#2563eb;overflow:hidden}
-#root .nw-coin-fill{position:absolute;inset:0 auto 0 0;background:var(--a-600);transition:width 420ms cubic-bezier(.2,.8,.2,1)}
+#root .nw-coin-fill{position:absolute;top:0;bottom:0;inset-inline-start:0;background:var(--a-600);transition:width 420ms cubic-bezier(.2,.8,.2,1)}
 #root .nw-coin-mid{position:absolute;top:-2px;bottom:-2px;left:50%;width:2px;margin-left:-1px;background:#fff}
 #root .nw-coin-scale{display:flex;justify-content:space-between;font-size:.8rem;color:var(--ink-3)}
 #root .nw-coin-scale .nw-m{color:var(--ink-3);font-weight:600}

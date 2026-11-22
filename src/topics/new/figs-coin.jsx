@@ -1,7 +1,7 @@
 'use client';
 /* A small coin-flip lab for the probability lesson (fixes board #96, Sulaiman 2026-11-22):
    the student picks how many times to flip a fair coin (1 to 1,000,000), the computer flips at
-   random, and the results of the last runs stay in a table, so it is easy to see the share of
+   random, and the results of the last runs stay in a table (runs, heads, % heads), so it is easy to see the share of
    heads getting closer to 50% the more times one flips.  Lesson item: { fig: { type: 'coinSim' } } */
 import React, { useState } from 'react';
 
@@ -51,19 +51,19 @@ export function CoinSim() {
             <div className="nw-coin-of">מתוך <M>{th(last.n)}</M> הטלות</div>
             <div className="nw-coin-side t"><span className="nw-coin-face">פ</span><b>פלי</b><M>{th(last.n - last.heads)}</M><small><M>{pctText(last.n - last.heads, last.n)}</M></small></div>
           </div>
-          <div className="nw-coin-bar" dir="ltr" role="img" aria-label={`עץ ${pctText(last.heads, last.n)}, פלי ${pctText(last.n - last.heads, last.n)}`}>
+          <div className="nw-coin-bar" role="img" aria-label={`עץ ${pctText(last.heads, last.n)}, פלי ${pctText(last.n - last.heads, last.n)}`}>
             <span className="nw-coin-fill" style={{ width: `${pct(last.heads, last.n)}%` }} />
             <span className="nw-coin-mid" />
           </div>
-          <div className="nw-coin-scale" dir="ltr"><span>עץ</span><span><M>50%</M></span><span>פלי</span></div>
+          <div className="nw-coin-scale"><span>עץ</span><span><M>50%</M></span><span>פלי</span></div>
           {last.seq && <div className="nw-coin-seq" dir="ltr">{last.seq.map((h, i) => <span key={i} className={h ? 'h' : 't'}>{h ? 'ע' : 'פ'}</span>)}</div>}
         </div>
       )}
       {runs.length > 1 && (
         <div className="nw-tablewrap">
           <table className="nw-table nw-coin-hist">
-            <thead><tr><th>הטלות</th><th>עץ</th><th>אחוז עץ</th><th>רחוק מ-<M>50%</M> ב-</th></tr></thead>
-            <tbody>{runs.map((r) => <tr key={r.id}><td><M>{th(r.n)}</M></td><td><M>{th(r.heads)}</M></td><td><M>{pctText(r.heads, r.n)}</M></td><td><M>{Math.abs(pct(r.heads, r.n) - 50).toFixed(r.n >= 10000 ? 2 : 1)}%</M></td></tr>)}</tbody>
+            <thead><tr><th>הטלות</th><th>עץ</th><th>אחוז עץ</th></tr></thead>
+            <tbody>{runs.map((r) => <tr key={r.id}><td><M>{th(r.n)}</M></td><td><M>{th(r.heads)}</M></td><td><M>{pctText(r.heads, r.n)}</M></td></tr>)}</tbody>
           </table>
         </div>
       )}
