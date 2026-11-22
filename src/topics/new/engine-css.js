@@ -65,6 +65,16 @@ export const NW_CSS = `/* ── math ── */
 #root .nw-rows{display:grid;gap:14px;margin-top:18px}
 #root .nw-row{display:grid;gap:6px;justify-items:center}
 #root .nw-lbl{font-size:.95rem;font-weight:700;color:var(--ink);justify-self:start}
+/* answer rows drawn as a table to fill in (q.tableHead, board #94) */
+#root .nw-rows--table{grid-template-columns:minmax(120px,max-content) minmax(110px,max-content);gap:0;justify-content:center;width:max-content;max-width:100%;margin-inline:auto;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+#root .nw-rows--table .nw-row{display:contents}
+#root .nw-rows--table :is(.nw-th,.nw-lbl,.nw-line){display:flex;align-items:center;justify-content:center;padding:6px 14px;border-bottom:1px solid var(--line);min-height:52px}
+#root .nw-rows--table :is(.nw-th,.nw-lbl){border-inline-end:1px solid var(--line)}
+#root .nw-rows--table .nw-th:nth-child(2){border-inline-end:0}
+#root .nw-rows--table .nw-th{background:var(--a-50);color:var(--a-900);font-weight:700;min-height:44px}
+#root .nw-rows--table .nw-lbl{justify-self:stretch;font-weight:600}
+#root .nw-rows--table .nw-row:last-child :is(.nw-lbl,.nw-line){border-bottom:0;background:var(--a-50)}
+#root .nw-rows--table .nw-row:last-child .nw-lbl{font-weight:700}
 #root .nw-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 10px;direction:rtl;font-size:clamp(1.2rem,5.4vw,1.5rem);max-width:100%;padding:12px 10px;border-radius:14px;background:color-mix(in srgb,var(--a-50) 75%,#fff);width:100%}
 #root .nw-grp{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 6px;direction:ltr;max-width:100%}
 #root .nw-unit{font-size:1rem;font-weight:600;color:var(--ink-2)}
@@ -105,6 +115,47 @@ export const NW_CSS = `/* ── math ── */
 #root .nw-table tr:last-child :is(th,td){border-bottom:0}
 #root .nw-table th{background:var(--a-50);color:var(--a-900);font-weight:700}
 #root .nw-table td{color:var(--ink);font-weight:500}
+
+
+/* ── coin-flip lab (probability lesson, board #96) ── */
+#root .nw-figbox--coinSim{width:100%;justify-items:stretch}
+#root .nw-coin{display:grid;gap:12px;width:100%;padding:16px;border-radius:16px;background:var(--a-50);border:1px solid var(--a-100)}
+#root .nw-coin-t{font-weight:700;color:var(--a-900);text-align:center;font-size:1rem;text-wrap:balance}
+#root .nw-coin-in{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+#root .nw-coin-l{font-weight:600;color:var(--ink-2)}
+#root .nw-coin-n{width:130px;height:46px;text-align:center;font-size:1.1rem;font-weight:700;border-radius:12px;font-variant-numeric:tabular-nums}
+#root .nw-coin-go{min-height:46px;min-width:96px}
+#root .nw-coin-quick{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+#root .nw-coin-q{min-height:36px;padding:4px 12px;border-radius:999px;border:1px solid var(--a-200);background:#fff;color:var(--a-800);font-size:.9rem;cursor:pointer;transition:transform 100ms ease-out,background-color 120ms ease-out}
+#root .nw-coin-q:active{transform:scale(.95)}
+#root .nw-coin-q .nw-m{color:inherit;font-weight:600}
+#root .nw-coin-err{color:var(--err-700,#b91c1c);font-weight:600;text-align:center;font-size:.92rem}
+#root .nw-coin-res{display:grid;gap:8px;padding:14px 12px;border-radius:14px;background:#fff;animation:nw-coin-in 260ms cubic-bezier(.2,.8,.2,1)}
+@keyframes nw-coin-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#root .nw-coin-big{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+#root .nw-coin-side{display:grid;justify-items:center;gap:2px}
+#root .nw-coin-side>.nw-m{font-size:1.5rem}
+#root .nw-coin-side small .nw-m{font-size:.95rem;color:var(--ink-3)}
+#root .nw-coin-side b{font-size:.9rem;color:var(--ink-2)}
+#root .nw-coin-face{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font-weight:800;color:#fff;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.12)}
+#root .nw-coin-side.h .nw-coin-face{background:var(--a-600)}
+#root .nw-coin-side.t .nw-coin-face{background:#2563eb}
+#root .nw-coin-side.h>.nw-m{color:var(--a-800)}
+#root .nw-coin-side.t>.nw-m{color:#1d4ed8}
+#root .nw-coin-of{font-size:.85rem;color:var(--ink-3);text-align:center}
+#root .nw-coin-bar{position:relative;height:16px;border-radius:999px;background:#2563eb;overflow:hidden}
+#root .nw-coin-fill{position:absolute;inset:0 auto 0 0;background:var(--a-600);transition:width 420ms cubic-bezier(.2,.8,.2,1)}
+#root .nw-coin-mid{position:absolute;top:-2px;bottom:-2px;left:50%;width:2px;margin-left:-1px;background:#fff}
+#root .nw-coin-scale{display:flex;justify-content:space-between;font-size:.8rem;color:var(--ink-3)}
+#root .nw-coin-scale .nw-m{color:var(--ink-3);font-weight:600}
+#root .nw-coin-seq{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+#root .nw-coin-seq span{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-size:.8rem;font-weight:800;color:#fff}
+#root .nw-coin-seq .h{background:var(--a-600)}
+#root .nw-coin-seq .t{background:#2563eb}
+#root .nw-coin-hist{font-size:.92rem}
+#root .nw-coin-tip{text-align:center;color:var(--ink-3);font-size:.9rem}
+@media (prefers-reduced-motion:reduce){#root .nw-coin-res{animation:none}#root .nw-coin-fill{transition:none}}
+@media (max-width:480px){#root .nw-coin{padding:12px 10px}#root .nw-coin-side>.nw-m{font-size:1.25rem}#root .nw-coin-hist :is(th,td){padding:6px 6px;font-size:.85rem}}
 
 @media (max-width:480px){
   #root .nw-choices{grid-template-columns:1fr}

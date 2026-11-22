@@ -9,6 +9,7 @@
    Hebrew letter of its colour, so the drawing does not depend on colour vision. */
 import React from 'react';
 import { INK, col } from './figs-kit';
+import { CoinSim } from './figs-coin';  // { type:'coinSim' } an interactive coin-flip lab (board #96)
 
 const NAMES = { red: ['אדום', 'א'], blue: ['כחול', 'כ'], green: ['ירוק', 'י'], yellow: ['צהוב', 'צ'], violet: ['סגול', 'ס'] };
 const onInk = (c) => (c === 'yellow' ? INK : '#fff');
@@ -144,5 +145,5 @@ function Tree({ fig }) {
   );
 }
 
-const FIGS = { balls: Balls, spinner: Spinner, tree: Tree };
+const FIGS = { balls: Balls, spinner: Spinner, tree: Tree, coinSim: CoinSim };
 export default FIGS;

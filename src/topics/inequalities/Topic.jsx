@@ -494,10 +494,10 @@ function NotationInputRay({expectedSign,expectedValue,onCorrect}){
   const xEl=<span style={{fontSize:'1.2rem',fontWeight:700,color:'#831843'}}>x</span>;
   const numEl=<input value={txt} onChange={e=>{setTxt(e.target.value);setFb(null);}} style={{width:70}}/>;
   return <div>
-    <div className="iq-final-t">את הסימן כותבים תמיד כך: <span className="iq-m">&lt;</span> או <span className="iq-m">≤</span>. אם x צריך להיות בצד השני, לחצו ״החלפת צדדים״.</div>
+    <div className="iq-final-t">בחרו את הסימן המתאים: <span className="iq-m">&lt;</span>, <span className="iq-m">≤</span>, <span className="iq-m">&gt;</span> או <span className="iq-m">≥</span>. כדי לכתוב את x בצד השני, לחצו ״החלפת צדדים״.</div>
     <div className="choice-row" style={{direction:'ltr'}}>
       {xFirst?xEl:numEl}
-      {['<','≤'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}
+      {['<','≤','>','≥'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}
       {xFirst?numEl:xEl}
     </div>
     <div style={{textAlign:'center'}}><button type="button" className="btn iq-swap" onClick={()=>{setXFirst(v=>!v);setFb(null);}}>⇄ החלפת צדדים</button></div>
@@ -737,6 +737,60 @@ function checkIntersectionNotation(text,result){
   const lo=parseInt(m[1],10), signA=m[2], signB=m[3], hi=parseInt(m[4],10);
   return lo===result.lo && hi===result.hi && signA===(result.closedLo?'≤':'<') && signB===(result.closedHi?'≤':'<');
 }
+/* The common range is built by tapping signs (fixes board #98): typing ≤ in a right-to-left box
+   was hard on a phone and showed the math mirrored. Both directions are accepted (board #97):
+   "−2 < x ≤ 5" and "5 ≥ x > −2". */
+function rangeFromPick(A,s1,s2,B){
+  if(isLtSign(s1)!==isLtSign(s2)) return 'dir';
+  if(isLtSign(s1)) return {lo:A,closedLo:s1==='≤',hi:B,closedHi:s2==='≤'};
+  return {lo:B,closedLo:s2==='≥',hi:A,closedHi:s1==='≥'};
+}
+function checkRangePick(mode,pick,result){
+  if(mode==='none') return result.type==='empty' ? 'ok' : 'err';
+  if(mode==='point'){
+    const v=parseInt(String(pick.p).replace(/[−–]/g,'-'),10);
+    if(isNaN(v)) return 'missing';
+    return result.type==='point' && v===result.value ? 'ok' : 'err';
+  }
+  const A=parseInt(String(pick.a).replace(/[−–]/g,'-'),10), B=parseInt(String(pick.b).replace(/[−–]/g,'-'),10);
+  if(isNaN(A)||isNaN(B)||!pick.s1||!pick.s2) return 'missing';
+  const r=rangeFromPick(A,pick.s1,pick.s2,B);
+  if(r==='dir') return 'dir';
+  if(result.type==='point') return r.lo===result.value && r.hi===result.value && r.closedLo && r.closedHi ? 'ok' : 'err';
+  if(result.type!=='interval') return 'err';
+  return r.lo===result.lo && r.hi===result.hi && r.closedLo===result.closedLo && r.closedHi===result.closedHi ? 'ok' : 'err';
+}
+function RangeBuilder({result,onCorrect}){
+  const [mode,setMode]=useState('range');
+  const [pk,setPk]=useState({a:'',s1:null,s2:null,b:'',p:''});
+  const [fb,setFb]=useState(null);
+  const set=(k,v)=>{ setPk(o=>({...o,[k]:v})); setFb(null); };
+  function check(){
+    const r=checkRangePick(mode,pk,result);
+    setFb(r);
+    if(r==='ok') setTimeout(onCorrect,500);
+  }
+  const signs=k=><div className="iq-rb-signs" role="group" aria-label="בחירת סימן">
+    {['<','≤','>','≥'].map(s=><button key={s} type="button" className={`iq-rb-s ${pk[k]===s?'active':''}`} onClick={()=>set(k,s)}>{s}</button>)}
+  </div>;
+  const box=k=><input className="iq-rb-n" value={pk[k]} inputMode="text" dir="ltr" aria-label="מספר" onChange={e=>set(k,e.target.value)}/>;
+  return <div className="iq-rb">
+    <div className="iq-rb-modes">
+      {[['range','תחום'],['point','ערך אחד'],['none','אין פתרון']].map(([m,t])=><button key={m} type="button" className={`choice-btn ${mode===m?'active':''}`} onClick={()=>{setMode(m);setFb(null);}}>{t}</button>)}
+    </div>
+    {mode==='range' && <>
+      <div className="iq-final-t">כתבו את המספרים ובחרו את הסימנים בלחיצה.</div>
+      <div className="iq-rb-row" dir="ltr">{box('a')}{signs('s1')}<span className="iq-rb-x">x</span>{signs('s2')}{box('b')}</div>
+    </>}
+    {mode==='point' && <div className="iq-rb-row" dir="ltr"><span className="iq-rb-x">x</span><span className="iq-rb-eq">=</span>{box('p')}</div>}
+    {mode==='none' && <div className="iq-final-t">אין אף מספר שמקיים את שני האי-שוויונות.</div>}
+    <div style={{textAlign:'center'}}><button className="btn bp" onClick={check}>✓ בדוק</button></div>
+    {fb==='err' && <Fb ok={false}/>}
+    {fb==='missing' && <div className="fb err">השלימו את שני המספרים ואת שני הסימנים.</div>}
+    {fb==='dir' && <div className="fb err">שני הסימנים צריכים להצביע לאותו כיוון. לדוגמה: <span className="iq-m">−2 &lt; x ≤ 5</span> או <span className="iq-m">5 ≥ x &gt; −2</span></div>}
+    {fb==='ok' && <Fb ok={true}/>}
+  </div>;
+}
 function genCh3(){
   const scenario=pick(['interval','interval','interval','empty','point']);
   let sign1,v1,sign2,v2,result;
@@ -766,8 +820,6 @@ function Ch3(){
   const [data,setData]=useState(genCh3);
   const [phase,setPhase]=useState(0);
   const [boundaryOk,setBoundaryOk]=useState(false);
-  const [notationTxt,setNotationTxt]=useState('');
-  const [notationFb,setNotationFb]=useState(null);
   const [listTxt,setListTxt]=useState('');
   const [listFb,setListFb]=useState(null);
   const [done1,setDone1]=useState(false);
@@ -777,19 +829,13 @@ function Ch3(){
   function reset(){
     setDone1(false); setDone2(false);
     setData(genCh3()); setPhase(0); setBoundaryOk(false);
-    setNotationTxt(''); setNotationFb(null); setListTxt(''); setListFb(null);
+    setListTxt(''); setListFb(null);
   }
   const r1={value:data.ineq1.v,closed:closedOfSign(data.ineq1.sign),dir:dirOfSign(data.ineq1.sign)};
   const r2={value:data.ineq2.v,closed:closedOfSign(data.ineq2.sign),dir:dirOfSign(data.ineq2.sign)};
   const seg1={type:'ray',value:r1.value,closed:r1.closed,dir:r1.dir,color:'#2563eb'};
   const seg2={type:'ray',value:r2.value,closed:r2.closed,dir:r2.dir,color:'#ea580c'};
 
-  function checkNotation(){
-    const ok=checkIntersectionNotation(notationTxt,data.result);
-    if(ok==='gt'){ setNotationFb('gt'); return; }
-    if(ok){ setNotationFb('ok'); setTimeout(()=>setPhase(data.result.type==='empty'?6:5),500); }
-    else setNotationFb('err');
-  }
   function checkList(){
     const expected = data.result.type==='point' ? [data.result.value] : integersInRange(data.result.lo,data.result.closedLo,data.result.hi,data.result.closedHi);
     const got=parseIntList(listTxt);
@@ -839,14 +885,9 @@ function Ch3(){
             : [{value:data.result.lo,closed:data.result.closedLo},{value:data.result.hi,closed:data.result.closedHi}]}
           color="#16a34a" staticSegments={[seg1,seg2]} onCorrect={()=>setBoundaryOk(true)}/>}
         {(data.result.type==='empty' || boundaryOk) && <div>
-          <div className="ans-row">
-            <input value={notationTxt} onChange={e=>{setNotationTxt(e.target.value);setNotationFb(null);}}
-              placeholder={data.result.type==='empty' ? 'אין פתרון' : 'לדוגמה: \u2066-2 < x ≤ 5\u2069'} style={{minWidth:170}}/>
-            <button className="btn bp" onClick={checkNotation}>✓ בדוק</button>
-          </div>
-          {notationFb==='err' && <Fb ok={false}/>}
-          {notationFb==='gt' && <div className="fb err iq-gt-hint">כמעט! את הסימן כותבים תמיד כך: <span className="iq-m">&lt;</span> או <span className="iq-nw"><span className="iq-m">≤</span>,</span> מהמספר הקטן אל הגדול. לדוגמה: <span className="iq-m">−2 &lt; x ≤ 5</span></div>}
-          {notationFb==='ok' && <Fb ok={true}/>}
+          <NumberLineStatic segments={[seg1,seg2,...(data.result.type==='point'?[{type:'point',value:data.result.value,color:'#16a34a'}]:data.result.type==='interval'?[{type:'interval',a:data.result.lo,b:data.result.hi,closedA:data.result.closedLo,closedB:data.result.closedHi,color:'#16a34a'}]:[])]}/>
+          <div className="hint">{data.result.type==='empty'?'האם יש תחום משותף לשני האי-שוויונות? כתבו את הפתרון של המערכת.':'בירוק: התחום המשותף. כתבו אותו.'}</div>
+          <RangeBuilder result={data.result} onCorrect={()=>setPhase(data.result.type==='empty'?6:5)}/>
         </div>}
       </div>}
 

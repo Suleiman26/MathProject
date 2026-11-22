@@ -1691,6 +1691,42 @@
       "old": "  </div>;\n}\n\n\n",
       "new": "    {chapter===4 && <NewChapter ch={quadInequality}/>}\n  </div>;\n}\n\n\n",
       "count": 1
+    },
+    {
+      "why": "Fixes board items #97 #98: > and ≥ buttons on the number-line reading; the system's common range is built by tapping signs",
+      "old": "    <div className=\"iq-final-t\">את הסימן כותבים תמיד כך: <span className=\"iq-m\">&lt;</span> או <span className=\"iq-m\">≤</span>. אם x צריך להיות בצד השני, לחצו ״החלפת צדדים״.</div>\n    <div className=\"choice-row\" style={{direction:'ltr'}}>\n      {xFirst?xEl:numEl}\n      {['<','≤'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}\n",
+      "new": "    <div className=\"iq-final-t\">בחרו את הסימן המתאים: <span className=\"iq-m\">&lt;</span>, <span className=\"iq-m\">≤</span>, <span className=\"iq-m\">&gt;</span> או <span className=\"iq-m\">≥</span>. כדי לכתוב את x בצד השני, לחצו ״החלפת צדדים״.</div>\n    <div className=\"choice-row\" style={{direction:'ltr'}}>\n      {xFirst?xEl:numEl}\n      {['<','≤','>','≥'].map(s=><button key={s} className={`choice-btn ${sign===s?'active':''}`} onClick={()=>{setSign(s);setFb(null);}}>{s}</button>)}\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #97 #98: > and ≥ buttons on the number-line reading; the system's common range is built by tapping signs",
+      "old": "function genCh3(){\n",
+      "new": "/* The common range is built by tapping signs (fixes board #98): typing ≤ in a right-to-left box\n   was hard on a phone and showed the math mirrored. Both directions are accepted (board #97):\n   \"−2 < x ≤ 5\" and \"5 ≥ x > −2\". */\nfunction rangeFromPick(A,s1,s2,B){\n  if(isLtSign(s1)!==isLtSign(s2)) return 'dir';\n  if(isLtSign(s1)) return {lo:A,closedLo:s1==='≤',hi:B,closedHi:s2==='≤'};\n  return {lo:B,closedLo:s2==='≥',hi:A,closedHi:s1==='≥'};\n}\nfunction checkRangePick(mode,pick,result){\n  if(mode==='none') return result.type==='empty' ? 'ok' : 'err';\n  if(mode==='point'){\n    const v=parseInt(String(pick.p).replace(/[−–]/g,'-'),10);\n    if(isNaN(v)) return 'missing';\n    return result.type==='point' && v===result.value ? 'ok' : 'err';\n  }\n  const A=parseInt(String(pick.a).replace(/[−–]/g,'-'),10), B=parseInt(String(pick.b).replace(/[−–]/g,'-'),10);\n  if(isNaN(A)||isNaN(B)||!pick.s1||!pick.s2) return 'missing';\n  const r=rangeFromPick(A,pick.s1,pick.s2,B);\n  if(r==='dir') return 'dir';\n  if(result.type==='point') return r.lo===result.value && r.hi===result.value && r.closedLo && r.closedHi ? 'ok' : 'err';\n  if(result.type!=='interval') return 'err';\n  return r.lo===result.lo && r.hi===result.hi && r.closedLo===result.closedLo && r.closedHi===result.closedHi ? 'ok' : 'err';\n}\nfunction RangeBuilder({result,onCorrect}){\n  const [mode,setMode]=useState('range');\n  const [pk,setPk]=useState({a:'',s1:null,s2:null,b:'',p:''});\n  const [fb,setFb]=useState(null);\n  const set=(k,v)=>{ setPk(o=>({...o,[k]:v})); setFb(null); };\n  function check(){\n    const r=checkRangePick(mode,pk,result);\n    setFb(r);\n    if(r==='ok') setTimeout(onCorrect,500);\n  }\n  const signs=k=><div className=\"iq-rb-signs\" role=\"group\" aria-label=\"בחירת סימן\">\n    {['<','≤','>','≥'].map(s=><button key={s} type=\"button\" className={`iq-rb-s ${pk[k]===s?'active':''}`} onClick={()=>set(k,s)}>{s}</button>)}\n  </div>;\n  const box=k=><input className=\"iq-rb-n\" value={pk[k]} inputMode=\"text\" dir=\"ltr\" aria-label=\"מספר\" onChange={e=>set(k,e.target.value)}/>;\n  return <div className=\"iq-rb\">\n    <div className=\"iq-rb-modes\">\n      {[['range','תחום'],['point','ערך אחד'],['none','אין פתרון']].map(([m,t])=><button key={m} type=\"button\" className={`choice-btn ${mode===m?'active':''}`} onClick={()=>{setMode(m);setFb(null);}}>{t}</button>)}\n    </div>\n    {mode==='range' && <>\n      <div className=\"iq-final-t\">כתבו את המספרים ובחרו את הסימנים בלחיצה.</div>\n      <div className=\"iq-rb-row\" dir=\"ltr\">{box('a')}{signs('s1')}<span className=\"iq-rb-x\">x</span>{signs('s2')}{box('b')}</div>\n    </>}\n    {mode==='point' && <div className=\"iq-rb-row\" dir=\"ltr\"><span className=\"iq-rb-x\">x</span><span className=\"iq-rb-eq\">=</span>{box('p')}</div>}\n    {mode==='none' && <div className=\"iq-final-t\">אין אף מספר שמקיים את שני האי-שוויונות.</div>}\n    <div style={{textAlign:'center'}}><button className=\"btn bp\" onClick={check}>✓ בדוק</button></div>\n    {fb==='err' && <Fb ok={false}/>}\n    {fb==='missing' && <div className=\"fb err\">השלימו את שני המספרים ואת שני הסימנים.</div>}\n    {fb==='dir' && <div className=\"fb err\">שני הסימנים צריכים להצביע לאותו כיוון. לדוגמה: <span className=\"iq-m\">−2 &lt; x ≤ 5</span> או <span className=\"iq-m\">5 ≥ x &gt; −2</span></div>}\n    {fb==='ok' && <Fb ok={true}/>}\n  </div>;\n}\nfunction genCh3(){\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #97 #98: > and ≥ buttons on the number-line reading; the system's common range is built by tapping signs",
+      "old": "  const [notationTxt,setNotationTxt]=useState('');\n  const [notationFb,setNotationFb]=useState(null);\n",
+      "new": "",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #97 #98: > and ≥ buttons on the number-line reading; the system's common range is built by tapping signs",
+      "old": "    setNotationTxt(''); setNotationFb(null); setListTxt(''); setListFb(null);\n",
+      "new": "    setListTxt(''); setListFb(null);\n",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #97 #98: > and ≥ buttons on the number-line reading; the system's common range is built by tapping signs",
+      "old": "  function checkNotation(){\n    const ok=checkIntersectionNotation(notationTxt,data.result);\n    if(ok==='gt'){ setNotationFb('gt'); return; }\n    if(ok){ setNotationFb('ok'); setTimeout(()=>setPhase(data.result.type==='empty'?6:5),500); }\n    else setNotationFb('err');\n  }\n",
+      "new": "",
+      "count": 1
+    },
+    {
+      "why": "Fixes board items #97 #98: > and ≥ buttons on the number-line reading; the system's common range is built by tapping signs",
+      "old": "          <div className=\"ans-row\">\n            <input value={notationTxt} onChange={e=>{setNotationTxt(e.target.value);setNotationFb(null);}}\n              placeholder={data.result.type==='empty' ? 'אין פתרון' : 'לדוגמה: \\u2066-2 < x ≤ 5\\u2069'} style={{minWidth:170}}/>\n            <button className=\"btn bp\" onClick={checkNotation}>✓ בדוק</button>\n          </div>\n          {notationFb==='err' && <Fb ok={false}/>}\n          {notationFb==='gt' && <div className=\"fb err iq-gt-hint\">כמעט! את הסימן כותבים תמיד כך: <span className=\"iq-m\">&lt;</span> או <span className=\"iq-nw\"><span className=\"iq-m\">≤</span>,</span> מהמספר הקטן אל הגדול. לדוגמה: <span className=\"iq-m\">−2 &lt; x ≤ 5</span></div>}\n          {notationFb==='ok' && <Fb ok={true}/>}\n",
+      "new": "          <NumberLineStatic segments={[seg1,seg2,...(data.result.type==='point'?[{type:'point',value:data.result.value,color:'#16a34a'}]:data.result.type==='interval'?[{type:'interval',a:data.result.lo,b:data.result.hi,closedA:data.result.closedLo,closedB:data.result.closedHi,color:'#16a34a'}]:[])]}/>\n          <div className=\"hint\">{data.result.type==='empty'?'האם יש תחום משותף לשני האי-שוויונות? כתבו את הפתרון של המערכת.':'בירוק: התחום המשותף. כתבו אותו.'}</div>\n          <RangeBuilder result={data.result} onCorrect={()=>setPhase(data.result.type==='empty'?6:5)}/>\n",
+      "count": 1
     }
   ],
   "parabola-practice": [

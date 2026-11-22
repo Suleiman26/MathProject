@@ -119,7 +119,9 @@ function Practice({ ch }) {
         {q.fig && <Fig fig={q.fig} />}
 
         {q.rows && (
-          <div className="nw-rows">
+          <div className={`nw-rows${q.tableHead ? ' nw-rows--table' : ''}`}>
+            {/* tableHead: the rows are drawn as a two-column table to fill in (board #94) */}
+            {q.tableHead && q.tableHead.map((h, hi) => <span className="nw-th" key={'h' + hi}><Rich text={h} /></span>)}
             {q.rows.map((row, ri) => (
               <div className="nw-row" key={ri}>
                 {row.label && <span className="nw-lbl"><Rich text={row.label} /></span>}

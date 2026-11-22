@@ -2,13 +2,37 @@
 import { num } from '../../core.js';
 import { fr, frEq, split, sameFrac } from './util.js';
 
+/* 25 survey stories (fixes board #94, Sulaiman 2026-11-22: "25 different kinds"). Every category
+   reads after "בחרו ב…" (no definite article). A shuffle bag gives all 25 before one comes back. */
 const CTX = [
   { ask: 'תלמידי שכבת ז׳ נשאלו מהו ענף הספורט האהוב עליהם', who: 'תלמידים', head: 'ענף ספורט', cats: ['כדורגל', 'כדורסל', 'שחייה', 'ריקוד'] },
   { ask: 'תלמידים נשאלו איזו חיית מחמד הם הכי אוהבים', who: 'תלמידים', head: 'חיית מחמד', cats: ['כלב', 'חתול', 'דג', 'תוכי'] },
   { ask: 'ילדים נשאלו מהו טעם הגלידה האהוב עליהם', who: 'ילדים', head: 'טעם', cats: ['וניל', 'שוקולד', 'תות', 'מנגו'] },
   { ask: 'תלמידים נשאלו איזה כלי נגינה היו רוצים ללמוד', who: 'תלמידים', head: 'כלי נגינה', cats: ['גיטרה', 'פסנתר', 'תופים', 'כינור'] },
   { ask: 'תלמידים נשאלו מהי עונת השנה האהובה עליהם', who: 'תלמידים', head: 'עונה', cats: ['קיץ', 'חורף', 'אביב', 'סתיו'] },
+  { ask: 'תלמידים נשאלו מהו הצבע האהוב עליהם', who: 'תלמידים', head: 'צבע', cats: ['כחול', 'אדום', 'ירוק', 'שחור'] },
+  { ask: 'תלמידים נשאלו מהו המקצוע האהוב עליהם בבית הספר', who: 'תלמידים', head: 'מקצוע', cats: ['מתמטיקה', 'אנגלית', 'מדעים', 'ספורט'] },
+  { ask: 'תלמידים נשאלו איך הם מגיעים בדרך כלל לבית הספר', who: 'תלמידים', head: 'דרך הגעה', cats: ['הליכה', 'אוטובוס', 'רכב', 'אופניים'] },
+  { ask: 'ילדים נשאלו מהו הפרי האהוב עליהם', who: 'ילדים', head: 'פרי', cats: ['תפוח', 'בננה', 'ענבים', 'אבטיח'] },
+  { ask: 'תלמידים נשאלו מה הם אוכלים בדרך כלל בארוחת הבוקר', who: 'תלמידים', head: 'ארוחת בוקר', cats: ['דגנים', 'כריך', 'חביתה', 'יוגורט'] },
+  { ask: 'ילדים נשאלו מהו המשקה האהוב עליהם', who: 'ילדים', head: 'משקה', cats: ['מים', 'מיץ', 'שוקו', 'תה'] },
+  { ask: 'תלמידים נשאלו איזה סוג סרטים הם הכי אוהבים', who: 'תלמידים', head: 'סוג סרט', cats: ['קומדיה', 'אקשן', 'אנימציה', 'מתח'] },
+  { ask: 'תלמידים נשאלו מה הם הכי אוהבים לעשות בהפסקה', who: 'תלמידים', head: 'פעילות', cats: ['כדור', 'קלפים', 'ציור', 'שיחה'] },
+  { ask: 'ילדים נשאלו מהו הירק האהוב עליהם', who: 'ילדים', head: 'ירק', cats: ['מלפפון', 'עגבנייה', 'גזר', 'פלפל'] },
+  { ask: 'משפחות נשאלו באיזו דרך הן נוסעות לחופשה', who: 'משפחות', head: 'דרך נסיעה', cats: ['מטוס', 'רכבת', 'רכב', 'אוטובוס'] },
+  { ask: 'תלמידים נשאלו איזה מזג אוויר הם הכי אוהבים', who: 'תלמידים', head: 'מזג אוויר', cats: ['שמש', 'גשם', 'שלג', 'עננים'] },
+  { ask: 'תלמידים נשאלו מהי המנה האהובה עליהם', who: 'תלמידים', head: 'מנה', cats: ['פיצה', 'פסטה', 'שניצל', 'פלאפל'] },
+  { ask: 'תלמידים נשאלו איזה סוג ספרים הם הכי אוהבים לקרוא', who: 'תלמידים', head: 'סוג ספר', cats: ['הרפתקאות', 'מדע', 'קומיקס', 'בלשים'] },
+  { ask: 'משפחות נשאלו איפה הן הכי אוהבות לבלות בחופשה', who: 'משפחות', head: 'מקום', cats: ['ים', 'הרים', 'עיר', 'מדבר'] },
+  { ask: 'ילדים נשאלו איזה בעל חיים הם הכי אוהבים לראות בגן החיות', who: 'ילדים', head: 'בעל חיים', cats: ['אריה', 'פיל', 'ג׳ירפה', 'קוף'] },
+  { ask: 'תלמידים נשאלו באיזה חוג הם רוצים להשתתף', who: 'תלמידים', head: 'חוג', cats: ['רובוטיקה', 'ציור', 'מחול', 'תיאטרון'] },
+  { ask: 'תלמידים נשאלו מהו סוג המוזיקה האהוב עליהם', who: 'תלמידים', head: 'סוג מוזיקה', cats: ['פופ', 'ראפ', 'רוק', 'קלאסית'] },
+  { ask: 'ילדים נשאלו מהו הקינוח האהוב עליהם', who: 'ילדים', head: 'קינוח', cats: ['עוגה', 'גלידה', 'פודינג', 'עוגיות'] },
+  { ask: 'תלמידים נשאלו איזה משחק לוח הם הכי אוהבים', who: 'תלמידים', head: 'משחק לוח', cats: ['שחמט', 'דמקה', 'שש-בש', 'רמי'] },
+  { ask: 'תלמידים נשאלו באיזה תחום היו רוצים לעבוד כשיגדלו', who: 'תלמידים', head: 'תחום', cats: ['רפואה', 'הוראה', 'הנדסה', 'תעופה'] },
 ];
+let BAG = [];
+const pickCtx = (R) => { if (!BAG.length) BAG = R.shuffle(CTX); return BAG.pop(); };
 /* every single answer of the survey, mixed: verify() recounts from this list */
 const rawOf = (R, cats, f) => R.shuffle(cats.flatMap((c, i) => Array(f[i]).fill(c)));
 const times = (n) => (n === 1 ? 'פעם אחת' : `[[${n}]] פעמים`);
@@ -18,7 +42,7 @@ const countIn = (raw, c) => { let n = 0; for (const x of raw) if (x === c) n++; 
 const readBars = {
   id: 'read-bars',
   make(R) {
-    const ctx = R.pick(CTX), k = R.pick([1, 2, 5]);
+    const ctx = pickCtx(R), k = R.pick([1, 2, 5]);
     let f;
     do { f = ctx.cats.map(() => k * R.int(1, 5)); } while (new Set(f).size < 3);
     let i, j;
@@ -94,11 +118,47 @@ const tally = {
   },
 };
 
+/* the raw answers of a survey → the student builds the frequency table (board #94) */
+const buildTable = {
+  id: 'build-table',
+  make(R) {
+    const ctx = pickCtx(R), N = 20;
+    let f;
+    do { f = split(R, N, 4, 1); } while (new Set(f).size < 3 || Math.max(...f) > 9);
+    const raw = rawOf(R, ctx.cats, f);
+    const rows = [0, 1, 2, 3, 4].map((r) => raw.slice(r * 4, r * 4 + 4));
+    return {
+      tag: 'בונים טבלת שכיחויות',
+      text: `${ctx.ask}. בטבלה העליונה כל [[${N}]] התשובות שנאספו. בנו טבלת שכיחויות: כמה פעמים מופיעה כל תשובה?`,
+      fig: { type: 'table', rows },
+      tableHead: [ctx.head, 'שכיחות'],
+      rows: [...ctx.cats.map((c, n) => ({ label: c, parts: [{ ans: f[n] }] })), { label: 'סך הכול', parts: [{ ans: N }] }],
+      hint: `עברו על התשובות אחת אחת וסמנו כל תשובה שספרתם. סך הכול הוא מספר כל התשובות, [[${N}]].`,
+      steps: [
+        `סופרים כל תשובה: ${ctx.cats.map((c, n) => `${c} ${times(f[n])}`).join(', ')}.`,
+        `סך הכול: [[${f.join(' + ')} = ${N}]], כמספר כל התשובות. הטבלה מוכנה.`,
+      ],
+      data: { raw, cats: ctx.cats },
+    };
+  },
+  verify(q) {
+    const { raw, cats } = q.data;
+    if (q.fig.rows.flat().join('|') !== raw.join('|')) return 'the table does not show the data';
+    let total = 0;
+    for (let n = 0; n < cats.length; n++) {
+      const c = countIn(raw, cats[n]);
+      if (q.rows[n].label !== cats[n] || q.rows[n].parts[0].ans !== c || c < 1) return `frequency of ${cats[n]} is wrong`;
+      total += c;
+    }
+    return total === raw.length && q.rows[cats.length].parts[0].ans === raw.length ? true : 'total is wrong';
+  },
+};
+
 /* a frequency table → relative frequency as a fraction and as a percent */
 const relative = {
   id: 'relative',
   make(R) {
-    const ctx = R.pick(CTX), N = R.pick([20, 25, 40, 50]);
+    const ctx = pickCtx(R), N = R.pick([20, 25, 40, 50]);
     let f, i;
     do { f = split(R, N, 4, 2); i = R.int(0, 3); } while (new Set(f).size < 3 || (100 * f[i]) % N !== 0);
     const pct = (100 * f[i]) / N, c = ctx.cats[i];
@@ -132,7 +192,7 @@ const relative = {
 const missing = {
   id: 'missing',
   make(R) {
-    const ctx = R.pick(CTX), N = R.pick([20, 25, 50]);
+    const ctx = pickCtx(R), N = R.pick([20, 25, 50]);
     let f, i;
     do { f = split(R, N, 4, 2); i = R.int(0, 3); } while (new Set(f).size < 3 || (100 * f[i]) % N !== 0);
     const pct = (100 * f[i]) / N, c = ctx.cats[i];
@@ -171,7 +231,7 @@ const missing = {
 const fromPercent = {
   id: 'from-percent',
   make(R) {
-    const ctx = R.pick(CTX), N = R.pick([20, 40, 50, 60, 80, 120, 200]);
+    const ctx = pickCtx(R), N = R.pick([20, 40, 50, 60, 80, 120, 200]);
     let pct;
     do { pct = 5 * R.int(1, 15); } while ((pct * N) % 100 !== 0 || pct === 50);
     const c = R.pick(ctx.cats), k = (pct * N) / 100;
@@ -226,5 +286,5 @@ export default {
       { note: 'טעות נפוצה: לחלק במספר השורות בטבלה. מחלקים תמיד במספר כל הנתונים (כאן [[20]]). סכום כל השכיחויות היחסיות הוא [[1]], כלומר [[100%]].' },
     ] },
   ],
-  gens: [readBars, tally, relative, missing, fromPercent],
+  gens: [readBars, tally, buildTable, relative, missing, fromPercent],
 };

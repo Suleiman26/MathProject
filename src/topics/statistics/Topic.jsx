@@ -7,5 +7,5 @@ import CHAPTERS from './chapters';
 import ModuleApp from '../new/Module';
 
 export default function App() {
-  return <ModuleApp title="סטטיסטיקה והסתברות" sub="כיתות ז׳–ט׳" chapters={CHAPTERS} />;
+  return <ModuleApp title="סטטיסטיקה והסתברות" sub="כיתות ז׳–ח׳" chapters={CHAPTERS} />;
 }
