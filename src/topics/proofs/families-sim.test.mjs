@@ -9,6 +9,7 @@ import { cramped } from './families/kit.js';
 import { liesSim, parallelKind, kOf, numberItems, numberLabels, piecesOf, sidesOf } from './families/sim-kit.js';
 import { classify, checkReason, isDone, canonRows, holds, measure, segKey, checkProp, anchorOf, roleOf } from './core.js';
 import { layout } from './figure-core.js';
+import { sub, unit } from '../new/chapters/geometry/geo.js';
 import { T, NEW_DRAFTS } from './texts.js';
 import P from './families/p.js'; import B from './families/b.js';
 import H from './families/h.js'; import N from './families/n.js';
@@ -190,4 +191,31 @@ test('number labels: each beside its own side, clear of lines and letters (rende
 test('texts: the family intros exist and are drafts', () => {
   for (const k of ['tx.P', 'tx.H']) { assert.ok(T[k], k); assert.ok(NEW_DRAFTS.includes(k), k); }
   assert.equal(T['gv.math'], '{s}');
+});
+
+/* Task 10 tweaks (review of Task 9) */
+test('N: DE stays 18° or more away from parallel to BC', () => {
+  const R = makeR(seeded(13)), names = ['A', 'B', 'C', 'D', 'E'];
+  for (let i = 0; i < 300; i++) {
+    const b = N.build(R, 'N-CG', { ask: i % 2 === 0, names }), P = b.figure.points;
+    const u = unit(sub(P.E, P.D)), v = unit(sub(P.C, P.B));
+    assert.ok(Math.asin(Math.min(1, Math.abs(u[0] * v[1] - u[1] * v[0]))) * 180 / Math.PI >= 18 - 1e-9);
+  }
+});
+test('an allowed ask never throws (a drawing that cannot host it is drawn again); a side never asked still does', () => {
+  const R = makeR(seeded(14));
+  for (const f of FAMS) for (const v of Object.keys(f.variants)) for (const ask of f.asks) for (let i = 0; i < 12; i++) {
+    const b = f.build(R, v, { ask, names: f.roles });
+    assert.equal(segKey(b.ask), segKey(ask));
+  }
+  assert.throws(() => P.build(makeR(seeded(1)), 'P-CC', { ask: 'AB', names: P.roles }), /cannot ask/);
+});
+test('a calculation: the whole sides it substitutes, the pieces on the drawing and the answer are all different numbers', () => {
+  const R = makeR(seeded(15));
+  for (const f of FAMS) for (const v of Object.keys(f.variants)) for (let i = 0; i < 300; i++) {
+    const b = f.build(R, v, { ask: true });
+    const sides = new Map(Object.entries(b.values).map(([s, n]) => [segKey(s), n]));
+    const nums = [...sides.values(), b.facts.val.v];
+    assert.equal(new Set(nums).size, nums.length, `${v}: ${JSON.stringify(b.values)} ? = ${b.facts.val.v}`);
+  }
 });

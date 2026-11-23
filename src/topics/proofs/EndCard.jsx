@@ -9,7 +9,7 @@ import { REASONS } from './reasons.js';
 import { targets, shapeOf } from './core.js';
 import { STAGES } from './types/index.js';
 import { T, fill } from './texts.js';
-import { St, Tx, Law, hasLaw, lawWord, IcCheck, IcBook, IcDown } from './signs.jsx';
+import { St, Goal, Tx, Law, hasLaw, lawWord, IcCheck, IcBook, IcDown } from './signs.jsx';
 
 export default function EndCard({ problem, rows, clean, filled = true, counted = true, dots = [], done = 0, lessHelp, event, levelName, typeName, newLevel, round, onMore, onFinish }) {
   // the result line mounts one frame after the card: a small new node of its own (tracker rule: a
@@ -50,9 +50,9 @@ export default function EndCard({ problem, rows, clean, filled = true, counted =
           <div className="prf-page-in">
             {(p.text || []).map((t, i) => <p key={i} className="prf-page-l"><Tx k={t.key} vars={t.vars} /></p>)}
             <p className="prf-page-l"><b>{T['lbl.given']}</b>{' '}
-              {(p.givenText || []).map((g, i) => <React.Fragment key={i}>{i > 0 && ', '}{g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />}{g.byOrder && ` ${T['lbl.byOrder']}`}</React.Fragment>)}
+              {(p.givenText || []).map((g, i) => <React.Fragment key={i}>{i > 0 && ', '}{g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />}{g.byOrder && ` ${T[p.facts[g.facts[0]].kind === 'sim' ? 'lbl.byOrderSim' : 'lbl.byOrder']}`}</React.Fragment>)}
             </p>
-            {!read && <p className="prf-page-l"><b>{T['lbl.toProve']}</b>{' '}{targets(p).map((t, i) => <React.Fragment key={t}>{i > 0 && ', '}<St st={p.facts[t]} /></React.Fragment>)}</p>}
+            {!read && <p className="prf-page-l"><b>{T['lbl.toProve']}</b>{' '}{targets(p).map((t, i) => <React.Fragment key={t}>{i > 0 && ', '}<Goal st={p.facts[t]} /></React.Fragment>)}</p>}
             <table className="prf-table">
               <thead><tr><th scope="col">{T['lbl.claim']}</th><th scope="col">{T['lbl.reason']}</th></tr></thead>
               <tbody>

@@ -625,7 +625,10 @@ export function optionsFor(p, id, n = 3, R) {
    then a conclusion) · 'exam'. A problem may carry its own `shape`; else it follows its type id (also for a problem
    rebuilt from a saved snapshot). Kept here, not read from types/, so core.js never imports the types (they import it).
    Every type's `shape` field must match this (subjects.test.mjs); unknown types count as 'prove'. */
-const SHAPE = { 'read-given': 'given', 'congruent-parts': 'parts', 'prove-congruence': 'prove', 'then-conclusion': 'then' };
+const SHAPE = {
+  'read-given': 'given', 'congruent-parts': 'parts', 'prove-congruence': 'prove', 'then-conclusion': 'then',
+  'sim-parts': 'parts', 'sim-side': 'side', 'prove-sim': 'prove', 'sim-calc': 'then',
+};
 export const shapeOf = (p) => (p && p.shape) || SHAPE[p && p.type] || 'prove';
 /**
  * present(problem, level, variant, { counted, R }) → view =
@@ -634,56 +637,70 @@ export const shapeOf = (p) => (p && p.shape) || SHAPE[p && p.type] || 'prove';
  *     tiles:[{ id, st, fact|null, why? }], chipsN, whyLine, autoHint, shortFirst, plan, ties, letters }
  * Walk and fill modes go through `steps` in order (show rows in canon order); tiles and tap modes
  * accept any valid order.
+ * Similarity (spec 2026-11-23 §7.6): 'side' is laid out like 'parts' (the similarity is known, no row); a parallel
+ * given is never asked (§7.2: the app writes it, except as a shown step in the walk-through); a number row (`val`)
+ * asks only its number (its reason is always "פתרון הפרופורציה"): chips at מודרך, never a tile (a keypad at ביחד and
+ * לבד, Task 11); the "which two triangles" plan question is a congruence one.
  */
 export function present(p, level, variant, ctx = {}) {
   const shape = shapeOf(p), R = ctx.R, counted = ctx.counted || 0;
-  const given = shape === 'given', parts = shape === 'parts', then = shape === 'then', big = !given && !parts;
-  const rows = p.canon.filter((f) => f !== anchorOf(p) || !parts);
-  const known = parts && anchorOf(p) ? [anchorOf(p)] : [];
+  const given = shape === 'given', parts = shape === 'parts', side = shape === 'side', then = shape === 'then', big = !given && !parts && !side;
+  const anc = anchorOf(p), simP = isSimP(p);
+  const rows = p.canon.filter((f) => f !== anc || !(parts || side));
+  const known = (parts || side) && anc ? [anc] : [];
+  const kind = (f) => p.facts[f] && p.facts[f].kind, isNum = (f) => kind(f) === 'val';
+  const pars = rows.filter((f) => kind(f) === 'par');
   const plainGiven = (f) => (p.given || []).includes(f) && roleOf(p, f) === 'given';
   const view = { mode: 'tiles', known, pre: [...known], steps: [], tiles: [], chipsN: 6, whyLine: false, autoHint: false, shortFirst: false, plan: null, ties: false, letters: false };
   const step = (fact, ask, extra = {}) => ({ fact, ask, chips: view.chipsN, ...extra });
   const gap = (fact) => step(fact, ['statement'], { options: optionsFor(p, fact, 3, R) });
   const tile = (st, fact, why) => ({ st, fact, ...(why ? { why } : {}) });
+  const ask2 = (f) => (isNum(f) ? ['statement'] : ['statement', 'reason']);
   const target = targets(p)[0];
+  const plan = then && !simP ? 'tris' : null;
 
   if (level === 1) {
-    view.whyLine = true; view.autoHint = true; view.letters = parts; view.plan = then ? 'tris' : null;
+    view.whyLine = true; view.autoHint = true; view.letters = parts; view.plan = plan;
     if (variant === 'A') {
       view.mode = 'walk'; view.chipsN = 3; view.ties = big;
       const last = rows[rows.length - 1];
-      view.steps = rows.map((f) => (big ? step(f, f === anchorOf(p) ? ['reason'] : []) : f === last ? gap(f) : step(f, [])));
+      view.steps = rows.map((f) => (big ? step(f, f === anc ? ['reason'] : []) : f === last ? gap(f) : step(f, [])));
     } else {
       view.mode = 'fill'; view.chipsN = 4;
       if (big) {
         view.pre = rows.filter(plainGiven);
-        const gapAt = counted >= 2 ? (shape === 'prove' ? anchorOf(p) : target) : null;
-        view.steps = rows.filter((f) => !view.pre.includes(f)).map((f) => (f === gapAt ? { ...gap(f), ask: ['statement', 'reason'] } : step(f, ['reason'])));
-      } else view.steps = rows.map(gap);
+        const gapAt = counted >= 2 ? (shape === 'prove' || isNum(target) ? anc : target) : null;
+        view.steps = rows.filter((f) => !view.pre.includes(f)).map((f) => (isNum(f) ? gap(f) : f === gapAt ? { ...gap(f), ask: ['statement', 'reason'] } : step(f, ['reason'])));
+      } else if (side) view.steps = rows.map((f) => (isNum(f) ? gap(f) : step(f, ['reason'])));      // the app writes the ratio
+      else view.steps = rows.map(gap);
     }
     return view;
   }
-  const wrongTiles = ((p.tiles && p.tiles.wrong) || []).map((w) => tile(w.st, null, w.why));
+  const wrongTiles = ((p.tiles && p.tiles.wrong) || []).filter((w) => w.st.kind !== 'val').map((w) => tile(w.st, null, w.why));
+  const small = parts || side;
   if (level === 2) {
-    view.mode = 'tiles'; view.plan = then ? 'tris' : null;
+    view.mode = 'tiles'; view.plan = plan;
     if (variant === 'A') {
-      view.whyLine = true; view.chipsN = parts ? 4 : 6;
+      view.whyLine = true; view.chipsN = small ? 4 : 6;
       view.pre = big ? rows.filter((f) => (p.given || []).includes(f)) : [...known];
       const todo = rows.filter((f) => !view.pre.includes(f));
-      view.steps = todo.map((f) => step(f, ['statement', 'reason']));
-      const extra = given ? wrongTiles.slice(0, 2) : parts ? wrongTiles.slice(0, 1) : [];
-      view.tiles = [...todo.map((f) => tile(p.facts[f], f)), ...extra];
+      view.steps = todo.map((f) => step(f, ask2(f)));
+      const extra = given ? wrongTiles.slice(0, 2) : small ? wrongTiles.slice(0, 1) : [];
+      view.tiles = [...todo.filter((f) => !isNum(f)).map((f) => tile(p.facts[f], f)), ...extra];
     } else {
       view.chipsN = big ? 8 : 6;
-      view.steps = rows.map((f) => step(f, ['statement', 'reason']));
+      view.pre = [...known, ...pars];
+      const todo = rows.filter((f) => !view.pre.includes(f));
+      view.steps = todo.map((f) => step(f, ask2(f)));
       const extra = big ? wrongTiles.slice(0, 2) : given ? wrongTiles.slice(0, Math.max(0, 6 - rows.length)) : wrongTiles.slice(0, 3);
-      view.tiles = [...rows.map((f) => tile(p.facts[f], f)), ...extra];
+      view.tiles = [...todo.filter((f) => !isNum(f)).map((f) => tile(p.facts[f], f)), ...extra];
     }
     view.tiles = shuffled(R, view.tiles).map((t, i) => ({ id: `t${i}`, ...t }));
     return view;
   }
   view.mode = 'tap'; view.chipsN = null;                     // all reasons, two-step pick
-  view.steps = rows.map((f) => step(f, ['statement', 'reason']));
+  view.pre = [...known, ...pars];
+  view.steps = rows.filter((f) => !view.pre.includes(f)).map((f) => step(f, ask2(f)));
   if (variant === 'A') { view.whyLine = true; view.plan = big ? 'line' : null; } else view.shortFirst = true;
   return view;
 }

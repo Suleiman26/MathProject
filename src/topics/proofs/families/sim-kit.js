@@ -90,8 +90,10 @@ export function calcOptions(fig, t1, t2) {
       if (pieces.some((s) => segKey(s) === segKey(asked))) continue;
       const vals = [asked, ...known, ...pieces].map((s) => lenOf(fig, s));
       if (!vals.every((x) => half(x) && x >= 1 - 1e-9)) continue;
-      // the numbers on the drawing and the answer all differ (a substitution never hides a mix-up)
-      const shown = [asked, ...pieces].map((s) => round2(lenOf(fig, s)));
+      // the numbers on the drawing, the whole sides the substitution uses (AB = AD + DB) and the answer all differ
+      // (a substitution never hides a mix-up)
+      const used = [...new Map([asked, ...pieces, ...known].map((s) => [segKey(s), s])).values()];
+      const shown = used.map((s) => round2(lenOf(fig, s)));
       out.push({ asked, tri, a, b, known, pieces, pairs: [[S[0][b], S[1][b]], [S[0][a], S[1][a]]], distinct: new Set(shown).size === shown.length });
     }
   }
@@ -134,7 +136,10 @@ export function assembleSim(spec, R) {
   let calc = null;
   if (spec.ask) {
     const all = calcOptions(fig, t1, t2).filter((o) => segKey(o.asked) === segKey(spec.ask)), opts = all.filter((o) => o.distinct);
-    if (!all.length) throw new Error(`${spec.family}: cannot ask ${spec.ask}`);
+    if (!all.length) {                                                 // a side the family never asks is a mistake in the caller;
+      if (!(spec.asks || []).some((x) => segKey(x) === segKey(spec.ask))) throw new Error(`${spec.family}: cannot ask ${spec.ask}`);
+      return null;                                                     // an allowed side this drawing cannot host: draw again
+    }
     if (!opts.length) return null;                                     // equal numbers by chance: draw again
     calc = R.pick(opts);
     facts.prop = { kind: 'prop', pairs: calc.pairs.map((x) => [...x]), need: { asked: calc.asked, known: [...new Set([...calc.known, ...calc.pieces])] } };
@@ -353,14 +358,15 @@ export function liesSim(base, { quick = false } = {}) {
 
 /** Build until the drawing is honest and has room for its marks. */
 export function honestSim(build, R, tries = 400) {
-  let last = [];
+  let last = null;                                     // the last rejected drawing: its full reasons are worked out only for the error
   for (let i = 0; i < tries; i++) {
     const b = build(R);
     if (!b) continue;
-    if (liesSim(b, { quick: true }).length) { last = liesSim(b); continue; }
+    if (liesSim(b, { quick: true }).length) { last = { b }; continue; }
     const c = cramped(b.figure);
     if (!c.length) return b;
-    last = c;
+    last = { c };
   }
-  throw new Error(`honestSim: no honest drawing in ${tries} tries (${last.slice(0, 3).join('; ')})`);
+  const why = !last ? ['no drawing built'] : last.c || liesSim(last.b);
+  throw new Error(`honestSim: no honest drawing in ${tries} tries (${why.slice(0, 3).join('; ')})`);
 }

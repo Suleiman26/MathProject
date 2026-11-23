@@ -28,7 +28,8 @@ test('flow: each kind at least once; two kinds alternate; two missed kinds take 
   for (let i = 0; i < 4; i++) { const k = next(s); s = answer(s, k, k === 'W2' || k === 'W5'); }
   const order = []; while (next(s)) { order.push(next(s)); s = answer(s, next(s), true); }
   assert.deepEqual(order, ['W4', 'W6', 'W4', 'W6']); assert.equal(s.n, 8);
-  for (const t of TYPES) { assert.ok(t.warm.length >= 1 && t.warm.length <= 4); for (const k of t.warm) assert.ok(KINDS.includes(k)); }
+  // the similarity levels have no warm-up kinds until their own are built (a level with none has no חימום tab)
+  for (const t of TYPES) { assert.ok(t.warm.length <= 4 && (t.warm.length >= 1 || t.subject === 'similarity')); for (const k of t.warm) assert.ok(KINDS.includes(k)); }
 });
 for (const kind of KINDS) test(`${kind}: ${RUNS} tasks, one right answer, the drawing is honest`, () => {
   const R = makeR(seeded(77)); const seen = new Set();

@@ -11,8 +11,9 @@ import { TOPICS as REGISTRY } from "@/topics/registry";
 import { CHAPTERS, chapterTitle } from "@/home/chapters";
 import { GRADES as LOCAL_GRADES, TOPICS as LOCAL_TOPICS } from "@/home/catalog";
 
-/* proofs is not in chapters.js yet (design §5: added when it ships); its 4 chapter buttons (src/topics/proofs/texts.js) */
-const EXTRA_CHAPTERS = { proofs: ["1. קוראים את הנתון", "2. מחפיפה לשוויונות", "3. הוכחת חפיפה", "4. חפיפה ואז מסקנה"] };
+/* the proofs level keys (src/topics/proofs/types: `button`), in key order. chapters.js lists only the LIVE ones (it wins
+   while proofs is there); this list keeps every key, so the review panel reaches a level even when it is hidden again */
+const EXTRA_CHAPTERS = { proofs: ["1. קוראים את הנתון", "2. מחפיפה לשוויונות", "3. הוכחת חפיפה", "4. חפיפה ואז מסקנה", "6. מדמיון לשוויונות ויחס", "7. מיחס לצלע חסרה", "8. הוכחת דמיון", "9. דמיון ואז חישוב"] };
 const NAME_OVERRIDE = { new: "חדש · מתוכנית הלימודים" };
 
 export const OPEN = new Set(["new", "working", "reopened"]);

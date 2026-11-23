@@ -25,7 +25,10 @@ import { IcCheck, IcBook, IcDown } from './signs.jsx';
 import { isAdminFrame } from '@/lib/admin-frame';
 
 /* the drawing in the hero: one fixed, good-looking instance per level; a level without one shows its subject's */
-const HERO = { 'read-given': ['1-a', 20261124], 'congruent-parts': ['2-c', 20261122], 'prove-congruence': ['3-X-SAS', 20261121], 'then-conclusion': ['4-K-SAS-1', 20261123] };
+const HERO = {
+  'read-given': ['1-a', 20261124], 'congruent-parts': ['2-c', 20261122], 'prove-congruence': ['3-X-SAS', 20261121], 'then-conclusion': ['4-K-SAS-1', 20261123],
+  'sim-parts': ['6-P', 20261127], 'sim-side': ['7-P', 20261127], 'prove-sim': ['8-P-CC', 20261127], 'sim-calc': ['9-B-VA', 20261127],
+};
 function heroOf(type, subject) {
   try {
     let t = type, pick = HERO[type.id];
@@ -36,10 +39,12 @@ function heroOf(type, subject) {
     // what the drawing may show before a proof starts: the given marks and the dashed goal. The two small
     // shapes ask the student to find the equalities, so their drawing never outlines an answer.
     let marks = [];
-    if (t.shape === 'parts') marks = Object.keys(p.facts).filter((f) => p.facts[f].kind === 'cong').map((fact) => ({ fact, style: 'on' }));
+    const anchor = (f) => p.facts[f].kind === 'cong' || p.facts[f].kind === 'sim';
+    if (t.shape === 'parts') marks = Object.keys(p.facts).filter(anchor).map((fact) => ({ fact, style: 'on' }));
     else if (t.shape !== 'given') {
       const goal = targets(p);
-      marks = [...p.canon.filter((f) => p.facts[f].kind !== 'cong' && !goal.includes(f)).map((fact, i) => ({ fact, style: 'on', delay: 350 + i * 380 })), ...goal.map((fact) => ({ fact, style: 'goal' }))];
+      // (a parallel given has no honest mark yet: it is never passed to the drawing)
+      marks = [...p.canon.filter((f) => !anchor(f) && p.facts[f].kind !== 'par' && !goal.includes(f)).map((fact, i) => ({ fact, style: 'on', delay: 350 + i * 380 })), ...goal.map((fact) => ({ fact, style: 'goal' }))];
     }
     return { p, marks };
   } catch { return null; }

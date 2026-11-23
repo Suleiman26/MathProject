@@ -6,7 +6,7 @@
    in matching order. Reasons: the two-step pick "מאיפה יודעים?". */
 import React, { useMemo, useState } from 'react';
 import { partsIndex } from './ProofFigure.jsx';
-import { GROUPS, REASONS } from './reasons.js';
+import { groupsFor, REASONS } from './reasons.js';
 import { T } from './texts.js';
 import { St, Mx, IcList, IcClose, hasLaw } from './signs.jsx';
 
@@ -110,7 +110,8 @@ export function TapStatement({ sel, onAdd, onMatching }) {
 
 /** The two-step reason pick: where do we know it from → which reason. In the second step every theorem and
     definition is listed with its full sentence under its name (spec 2026-11-23 §6.2.2): one tap chooses. */
-export function GroupPick({ wrong = [], onPick, onGroup }) {
+export function GroupPick({ subject, wrong = [], onPick, onGroup }) {
+  const GROUPS = groupsFor(subject);
   const [g, setG0] = useState(null);
   // the parent hears which list is open: a list of theorems is long, so the sheet makes room for it
   const setG = (id) => { setG0(id); if (onGroup) { const x = GROUPS.find((y) => y.id === id); onGroup(x && x.reasons.some(hasLaw) ? id : null); } };

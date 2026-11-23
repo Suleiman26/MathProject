@@ -35,7 +35,23 @@ export const SUBJECTS = [
       altitude: demo('read-given', '1-b', 20261123, ['f1'], true),
     },
   }),
-  subject('similarity', { live: false, types: [], theorems: [], hero: null, demos: {} }),
+  subject('similarity', {
+    live: true,                                                   // Abed 2026-11-23: "Build, show it live"
+    types: ['sim-parts', 'sim-side', 'prove-sim', 'sim-calc'],
+    theorems: ['aa', 'corresponding', 'alternate', 'vertical', 'common-angle', 'right-angles', 'sim-angles', 'sim-ratio', 'solve'],
+    hero: { type: 'prove-sim', template: '8-P-CC', seed: 20261127 },
+    // the parallel given is never a mark (it has no honest mark yet: ticks would say "equal lengths"); "solve" has no drawing
+    demos: {
+      aa: demo('prove-sim', '8-P-CC', 20261126, ['a0', 'a1']),                  // the two angle pairs ז.ז stands on
+      corresponding: demo('prove-sim', '8-P-CC2', 20261126, ['a1']),
+      alternate: demo('prove-sim', '8-B-AA', 20261124, ['a0']),
+      vertical: demo('prove-sim', '8-B-VA', 20261123, ['a1']),
+      'common-angle': demo('prove-sim', '8-P-CC', 20261125, ['a0']),
+      'right-angles': demo('prove-sim', '8-H-CR', 20261124, ['a2']),
+      'sim-angles': demo('sim-parts', '6-P', 20261124, ['sim', 'a1']),          // the similar pair + one pair of matching angles
+      'sim-ratio': demo('sim-parts', '6-B', 20261123, ['sim']),
+    },
+  }),
 ];
 
 const byType = (typeId) => SUBJECTS.find((s) => s.types.includes(typeId)) || null;

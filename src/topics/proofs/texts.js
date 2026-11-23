@@ -12,6 +12,11 @@ export const T = {
   'type.congruent-parts': 'מחפיפה לשוויונות',
   'type.prove-congruence': 'הוכחת חפיפה',
   'type.then-conclusion': 'חפיפה ואז מסקנה',
+  // similarity levels (spec 2026-11-23 §5.2, drafts): the tracker keys are `${n}. ${name}` (6–9)
+  'type.sim-parts': 'מדמיון לשוויונות ויחס',
+  'type.sim-side': 'מיחס לצלע חסרה',
+  'type.prove-sim': 'הוכחת דמיון',
+  'type.sim-calc': 'דמיון ואז חישוב',
   'tab.warm': 'חימום', 'tab.1': 'רמה 1', 'tab.2': 'רמה 2', 'tab.3': 'רמה 3',
   /* ── subjects → levels → help stages (spec 2026-11-23 §5.1; all in NEW_DRAFTS). The tab texts above stay the
      stored keys; these are what the student sees. ── */
@@ -192,7 +197,10 @@ export const T = {
   'lbl.dots': '{{k}} מתוך 4',
   'lbl.marked': 'סומן בציור',
   'lbl.byOrder': '(החפיפה לפי סדר הקודקודים)',
+  'lbl.byOrderSim': '(הדמיון לפי סדר הקודקודים)',
   'lbl.planL3': 'קודם שלושה שוויונות, אחר כך החפיפה.',
+  'lbl.planL3Sim': 'קודם שני זוגות של זוויות שוות, אחר כך הדמיון.',
+  'lbl.planL3SimCalc': 'קודם שני זוגות של זוויות שוות ואחר כך הדמיון. בסוף היחס והחישוב.',
   'lbl.show': 'הראו בציור',
   'lbl.leadRows': 'אילו שורות מובילות לחפיפה?',
   'lbl.planTris': 'באילו שני משולשים נמצאים {x}, {y}?',
@@ -215,6 +223,8 @@ export const T = {
   'say.prop': 'היחסים שווים: {x}',
   'say.val': 'אורך הקטע {x} הוא {v}',
   'say.ask': 'מחפשים את החלק ששווה לחלק {x}',
+  'say.askProp': 'מחפשים את הצלעות שמתאימות לצלעות {x}',
+  'say.askVal': 'מחפשים את האורך של {x}',
 
   /* ── the words a given sentence can use (inserted into rs.words.otherDef, why.given-words) ── */
   'word.median': 'תיכון', 'word.bisector': 'חוצה זווית', 'word.midpoint': 'אמצע', 'word.altitude': 'גובה',
@@ -275,6 +285,7 @@ export const T = {
   'lbl.matchOrder': 'כתבו את המשולש השני לפי סדר ההתאמה.',
   'lbl.chooser': 'לאיזה חלק התכוונתם?',
   'lbl.goalCong': 'המשולשים {t1}, {t2} חופפים',
+  'lbl.goalSim': 'המשולשים {t1}, {t2} דומים',
   'lbl.sameSeg': 'אותו קטע בשני המשולשים',
   'lbl.walkIntro': 'עוברים יחד על הוכחה שלמה, שורה אחרי שורה.',
   'lbl.proofDone': 'כל השורות מנומקות. נשאר רק לסיים.',
@@ -304,6 +315,7 @@ export const T = {
   'lbl.beforeStart': 'לפני שמתחילים',
   'q.sentence': 'מה המשפט הזה אומר? בחרו את השוויון.',
   'q.partner': 'מה כותבים בריבוע? היעזרו בסדר האותיות בחפיפה.',
+  'q.partnerSim': 'מה כותבים בריבוע? היעזרו בסדר האותיות בדמיון.',
   'q.whyRow': 'מאיפה יודעים את הטענה הזאת?',
   'q.whyCong': 'איזה משפט חפיפה מתאים לשוויונות שמעל?',
   'q.whyConcl': 'המשולשים חופפים. מה הנימוק לשוויון הזה?',
@@ -328,6 +340,10 @@ export const T = {
   'about.congruent-parts': 'שני משולשים חופפים: מוצאים אילו צלעות ואילו זוויות שוות.',
   'about.prove-congruence': 'משלושה שוויונות מוכיחים ששני משולשים חופפים.',
   'about.then-conclusion': 'קודם מוכיחים חפיפה, ואחר כך שוויון שנובע ממנה.',
+  'about.sim-parts': 'שני משולשים דומים: מוצאים אילו זוויות שוות ואיך כותבים את יחס הצלעות.',
+  'about.sim-side': 'שני משולשים דומים: כותבים את היחס ומוצאים צלע חסרה.',
+  'about.prove-sim': 'משתי זוויות שוות מוכיחים ששני משולשים דומים.',
+  'about.sim-calc': 'קודם מוכיחים דמיון, ואחר כך כותבים יחס ומוצאים צלע חסרה.',
 };
 
 /** Open maths points for Sulaiman (printed on the review sheet, above the new texts). */
@@ -375,6 +391,9 @@ export const NEW_DRAFTS = [
   'rs.fact.simTheorem', 'rs.fact.sim', 'rs.sim.cong', 'rs.sim.given', 'rs.sim.follows', 'rs.sim.angle', 'rs.sim.after', 'rs.sim.cp',
   'rs.ratio.given', 'rs.ratio.solve', 'rs.num.given', 'rs.num.ratio', 'rs.simc.given',
   'tx.P', 'tx.H',                                                                          // similarity family intros (P and N share tx.P; B uses tx.X)
+  // the similarity levels (spec 2026-11-23 §5.2, §7.6)
+  'type.sim-parts', 'type.sim-side', 'type.prove-sim', 'type.sim-calc', 'about.sim-parts', 'about.sim-side', 'about.prove-sim', 'about.sim-calc',
+  'lbl.byOrderSim', 'lbl.planL3Sim', 'lbl.planL3SimCalc', 'say.askProp', 'say.askVal', 'lbl.goalSim', 'q.partnerSim',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

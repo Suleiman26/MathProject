@@ -42,8 +42,8 @@ test('SUBJECTS: two, Ministry order, names and months from texts', () => {
   assert.deepEqual(SUBJECTS.map((s) => s.id), ['congruence', 'similarity']);
   const [c, s] = SUBJECTS;
   assert.deepEqual([c.name, c.when, c.short, c.live], ['חפיפת משולשים', 'ינואר–פברואר', 'חפיפה', true]);
-  assert.deepEqual([s.name, s.when, s.short, s.live], ['דמיון משולשים', 'מרץ–אפריל', 'דמיון', false]);
-  assert.deepEqual(c.types, CONG); assert.deepEqual(s.types, []); assert.deepEqual(s.theorems, []); assert.equal(s.hero, null);
+  assert.deepEqual([s.name, s.when, s.short, s.live], ['דמיון משולשים', 'מרץ–אפריל', 'דמיון', true]);   // live since Task 10 (Abed: "show it live")
+  assert.deepEqual(c.types, CONG); assert.deepEqual(s.types, ['sim-parts', 'sim-side', 'prove-sim', 'sim-calc']); assert.equal(s.hero.type, 'prove-sim');
   assert.deepEqual(c.theorems, ['sas', 'asa', 'sss', 'vertical', 'common-side', 'cp-sides', 'cp-angles', 'bisector', 'median', 'midpoint', 'altitude']);
   for (const r of c.theorems) assert.ok(r in REASONS, r);
   assert.deepEqual(c.hero, { type: 'prove-congruence', template: '3-X-SAS', seed: 20261121 });
@@ -56,7 +56,7 @@ test('SUBJECTS: two, Ministry order, names and months from texts', () => {
 test('subjectOf, levelNo, typesOf, prevInSubject', () => {
   assert.equal(subjectOf('then-conclusion').id, 'congruence'); assert.equal(subjectOf('nope'), null);
   assert.deepEqual(CONG.map(levelNo), [1, 2, 3, 4]); assert.equal(levelNo('prove-congruence'), 3); assert.equal(levelNo('nope'), 0);
-  assert.deepEqual(typesOf('congruence').map((t) => t.id), CONG); assert.deepEqual(typesOf('similarity'), []); assert.deepEqual(typesOf('nope'), []);
+  assert.deepEqual(typesOf('congruence').map((t) => t.id), CONG); assert.equal(typesOf('similarity').length, 4); assert.deepEqual(typesOf('nope'), []);
   assert.equal(prevInSubject('read-given'), null);
   assert.equal(prevInSubject('prove-congruence').id, 'congruent-parts'); assert.equal(prevInSubject('nope'), null);
 });
@@ -74,7 +74,8 @@ test('canShow: live, or the review frame, or a local / preview host', () => {
   assert.equal(canShow(off, {}), false);
   assert.equal(canShow(off, null), false); assert.equal(canShow({}, null), true);   // live defaults to true
   assert.equal(canShow(on, env('mathix-sooty.vercel.app')), true);
-  assert.equal(canShow(SUBJECTS[1], env('mathix-sooty.vercel.app')), false);
+  assert.equal(canShow(SUBJECTS[1], env('mathix-sooty.vercel.app')), true);         // similarity is live
+  assert.equal(canShow({ ...SUBJECTS[1], live: false }, env('mathix-sooty.vercel.app')), false);   // the switch still hides it
   assert.equal(canShow(SUBJECTS[0], env('mathix-sooty.vercel.app')), true);
 });
 test('shapeOf: every existing problem, made or restored from a snapshot, has its type\'s shape', () => {
@@ -143,7 +144,7 @@ test('theorem list: every entry exists with its full sentence; theorems first, t
   const { laws, more } = lawsOf(c.id);
   assert.deepEqual(laws, ['sas', 'asa', 'sss', 'vertical']);
   assert.deepEqual(more, ['bisector', 'median', 'midpoint', 'altitude', 'common-side', 'cp-sides', 'cp-angles']);
-  assert.deepEqual(lawsOf('similarity'), { laws: [], more: [] }); assert.deepEqual(lawsOf('nope'), { laws: [], more: [] });
+  assert.deepEqual(lawsOf('nope'), { laws: [], more: [] });
 });
 test('theorem list: an unknown reason and "נתון" are left out; alternate has its sentence since similarity', () => {
   const fake = { id: 'x', theorems: ['sas', 'alternate', 'nope', 'given', 'median'] };

@@ -18,12 +18,14 @@ import ProofRows from './ProofRows.jsx';
 import Tray from './Tray.jsx';
 import EndCard from './EndCard.jsx';
 import { useSelection, TapStatement, GroupPick } from './TapBuild.jsx';
-import { St, Tx, Mx, Ask, CongSt, Law, hasLaw, lawWord, IcBack, IcBook, IcCheck, IcLock, IcSwap } from './signs.jsx';
+import { St, Goal, Tx, Mx, Ask, AskProp, CongSt, Law, hasLaw, lawWord, IcBack, IcBook, IcCheck, IcLock, IcSwap } from './signs.jsx';
 import Theorems from './Theorems.jsx';
 import { lawsOf } from './subjects.js';
 
 const PAIR = { 1: 'var(--prf-p1)', 2: 'var(--prf-p2)', 3: 'var(--prf-p3)' };
 const ids = (problem, fact) => (problem.facts[fact] ? partsOf(problem.facts[fact]).map((x) => partId(x, problem.figure)) : []);
+/* type 2 / similarity level 1: an asked part with an empty box for its partner ("AB = ▢", "AD/▢ = AE/▢ = DE/▢") */
+const askOf = (f, className) => (!f ? null : f.kind === 'prop' ? <AskProp st={f} className={className} /> : f.kind === 'seg' || f.kind === 'ang' ? <Ask part={f.x} className={className} /> : null);
 const hash = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) % 2147483646 + 1; };
 
 export default function ProofScreen({ type, problem, view, level = 1, dots = [null, null, null, null], levelName, onEnd, onLeave, onSwap, onState, restored, end }) {
@@ -57,6 +59,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const isGiven = type.shape === 'given', isParts = type.shape === 'parts', small = isGiven || isParts;
   const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), small ? ['seg', 'ang'] : null);
   const p = problem, cur = s.cur, mode = s.view.mode, cong = anchorOf(p);
+  const simP = !!cong && p.facts[cong].kind === 'sim';                 // a similarity: its own words where congruence ones would lie
+  const byOrder = T[simP ? 'lbl.byOrderSim' : 'lbl.byOrder'];
   const later = (name, ms, fn) => { clearTimeout(timers.current[name]); timers.current[name] = setTimeout(fn, ms); };
   useEffect(() => () => { Object.values(timers.current).forEach(clearTimeout); }, []);
   useEffect(() => { if (onState) onState(sRef.current); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -172,7 +176,10 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const cueIds = (fact) => (p.cue && p.cue[fact] ? p.cue[fact].map((x) => partId(x, p.figure)) : ids(p, fact));
   const marks = useMemo(() => {
     const out = [], pre = s.view.pre || [];
-    s.done.forEach((fact) => { const i = pre.indexOf(fact); out.push({ fact, style: 'on', delay: intro.current && i >= 0 ? 250 + i * 260 : 0 }); });
+    s.done.forEach((fact) => {
+      if (p.facts[fact] && p.facts[fact].kind === 'par') return;          // a parallel given has no honest mark yet (ticks would say "equal")
+      const i = pre.indexOf(fact); out.push({ fact, style: 'on', delay: intro.current && i >= 0 ? 250 + i * 260 : 0 });
+    });
     for (const t of targets(p)) {
       if (s.done.includes(t) || isGiven) continue;            // type 1: the drawing never shows the answer before it is written
       if (isParts) { if (t === askFact) out.push({ fact: t, style: 'goal', only: p.cue && p.cue[t] }); continue; }   // type 2: only the asked part
@@ -207,11 +214,11 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const colorOf = (fact) => (level === 1 && p.facts[fact].mark ? PAIR[p.facts[fact].mark.color] : undefined);
   const given = p.givenText || [];
   // type 2, Level 1: the letters of the active part and of its partner carry the row's pair colour in the given congruence
-  const lit = s.view.letters && askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' && cong ? (() => {
+  const lit = s.view.letters && askFact && p.facts[askFact] && (p.facts[askFact].kind === 'seg' || p.facts[askFact].kind === 'ang') && cong ? (() => {
     const f = p.facts[askFact], t1 = p.facts[cong].map.map((m) => m[0]);
     return { at: (f.kind === 'seg' ? [...f.x] : [f.x.v]).map((q) => t1.indexOf(q)), color: f.mark ? PAIR[f.mark.color] : undefined };
   })() : null;
-  const congQuote = cong ? <>{lit ? <CongSt st={p.facts[cong]} at={lit.at} color={lit.color} /> : <St st={p.facts[cong]} />} <span className="prf-fc-note">{T['lbl.byOrder']}</span></> : null;
+  const congQuote = cong ? <>{lit ? <CongSt st={p.facts[cong]} at={lit.at} color={lit.color} /> : <St st={p.facts[cong]} />} <span className="prf-fc-note">{byOrder}</span></> : null;
   let head = null, body = null, label = cur ? cur.label : '', hint = null, onCancel = null, onPick = () => {}, now = null, whyShown = why;
 
   const tris = p.figure.tris || [];
@@ -275,7 +282,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     if (mode === 'tap') {
       // a list of theorems with their sentences is long: while it is open the big question and the lines about the row before step aside
       const key = cur.key;
-      body = { t: 'node', node: <GroupPick key={key} wrong={cur.wrong} onPick={(id) => dispatch({ t: 'reason', id })} onGroup={(g) => { setLawList(g ? key : null); if (g) { setFbs((f) => (f.some((x) => x.cls === 'err') ? f : [])); setWhy(null); setSaid(null); } }} /> };
+      body = { t: 'node', node: <GroupPick key={key} subject={type.subject} wrong={cur.wrong} onPick={(id) => dispatch({ t: 'reason', id })} onGroup={(g) => { setLawList(g ? key : null); if (g) { setFbs((f) => (f.some((x) => x.cls === 'err') ? f : [])); setWhy(null); setSaid(null); } }} /> };
       if (lawList === key) head.ask = null;
     } else {
       const all = chipsFor(fact), acc = acceptedReasons(p, fact);
@@ -300,9 +307,9 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   } else if (cur && cur.kind === 'statement') {
     const step = s.view.steps.find((x) => x.fact === cur.fact);
     const asked = askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' ? askFact : null;
-    now = { st: isParts && asked ? <Ask part={p.facts[asked].x} className="prf-ask-st" /> : null, reason: null, ask: 'st' };
+    now = { st: isParts && asked ? askOf(p.facts[asked], 'prf-ask-st') : null, reason: null, ask: 'st' };
     if ((mode === 'fill' || mode === 'walk') && step && step.options) {
-      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: isGiven ? T['q.sentence'] : isParts ? T['q.partner'] : T['lbl.whatClaim'] };
+      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: isGiven ? T['q.sentence'] : isParts ? T[simP ? 'q.partnerSim' : 'q.partner'] : T['lbl.whatClaim'] };
       const items = step.options.map((st, i) => ({ id: `o${i}`, st, disabled: cur.wrong.includes(norm(p.figure, st)) }));
       body = { t: 'options', items };
       onPick = (id) => dispatch({ t: 'statement', st: items.find((x) => x.id === id).st });
@@ -412,7 +419,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
                         <span className="prf-gv-n">{used && !isParts ? <IcCheck /> : i + 1}</span>
                         <span className="prf-gv-t">
                           {g.form !== 'eq' ? <Tx k={g.key} vars={g.vars} /> : f0.kind === 'cong' && lit && !end ? <CongSt st={f0} at={lit.at} color={lit.color} /> : <St st={f0} />}
-                          {g.byOrder && <> <span className="prf-fc-note">{T['lbl.byOrder']}</span></>}
+                          {g.byOrder && <> <span className="prf-fc-note">{byOrder}</span></>}
                         </span>
                       </li>
                     );
@@ -426,12 +433,12 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
                       // while writing the congruence is itself a decision (a statement gap, or Level 3), the goal names the two triangles without the matching order
                       const step = s.view.steps.find((x) => x.fact === t);
                       const open = !ok && t === cong && tris.length === 2 && step && step.ask.includes('statement') && (mode === 'tap' || !!step.options);
-                      return <span key={t} className={`prf-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k="lbl.goalCong" vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : isParts && !ok ? <Ask part={p.facts[t].x} /> : <St st={p.facts[t]} />}</span>;
+                      return <span key={t} className={`prf-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k={simP ? 'lbl.goalSim' : 'lbl.goalCong'} vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : isParts && !ok ? askOf(p.facts[t]) : <Goal st={p.facts[t]} />}</span>;
                     })}
                   </span>
                 )}
               </div>
-              {s.view.plan === 'line' && <p className="prf-plan">{T['lbl.planL3']}</p>}
+              {s.view.plan === 'line' && <p className="prf-plan">{T[!simP ? 'lbl.planL3' : type.shape === 'then' ? 'lbl.planL3SimCalc' : 'lbl.planL3Sim']}</p>}
               <ProofRows problem={p} rows={s.rows} total={totalRows} now={end ? null : now} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={leadRows} said={saidRow} />
             </div>
             {!end && (

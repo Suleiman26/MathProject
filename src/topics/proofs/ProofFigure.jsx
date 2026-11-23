@@ -50,8 +50,10 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
     for (const m of marks) {
       const f = problem.facts[m.fact];
       if (!f) continue;
-      if (f.kind === 'cong') { for (const t of partsOf(f)) tri[partId(t)] = m.style; continue; }
-      for (const part of m.only || partsOf(f)) (f.kind === 'seg' ? seg : ang)[partId(part, fig)] = { style: m.style, mark: f.mark || {}, part, delay: m.delay || 0 };   // m.only: a goal shown by one of its parts (type 2)
+      if (f.kind === 'cong' || f.kind === 'sim') { for (const t of partsOf(f)) tri[partId(t)] = m.style; continue; }
+      // no honest mark for a parallel (ticks would say "equal"); a ratio shows only where to look; a length only as the dashed goal
+      if (f.kind === 'par' || (f.kind === 'prop' && !m.only) || (f.kind === 'val' && m.style !== 'goal')) continue;
+      for (const part of m.only || partsOf(f)) (typeof part === 'string' ? seg : ang)[partId(part, fig)] = { style: m.style, mark: f.mark || {}, part, delay: m.delay || 0 };   // m.only: a goal shown by one of its parts (type 2)
     }
     return { seg, ang, tri };
   }, [marks, problem, fig]);

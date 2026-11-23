@@ -50,8 +50,10 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const [state, setState] = useState(() => load(store(), firstWho()));
   const stateRef = useRef(state), whoRef = useRef(who);
   const ts = typeState(state, type.id);
+  // a level without warm-up kinds yet (the similarity levels until their warm-up is built) has no חימום tab
+  const hasWarm = (type.warm || []).length > 0;
   // a first visit opens on the warm-up tab (it never blocks: the student can tap מודרך and start there)
-  const [tab, setTab] = useState(() => (ts.done > 0 || ts.walked || ts.warm.done ? Math.max(1, Math.min(3, ts.level)) : 0));
+  const [tab, setTab] = useState(() => (ts.done > 0 || ts.walked || ts.warm.done || !hasWarm ? Math.max(1, Math.min(3, ts.level)) : 0));
   const [open, setOpen] = useState(null);      // { key, problem, view, level, variant, counted, walk, restored }
   const [end, setEnd] = useState(null);
   const [rescue, setRescue] = useState(devRescue || null);
@@ -205,6 +207,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const tabs = (
     <div className="sub-tabs prf-tabs">
       {TABS.map((name, i) => {
+        if (i === 0 && !hasWarm) return null;
         const locked = i > level, done = !locked && ((i === 0 ? began : i < level) || passed);
         return (
           <button type="button" key={name} data-mp-key={name} className={`sub-tab${i === tab ? ' active' : ''}${done ? ' prf-is-done' : ''}`} disabled={locked} onClick={() => setTab(i)}>
@@ -234,21 +237,23 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   }
 
   if (rescue) {
-    const go = () => (rescue.step === 1 ? startWarm({ only: rescue.warm || 'W1', then: 'proof' }) : rescue.step === 2 ? startProof(level, { walk: true }) : startProof(level));
+    // no warm-up kinds on this level: the warm-up step of the rescue ladder becomes the worked example
+    const step = rescue.step === 1 && !hasWarm ? 2 : rescue.step;
+    const go = () => (step === 1 ? startWarm({ only: rescue.warm || 'W1', then: 'proof' }) : rescue.step === 2 ? startProof(level, { walk: true }) : startProof(level));
     return frame(tabs, (
       <div className="content prf-ch prf-ch-card">
         <div className="prf-rescue">
-          {rescue.step !== 1 && <span className="prf-rescue-k">{T['lbl.rescueCard']}</span>}
+          {step !== 1 && <span className="prf-rescue-k">{T['lbl.rescueCard']}</span>}
           <p className="prf-rescue-t">
-            {rescue.step === 1 && fill('ui.rescue1', { skill: T[`skill.${rescue.warm || 'W1'}`] })}
-            {rescue.step === 2 && T['ui.rescue2']}
-            {rescue.step === 3 && fill('ui.rescue3', { prev: prev ? prev.label : STAGES[0] })}
+            {step === 1 && fill('ui.rescue1', { skill: T[`skill.${rescue.warm || 'W1'}`] })}
+            {step === 2 && T['ui.rescue2']}
+            {step === 3 && fill('ui.rescue3', { prev: prev ? prev.label : STAGES[0] })}
           </p>
           <div className="prf-rescue-b">
-            {rescue.step === 3 && prev
+            {step === 3 && prev
               ? <button type="button" className="prf-go" onClick={() => onGoType && onGoType(prev.id)}>{fill('lbl.levelN', { n: levelNo(prev.id) })} · {prev.label}</button>
-              : <button type="button" className="prf-go" onClick={go}>{rescue.step === 2 ? T['ui.rescue2Btn'] : T['btn.go']}</button>}
-            {rescue.step === 3 && prev && <button type="button" className="prf-go is-quiet" onClick={go}>{T['btn.continue']}</button>}
+              : <button type="button" className="prf-go" onClick={go}>{step === 2 ? T['ui.rescue2Btn'] : T['btn.go']}</button>}
+            {step === 3 && prev && <button type="button" className="prf-go is-quiet" onClick={go}>{T['btn.continue']}</button>}
           </div>
         </div>
       </div>
@@ -256,7 +261,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   }
 
   // the main button starts what the open tab says: the warm-up (a first visit), or a proof at that level
-  const viaWarm = tab === 0;
+  const viaWarm = tab === 0 && hasWarm;
   const goLevel = Math.min(Math.max(1, tab), level);
   const k = dots(ts, level).filter((d) => d === true).length;
   const inner = (

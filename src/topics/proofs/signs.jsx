@@ -49,11 +49,26 @@ export function Mx({ s, label, className, style }) {
 export function St({ st, color, className }) {
   return <Mx s={show(st)} label={say(st)} className={className} style={color ? { color } : undefined} />;
 }
+/** What the proof is after (צ״ל): the statement, or for a length its name and a question mark ("ST = ?"): the number
+    is the answer, never shown before it is found. */
+export function Goal({ st, className }) {
+  return st.kind === 'val' ? <Mx s={`${st.x} = ?`} label={fill('say.askVal', { x: st.x })} className={className} /> : <St st={st} className={className} />;
+}
 /** Type 2: an asked part and an empty box for its partner ("AB = ▢"), read as "AB שווה ל…". */
 export function Ask({ part, className }) {
   return (
     <span className={`prf-m prf-askst${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={fill('say.ask', { x: showPart(part) })}>
       <span aria-hidden="true"><Mx s={`${showPart(part)} =`} /> <i className="prf-slot" /></span>
+    </span>
+  );
+}
+/** Similarity level 1: the ratio with the sides of the first triangle and an empty box under each ("AD/▢ = AE/▢ = DE/▢"),
+    read as "מחפשים את הצלעות שמתאימות לצלעות AD, AE, DE". */
+export function AskProp({ st, className }) {
+  const tops = st.pairs.map((f) => f[0]);
+  return (
+    <span className={`prf-m prf-askst${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={fill('say.askProp', { x: tops.join(', ') })}>
+      <span aria-hidden="true">{tops.map((x, i) => <React.Fragment key={x}>{i > 0 && ' = '}<span>{x}/</span><i className="prf-slot" /></React.Fragment>)}</span>
     </span>
   );
 }
@@ -64,7 +79,7 @@ export function CongSt({ st, at = [], color, className }) {
   const tri = (t) => <><Sign name="tri" quiet />{t.map((q, i) => (at.includes(i) ? <span key={i} className="prf-lk" style={color ? { color } : undefined}>{q}</span> : <span key={i}>{q}</span>))}</>;
   return (
     <span className={`prf-m${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={say(st)}>
-      <span aria-hidden="true">{tri(t1)} <Sign name="cong" quiet /> {tri(t2)}</span>
+      <span aria-hidden="true">{tri(t1)} {st.kind === 'sim' ? <span>∼</span> : <Sign name="cong" quiet />} {tri(t2)}</span>
     </span>
   );
 }
