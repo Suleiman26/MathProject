@@ -6,6 +6,7 @@ import React, { useRef, useState } from 'react';
 import { boxesOf, emptyValue, isEmpty, checkAll, deck } from './core';
 import { M, Rich } from './rich';
 import { Fig } from './figs';
+import WordWork from './WordWork';
 
 /* ── Explanation ──────────────────────────────────────────────────────────── */
 function LessonItem({ it }) {
@@ -117,6 +118,9 @@ function Practice({ ch }) {
         </div>
         <p className="nw-ask"><Rich text={q.text} /></p>
         {q.fig && <Fig fig={q.fig} />}
+        {/* word problems (board #93): the student's own equation / helper table, then the final answer */}
+        {q.work && <WordWork work={q.work} locked={over} key={q.key} />}
+        {q.work && q.rows && <div className="nw-final-t">התשובה הסופית</div>}
 
         {q.rows && (
           <div className={`nw-rows${q.tableHead ? ' nw-rows--table' : ''}`}>

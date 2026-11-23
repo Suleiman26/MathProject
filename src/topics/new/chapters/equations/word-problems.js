@@ -256,7 +256,7 @@ const MOTION = [
         `[[${v1}x + ${v1 * h} = ${v2}x]], לכן [[${v1 * h} = ${v2 - v1}x]] ו-[[x = ${x}]]`,
         `תשובה: אחרי ${xTxt}. עד אז שניהם עברו ${v2 * x} ק״מ.`,
       ],
-      data: { kind: 'catch-up', v1, v2, h, nums: [v1, v2] },
+      data: { kind: 'catch-up', v1, v2, h, who: [slow, fast], nums: [v1, v2] },
     };
   },
 ];
@@ -400,11 +400,25 @@ export default full;
    two topics. "משוואות ליניאריות" gets the linear stories (numbers, geometry, percent, motion) and
    "משוואות ריבועיות" the stories that lead to a quadratic equation (grade 9). Same generators, same
    lesson cards, only split. */
+/* Board #93 (Sulaiman): before the final answer the student may write the equation of the story, or
+   (motion) fill a helper table. q.work says what x may stand for (the answer, or another quantity of
+   the story a student may call x) and, for motion, the table's rows. Checked in ../../work.js. */
+export function workOf(q) {
+  const d = q.data; const a = answers(q); const xs = [...a];
+  if (d.kind === 'age-diff') xs.push(a[0] + d.d);
+  if (d.kind === 'age-times') xs.push(d.k * a[0]);
+  if (d.kind === 'consecutive') xs.push(a[0] + 1, a[0] + 2);
+  if (d.kind === 'catch-up') xs.push(a[0] + d.h);
+  const names = { towards: ['המכונית', 'המשאית'], 'two-speeds': ['הרוכב הראשון', 'הרוכב השני'], 'catch-up': d.who }[d.kind];
+  return { xs, table: names ? { names } : null };
+}
+const withWork = (g) => ({ ...g, make: (R) => { const q = g.make(R); return { ...q, work: workOf(q) }; } });
+
 export const wordsLinear = {
   ...full,
   grade: 'ז׳–ח׳',
   lesson: full.lesson.slice(0, 3),
-  gens: [linear, geometry, percent, motion],
+  gens: [linear, geometry, percent, motion].map(withWork),
 };
 export const wordsQuadratic = {
   ...full,

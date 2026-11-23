@@ -106,6 +106,60 @@ export const NW_CSS = `/* ── math ── */
 #root .nw-skip{display:flex;justify-content:center;margin:-4px 0 24px}
 #root .nw-other{min-height:44px;padding:8px 16px;border:0;background:transparent;box-shadow:none;color:var(--ink-3);font-size:.9rem;font-weight:500;text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--line-strong)}
 
+/* ── word problems: the student's own work before the final answer (board #93) ── */
+#root .nw-wk{margin-top:18px;padding:14px;border-radius:16px;background:color-mix(in srgb,var(--a-50) 60%,#fff);border:1px solid var(--a-100);transition:background-color 180ms ease-out,border-color 180ms ease-out}
+#root .nw-wk.is-open{background:#fff;border-color:var(--a-200);box-shadow:var(--sh-1)}
+#root .nw-wk-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+#root .nw-wk-t{font-size:.92rem;font-weight:700;color:var(--a-900)}
+#root .nw-wk-pick{display:flex;flex-wrap:wrap;gap:8px}
+#root .nw-wk-chip{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:6px 14px 6px 16px;border-radius:var(--r-pill);border:1.5px solid var(--a-200);background:#fff;color:var(--a-800);font:inherit;font-size:.95rem;font-weight:700;cursor:pointer;transition:transform 100ms ease-out,background-color 140ms ease-out,border-color 140ms ease-out,color 140ms ease-out;-webkit-tap-highlight-color:transparent}
+#root .nw-wk-chip:active{transform:scale(.97)}
+#root .nw-wk-chip.on{background:var(--a-600);border-color:var(--a-600);color:#fff}
+#root .nw-wk-chip.on .nw-m,#root .nw-wk-chip.on .nw-v{color:inherit}
+#root .nw-wk-ico{display:inline-grid;place-items:center;min-width:22px;font-size:.9rem}
+#root .nw-wk-ico .nw-m{font-weight:800}
+#root .nw-wk-body{display:grid;gap:10px;margin-top:14px;animation:nw-wk-in 220ms cubic-bezier(.2,.8,.2,1)}
+@keyframes nw-wk-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+#root .nw-wk-lbl{display:block;margin:0;font-size:.95rem;line-height:1.6;font-weight:600;color:var(--ink-2)}
+#root .nw-wk-eqrow{display:flex;gap:8px;align-items:stretch}
+#root .nw-wk-in{flex:1 1 auto;min-width:0;height:52px;padding:0 14px;direction:ltr;text-align:left;font:inherit;font-size:1.2rem;font-weight:700;color:var(--ink);background:#fff;border:1.5px solid var(--line-strong);border-radius:12px;outline:0;transition:border-color var(--t),box-shadow var(--t)}
+#root .nw-wk-in::placeholder{color:var(--ink-3);font-weight:500;font-size:1rem}
+#root .nw-wk-in:focus{border-color:var(--a-500);box-shadow:var(--ring)}
+#root .nw-wk-in.ok{border-color:var(--ok-500);background:var(--ok-50);color:var(--ok-800)}
+#root .nw-wk-go{flex:none;min-height:52px;min-width:96px;padding:0 18px;border-radius:12px;border:1.5px solid var(--a-600);background:#fff;color:var(--a-700);font-weight:700}
+#root .nw-wk-next{min-height:48px;padding:0 18px;border-radius:12px}
+#root .nw-wk-show{text-align:center;font-size:clamp(1.15rem,5vw,1.4rem);padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--a-50) 75%,#fff);overflow-x:auto}
+#root .nw-wk-msg{padding:10px 14px;border-radius:12px;font-size:.95rem;line-height:1.6;font-weight:600;text-align:center}
+#root .nw-wk-msg.is-ok{background:var(--ok-50);color:var(--ok-800);border:1px solid var(--ok-200)}
+#root .nw-wk-msg.is-err{background:var(--bad-50);color:var(--bad-700);border:1px solid var(--bad-200)}
+#root .nw-wk-msg.is-warn{background:var(--warn-50);color:var(--warn-800);border:1px solid var(--warn-200)}
+#root .nw-wk-msg :is(.nw-m,.nw-v){color:inherit}
+#root .nw-wk-acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+#root .nw-wk-tablewrap{max-width:100%;overflow-x:auto}
+#root .nw-wk-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;table-layout:fixed}
+#root .nw-wk-table :is(th,td){padding:6px;text-align:center;border-bottom:1px solid var(--line);border-inline-start:1px solid var(--line);vertical-align:middle}
+#root .nw-wk-table :is(th,td):first-child{border-inline-start:0}
+#root .nw-wk-table tbody tr:last-child :is(th,td){border-bottom:0}
+#root .nw-wk-table thead th{background:var(--a-50);color:var(--a-900);font-size:.92rem;font-weight:700;line-height:1.3}
+#root .nw-wk-table thead th:first-child{width:26%}
+#root .nw-wk-table thead small{display:block;font-size:.75rem;font-weight:500;color:var(--ink-3)}
+#root .nw-wk-table tbody th{font-size:.9rem;font-weight:700;color:var(--ink);line-height:1.35;background:color-mix(in srgb,var(--a-50) 40%,#fff)}
+#root .nw-wk-table tr.ok :is(th,td){background:var(--ok-50)}
+#root .nw-wk-table tr.bad :is(th,td){background:var(--bad-50)}
+#root .nw-wk-cell{width:100%;min-width:0;height:44px;padding:0 4px;text-align:center;direction:ltr;font:inherit;font-weight:700;font-size:1.05rem;color:var(--ink);background:#fff;border:1.5px solid var(--line-strong);border-radius:10px;outline:0}
+#root .nw-wk-cell:focus{border-color:var(--a-500);box-shadow:var(--ring)}
+#root .nw-final-t{margin:20px 0 -8px;font-size:.92rem;font-weight:700;color:var(--a-900)}
+@media (max-width:480px){
+  #root .nw-wk{padding:12px 10px}
+  #root .nw-wk-pick{width:100%}
+  #root .nw-wk-chip{flex:1 1 0;justify-content:center;padding-inline:10px;font-size:.9rem}
+  #root .nw-wk-go{min-width:84px;padding:0 12px}
+  #root .nw-wk-table :is(th,td){padding:5px 3px}
+  #root .nw-wk-table thead th{font-size:.82rem}
+  #root .nw-wk-table tbody th{font-size:.8rem}
+}
+@media (prefers-reduced-motion:reduce){#root .nw-wk-body{animation:none}}
+
 /* ── drawings ── */
 #root .nw-figbox{margin:14px auto 0;display:grid;justify-items:center;gap:6px;max-width:100%}
 #root .nw-fig{direction:ltr;display:block;width:100%;max-width:380px;height:auto;font-family:var(--font)}

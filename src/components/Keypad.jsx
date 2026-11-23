@@ -106,6 +106,12 @@ function backspace(el) {
 }
 
 function checkButtonFor(el, evenDisabled) {
+  // a panel with its own check (data-kp-scope + a button[data-kp-ok], board #93): ✓ presses that one, never the exercise's check
+  const own = el.closest && el.closest("[data-kp-scope]");
+  if (own) {
+    const b = own.querySelector("button[data-kp-ok]");
+    return b && (evenDisabled || !b.disabled) && b.offsetParent ? b : null;
+  }
   // the nearest "check / confirm" button around this box
   let box = el.parentElement;
   for (let i = 0; box && i < 7; i++, box = box.parentElement) {
