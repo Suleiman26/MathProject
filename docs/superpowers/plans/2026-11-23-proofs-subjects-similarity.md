@@ -18,7 +18,7 @@
 - Tracker keys never change once stored: congruence `1. קוראים את הנתון`, `2. מחפיפה לשוויונות`, `3. הוכחת חפיפה`, `4. חפיפה ואז מסקנה`, `5. חפיפה – כמו במבחן`; similarity `6. מדמיון לשוויונות ויחס`, `7. מיחס לצלע חסרה`, `8. הוכחת דמיון`, `9. דמיון ואז חישוב`, `10. דמיון – כמו במבחן` (en dash U+2013); tabs `חימום`, `רמה 1`, `רמה 2`, `רמה 3`.
 - Visible names (drafts → `NEW_DRAFTS`): help stages `חימום · מודרך · ביחד · לבד`; levels `רמה N · <label>` numbered inside the subject; subjects `חפיפת משולשים` (`ינואר–פברואר`), `דמיון משולשים` (`מרץ–אפריל`). No visible "רמה 1–3" for help stages anywhere (landing, pill, `ui.locked`, EndCard, rescue cards).
 - Type ids: `read-given`, `congruent-parts`, `prove-congruence`, `then-conclusion`, `cong-exam`, `sim-parts`, `sim-side`, `prove-sim`, `sim-calc`, `sim-exam`.
-- Release gate (S§2 goal 7): `SUBJECTS[i].live` and each exam type's `live` are `false` for similarity and both exams until Abed lifts it. `canShow(x, env)` is true when `x.live`, or `env.framed` (admin frame), or host is `localhost`/`127.0.0.1`, or host matches `/^mathix-[a-z0-9-]+-abed-shalgams-projects\.vercel\.app$/` (mathix preview deploys only — never `mathix-sooty.vercel.app`, never gamma). Non-live keys are NOT added to `src/home/chapters.js`.
+- Release (Abed, 2026-11-23: "Build, show it live"): similarity and both exams are LIVE when built (`live:true`). Keep the `live` flag and `canShow(x, env)` (true when `x.live`, or `env.framed`, or host `localhost`/`127.0.0.1`, or `/^mathix-[a-z0-9-]+-abed-shalgams-projects\.vercel\.app$/`) so a subject can be hidden later. Each live key goes into `src/home/chapters.js` + `chapterInfo.js` (key order) in the task that builds it.
 - The subject switcher never uses `.ch-btn`/`.nav-btn`/`.sub-tab`/`.tab`/`.sub-btn`/`.sub-tab-btn` classes. No proofs button text matches `/בדוק|בדיקה|בדקו|אישור|אשר|✓/` (keypad submit = `זו התשובה`).
 - CSS: classes `prf-…`/`is-…`, every rule under `#root`, no `letter-spacing`, 40 px touch targets, motion only transform/opacity, reduced motion = no motion, colour never the only signal.
 - Hebrew only in `texts.js` / `reasons.js`; every new key in `NEW_DRAFTS`; maths islands `{name}`, never glued to a Hebrew prefix.
@@ -146,12 +146,12 @@
 
 ### Task 10: Similarity types (levels 1–4) and `present()`
 
-**Files:** create `types/sim-parts.js` (key `6.`, shape `parts`), `types/sim-side.js` (`7.`, `side`), `types/prove-sim.js` (`8.`, `prove`), `types/sim-calc.js` (`9.`, `then`); modify `types/index.js`, `subjects.js` (similarity `types`, `theorems`, `demos`, `live:false`), `core.js` (`present` per shape), `src/admin/pages/review/model.js` (`EXTRA_CHAPTERS.proofs` + keys 6–9); test `types-sim.test.mjs`
+**Files:** create `types/sim-parts.js` (key `6.`, shape `parts`), `types/sim-side.js` (`7.`, `side`), `types/prove-sim.js` (`8.`, `prove`), `types/sim-calc.js` (`9.`, `then`); modify `types/index.js`, `subjects.js` (similarity `types`, `theorems`, `demos`, `live:true`), `core.js` (`present` per shape), `src/admin/pages/review/model.js` (`EXTRA_CHAPTERS.proofs` + keys 6–9); test `types-sim.test.mjs`
 
 **Interfaces:**
 - Produces: types with `make(R, level, variant, avoid, ctx)` / `remake(meta)` (contract of `prove-congruence.js`), `warm: []` (filled in Task 13). Families: sim-parts P,B; sim-side P,B; prove-sim P,B at stages 1–2, + H,N at לבד variant B; sim-calc P,B, + H at לבד. sim-calc's first מודרך proof prefers a template proved in prove-sim (`ctx.prefer`). sim-side/sim-calc end with `prop` (only the needed pairs) + `val`.
 - [ ] **Step 1: Tests first:** each type × stage × variant, 200 seeds: `remake(meta)` deep-equal; `present` steps ⊂ `canon`; `decisionsOf(view) > 0`; crossed families never at stages 1–2; similarity demos build and their marks are facts.
-- [ ] **Step 2:** FAIL → implement → PASS. Do NOT touch `src/home/chapters.js` (not live). Commit `Proofs: similarity levels 1–4`.
+- [ ] **Step 2:** FAIL → implement → PASS. Add keys 6–9 to `src/home/chapters.js` and their `chapterInfo.js` lines (drafts). Commit `Proofs: similarity levels 1–4`.
 
 ### Task 11: Ratio row, number row, keypad, pair tapping
 
@@ -179,14 +179,14 @@
 
 ### Task 14: Exam level per subject + "שולטים בנושא"
 
-**Files:** create `types/exam.js` (`cong-exam` key `5. חפיפה – כמו במבחן`, `sim-exam` key `10. דמיון – כמו במבחן`, shape `exam`, `live:false`); modify `core.js` (`present` for `exam`), `mastery.js`, `ProofRows.jsx` + `ProofScreen.jsx` (section letters + goal lines), `ProofChapter.jsx`, `EndCard.jsx`, `subjects.js`, `src/admin/pages/review/model.js` (keys 5, 10), `texts.js`; test `exam.test.mjs`
+**Files:** create `types/exam.js` (`cong-exam` key `5. חפיפה – כמו במבחן`, `sim-exam` key `10. דמיון – כמו במבחן`, shape `exam`, `live:true`); modify `core.js` (`present` for `exam`), `mastery.js`, `ProofRows.jsx` + `ProofScreen.jsx` (section letters + goal lines), `ProofChapter.jsx`, `EndCard.jsx`, `subjects.js`, `src/admin/pages/review/model.js` (keys 5, 10), `texts.js`; test `exam.test.mjs`
 
 **Interfaces:**
 - Problem: from a random family of the subject (incl. crossed and words givens); `sections:[{letter, targets:[factId], goalKey, goalVars}]` from canon (S§8): congruence א words-row (if any) / ב congruence / ג conclusion (else א/ב); similarity א sim / ב prop / ג val. `target` = all section targets.
 - `mastery.js`: `emptyType({ start })`; `typeState(state, id, { start:3 })` for exam types; `record(ts, level, rec, { …, exam:true })` → no fast track, rescue steps 2/3 → `{ step:'exam' }`; `variantFor` → `{variant:'B', counted:true}` for exam; `examOpen(state, subjectId)` = the subject's last proof type `level >= 3`; `subjectMastered(state, subjectId)` = exam type `level >= 4`; `cleanQueued` accepts `{step:'exam'}`.
 - UI: one tab visible `לבד`, `data-mp-key="רמה 3"`; locked line `lbl.examLocked`; exam rescue card `ui.rescueExam` (practise the previous level / continue here); end card `ui.mastered` on the level-up to 4.
 - [ ] **Step 1: Tests first:** 200 seeds per subject: sections in order, targets in canon, section ב needs א's target, `remake` deep-equal; `examOpen` false at last proof level 2, true at 3; exam: 2 perfect proofs do NOT level up, 3 clean of 4 do; a not-clean streak never yields `{step:2}`; `seedFromServer` with `5. חפיפה – כמו במבחן › רמה 3`, win ≥ 3 → `subjectMastered(…,'congruence')`.
-- [ ] **Step 2:** FAIL → implement → PASS. Commit `Proofs: exam level per subject and subject mastery`.
+- [ ] **Step 2:** FAIL → implement → PASS. Insert keys 5 and 10 into `src/home/chapters.js` (key order) + `chapterInfo.js`. Commit `Proofs: exam level per subject and subject mastery`.
 
 ### Task 15: Care details
 
@@ -198,7 +198,7 @@
 
 - [ ] `node --test src/topics/proofs/*.test.mjs src/lib/mp-key.test.mjs src/admin/review/*.test.mjs` PASS; `python3 tools/verify-logic.py` → "math and text untouched"; `npx next build` → success.
 - [ ] Saved progress: a pre-update device state for all four congruence types shows the same stages; a `zz` test account on the LOCAL database still seeds levels from server rows.
-- [ ] Gate: with the dev lab's `canShow` env set to `mathix-sooty.vercel.app`, similarity and exams are hidden; on localhost and in the admin review frame they show; the home railway still shows proofs with 4 chapters.
+- [ ] Live check: on localhost both subjects show; the home railway shows proofs with all 10 levels in key order and `?ch` links open each; `canShow` unit tests still pass.
 - [ ] Phone pass (WebKit 375×667 + iPhone-size scroll video, frame by frame): each subject/level/stage, theorem page + sheet, keypad, exam, switcher, `?ch` for keys 1–10; scroll smooth down and up; every menu opened. Desktop pass.
 - [ ] Stop every dev server/browser started. Write Sulaiman's review list (S§13 + every new `NEW_DRAFTS` key) to `design/proofs-review/2026-11-23-sulaiman.md`. Commit.
-- [ ] Go-live (only when Abed says): flip `live`, add the live keys to `src/home/chapters.js` + `chapterInfo.js` in key order, deploy per CLAUDE.md.
+- [ ] Merge to `main`, push and deploy mathix per CLAUDE.md (Abed: "show it live"), then check the live site on a phone width.

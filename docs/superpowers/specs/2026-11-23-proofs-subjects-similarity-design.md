@@ -54,11 +54,9 @@ Found on our own site: Sulaiman's `similar-triangles` topic is listed for grade 
 5. A weak student always has a next step that works; a strong student reaches the top of a subject fast.
 6. Zero loss of saved progress: everything a student did in the four congruence chapters stays theirs (device
    storage, server rows, home railway).
-7. **Release gate (Abed decides, asked 2026-11-23):** new MATH content (the similarity subject and the exam
-   levels) appears to students only after Sulaiman approves it, or when Abed says so. Until then it shows on
-   localhost, preview deployments and in the admin content-review frame only (`subjects.js` flag `live:false`).
-   The structure (subjects, labels, help-stage names) and the theorem sentences (Ministry quotes) can go live
-   first.
+7. **Release (Abed, 2026-11-23: "Build, show it live"):** the similarity subject and the exam levels go live when
+   built, with Hebrew drafts; Sulaiman reviews them on the live site. The `live` flag stays in `subjects.js` so a
+   subject can be hidden later without code changes.
 8. Zero database migrations; zero edits to Sulaiman's `Topic.jsx` files; `verify-logic.py` stays clean.
 
 **Non-goals (this round)**
@@ -163,8 +161,8 @@ label is free.
 | Similarity levels | `6. מדמיון לשוויונות ויחס`, `7. מיחס לצלע חסרה`, `8. הוכחת דמיון`, `9. דמיון ואז חישוב`, `10. דמיון – כמו במבחן` | רמה 1 … רמה 5 + name |
 | Help-stage tabs | `חימום`, `רמה 1`, `רמה 2`, `רמה 3` (exactly today's texts) | חימום · מודרך · ביחד · לבד |
 
-- **The home railway lists only live keys:** a key goes into `chapters.js` only when its subject/level is live
-  (§2 goal 7). Otherwise `Journey.jsx` would count hidden levels (4/4 → 4/9) and link stops that open nothing.
+- **The home railway lists only live keys:** a key goes into `chapters.js` when its subject/level is live
+  (§2 goal 7; all live from the start). Otherwise `Journey.jsx` would count hidden levels (4/4 → 4/9) and link stops that open nothing.
 - **The admin content-review panel** (`src/admin/pages/review/frame.js`, `src/admin/review/snapshot.js`,
   `src/admin/pages/review/model.js` `EXTRA_CHAPTERS.proofs`) and `TopicView.activeChapter()` also match chapters
   and tabs by text: they read the key the same way, and the review model lists the new keys (the review frame is
