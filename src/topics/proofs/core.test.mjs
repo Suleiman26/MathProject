@@ -177,7 +177,7 @@ test('options for a statement gap: one right, the others wrong', () => {
 });
 test('whyOf: the why-line of each role', () => {
   assert.equal(whyOf(P, 'a').key, 'why.given'); assert.deepEqual(whyOf(P, 'c'), { key: 'why.vertical', vars: { pt: 'O' } });
-  assert.deepEqual(whyOf(P, 'cong', 'sas'), { key: 'why.sas', vars: { m1: 'A ↔ B', m2: 'O ↔ O', m3: 'C ↔ D' } });
+  assert.deepEqual(whyOf(P, 'cong', 'sas'), { key: 'why.sas', vars: { m: 'A ↔ B, O ↔ O, C ↔ D' } });
   assert.deepEqual(whyOf(P, 'goal'), { key: 'why.concl-side', vars: { x: 'AC', y: 'BD' } });
   assert.equal(whyOf(P, 'e1').key, 'why.concl-angle');
 });

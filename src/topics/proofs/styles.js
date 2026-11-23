@@ -30,6 +30,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 
 /* ── figure ── */
 #root .prf-stage{position:relative;isolation:isolate;height:clamp(150px,30dvh,240px);padding:2px 12px}
+@media (max-width:767px) and (orientation:portrait){#root .prf-figcol .prf-stage{height:clamp(128px,23dvh,210px)}}
 #root .prf-stage::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
   background-image:radial-gradient(circle,color-mix(in srgb,var(--a-500) 26%,transparent) 1.1px,transparent 1.6px);
   background-size:18px 18px;background-position:center;
@@ -107,51 +108,89 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-fc-note{font-size:.78rem;color:var(--ink-3)}
 #root .prf-lk{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;font-weight:700}
 #root .prf-askst .prf-slot{width:1.9em;vertical-align:-.3em}
-#root .prf-ask-sent{flex:0 0 100%;min-width:0;padding:4px 10px;border-radius:10px;background:var(--a-50);color:var(--a-900);font-size:.95rem;line-height:1.45}
 #root .prf-fc-goal{background:var(--a-50);border:1.5px dashed var(--a-300);color:var(--a-800)}
 #root .prf-fc-goal.is-done{background:var(--ok-50);border:1.5px solid var(--ok-500);color:var(--ok-800)}
 
-/* ── rows ── */
-#root .prf-rows{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:6px 14px 8px}
-#root .prf-intro{padding-block:2px 4px;font-size:.9rem;line-height:1.5;color:var(--ink-2)}
-#root .prf-plan{width:fit-content;margin-block:2px 4px;padding:3px 10px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.84rem;font-weight:500}
+/* ── progress: "שורה X מתוך Y" ── */
+#root .prf-prog{flex:none;display:flex;align-items:center;gap:10px;padding:0 16px 6px}
+#root .prf-prog-t{flex:none;font-size:.78rem;font-weight:600;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+#root .prf-prog-bar{flex:1;display:flex;gap:4px;min-width:0}
+#root .prf-prog-bar i{flex:1;height:5px;border-radius:9px;background:var(--line);transition:background-color .3s ease}
+#root .prf-prog-bar i.is-done{background:var(--ok-500)}
+#root .prf-prog-bar i.is-cur{background:var(--a-500)}
+#root .prf-swap{flex:none;display:inline-flex;align-items:center;gap:5px;min-height:40px;margin-inline-start:auto;padding-inline:10px;border:0;border-radius:999px;background:transparent;box-shadow:none;color:var(--a-700);font-size:.84rem;font-weight:600;white-space:nowrap}
+#root .prf-swap .prf-ic{font-size:16px}
+
+/* ── the notebook: נתון, צ״ל, then the טענה | נימוק table ── */
+#root .prf-nb{flex:1;min-height:96px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:10px 14px 14px;border-top:1px solid var(--line);background:var(--surface)}
+#root .prf-intro{padding-block:0 6px;font-size:.88rem;line-height:1.5;color:var(--ink-2)}
+#root .prf-plan{width:fit-content;margin-block:2px 6px;padding:3px 10px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.82rem;font-weight:500}
+#root .prf-nb-head{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline;gap:5px 8px;margin-bottom:10px;font-size:.92rem;line-height:1.4}
+#root .prf-nb-k{font-weight:700;color:var(--ink-2)}
+#root .prf-givl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;min-width:0}
+#root .prf-gv{display:flex;align-items:center;gap:7px;min-width:0;margin-inline-start:-7px;padding:2px 7px;border-radius:9px;transition:background-color .3s ease}
+#root .prf-gv-n{flex:none;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--surface-3);color:var(--ink-2);font-size:.68rem;font-weight:700;font-variant-numeric:tabular-nums}
+#root .prf-gv-n .prf-ic{font-size:11px}
+#root .prf-gv-t{min-width:0}
+#root .prf-gv.is-now{background:var(--a-50);box-shadow:inset 0 0 0 1.5px var(--a-300);color:var(--a-900)}
+#root .prf-gv.is-now .prf-gv-n{background:var(--a-600);color:#fff}
+#root .prf-gv.is-used{color:var(--ink-2)}
+#root .prf-gv.is-used .prf-gv-n{background:var(--ok-600);color:#fff}
+#root .prf-goals{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+#root .prf-goal{display:inline-flex;align-items:center;gap:6px;min-width:0;padding:1px 9px;border-radius:9px;border:1.5px dashed var(--a-300);background:var(--a-50);color:var(--a-800)}
+#root .prf-goal .prf-ic{font-size:13px}
+#root .prf-goal.is-done{border-style:solid;border-color:var(--ok-500);background:var(--ok-50);color:var(--ok-800)}
+#root .prf-nb-th,#root .prf-row-b{display:grid;grid-template-columns:22px minmax(0,1.25fr) minmax(0,1fr);align-items:center;column-gap:8px}
+#root .prf-nb-th{padding:3px 4px 4px;border-bottom:1.5px solid var(--ink);font-size:.72rem;font-weight:600;color:var(--ink-3)}
 #root .prf-rowlist{list-style:none;margin:0;padding:0}
 #root .prf-row{border-bottom:1px solid var(--line);transition:background-color .3s ease}
-#root .prf-row.is-new{animation:prf-row .2s var(--ease-out) backwards}
-#root .prf-row.is-lead{background:var(--a-50)}
-#root .prf-row-b{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:4px 2px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--ink);text-align:start}
-#root .prf-row-n{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ok-50);color:var(--ok-700);box-shadow:inset 0 0 0 1.5px var(--ok-500);font-size:.76rem;font-weight:700;font-variant-numeric:tabular-nums}
-#root .prf-row-st{flex:none;font-size:1.02rem}
-#root .prf-row-r{flex:1;min-width:0;font-size:.84rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#root .prf-row-g{flex:none;display:flex;align-items:center;gap:4px}
-#root .prf-row-ok{color:var(--ok-600);font-size:16px}
-#root .prf-row-full{padding:0 32px 8px;font-size:.88rem;color:var(--ink-2)}
+#root .prf-row.is-new{animation:prf-row .25s var(--ease-out) backwards}
+#root .prf-row.is-lead{background:color-mix(in srgb,var(--a-100) 50%,transparent)}
+#root .prf-row.is-lead .prf-row-n{color:var(--a-700)}
+#root .prf-row.is-now{background:var(--a-50);box-shadow:inset -3px 0 0 var(--a-500)}
+#root .prf-row-b{width:100%;min-height:40px;margin:0;padding:5px 4px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--ink);font-size:inherit;text-align:start}
+#root .prf-row-n{font-size:.78rem;font-weight:700;color:var(--ok-700);font-variant-numeric:tabular-nums}
+#root .prf-row.is-now .prf-row-n{color:var(--a-700)}
+#root .prf-row.is-ghost .prf-row-n{color:var(--line-strong)}
+#root .prf-row-c{display:flex;align-items:center;gap:6px;min-width:0}
+#root .prf-row-st{font-size:1rem}
+#root .prf-row-r{display:flex;align-items:center;gap:4px;min-width:0;font-size:.82rem;line-height:1.3;color:var(--ink-2)}
+#root .prf-row-ok{flex:none;margin-inline-start:auto;color:var(--ok-600);font-size:15px}
+#root .prf-row-later{font-size:.8rem;color:var(--ink-3)}
+#root .prf-ghost-bar{display:block;height:10px;border-radius:6px;background:var(--surface-3)}
+#root .prf-qslot{display:inline-grid;place-items:center;min-width:56px;height:26px;padding-inline:8px;border-radius:8px;border:1.5px dashed var(--a-500);color:var(--a-700);font-size:.9rem;font-weight:800;animation:prf-qpulse 1.6s ease-in-out infinite}
+#root .prf-row-full{padding:0 34px 8px;font-size:.86rem;color:var(--ink-2)}
 #root .prf-row-full b{font-weight:600;color:var(--ink)}
-#root .prf-swap{flex:none;display:grid;place-items:center;width:40px;height:40px;margin-inline-start:auto;border:0;border-radius:50%;background:transparent;box-shadow:none;color:var(--a-700);font-size:18px}
-#root .prf-swap + .prf-dots{margin-inline-start:0}
 @keyframes prf-row{from{opacity:0;transform:translateY(8px)}}
+@keyframes prf-qpulse{50%{background:var(--a-100)}}
 
-/* ── tray ── */
-#root .prf-tray{flex:none;display:flex;flex-direction:column;gap:8px;min-height:120px;max-height:40dvh;overflow-y:auto;overscroll-behavior:contain;padding:10px 14px max(12px,env(safe-area-inset-bottom,0px));background:var(--surface-2);border-top:1px solid var(--line);box-shadow:0 -14px 28px -22px rgb(28 27 25 / .25)}
+/* ── the sheet: the row and what is asked, one question, the answers ── */
+#root .prf-tray{flex:none;display:flex;flex-direction:column;gap:8px;min-height:120px;max-height:56dvh;overflow-y:auto;overscroll-behavior:contain;padding:12px 16px max(14px,env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:var(--surface);box-shadow:0 0 0 1px var(--line),0 -12px 30px -10px rgb(28 27 25 / .14)}
 #root .prf-step,#root .prf-fbc{margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;animation:none}
-#root .prf-ask{display:flex;align-items:center;gap:8px;min-height:44px}
-#root .prf-ask-t{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;line-height:1.35}
-#root .prf-ask-k{font-size:.78rem;font-weight:700;color:var(--a-700)}
-#root .prf-ask-st{font-size:1.16rem}
-#root .prf-ask-r{font-size:.9rem;color:var(--ink-2)}
-#root .prf-ask-q{flex:0 0 100%;font-size:.95rem;color:var(--ink-2)}
-#root .prf-ask-k + .prf-ask-q,#root .prf-ask-q:first-child{flex:1 1 auto;color:var(--ink);font-weight:500;font-size:1rem}
-#root .prf-ask-e{flex:none;display:flex;align-items:center;gap:6px}
+#root .prf-q{display:flex;flex-direction:column;gap:4px}
+#root .prf-q-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px}
+#root .prf-q-k{min-width:0;font-size:.8rem;font-weight:700;color:var(--a-700)}
+#root .prf-q-e{flex:none;display:flex;align-items:center;gap:4px}
+#root .prf-q-h{margin:0;font-size:1.12rem;font-weight:800;line-height:1.38;color:var(--ink);text-wrap:balance}
+#root .prf-q-quote{width:fit-content;max-width:100%;padding:4px 10px;border-radius:10px;background:var(--a-50);box-shadow:inset 0 0 0 1px var(--a-200);color:var(--a-900);font-size:.98rem;line-height:1.45}
+#root .prf-ask-st{font-size:1.02rem}
+#root .prf-coach{display:flex;align-items:flex-start;gap:10px;padding-top:2px}
+#root .prf-coach-av{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,var(--a-300),var(--a-600));color:#fff}
+#root .prf-coach-av .prf-ic{font-size:17px}
+#root .prf-coach-t{margin:0;font-size:.98rem;line-height:1.55;color:var(--ink)}
+#root .prf-chip-2{display:flex;flex-direction:column;align-items:center;gap:1px}
+#root .prf-chip-2 small{font-size:.68rem;font-weight:500;color:var(--ink-3)}
 #root .prf-hintb{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding-inline:11px;border:0;border-radius:12px;background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink-2);font-size:.88rem;font-weight:600;white-space:nowrap}
 #root .prf-hintb > *{position:relative;z-index:1}
 #root .prf-hintb .prf-ic{font-size:17px;color:var(--a-600)}
+#root .prf-q-e .prf-hintb{min-height:36px;padding-inline:12px;border-radius:999px;background:var(--surface-3);box-shadow:none;font-size:.84rem}
 #root .prf-hintb:disabled{color:var(--ink-3)}
 #root .prf-hintb .prf-hintb-fill{position:absolute;inset:0;z-index:0;background:var(--a-100);transform-origin:right;animation:prf-fill 4s linear both}
 #root .prf-hintb.is-nudge{animation:prf-nudge .9s var(--ease-out) 1}
 #root .prf-rungs{display:inline-flex;gap:3px}
 #root .prf-rungs i{display:block;width:5px;height:5px;border-radius:50%;background:var(--line-strong)}
 #root .prf-rungs i.is-on{background:var(--a-500)}
-#root .prf-ask-e .prf-x span{display:none}
+#root .prf-q-e .prf-x span{display:none}
 #root .prf-x{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:40px;min-height:40px;padding-inline:8px;border:0;background:transparent;box-shadow:none;color:var(--ink-3);font-size:.86rem;font-weight:500}
 #root .prf-x .prf-ic{font-size:15px;color:var(--a-600)}
 #root .prf-hint{margin-top:4px;padding-inline-start:10px;border-inline-start:3px solid var(--a-300);font-size:.92rem;line-height:1.45;color:var(--ink-2);animation:prf-row .25s var(--ease-out) backwards}
@@ -353,8 +392,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 
 /* ── phones on their side (and very short windows): the drawing beside the rows ── */
 @media (orientation:landscape) and (max-height:500px){
-  #root .prf-screen{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:20px;max-width:1120px;margin-inline:auto;padding-inline:16px;background:transparent}
-  #root .prf-head{grid-column:1 / -1}
+  #root .prf-screen{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);column-gap:20px;max-width:1120px;margin-inline:auto;padding-inline:16px;background:transparent}
+  #root .prf-head,#root .prf-prog{grid-column:1 / -1}
   #root .prf-figcol{align-self:center}
   #root .prf-stage{height:min(62dvh,480px)}
   #root .prf-work{margin-bottom:16px;overflow:hidden;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--sh-2)}
@@ -363,7 +402,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 /* short phones (an iPhone SE in Safari shows about 550px): one-line strip with the goal first, a lower drawing */
 @media (max-height:600px) and (max-width:767px) and (orientation:portrait){
   #root .prf-head{height:40px}
-  #root .prf-stage{height:150px}
+  #root .prf-figcol .prf-stage{height:118px}
   #root .prf-strip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-block:2px;padding-inline-end:34px;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 30px);mask-image:linear-gradient(to right,transparent 0,#000 30px)}
   #root .prf-strip::-webkit-scrollbar{display:none}
   #root .prf-strip-goal{order:-1;flex:none;flex-wrap:nowrap;max-width:none}
@@ -438,25 +477,34 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-strip-given,#root .prf-strip-goal{gap:6px 8px;min-height:34px}
   #root .prf-strip-k{min-width:2.8em}
   #root .prf-fc{min-height:32px;padding:3px 12px;border-radius:16px;font-size:1rem}
-  #root .prf-rows{flex:0 1 auto;padding:10px 20px 12px}
+  #root .prf-nb{flex:0 1 auto;padding:16px 22px 14px;border-top:0}
+  #root .prf-prog{padding:0 2px 10px}
+  #root .prf-prog-t{font-size:.9rem}
+  #root .prf-prog-bar i{height:6px}
+  #root .prf-nb-head{font-size:1.02rem;gap:7px 10px;margin-bottom:14px}
+  #root .prf-gv-n{width:22px;height:22px;font-size:.78rem}
+  #root .prf-nb-th,#root .prf-row-b{grid-template-columns:28px minmax(0,1.2fr) minmax(0,1fr);column-gap:12px}
+  #root .prf-nb-th{font-size:.82rem}
+  #root .prf-swap{font-size:.95rem;min-height:44px;padding-inline:14px}
   #root .prf-intro{font-size:1.02rem;padding-block:4px 6px}
   #root .prf-plan{font-size:.92rem;padding:4px 12px}
-  #root .prf-row-b{min-height:50px;gap:12px;padding:6px 2px}
-  #root .prf-row-n{width:26px;height:26px;font-size:.84rem}
-  #root .prf-row-st{font-size:1.16rem}
+  #root .prf-row-b{min-height:50px;padding:6px 6px}
+  #root .prf-row-n{font-size:.88rem}
+  #root .prf-row-st{font-size:1.14rem}
   #root .prf-row-r{font-size:.95rem}
-  #root .prf-row-full{padding:0 40px 10px;font-size:.96rem}
+  #root .prf-row-full{padding:0 46px 10px;font-size:.96rem}
+  #root .prf-qslot{min-width:70px;height:30px;font-size:1rem}
   #root .prf-row:last-child{border-bottom:0}
-  #root .prf-tray{min-height:0;max-height:none;overflow:visible;gap:10px;padding:16px 20px 20px;border-top:1px solid var(--line);box-shadow:none}
+  #root .prf-tray{min-height:0;max-height:none;overflow:visible;gap:10px;padding:16px 22px 22px;border-radius:0;border-top:1px solid var(--line);box-shadow:none;background:var(--surface-2)}
   #root .prf-tray .prf-prev{position:relative;top:auto;box-shadow:inset 0 0 0 1.5px var(--a-300)}
-  #root .prf-ask{min-height:48px}
-  #root .prf-ask-k{font-size:.86rem}
-  #root .prf-ask-st{font-size:1.36rem}
-  #root .prf-ask-r{font-size:1rem}
-  #root .prf-ask-q{font-size:1.04rem}
-  #root .prf-ask-k + .prf-ask-q,#root .prf-ask-q:first-child{font-size:1.1rem}
-  #root .prf-ask-sent{font-size:1.04rem;padding:6px 12px}
-  #root .prf-ask-e .prf-x span{display:inline}
+  #root .prf-q-k{font-size:.88rem}
+  #root .prf-q-h{font-size:1.32rem}
+  #root .prf-q-quote{font-size:1.06rem;padding:6px 12px}
+  #root .prf-coach-t{font-size:1.06rem}
+  #root .prf-coach-av{width:40px;height:40px}
+  #root .prf-ask-st{font-size:1.14rem}
+  #root .prf-q-e .prf-x span{display:inline}
+  #root .prf-q-e .prf-hintb{min-height:40px}
   #root .prf-hintb{min-height:44px;font-size:.94rem;padding-inline:14px}
   #root .prf-hint,#root .prf-why{font-size:1rem}
   #root .prf-fb{font-size:1rem;padding:9px 14px}
@@ -514,7 +562,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-screen{max-width:720px;margin-inline:auto;padding-inline:24px 24px}
   #root .prf-stage{height:clamp(240px,34dvh,380px)}
   #root .prf-work{margin-bottom:20px}
-  #root .prf-rows{min-height:60px}
+  #root .prf-nb{min-height:60px;overflow-y:auto}
   #root .prf-tray{flex:none;max-height:46dvh;overflow-y:auto}
   #root .prf-end-card{min-height:0}
   #root .prf-end-scroll{overflow-y:auto}
@@ -537,12 +585,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-pt.is-open .prf-pt-name{font-size:clamp(1.7rem,2.3vw,2.2rem)}
 
   /* a proof: the work on the right, the drawing large and sticky on the left */
-  #root .prf-screen{display:grid;grid-template-columns:minmax(0,600px) minmax(0,780px);justify-content:center;grid-template-rows:auto minmax(0,1fr);grid-template-areas:"head fig" "work fig";column-gap:clamp(32px,4vw,72px);max-width:none;height:auto;min-height:calc(100dvh - var(--prf-top));overflow:visible;padding:4px clamp(24px,3.5vw,56px) 40px}
+  #root .prf-screen{display:grid;grid-template-columns:minmax(0,600px) minmax(0,780px);justify-content:center;grid-template-rows:auto auto minmax(0,1fr);grid-template-areas:"head fig" "prog fig" "work fig";column-gap:clamp(32px,4vw,72px);max-width:none;height:auto;min-height:calc(100dvh - var(--prf-top));overflow:visible;padding:4px clamp(24px,3.5vw,56px) 40px}
   #root .prf-head{grid-area:head}
   #root .prf-figcol{grid-area:fig;position:sticky;top:var(--prf-top);align-self:start;padding-top:66px}
   #root .prf-stage{width:100%;height:auto;max-height:calc(100dvh - var(--prf-top) - 90px);aspect-ratio:320 / 196}
   #root .prf-work{grid-area:work;align-self:start;max-width:640px}
-  #root .prf-rows{overflow:visible}
+  #root .prf-nb{overflow:visible}
+  #root .prf-prog{grid-area:prog}
   /* the rescue card beside the poster */
   #root .prf-in-proof:has(> .prf-ch-card){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.24fr);grid-template-areas:"card mast";align-items:center;column-gap:clamp(40px,5.5vw,104px);padding:12px clamp(24px,4vw,56px) 28px}
   #root .prf-in-proof:has(> .prf-ch-card) > .hdr{display:flex;grid-area:mast;--prf-wm:min(31cqw,22dvh);max-width:none;margin:0;padding:0}
@@ -580,8 +629,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-row-b{min-height:56px}
   #root .prf-row-st{font-size:1.28rem}
   #root .prf-row-r{font-size:1.02rem}
-  #root .prf-ask-st{font-size:1.5rem}
-  #root .prf-ask-k + .prf-ask-q,#root .prf-ask-q:first-child{font-size:1.2rem}
+  #root .prf-q-h{font-size:1.44rem}
+  #root .prf-ask-st{font-size:1.28rem}
   #root .prf-chip{min-height:58px;font-size:1.1rem}
   #root .prf-tile{font-size:1.24rem}
   #root .prf-fb,#root .prf-hint,#root .prf-why{font-size:1.08rem}

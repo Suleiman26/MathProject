@@ -35,16 +35,16 @@ export const T = {
   'hint.partner.2': 'האות שכתובה באותו מקום במשולש השני היא המתאימה.',
 
   /* ── after a right answer: the why-line (§9.2) ── */
-  'why.given': 'נכון. זה כתוב בנתון.',
-  'why.given-words': 'נכון. {{word}} — לכן {st}.',
-  'why.vertical': 'נכון. שני ישרים נחתכים בנקודה {pt}, והזוויות האלה זו מול זו.',
-  'why.common': 'נכון. זו אותה צלע בשני המשולשים.',
-  'why.sas': 'נכון: צלע, הזווית שביניהן, צלע. ההתאמה: {m1}, {m2}, {m3}.',
-  'why.asa': 'נכון: זווית, הצלע שביניהן, זווית. ההתאמה: {m1}, {m2}, {m3}.',
-  'why.sss': 'נכון: שלוש צלעות שוות בהתאמה. ההתאמה: {m1}, {m2}, {m3}.',
-  'why.concl-side': 'נכון. הצלעות {x}, {y} נמצאות מול זוויות שוות. אלה צלעות מתאימות.',
-  'why.concl-angle': 'נכון. הזוויות {x}, {y} נמצאות מול צלעות שוות. אלה זוויות מתאימות.',
-  'why.partner': 'נכון. האותיות {p}, {q} כתובות באותו מקום בחפיפה.',
+  'why.given': 'זה כתוב בנתון.',
+  'why.given-words': 'לפי הגדרת {{word}}: {st}.',
+  'why.vertical': 'שני ישרים נחתכים בנקודה {pt}, והזוויות האלה זו מול זו.',
+  'why.common': 'זו אותה צלע בשני המשולשים.',
+  'why.sas': 'צלע, הזווית שביניהן, צלע. ההתאמה: {m}',
+  'why.asa': 'זווית, הצלע שביניהן, זווית. ההתאמה: {m}',
+  'why.sss': 'שלוש צלעות שוות בהתאמה. ההתאמה: {m}',
+  'why.concl-side': 'הצלעות {x}, {y} נמצאות מול זוויות שוות. אלה צלעות מתאימות.',
+  'why.concl-angle': 'הזוויות {x}, {y} נמצאות מול צלעות שוות. אלה זוויות מתאימות.',
+  'why.partner': 'האותיות {p}, {q} כתובות באותו מקום בחפיפה.',
 
   /* ── a statement was chosen (§9.2) ── */
   'st.written': 'השורה הזו כבר כתובה.',
@@ -114,7 +114,7 @@ export const T = {
   'btn.hint': 'רמז', 'btn.hint2': 'עוד רמז', 'btn.show': 'הראו לי', 'btn.add': 'להוסיף שורה',
   'btn.parts': 'רשימת חלקים', 'btn.cancel': 'ביטול', 'btn.back': 'חזרה', 'btn.next': 'הבא',
   'btn.go': 'קדימה', 'btn.qed': 'מ.ש.ל.', 'btn.more': 'הוכחה נוספת', 'btn.finish': 'סיום',
-  'btn.swap': 'הוכחה אחרת', 'btn.start': 'מתחילים', 'btn.continue': 'ממשיכים',
+  'btn.swap': 'תרגיל אחר', 'btn.start': 'מתחילים', 'btn.continue': 'ממשיכים',
 
   /* ── labels ── */
   'lbl.whatReason': 'מה הנימוק?',
@@ -136,7 +136,6 @@ export const T = {
   'lbl.planTris': 'באילו שני משולשים נמצאים {x}, {y}?',
   'lbl.rescueCard': 'נעצור רגע ונחזק דבר אחד.',
   'lbl.segs': 'קטעים', 'lbl.angs': 'זוויות', 'lbl.tris': 'משולשים',
-  'lbl.team': 'מוסתר עד אישור',
   'lbl.row': 'שורה {{n}}',
   'lbl.theSeg': 'הקטע', 'lbl.theAng': 'הזווית', 'lbl.theTri': 'המשולש',
   'lbl.equals': 'שווה', 'lbl.congruent': 'חופף',
@@ -220,11 +219,34 @@ export const T = {
   'lbl.passed': 'הושלמה',
   'lbl.order': 'סדר מומלץ',
   'lbl.sample': 'כך נראית הוכחה',
-  'ui.teamNote': 'העמוד מוסתר מתלמידים. המתמטיקה והניסוחים מחכים לאישור.',
   'ui.rescue2Btn': 'נעבור יחד',
   'lbl.nextUp': 'הבא בתור',
   'btn.these': 'אלה השניים',
   'ui.planOk': 'נכון: החלקים האלה נמצאים במשולשים {t1}, {t2}. נוכיח קודם שהמשולשים חופפים.',
+
+  /* ── the notebook screen (2026-11-22 redesign; all in NEW_DRAFTS) ── */
+  'lbl.rowOf': 'שורה {{n}} מתוך {{t}}',
+  'lbl.allRows': 'כל השורות כתובות',
+  'lbl.rowStmt': 'שורה {{n}} · מה כותבים בטענה?',
+  'lbl.rowReason': 'שורה {{n}} · מה הנימוק?',
+  'lbl.rowShow': 'שורה {{n}} · ככה עושים',
+  'lbl.howTo': 'ככה עושים',
+  'lbl.later': 'אחר כך',
+  'lbl.beforeStart': 'לפני שמתחילים',
+  'q.sentence': 'מה המשפט הזה אומר? בחרו את השוויון.',
+  'q.partner': 'מה כותבים בריבוע? היעזרו בסדר האותיות בחפיפה.',
+  'q.whyRow': 'מאיפה יודעים את הטענה הזאת?',
+  'q.whyCong': 'איזה משפט חפיפה מתאים לשוויונות שמעל?',
+  'q.whyConcl': 'המשולשים חופפים. מה הנימוק לשוויון הזה?',
+  'coach.start': 'נבנה יחד הוכחה שלמה, שורה אחרי שורה. כל שורה היא טענה, ולידה נימוק: מאיפה יודעים אותה. בשורה אחת תבחרו בעצמכם.',
+  'coach.given': 'השוויון הזה כתוב בנתון, אז מעתיקים אותו לטענה כמו שהוא. הנימוק: נתון.',
+  'coach.reason': 'הנימוק: {{reason}}.',
+  'btn.gotIt': 'הבנתי, לשורה הבאה',
+  'btn.doneRead': 'סיימנו',
+  'sub.sas': 'צלע, זווית, צלע', 'sub.asa': 'זווית, צלע, זווית', 'sub.sss': 'שלוש צלעות',
+  'ui.endCleanRead': 'סיימנו. עבודה נקייה.',
+  'ui.endHelpedRead': 'סיימנו. היה צעד שמילאנו יחד, ולכן זה לא נספר כנקי. הרמה לא יורדת.',
+  'ui.endSlipsRead': 'סיימנו. בכמה צעדים היה צריך רמז או ניסיון נוסף, ולכן זה לא נספר כנקי. הרמה לא יורדת.',
 
   /* ── one line per type on its landing ── */
   'about.read-given': 'מהמשפט שבנתון אל השוויון שהוא נותן, עם הנימוק הנכון.',
@@ -249,9 +271,13 @@ export const NEW_DRAFTS = [
   'about.read-given', 'about.congruent-parts', 'about.prove-congruence', 'about.then-conclusion',
   'lbl.title', 'lbl.whatClaim', 'lbl.pickTile', 'lbl.tapTwo', 'lbl.tapSecond', 'lbl.matchOrder', 'lbl.chooser', 'lbl.goalCong', 'lbl.sameSeg', 'lbl.walkIntro',
   'lbl.proofDone', 'lbl.cleanN', 'lbl.cleanAria', 'lbl.figure', 'lbl.leanGiven', 'lbl.leanSeen', 'lbl.leanRows', 'lbl.here',
-  'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.teamNote', 'ui.rescue2Btn', 'lbl.nextUp', 'btn.these',
+  'lbl.passed', 'lbl.order', 'lbl.sample', 'ui.rescue2Btn', 'lbl.nextUp', 'btn.these',
   'ui.planOk', 'say.ask',
   'ui.endSlips', 'st.isoLater', 'st.matchingAng', 'st.matchingTwo', 'st.matchingSide', 'st.matchingPlain',
+  'lbl.rowOf', 'lbl.allRows', 'lbl.rowStmt', 'lbl.rowReason', 'lbl.rowShow', 'lbl.howTo', 'lbl.later', 'lbl.beforeStart',
+  'q.sentence', 'q.partner', 'q.whyRow', 'q.whyCong', 'q.whyConcl', 'coach.start', 'coach.given', 'coach.reason',
+  'btn.gotIt', 'btn.doneRead', 'sub.sas', 'sub.asa', 'sub.sss', 'ui.endCleanRead', 'ui.endHelpedRead', 'ui.endSlipsRead',
+  'why.given', 'why.given-words', 'why.vertical', 'why.common', 'why.sas', 'why.asa', 'why.sss', 'why.concl-side', 'why.concl-angle', 'why.partner', 'btn.swap',   // reworded 2026-11-22: no "נכון" (the feedback line already says it), one island for the matching
   'w.W2', 'w.W3', 'st.partner',                       // reworded after the review (the spec drafts read less clearly)
 ];
 

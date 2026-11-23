@@ -1,14 +1,15 @@
 'use client';
-/* The proofs section: the bottom tray. The active row sits in its header ("שורה 3 · AO = OB · מה
-   הנימוק?"), then the chips / tiles / one button, with the feedback lines above (so the chips stay
-   under the thumb). It renders what ProofScreen decides; it judges nothing.
+/* The proofs section: the bottom sheet (2026-11-22 redesign, "מחברת"). One line names the row and
+   what is asked ("שורה 3 · מה הנימוק?") with the hint button beside it, then ONE clear question in
+   big type (or, in the walk-through, the guide's bubble), then the answers. The feedback lines sit
+   above it. It renders what ProofScreen decides; it judges nothing.
 
    Tracker contract (spec §10.4): every feedback line is a NEW small node inside its own .step-card
    whose .step-label names the decision kind. The labels are hidden: they name the answer. */
 import React from 'react';
 import { T } from './texts.js';
 import { show } from './core.js';
-import { St, Tx, IcCheck, IcNote, IcBulb, IcClose } from './signs.jsx';
+import { St, Tx, IcCheck, IcNote, IcBulb, IcClose, IcPen } from './signs.jsx';
 
 const short = (s) => [...s].length <= 7;
 
@@ -45,7 +46,7 @@ function Body({ body, onPick, onNext, onQed, qedBusy }) {
     return (
       <div className={`prf-chips prf-cols-${cols}`}>
         {body.chips.map((c) => (
-          <button type="button" key={c.id} className={`prf-chip${c.dim ? ' is-dim' : ''}${c.yes ? ' is-yes' : ''}`} disabled={!!c.disabled} onClick={() => onPick(c.id)}>{c.label}</button>
+          <button type="button" key={c.id} className={`prf-chip${c.dim ? ' is-dim' : ''}${c.yes ? ' is-yes' : ''}`} disabled={!!c.disabled} onClick={() => onPick(c.id)}>{c.sub ? <span className="prf-chip-2"><span>{c.label}</span><small>{c.sub}</small></span> : c.label}</button>
         ))}
       </div>
     );
@@ -61,7 +62,7 @@ function Body({ body, onPick, onNext, onQed, qedBusy }) {
   }
   if (body.t === 'next') return <div className="prf-go-row"><button type="button" className="prf-go" onClick={onNext}>{body.label || T['btn.next']}</button></div>;
   if (body.t === 'action') return <div className="prf-go-row"><button type="button" className="prf-go is-soft" onClick={body.onClick}>{body.icon}{body.label}</button></div>;
-  if (body.t === 'qed') return <div className="prf-go-row"><button type="button" className="prf-go prf-qed" disabled={!!qedBusy} onClick={onQed}>{T['btn.qed']}</button></div>;
+  if (body.t === 'qed') return <div className="prf-go-row"><button type="button" className="prf-go prf-qed" disabled={!!qedBusy} onClick={onQed}>{body.label || T['btn.qed']}</button></div>;
   if (body.t === 'node') return body.node;
   return null;
 }
@@ -74,19 +75,19 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
       <div className="step-card prf-step">
         <span className="step-label prf-sr" aria-hidden="true">{label}</span>
         {head && (
-          <div className="prf-ask">
-            <div className="prf-ask-t">
-              {head.sent && <span className="prf-ask-sent">{head.sent}</span>}
-              {head.kicker && <span className="prf-ask-k">{head.kicker}</span>}
-              {head.lead}
-              {head.st && <St st={head.st} color={head.color} className="prf-ask-st" />}
-              {head.reason && <span className="prf-ask-r">{head.reason}</span>}
-              {head.ask && <span className="prf-ask-q">{head.ask}</span>}
-            </div>
-            <div className="prf-ask-e">
-              {onCancel && <button type="button" className="prf-x" aria-label={T['btn.cancel']} onClick={onCancel}><IcClose /><span>{T['btn.cancel']}</span></button>}
-              <HintButton hint={hint} onHint={onHint} />
-            </div>
+          <div className="prf-q">
+            {(head.kicker || hint || onCancel) && (
+              <div className="prf-q-top">
+                <span className="prf-q-k">{head.kicker}</span>
+                <span className="prf-q-e">
+                  {onCancel && <button type="button" className="prf-x" aria-label={T['btn.cancel']} onClick={onCancel}><IcClose /><span>{T['btn.cancel']}</span></button>}
+                  <HintButton hint={hint} onHint={onHint} />
+                </span>
+              </div>
+            )}
+            {head.coach && <div className="prf-coach"><span className="prf-coach-av" aria-hidden="true"><IcPen /></span><p className="prf-coach-t">{head.coach}</p></div>}
+            {head.quote && <div className="prf-q-quote">{head.quote}</div>}
+            {head.ask && <h3 className="prf-q-h">{head.ask}</h3>}
           </div>
         )}
         {hintLine && <p className="prf-hint" key={hintLine.id}><Tx k={hintLine.key} vars={hintLine.vars} /></p>}

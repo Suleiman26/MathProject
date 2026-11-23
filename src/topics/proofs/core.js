@@ -303,8 +303,8 @@ export function whyOf(p, id, reason) {
   if (role === 'common') return { key: 'why.common', vars: {} };
   if (role === 'congruence') {
     const th = THEOREMS.includes(reason) ? reason : (p.just[id][0].reasons.find((r) => THEOREMS.includes(r)) || 'sas');
-    const [m1, m2, m3] = f.map.map(([u, v]) => `${u} ↔ ${v}`);
-    return { key: `why.${th}`, vars: { m1, m2, m3 } };
+    const m = f.map.map(([u, v]) => `${u} ↔ ${v}`).join(', ');      // one island: it never breaks into a garbled line (RTL)
+    return { key: `why.${th}`, vars: { m } };
   }
   // type 2: the letters written in the same places (a side: both its letters; an angle: its vertex)
   if (role === 'partner') return { key: 'why.partner', vars: f.kind === 'ang' ? { p: f.x.v, q: f.y.v } : { p: f.x, q: f.y } };

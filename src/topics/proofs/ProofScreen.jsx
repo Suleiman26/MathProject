@@ -1,6 +1,7 @@
 'use client';
-/* The proofs section: screen C, one proof (spec §11.1). Header, the drawing (always in view), the
-   given + goal strip, the finished rows, and the bottom tray. It drives session.js: every tap is an
+/* The proofs section: screen C, one proof (spec §11.1; 2026-11-22 redesign "מחברת"). Header ("תרגיל אחר"),
+   a "שורה X מתוך Y" bar, the drawing (always in view), the notebook (נתון, צ״ל and a טענה | נימוק table with
+   the open row and the empty rows still to come), and the bottom sheet with one clear question. It drives session.js: every tap is an
    action, the reducer answers with the next state and effects, and this file only shows them. */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
@@ -15,7 +16,7 @@ import ProofRows from './ProofRows.jsx';
 import Tray from './Tray.jsx';
 import EndCard from './EndCard.jsx';
 import { useSelection, TapStatement, GroupPick } from './TapBuild.jsx';
-import { St, Tx, Mx, Ask, CongSt, IcBack, IcCheck, IcLock, IcSwap, IcHand } from './signs.jsx';
+import { St, Tx, Mx, Ask, CongSt, IcBack, IcCheck, IcLock, IcSwap } from './signs.jsx';
 
 const PAIR = { 1: 'var(--prf-p1)', 2: 'var(--prf-p2)', 3: 'var(--prf-p3)' };
 const ids = (problem, fact) => (problem.facts[fact] ? partsOf(problem.facts[fact]).map((x) => partId(x, problem.figure)) : []);
@@ -32,7 +33,6 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const [leans, setLeans] = useState(null);
   const [openRow, setOpenRow] = useState(null);
   const [badTiles, setBadTiles] = useState([]);
-  const [walk, setWalk] = useState({ tie1: false, tie2: false });
   const [lead, setLead] = useState([]);
   const [fresh, setFresh] = useState(null);
   const [showKey, setShowKey] = useState(null);       // the decision whose "הראו לי" is unlocked
@@ -42,7 +42,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const [live, setLive] = useState('');
   // type 4: the unscored plan question "באילו שני משולשים נמצאים …?" before the first row (not a decision, no row)
   const [planQ, setPlanQ] = useState(() => (!restored && view.plan === 'tris' && (problem.figure.tris || []).length === 2 ? { picked: [] } : null));
-  const n = useRef(0), timers = useRef({}), rowsEl = useRef(null), workEl = useRef(null), qedDone = useRef(false), intro = useRef(!restored);
+  const n = useRef(0), timers = useRef({}), nbEl = useRef(null), workEl = useRef(null), qedDone = useRef(false), intro = useRef(!restored);
   const reduce = useReducedMotion();
   const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), type.n <= 2 ? ['seg', 'ang'] : null);
   const p = problem, cur = s.cur, mode = s.view.mode, cong = congOf(p);
@@ -114,13 +114,18 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     return () => clearTimeout(t);
   }, [curKey, tries, level]);
 
-  // the newest row stays in view
-  const rowsSeen = useRef(s.rows.length);
+  // the row being worked on stays in view inside the notebook (on a phone the notebook scrolls between the drawing and the sheet)
   useLayoutEffect(() => {
-    const el = rowsEl.current;
-    if (el && s.rows.length !== rowsSeen.current) el.scrollTop = el.scrollHeight;
-    rowsSeen.current = s.rows.length;
-  }, [s.rows.length]);
+    const box = nbEl.current;
+    if (!box || box.scrollHeight <= box.clientHeight + 1) return;
+    const el = box.querySelector('.prf-row.is-now') || box.querySelector('.prf-row:not(.is-ghost):last-of-type');
+    if (!el) return;
+    const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
+    let d = 0;
+    if (r.bottom > b.bottom - 24) d = r.bottom - b.bottom + 30;          // a little of the next (empty) row shows under it
+    else if (r.top < b.top + 4) d = r.top - b.top - 10;
+    if (d) box.scrollTo({ top: box.scrollTop + d, behavior: reduce || intro.current ? 'auto' : 'smooth' });
+  }, [s.rows.length, curKey, leans, planQ, end, fbs, why, hintLine]); // eslint-disable-line react-hooks/exhaustive-deps
   // on a computer the page itself scrolls (the sheet is as tall as its rows): keep the sheet's foot, where the tray is, in view
   useEffect(() => {
     const el = workEl.current;
@@ -175,16 +180,28 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     return chipCache.current[fact];
   };
 
-  /* ── the tray ── */
+  /* ── the sheet: one row label, one question, its answers; the notebook row it belongs to ── */
   const isDone = ready(s);
-  const rowKicker = fill('lbl.row', { n: rowNo });
+  const total = useMemo(() => {
+    const known = s.view.known || [];
+    return new Set([...(s.view.pre || []).filter((f) => !known.includes(f)), ...s.view.steps.map((x) => x.fact)]).size;
+  }, [s.view]);
+  const totalRows = Math.max(total, s.rows.length);
+  const rowAt = (fact) => s.rows.findIndex((x) => x.fact === fact);
   const colorOf = (fact) => (level === 1 && p.facts[fact].mark ? PAIR[p.facts[fact].mark.color] : undefined);
-  let head = null, body = null, label = cur ? cur.label : '', hint = null, onCancel = null, onPick = () => {};
+  const given = p.givenText || [];
+  // type 2, Level 1: the letters of the active part and of its partner carry the row's pair colour in the given congruence
+  const lit = s.view.letters && askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' && cong ? (() => {
+    const f = p.facts[askFact], t1 = p.facts[cong].map.map((m) => m[0]);
+    return { at: (f.kind === 'seg' ? [...f.x] : [f.x.v]).map((q) => t1.indexOf(q)), color: f.mark ? PAIR[f.mark.color] : undefined };
+  })() : null;
+  const congQuote = cong ? <>{lit ? <CongSt st={p.facts[cong]} at={lit.at} color={lit.color} /> : <St st={p.facts[cong]} />} <span className="prf-fc-note">{T['lbl.byOrder']}</span></> : null;
+  let head = null, body = null, label = cur ? cur.label : '', hint = null, onCancel = null, onPick = () => {}, now = null, whyShown = why;
 
   const tris = p.figure.tris || [];
   if (planQ) {
     const gp = partsOf(p.facts[targets(p)[0]]).map(showPart), both = planQ.picked.length === 2;
-    head = { ask: <Tx k="lbl.planTris" vars={{ x: gp[0], y: gp[1] }} /> };
+    head = { kicker: T['lbl.beforeStart'], ask: <Tx k="lbl.planTris" vars={{ x: gp[0], y: gp[1] }} /> };
     label = '';
     body = { t: 'node', node: (
       <>
@@ -195,10 +212,11 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       </>
     ) };
   } else if (leans) {
-    const role = roleOf(p, leans.fact);
+    const role = roleOf(p, leans.fact), at = rowAt(leans.fact);
     const answer = role === 'vertical' || role === 'common' ? 'seen' : role === 'congruence' || role === 'conclusion' ? 'rows' : 'given';   // type 2's partner leans on the given congruence
     const done = !!leans.picked;
-    head = { kicker: fill('lbl.row', { n: s.rows.findIndex((x) => x.fact === leans.fact) + 1 || rowNo }), st: p.facts[leans.fact], ask: T['lbl.leans'] };
+    head = { kicker: fill('lbl.row', { n: at + 1 || rowNo }), ask: T['lbl.leans'] };
+    now = { at };
     label = '';
     if (!done) {
       body = { t: 'chips', cols: 3, chips: [['given', T['lbl.leanGiven']], ['seen', T['lbl.leanSeen']], ['rows', T['lbl.leanRows']]].map(([id, lb]) => ({ id, label: lb })) };
@@ -218,45 +236,44 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     }
   } else if (isDone) {
     head = { ask: T['lbl.proofDone'] };
-    body = { t: 'qed' };
+    body = { t: 'qed', label: tn === 1 ? T['btn.doneRead'] : null };
   } else if (mode === 'walk' && !cur) {
-    if (!walkLast) { head = { ask: T['lbl.walkIntro'] }; body = { t: 'next' }; } else {
-      const role = roleOf(p, walkLast.fact);
-      head = { kicker: fill('lbl.row', { n: s.rows.length }), st: p.facts[walkLast.fact], color: colorOf(walkLast.fact), reason: REASONS[walkLast.reason].short };
-      if (s.view.ties && !walk.tie1 && (role === 'vertical' || role === 'common')) {
-        body = { t: 'action', label: T['lbl.show'], icon: <IcHand />, onClick: () => { setWalk((x) => ({ ...x, tie1: true })); setPulse([]); later('p0', 20, () => setPulse(ids(p, walkLast.fact))); later('p', 1900, () => setPulse([])); } };
-      } else body = { t: 'next' };
+    // the walk-through: the guide says what is done and why; nothing is graded, so nothing says "נכון"
+    if (!walkLast) {
+      head = { kicker: T['lbl.howTo'], coach: T['coach.start'] };
+      body = { t: 'next', label: T['btn.start'] };
+      now = { st: null, reason: null, ask: null };
+    } else {
+      const at = s.rows.length - 1, role = roleOf(p, walkLast.fact), rs = REASONS[walkLast.reason] || REASONS.given, w = whyOf(p, walkLast.fact, walkLast.reason);
+      head = { kicker: fill('lbl.rowShow', { n: at + 1 }), coach: role === 'given' || role === 'given-more' ? T['coach.given'] : <><Tx k={w.key} vars={w.vars} /> {fill('coach.reason', { reason: rs.full || rs.short })}</> };
+      body = { t: 'next', label: T['btn.gotIt'] };
+      now = { at };
+      whyShown = null;
     }
   } else if (cur && cur.kind === 'reason') {
-    const fact = cur.fact;
-    head = { kicker: rowKicker, st: p.facts[fact], color: colorOf(fact), ask: mode === 'tap' ? T['lbl.whereFrom'] : T['lbl.whatReason'] };
-    if (mode === 'walk' && s.view.ties && !walk.tie2 && fact === cong) {
-      head.ask = null;
-      body = { t: 'action', label: T['lbl.leadRows'], onClick: () => {
-        setWalk((x) => ({ ...x, tie2: true }));
-        const js = (p.just[fact] || [])[0], needs = js ? js.needs : [];
-        setLead(needs); later('lead', 2400, () => setLead([]));
-        setPulse([]); later('p0', 20, () => setPulse(needs.flatMap((f) => ids(p, f)))); later('p', 1900, () => setPulse([]));
-        setFbs([{ id: ++n.current, cls: 'note', key: 'hint.congruence.1', vars: {}, label: '' }]);
-      } };
-    } else if (mode === 'tap') {
+    const fact = cur.fact, role = roleOf(p, fact);
+    head = { kicker: fill('lbl.rowReason', { n: rowNo }), ask: role === 'congruence' ? T['q.whyCong'] : role === 'conclusion' ? T['q.whyConcl'] : T['q.whyRow'] };
+    now = { st: <St st={p.facts[fact]} color={colorOf(fact)} />, reason: null, ask: 'reason' };
+    if (mode === 'tap') {
       body = { t: 'node', node: <GroupPick key={cur.key} wrong={cur.wrong} onPick={(id) => dispatch({ t: 'reason', id })} /> };
     } else {
       const all = chipsFor(fact), acc = acceptedReasons(p, fact);
       const keep = cur.rung >= 2 ? [...all.filter((c) => acc.includes(c)), ...all.filter((c) => !acc.includes(c) && !cur.wrong.includes(c))].slice(0, 3) : all;
-      body = { t: 'chips', chips: all.map((id) => ({ id, label: REASONS[id].short, disabled: cur.wrong.includes(id), dim: !keep.includes(id) })) };
+      body = { t: 'chips', chips: all.map((id) => ({ id, label: REASONS[id].short, sub: T[`sub.${id}`], disabled: cur.wrong.includes(id), dim: !keep.includes(id) })) };
       onPick = (id) => dispatch({ t: 'reason', id });
     }
     if (s.pending && (mode === 'tiles' || mode === 'tap')) onCancel = () => dispatch({ t: 'cancel' });
   } else if (cur && cur.kind === 'statement') {
     const step = s.view.steps.find((x) => x.fact === cur.fact);
+    const asked = askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' ? askFact : null;
+    now = { st: tn === 2 && asked ? <Ask part={p.facts[asked].x} className="prf-ask-st" /> : null, reason: null, ask: 'st' };
     if ((mode === 'fill' || mode === 'walk') && step && step.options) {
-      head = { kicker: rowKicker, ask: T['lbl.whatClaim'] };
+      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: tn === 1 ? T['q.sentence'] : tn === 2 ? T['q.partner'] : T['lbl.whatClaim'] };
       const items = step.options.map((st, i) => ({ id: `o${i}`, st, disabled: cur.wrong.includes(norm(p.figure, st)) }));
       body = { t: 'options', items };
       onPick = (id) => dispatch({ t: 'statement', st: items.find((x) => x.id === id).st });
     } else if (mode === 'tiles') {
-      head = { kicker: rowKicker, ask: T['lbl.pickTile'] };
+      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: T['lbl.pickTile'] };
       const req = required(p);
       const items = s.view.tiles.filter((t) => !(t.fact && s.done.includes(t.fact))).map((t) => ({ id: t.id, st: t.st, disabled: badTiles.includes(t.id) || cur.wrong.includes(norm(p.figure, t.st)) }));
       body = { t: 'tiles', items };
@@ -265,35 +282,47 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
         if (r.fx.some((f) => f.t === 'fb' && f.cls === 'err') && !(t.fact && req.has(t.fact))) setBadTiles((b) => [...b, id]);
       };
     } else if (mode === 'tap') {
-      const two = sel.parts.length === 2, tris = sel.kind === 'tri' && two;
-      head = { kicker: rowKicker, ask: sel.chooser ? null : tris ? T['lbl.matchOrder'] : sel.parts.length === 1 ? T['lbl.tapSecond'] : two ? null : T['lbl.tapTwo'] };
+      const two = sel.parts.length === 2, both = sel.kind === 'tri' && two;
+      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: sel.chooser ? null : both ? T['lbl.matchOrder'] : sel.parts.length === 1 ? T['lbl.tapSecond'] : two ? null : T['lbl.tapTwo'] };
       body = { t: 'node', node: (
         <TapStatement sel={sel}
           onAdd={(st) => { dispatch({ t: 'statement', st }); sel.clear(); }}
           onMatching={(tri1, order) => { dispatch({ t: 'matching', tri1, order }); sel.clear(); }} />
       ) };
     }
+    // where the answer is read from: the sentence being read (type 1, its gap), or the given congruence (type 2)
+    if (head && tn === 1 && step && step.options) {
+      const g = asked && given.find((x) => x.facts.includes(asked));
+      if (g) head.quote = g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />;
+    }
+    if (head && tn === 2) head.quote = congQuote;
   }
-  const given = p.givenText || [];
-  // type 2, Level 1: the letters of the active part and of its partner carry the row's pair colour in the given congruence
-  const lit = s.view.letters && askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' && cong ? (() => {
-    const f = p.facts[askFact], t1 = p.facts[cong].map.map((m) => m[0]);
-    return { at: (f.kind === 'seg' ? [...f.x] : [f.x.v]).map((q) => t1.indexOf(q)), color: f.mark ? PAIR[f.mark.color] : undefined };
-  })() : null;
-  // types 1–2: the tray names the sentence being read (type 1), or the given congruence and the asked part "AB = ▢" (type 2:
-  // on a phone the strip scrolls, and the congruence is what the student reads from)
-  if (head && !planQ && !isDone && askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong') {
-    const g = tn === 1 && given.find((x) => x.facts.includes(askFact));
-    if (g) head.sent = g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />;
-    if (tn === 2 && cong) head.sent = <>{lit ? <CongSt st={p.facts[cong]} at={lit.at} color={lit.color} /> : <St st={p.facts[cong]} />} <span className="prf-fc-note">{T['lbl.byOrder']}</span></>;
-    if (tn === 2 && !head.st) head.lead = <Ask part={p.facts[askFact].x} className="prf-ask-st" />;
-  }
-  if (cur && !planQ && !leans && !isDone && !(mode === 'walk' && body && body.t === 'action')) {
-    hint = { rung: cur.rung, nudge, wait: cur.rung === 2 && showKey !== cur.key, waitMs: RULES.HINT3_WAIT_MS };
-  }
+  if (cur && !planQ && !leans && !isDone) hint = { rung: cur.rung, nudge, wait: cur.rung === 2 && showKey !== cur.key, waitMs: RULES.HINT3_WAIT_MS };
+
+  // Level 1: while the congruence's reason is open, the rows it stands on stay lit (no extra button)
+  const congNeeds = useMemo(() => {
+    if (level !== 1 || !cur || cur.kind !== 'reason' || !cong || cur.fact !== cong) return [];
+    const j = (p.just[cong] || []).find((x) => x.needs.every((f) => s.done.includes(f))) || (p.just[cong] || [])[0];
+    return j ? j.needs : [];
+  }, [level, cur, cong, p, s.done]);
+  const leadRows = lead.length ? lead : congNeeds;
+
+  // the walk-through: a row "seen in the drawing" (vertical angles, a common side) flashes there once
+  const walkFact = mode === 'walk' && walkLast ? walkLast.fact : null;
+  useEffect(() => {
+    if (!walkFact || !s.view.ties) return;
+    const role = roleOf(p, walkFact);
+    if (role !== 'vertical' && role !== 'common') return;
+    setPulse([]); later('p0', 20, () => setPulse(ids(p, walkFact))); later('p', 1900, () => setPulse([]));
+  }, [walkFact]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── progress: "שורה X מתוך Y" ── */
+  const curN = isDone || s.ended ? 0 : leans ? rowAt(leans.fact) + 1 : mode === 'walk' && !cur ? Math.max(1, s.rows.length) : Math.min(rowNo, totalRows);
+  const progText = curN ? fill('lbl.rowOf', { n: curN, t: totalRows }) : T['lbl.allRows'];
 
   const tapping = mode === 'tap' && !end && !planQ && !!cur && cur.kind === 'statement' && !leans && !isDone;
   const leave = () => onLeave && onLeave({ nonSolo: s.nonSolo, decisions: s.decisions, ended: s.ended });
+  const showCard = end && cardOn;
 
   return (
     <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
@@ -301,11 +330,16 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
         <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={leave}><IcBack /></button>
         <span className="prf-head-t">{type.name}</span>
         {levelName && <span className="prf-pill">{levelName}</span>}
-        {onSwap && !s.ended && <button type="button" className="prf-swap" aria-label={T['btn.swap']} title={T['btn.swap']} onClick={() => onSwap({ nonSolo: s.nonSolo, decisions: s.decisions })}><IcSwap /></button>}
-        <span className="prf-dots" role="img" aria-label={`${T['lbl.cleanAria']}: ${dots.filter((d) => d === true).length}`}>
-          {dots.map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}
-        </span>
+        {onSwap && !s.ended && <button type="button" className="prf-swap" onClick={() => onSwap({ nonSolo: s.nonSolo, decisions: s.decisions })}><IcSwap /><span>{T['btn.swap']}</span></button>}
       </div>
+      {!showCard && (
+        <div className="prf-prog">
+          <span className="prf-prog-t">{progText}</span>
+          <span className="prf-prog-bar" aria-hidden="true">
+            {[...Array(totalRows)].map((_, i) => <i key={i} className={i === curN - 1 ? 'is-cur' : i < s.rows.length ? 'is-done' : ''} />)}
+          </span>
+        </div>
+      )}
       <div className="prf-figcol">
         <div className="prf-stage">
           <ProofFigure problem={p} marks={marks} focus={end || planQ ? [] : focus} selected={planQ ? planQ.picked : tapping ? sel.selected : []} pulse={pulse} question={question}
@@ -313,41 +347,45 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
         </div>
       </div>
       <div className="prf-work" ref={workEl}>
-        <div className="prf-strip">
-          <span className="prf-strip-given">
-            <span className="prf-strip-k">{T['lbl.given']}</span>
-            {given.map((g, i) => {
-              const used = g.facts.every((f) => s.done.includes(f)), f0 = p.facts[g.facts[0]];
-              const now = tn === 1 && !end && askFact && g.facts.includes(askFact);       // type 1: the sentence being read
-              return (
-                <span key={i} className={`prf-fc${used ? ' is-used' : ''}${now ? ' is-now' : ''}`}>
-                  {g.form !== 'eq' ? <span><Tx k={g.key} vars={g.vars} /></span> : f0.kind === 'cong' && lit && !end ? <CongSt st={f0} at={lit.at} color={lit.color} /> : <St st={f0} />}
-                  {g.byOrder && <span className="prf-fc-note">{T['lbl.byOrder']}</span>}
-                  {used && tn !== 2 && <IcCheck />}
-                </span>
-              );
-            })}
-          </span>
-          {tn !== 1 && <span className="prf-strip-goal">
-            <span className="prf-strip-k">{T['lbl.toProve']}</span>
-            {targets(p).map((t) => {
-              const ok = s.done.includes(t);
-              // while writing the congruence is itself a decision (a statement gap, or Level 3), the goal names the two triangles without the matching order
-              const step = s.view.steps.find((x) => x.fact === t), tris = p.figure.tris || [];
-              const open = !ok && t === cong && tris.length === 2 && step && step.ask.includes('statement') && (mode === 'tap' || !!step.options);
-              return <span key={t} className={`prf-fc prf-fc-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k="lbl.goalCong" vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : tn === 2 && !ok ? <Ask part={p.facts[t].x} /> : <St st={p.facts[t]} />}</span>;
-            })}
-          </span>}
-        </div>
-        {end && cardOn ? <EndCard problem={p} rows={s.rows} {...end} /> : (
+        {showCard ? <EndCard problem={p} rows={s.rows} {...end} /> : (
           <>
-            <div className="prf-rows" ref={rowsEl}>
+            <div className="prf-nb" ref={nbEl}>
               {(p.text || []).map((t, i) => <p key={i} className="prf-intro"><Tx k={t.key} vars={t.vars} /></p>)}
+              <div className="prf-nb-head">
+                <span className="prf-nb-k">{T['lbl.given']}</span>
+                <ol className="prf-givl">
+                  {given.map((g, i) => {
+                    const used = g.facts.every((f) => s.done.includes(f)), f0 = p.facts[g.facts[0]];
+                    const on = tn === 1 && !end && !isDone && askFact && g.facts.includes(askFact);       // type 1: the sentence being read
+                    return (
+                      <li key={i} className={`prf-gv${used && tn !== 2 ? ' is-used' : ''}${on ? ' is-now' : ''}`}>
+                        <span className="prf-gv-n">{used && tn !== 2 ? <IcCheck /> : i + 1}</span>
+                        <span className="prf-gv-t">
+                          {g.form !== 'eq' ? <Tx k={g.key} vars={g.vars} /> : f0.kind === 'cong' && lit && !end ? <CongSt st={f0} at={lit.at} color={lit.color} /> : <St st={f0} />}
+                          {g.byOrder && <> <span className="prf-fc-note">{T['lbl.byOrder']}</span></>}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+                {tn !== 1 && <span className="prf-nb-k">{T['lbl.toProve']}</span>}
+                {tn !== 1 && (
+                  <span className="prf-goals">
+                    {targets(p).map((t) => {
+                      const ok = s.done.includes(t);
+                      // while writing the congruence is itself a decision (a statement gap, or Level 3), the goal names the two triangles without the matching order
+                      const step = s.view.steps.find((x) => x.fact === t);
+                      const open = !ok && t === cong && tris.length === 2 && step && step.ask.includes('statement') && (mode === 'tap' || !!step.options);
+                      return <span key={t} className={`prf-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k="lbl.goalCong" vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : tn === 2 && !ok ? <Ask part={p.facts[t].x} /> : <St st={p.facts[t]} />}</span>;
+                    })}
+                  </span>
+                )}
+              </div>
               {s.view.plan === 'line' && <p className="prf-plan">{T['lbl.planL3']}</p>}
-              <ProofRows problem={p} rows={s.rows} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={lead} />
+              <ProofRows problem={p} rows={s.rows} total={totalRows} now={end ? null : now} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={leadRows} />
             </div>
             {!end && (
-              <Tray label={label} head={head} body={body} fbs={fbs} why={why} hintLine={hintLine} hint={hint}
+              <Tray label={label} head={head} body={body} fbs={fbs} why={whyShown} hintLine={hintLine} hint={hint}
                 onPick={onPick} onHint={() => dispatch({ t: 'hint' })} onNext={() => dispatch({ t: 'next' })} onQed={() => dispatch({ t: 'qed' })} onCancel={onCancel} qedBusy={s.ended} />
             )}
           </>

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>הוכחות · שני כיוונים למסך</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --ink:#1c1917; --ink2:#57534e; --ink3:#a8a29e; --line:#e7e5e4;
+  --a50:#fff7ed; --a100:#ffedd5; --a200:#fed7aa; --a300:#fdba74; --a500:#f97316; --a600:#ea580c; --a700:#c2410c; --a800:#9a3412;
+  --p1:#0284c7; --p2:#7c3aed; --p3:#0d9488; --ok:#16a34a; --ok50:#f0fdf4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Rubik,system-ui,sans-serif;background:#e9e6df;color:var(--ink);padding:24px 16px 60px}
+h1{font-size:26px;font-weight:800;margin-bottom:6px}
+.lead{color:var(--ink2);font-size:15px;line-height:1.6;max-width:760px;margin-bottom:18px}
+.dir{margin:34px 0 10px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.dir h2{font-size:22px;font-weight:800}
+.dir .tag{font-size:13px;font-weight:700;background:var(--a700);color:#fff;border-radius:99px;padding:4px 12px}
+.dir p{flex-basis:100%;color:var(--ink2);font-size:14.5px;line-height:1.6;max-width:760px}
+.row{display:flex;gap:22px;overflow-x:auto;padding:8px 2px 18px;scroll-snap-type:x mandatory}
+.cap{font-size:13px;color:var(--ink2);margin-top:10px;text-align:center;max-width:360px;line-height:1.5}
+.cell{scroll-snap-align:start;flex:0 0 auto}
+
+/* phone */
+.ph{width:360px;height:760px;border-radius:38px;background:#fff;box-shadow:0 0 0 9px #1c1917,0 24px 60px rgba(0,0,0,.22);overflow:hidden;position:relative;display:flex;flex-direction:column;margin:9px}
+.sb{height:34px;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:13px;font-weight:600;flex:none}
+.tb{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:14px;color:var(--ink2);flex:none;border-bottom:1px solid var(--line)}
+.tb b{color:var(--ink);font-weight:700;font-size:16px}
+.pill{font-size:12px;font-weight:700;color:var(--a800);background:var(--a100);border-radius:99px;padding:3px 10px}
+.other{font-size:12.5px;color:var(--a700);font-weight:600;display:flex;gap:4px;align-items:center}
+.m{direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-weight:700}
+.fig{flex:none;height:158px;background:
+  radial-gradient(circle, #e7e0d6 1.1px, transparent 1.3px) 0 0/14px 14px, #fffdf9;position:relative}
+.fig svg{width:100%;height:100%}
+
+/* progress */
+.prog{display:flex;align-items:center;gap:10px;padding:8px 16px 6px;flex:none}
+.prog .bar{flex:1;display:flex;gap:4px}
+.prog .bar i{flex:1;height:6px;border-radius:9px;background:var(--line)}
+.prog .bar i.d{background:var(--ok)} .prog .bar i.c{background:var(--a500)}
+.prog span{font-size:12px;color:var(--ink2);font-weight:600;white-space:nowrap}
+
+/* A: notebook */
+.nb{flex:1;overflow:hidden;padding:10px 14px 0;background:#fff}
+.giv{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;font-size:14px;align-items:baseline;margin-bottom:10px}
+.giv .k{font-weight:700;color:var(--ink2)}
+.giv ol{list-style:none;display:flex;flex-direction:column;gap:4px}
+.giv li{display:flex;gap:7px;align-items:center;border-radius:9px;padding:3px 7px;margin-inline-start:-7px}
+.giv li .n{width:18px;height:18px;border-radius:50%;background:var(--line);color:var(--ink2);font-size:11px;font-weight:700;display:grid;place-items:center;flex:none}
+.giv li.now{background:var(--a50);box-shadow:inset 0 0 0 1.5px var(--a300)}
+.giv li.now .n{background:var(--a600);color:#fff}
+.giv li.used{color:var(--ink2)} .giv li.used .n{background:var(--ok);color:#fff}
+.goal{display:inline-flex;align-items:center;gap:6px;border:1.5px dashed var(--a300);border-radius:9px;padding:2px 9px;color:var(--a800)}
+.goal small{font-size:11px;color:var(--a700);font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11.5px;color:var(--ink3);font-weight:600;text-align:right;padding:4px 6px;border-bottom:1.5px solid var(--ink)}
+th:first-child{width:28px}
+td{padding:6px 6px;border-bottom:1px solid var(--line);height:35px;vertical-align:middle}
+td.n{color:var(--ink3);font-size:12px;font-weight:700}
+td.r{color:var(--ink2);font-size:13px}
+tr.done td.n{color:var(--ok)}
+tr.ghost td{color:transparent}
+tr.ghost td.s span,tr.ghost td.r span{display:inline-block;height:12px;border-radius:6px;background:#f1efec}
+tr.ghost td.s span{width:90px} tr.ghost td.r span{width:60px}
+tr.now td{background:var(--a50)}
+tr.now td:first-child{box-shadow:inset -3px 0 0 var(--a500)}
+.q{display:inline-grid;place-items:center;min-width:64px;height:26px;border-radius:8px;border:1.5px dashed var(--a500);color:var(--a700);font-weight:800;font-size:14px;animation:pq 1.6s ease-in-out infinite}
+@keyframes pq{50%{background:var(--a100)}}
+.mk{display:inline-block;width:14px;height:10px;margin-inline-start:6px;vertical-align:middle}
+
+/* bottom sheet */
+.sheet{flex:none;background:#fff;border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(28,25,23,.06);padding:12px 16px 22px;border-radius:22px 22px 0 0}
+.sheet .step{font-size:12px;font-weight:700;color:var(--a700);margin-bottom:2px;display:flex;justify-content:space-between;align-items:center}
+.sheet h3{font-size:18.5px;font-weight:800;line-height:1.35;margin-bottom:12px}
+.sheet h3 .quote{background:var(--a50);border-radius:7px;padding:1px 6px;box-shadow:inset 0 0 0 1px var(--a200)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opts.three{display:grid;grid-template-columns:1fr 1fr 1fr}
+.opt{min-height:46px;border-radius:14px;border:1.5px solid var(--line);background:#fff;display:grid;place-items:center;font-size:16px;font-weight:700;padding:6px}
+.opt small{display:block;font-size:10.5px;color:var(--ink3);font-weight:500;margin-top:1px}
+.sub{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:13px;color:var(--ink2)}
+.hint{display:inline-flex;gap:6px;align-items:center;border-radius:99px;padding:6px 14px;font-size:12.5px;background:#f5f5f4;font-weight:600;color:var(--ink2)}
+.btn{height:52px;border-radius:16px;background:var(--a700);color:#fff;font-size:17px;font-weight:700;display:grid;place-items:center;margin-top:12px}
+.coach{display:flex;gap:10px;align-items:flex-start}
+.coach .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,var(--a300),var(--a600));flex:none;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px}
+.coach .bub{font-size:15px;line-height:1.55;color:var(--ink)}
+.coach .bub b{font-weight:700}
+
+/* B: one step */
+.stepper{display:flex;justify-content:center;gap:0;align-items:center;padding:10px 16px 4px;flex:none}
+.stepper .s{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink3);background:#fff}
+.stepper .s.d{background:var(--ok);border-color:var(--ok);color:#fff}
+.stepper .s.c{border-color:var(--a600);color:var(--a700);box-shadow:0 0 0 4px var(--a100)}
+.stepper .s.q{width:auto;padding:0 9px;border-radius:99px;font-size:11px}
+.stepper .ln{width:26px;height:2px;background:var(--line)} .stepper .ln.d{background:var(--ok)}
+.focus{flex:1;padding:12px 14px 0;display:flex;flex-direction:column}
+.card{border-radius:22px;background:#fff;box-shadow:0 0 0 1px var(--line),0 12px 30px rgba(28,25,23,.07);padding:16px}
+.card .step{font-size:12px;font-weight:700;color:var(--a700);margin-bottom:6px}
+.card h3{font-size:20px;font-weight:800;line-height:1.3;margin-bottom:10px}
+.card blockquote{background:var(--a50);border-radius:12px;padding:10px 12px;font-size:16px;margin-bottom:12px;box-shadow:inset 3px 0 0 var(--a500)}
+.ans{display:flex;gap:8px;align-items:center;font-size:15px;color:var(--ink2);margin-bottom:6px}
+.ans .m{color:var(--ink);font-size:17px}
+.mini{margin-top:auto;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border-radius:14px;background:#f7f5f2;padding:10px 14px;font-size:13.5px;color:var(--ink2)}
+.mini b{color:var(--ink)}
+.chips{display:flex;gap:5px}
+.chips i{font-style:normal;font-size:11px;font-weight:700;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--ok50);color:var(--ok)}
+
+.fix{background:#fff;border-radius:18px;padding:18px 20px;max-width:760px;margin-top:30px;box-shadow:0 0 0 1px var(--line)}
+.fix h2{font-size:19px;margin-bottom:10px}
+.fix li{font-size:14.5px;line-height:1.65;color:var(--ink2);margin-inline-start:18px}
+.fix li b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>הוכחות · שני כיוונים למסך</h1>
+<p class="lead">אותם שלושה רגעים בשני העיצובים: (1) הפתיחה שראית, (2) שאלה בפרק 1, (3) שורה 4 בהוכחת חפיפה. הטקסטים הם דוגמה; את המתמטיקה ואת הניסוחים עוד יאשר סולימאן. החליקו הצידה כדי לראות את כל השלושה.</p>
+
+<!-- ═════════ A ═════════ -->
+<div class="dir"><h2>A · מחברת</h2><span class="tag">ההמלצה שלי</span>
+<p>ההוכחה נראית כמו דף במחברת: נתון למעלה, ואחריו טבלה של טענה ונימוק עם שורות ריקות שמחכות. השורה שעובדים עליה מסומנת, ובמקום שצריך למלא יש סימן שאלה. למטה מופיעה רק השאלה עצמה, בכותרת גדולה וברורה. מההתחלה רואים כמה שורות יש בהוכחה ואיפה נמצאים, ולומדים את הצורה שבה כותבים הוכחה במבחן.</p></div>
+<div class="row">
+
+<!-- A1 -->
+<div class="cell"><div class="ph">
+  <div class="sb"><span>11:23</span><span>●●●</span></div>
+  <div class="tb"><span class="other">⟳ תרגיל אחר</span><span><b>קוראים את הנתון</b> &nbsp;<span class="pill">רמה 1</span></span><span>›</span></div>
+  <div class="prog"><span>שורה 1 מתוך 2</span><div class="bar"><i class="c"></i><i></i></div></div>
+  <div class="fig"><svg viewBox="0 0 360 178" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-linecap="round">
+    <path d="M90 78 L188 18 L262 82 L172 158 Z" stroke="#a8a29e" stroke-width="2"/>
+    <path d="M90 78 L262 82" stroke="#a8a29e" stroke-width="2"/>
+    <path d="M90 78 L188 18" stroke="#0284c7" stroke-width="3"/><path d="M90 78 L172 158" stroke="#0284c7" stroke-width="3"/>
+    <path d="M136 42 l7 9 M126 116 l9 -6" stroke="#0284c7" stroke-width="2.4"/></g>
+    <g font-family="Rubik" font-weight="700" font-size="15" fill="#1c1917"><text x="72" y="80">M</text><text x="183" y="13">N</text><text x="268" y="88">T</text><text x="166" y="175">R</text></g></svg></div>
+  <div class="nb">
+    <div class="giv"><span class="k">נתון:</span><ol>
+      <li class="now"><span class="n">1</span><span class="m">MR = MN</span></li>
+      <li><span class="n">2</span><span><span class="m">TM</span> חוצה את <span class="m">∢RTN</span></span></li></ol></div>
+    <table><tr><th>#</th><th>טענה</th><th>נימוק</th></tr>
+      <tr class="now"><td class="n">1</td><td><span class="m">MR = MN</span><svg class="mk" viewBox="0 0 14 10"><path d="M4 1v8M10 1v8" stroke="#0284c7" stroke-width="2"/></svg></td><td class="r">נתון</td></tr>
+      <tr class="ghost"><td class="n" style="color:var(--ink3)">2</td><td class="s"><span></span></td><td class="r"><span></span></td></tr></table>
+  </div>
+  <div class="sheet">
+    <div class="coach"><div class="av">✎</div><div class="bub"><b>ככה עושים:</b> המשפט הראשון בנתון כבר כתוב כשוויון. מעתיקים אותו לשורה 1, והנימוק הוא <b>נתון</b>. בציור סימנו את שתי הצלעות השוות.</div></div>
+    <div class="btn">הבנתי, לשורה הבאה</div>
+  </div>
+</div><div class="cap">1 · פתיחה: אומרים מה עושים, מראים איפה, ואת השורה הבאה כבר רואים מחכה.</div></div>
+
+<!-- A2 -->
+<div class="cell"><div class="ph">
+  <div class="sb"><span>11:23</span><span>●●●</span></div>
+  <div class="tb"><span class="other">⟳ תרגיל אחר</span><span><b>קוראים את הנתון</b> &nbsp;<span class="pill">רמה 1</span></span><span>›</span></div>
+  <div class="prog"><span>שורה 2 מתוך 2</span><div class="bar"><i class="d"></i><i class="c"></i></div></div>
+  <div class="fig"><svg viewBox="0 0 360 178" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-linecap="round">
+    <path d="M90 78 L188 18 L262 82 L172 158 Z" stroke="#a8a29e" stroke-width="2"/>
+    <path d="M90 78 L262 82" stroke="#ea580c" stroke-width="3.2"/>
+    <path d="M90 78 L188 18 M90 78 L172 158" stroke="#0284c7" stroke-width="2.2" opacity=".55"/>
+    <path d="M136 42 l7 9 M126 116 l9 -6" stroke="#0284c7" stroke-width="2.2" opacity=".55"/></g>
+    <g font-family="Rubik" font-weight="700" font-size="15" fill="#1c1917"><text x="72" y="80">M</text><text x="183" y="13">N</text><text x="268" y="88">T</text><text x="166" y="175">R</text></g></svg></div>
+  <div class="nb">
+    <div class="giv"><span class="k">נתון:</span><ol>
+      <li class="used"><span class="n">✓</span><span class="m">MR = MN</span></li>
+      <li class="now"><span class="n">2</span><span><span class="m">TM</span> חוצה את <span class="m">∢RTN</span></span></li></ol></div>
+    <table><tr><th>#</th><th>טענה</th><th>נימוק</th></tr>
+      <tr class="done"><td class="n">✓</td><td><span class="m">MR = MN</span><svg class="mk" viewBox="0 0 14 10"><path d="M4 1v8M10 1v8" stroke="#0284c7" stroke-width="2"/></svg></td><td class="r">נתון</td></tr>
+      <tr class="now"><td class="n">2</td><td><span class="q">?</span></td><td class="r" style="color:var(--ink3)">אחר כך</td></tr></table>
+  </div>
+  <div class="sheet">
+    <div class="step"><span>שורה 2 · מה כותבים בטענה?</span><span class="hint">רמז</span></div>
+    <h3>המשפט <span class="quote"><span class="m">TM</span> חוצה את <span class="m">∢RTN</span></span>, מה הוא אומר בציור?</h3>
+    <div class="opts">
+      <div class="opt"><span class="m">∢RTM = ∢MTN</span></div>
+      <div class="opt"><span class="m">∢RMT = ∢TRM</span></div>
+      <div class="opt"><span class="m">TR = TN</span></div></div>
+  </div>
+</div><div class="cap">2 · שאלה: הכותרת אומרת בדיוק מה לבחור, והשורה בטבלה מראה לאן זה ייכנס.</div></div>
+
+<!-- A3 -->
+<div class="cell"><div class="ph">
+  <div class="sb"><span>11:23</span><span>●●●</span></div>
+  <div class="tb"><span class="other">⟳ תרגיל אחר</span><span><b>הוכחת חפיפה</b> &nbsp;<span class="pill">רמה 1</span></span><span>›</span></div>
+  <div class="prog"><span>שורה 4 מתוך 4</span><div class="bar"><i class="d"></i><i class="d"></i><i class="d"></i><i class="c"></i></div></div>
+  <div class="fig"><svg viewBox="0 0 360 178" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-linecap="round">
+    <path d="M100 66 L196 12 L262 96 L176 162 Z" stroke="#78716c" stroke-width="2"/>
+    <path d="M100 66 L262 96" stroke="#7c3aed" stroke-width="2.6"/><path d="M176 81 l3 -8" stroke="#7c3aed" stroke-width="2.4"/>
+    <path d="M118 57 a20 20 0 0 1 2 18" stroke="#0284c7" stroke-width="2.2"/><path d="M243 104 a20 20 0 0 1 -1 -16" stroke="#0284c7" stroke-width="2.2"/>
+    <path d="M118 72 a20 20 0 0 0 6 12 M114 74 a24 24 0 0 0 8 14" stroke="#0d9488" stroke-width="2"/>
+    <path d="M244 84 a20 20 0 0 0 -8 -10 M248 82 a24 24 0 0 0 -10 -12" stroke="#0d9488" stroke-width="2"/></g>
+    <g font-family="Rubik" font-weight="700" font-size="15" fill="#1c1917"><text x="82" y="68">B</text><text x="191" y="9">E</text><text x="268" y="101">D</text><text x="170" y="177">C</text></g></svg></div>
+  <div class="nb">
+    <div class="giv"><span class="k">נתון:</span><ol>
+      <li class="used"><span class="n">✓</span><span class="m">∢CBD = ∢EDB</span></li>
+      <li class="used"><span class="n">✓</span><span class="m">∢CDB = ∢EBD</span></li></ol>
+      <span class="k">צ״ל:</span><span><span class="goal"><span class="m">△BCD ≅ △DEB</span></span></span></div>
+    <table><tr><th>#</th><th>טענה</th><th>נימוק</th></tr>
+      <tr class="done"><td class="n">✓</td><td><span class="m">∢CBD = ∢EDB</span></td><td class="r">נתון</td></tr>
+      <tr class="done"><td class="n">✓</td><td><span class="m">BD = DB</span></td><td class="r">צלע משותפת</td></tr>
+      <tr class="done"><td class="n">✓</td><td><span class="m">∢CDB = ∢EBD</span></td><td class="r">נתון</td></tr>
+      <tr class="now"><td class="n">4</td><td><span class="m">△BCD ≅ △DEB</span></td><td class="r"><span class="q">?</span></td></tr></table>
+  </div>
+  <div class="sheet">
+    <div class="step"><span>שורה 4 · מה הנימוק?</span><span class="hint">רמז</span></div>
+    <h3>איזה משפט חפיפה מתאים לשלוש השורות שמעל?</h3>
+    <div class="opts three">
+      <div class="opt">צ.ז.צ<small>צלע זווית צלע</small></div>
+      <div class="opt">ז.צ.ז<small>זווית צלע זווית</small></div>
+      <div class="opt">צ.צ.צ<small>שלוש צלעות</small></div></div>
+  </div>
+</div><div class="cap">3 · הוכחה מלאה: הנתון וה־צ״ל בראש הדף, וכל שורה מתמלאת לפי הסדר עד מ.ש.ל.</div></div>
+</div>
+
+<!-- ═════════ B ═════════ -->
+<div class="dir"><h2>B · צעד אחד בכל פעם</h2>
+<p>במרכז המסך כרטיס גדול אחד עם שאלה אחת, כמו באפליקציית לימוד. השורות שכבר נפתרו מתקפלות לפס קטן בתחתית. זה הכי פשוט לעין, אבל רואים פחות את ההוכחה כולה, ופחות לומדים איך היא נכתבת במחברת.</p></div>
+<div class="row">
+
+<!-- B1 -->
+<div class="cell"><div class="ph">
+  <div class="sb"><span>11:23</span><span>●●●</span></div>
+  <div class="tb"><span class="other">⟳ תרגיל אחר</span><span><b>קוראים את הנתון</b> &nbsp;<span class="pill">רמה 1</span></span><span>›</span></div>
+  <div class="stepper"><span class="s c">1</span><span class="ln"></span><span class="s">2</span><span class="ln"></span><span class="s q">סיום</span></div>
+  <div class="fig"><svg viewBox="0 0 360 178" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-linecap="round">
+    <path d="M90 78 L188 18 L262 82 L172 158 Z" stroke="#a8a29e" stroke-width="2"/><path d="M90 78 L262 82" stroke="#a8a29e" stroke-width="2"/>
+    <path d="M90 78 L188 18 M90 78 L172 158" stroke="#0284c7" stroke-width="3"/><path d="M136 42 l7 9 M126 116 l9 -6" stroke="#0284c7" stroke-width="2.4"/></g>
+    <g font-family="Rubik" font-weight="700" font-size="15" fill="#1c1917"><text x="72" y="80">M</text><text x="183" y="13">N</text><text x="268" y="88">T</text><text x="166" y="175">R</text></g></svg></div>
+  <div class="focus">
+    <div class="card"><div class="step">שלב 1 מתוך 2 · ככה עושים</div>
+      <h3>קוראים את המשפט הראשון בנתון</h3>
+      <blockquote><span class="m">MR = MN</span></blockquote>
+      <div class="ans">כותבים: <span class="m">MR = MN</span></div>
+      <div class="ans">נימוק: <b style="color:var(--ink)">נתון</b></div>
+      <div class="btn">הבנתי, הלאה</div></div>
+    <div class="mini"><span><b>ההוכחה שלכם</b> · עוד אין שורות</span><span>⌃</span></div>
+  </div>
+</div><div class="cap">1 · פתיחה: כרטיס אחד, פעולה אחת.</div></div>
+
+<!-- B2 -->
+<div class="cell"><div class="ph">
+  <div class="sb"><span>11:23</span><span>●●●</span></div>
+  <div class="tb"><span class="other">⟳ תרגיל אחר</span><span><b>קוראים את הנתון</b> &nbsp;<span class="pill">רמה 1</span></span><span>›</span></div>
+  <div class="stepper"><span class="s d">✓</span><span class="ln d"></span><span class="s c">2</span><span class="ln"></span><span class="s q">סיום</span></div>
+  <div class="fig"><svg viewBox="0 0 360 178" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-linecap="round">
+    <path d="M90 78 L188 18 L262 82 L172 158 Z" stroke="#a8a29e" stroke-width="2"/><path d="M90 78 L262 82" stroke="#ea580c" stroke-width="3.2"/>
+    <path d="M90 78 L188 18 M90 78 L172 158" stroke="#0284c7" stroke-width="2.2" opacity=".55"/></g>
+    <g font-family="Rubik" font-weight="700" font-size="15" fill="#1c1917"><text x="72" y="80">M</text><text x="183" y="13">N</text><text x="268" y="88">T</text><text x="166" y="175">R</text></g></svg></div>
+  <div class="focus">
+    <div class="card"><div class="step">שלב 2 מתוך 2</div>
+      <h3>מה המשפט הזה אומר בציור?</h3>
+      <blockquote><span class="m">TM</span> חוצה את <span class="m">∢RTN</span></blockquote>
+      <div class="opts">
+        <div class="opt"><span class="m">∢RTM = ∢MTN</span></div>
+        <div class="opt"><span class="m">∢RMT = ∢TRM</span></div>
+        <div class="opt"><span class="m">TR = TN</span></div></div></div>
+    <div class="mini"><span><b>ההוכחה שלכם</b> · שורה אחת</span><span class="chips"><i>1</i></span></div>
+  </div>
+</div><div class="cap">2 · שאלה: גדולה וברורה, אבל ההוכחה מוסתרת למטה.</div></div>
+
+<!-- B3 -->
+<div class="cell"><div class="ph">
+  <div class="sb"><span>11:23</span><span>●●●</span></div>
+  <div class="tb"><span class="other">⟳ תרגיל אחר</span><span><b>הוכחת חפיפה</b> &nbsp;<span class="pill">רמה 1</span></span><span>›</span></div>
+  <div class="stepper"><span class="s d">✓</span><span class="ln d"></span><span class="s d">✓</span><span class="ln d"></span><span class="s d">✓</span><span class="ln d"></span><span class="s c">4</span><span class="ln"></span><span class="s q">מ.ש.ל.</span></div>
+  <div class="fig"><svg viewBox="0 0 360 178" preserveAspectRatio="xMidYMid meet"><g fill="none" stroke-linecap="round">
+    <path d="M100 66 L196 12 L262 96 L176 162 Z" stroke="#78716c" stroke-width="2"/>
+    <path d="M100 66 L262 96" stroke="#7c3aed" stroke-width="2.6"/><path d="M176 81 l3 -8" stroke="#7c3aed" stroke-width="2.4"/>
+    <path d="M118 57 a20 20 0 0 1 2 18" stroke="#0284c7" stroke-width="2.2"/><path d="M243 104 a20 20 0 0 1 -1 -16" stroke="#0284c7" stroke-width="2.2"/>
+    <path d="M118 72 a20 20 0 0 0 6 12 M114 74 a24 24 0 0 0 8 14" stroke="#0d9488" stroke-width="2"/>
+    <path d="M244 84 a20 20 0 0 0 -8 -10 M248 82 a24 24 0 0 0 -10 -12" stroke="#0d9488" stroke-width="2"/></g>
+    <g font-family="Rubik" font-weight="700" font-size="15" fill="#1c1917"><text x="82" y="68">B</text><text x="191" y="9">E</text><text x="268" y="101">D</text><text x="170" y="177">C</text></g></svg></div>
+  <div class="focus">
+    <div class="card"><div class="step">שורה 4 מתוך 4</div>
+      <h3>למה המשולשים חופפים?</h3>
+      <blockquote><span class="m">△BCD ≅ △DEB</span></blockquote>
+      <div class="opts three">
+        <div class="opt">צ.ז.צ<small>צלע זווית צלע</small></div>
+        <div class="opt">ז.צ.ז<small>זווית צלע זווית</small></div>
+        <div class="opt">צ.צ.צ<small>שלוש צלעות</small></div></div></div>
+    <div class="mini"><span><b>ההוכחה שלכם</b> · 3 שורות</span><span class="chips"><i>1</i><i>2</i><i>3</i></span></div>
+  </div>
+</div><div class="cap">3 · שורות 1 עד 3 קטנות למטה; כדי לראות על מה מתבססים צריך לפתוח אותן.</div></div>
+</div>
+
+<div class="fix"><h2>מה מתוקן בכל מקרה, בשני הכיוונים</h2><ul>
+<li><b>אותו משפט מופיע 3 פעמים</b> (בפס הנתון, בשורת הטקסט ובמגש התחתון): נשאר פעם אחת.</li>
+<li><b>החלל הלבן הגדול</b> באמצע: מתמלא בהוכחה עצמה, עם שורות שמחכות.</li>
+<li><b>אף פעם לא כתוב מה לעשות:</b> לכל רגע יש כותרת אחת וברורה.</li>
+<li><b>הסמל ⇄ ו־4 העיגולים לא מוסברים:</b> במקומם ״תרגיל אחר״ ופס של ״שורה X מתוך Y״. ההתקדמות לרמה הבאה עוברת לסוף ההוכחה.</li>
+<li><b>״נכון״ אחרי שרק לחצתם ״הבא״:</b> בהדגמה מסבירים מה עושים ולא נותנים ציון.</li>
+<li><b>כפתורים מסתוריים</b> (״הראו בציור״, ״אילו שורות מובילות לחפיפה?״): הופכים לשאלה ברורה עם הוראה, או יורדים.</li>
+<li><b>שורת ההסבר שהתבלגנה</b> (״התאמה: D ↔ B…״ נשבר לשתי שורות, ו״נכון״ כתוב פעמיים): נכתבת מחדש כך שתיקרא נכון.</li>
+<li><b>״העמוד מוסתר מתלמידים״</b> עדיין כתוב בעמוד הפתיחה, למרות שהעמוד כבר פתוח לכולם: יורד.</li>
+<li><b>״מ.ש.ל.״ בפרק 1</b>, שבו אין מה להוכיח: במקומו ״סיימנו״.</li>
+</ul></div>
+</body>
+</html>

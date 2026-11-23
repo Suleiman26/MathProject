@@ -73,7 +73,6 @@ export default function App({ devRescue }) {
 
   return (
     <div className={`prf prf-topic${inProof ? ' prf-in-proof' : ''}`}>
-      <p className="prf-team" title={T['lbl.team']}>{T['ui.teamNote']}</p>
       <div className="hdr prf-mast">
         <h1 className="prf-wm">{T['lbl.title']}</h1>
         {hero && <div className="prf-stage prf-mast-fig" key={TYPES[ch].id}><ProofFigure problem={hero.p} marks={hero.marks} label={T['lbl.sample']} /></div>}

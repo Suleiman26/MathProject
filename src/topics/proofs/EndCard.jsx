@@ -16,14 +16,15 @@ export default function EndCard({ problem, rows, clean, filled = true, counted =
   useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
   const p = problem, k = dots.filter((d) => d === true).length;
   const up = event === 'level-up' || event === 'type-done';
+  const read = p.type === 'read-given', R = read ? 'Read' : '';   // type 1 proves nothing: it ends with "סיימנו", not מ.ש.ל.
   const lv = event === 'type-done' ? 4 : newLevel || 1;
   return (
     <div className="prf-end-card">
       <div className="prf-end-scroll">
         <div className="prf-end-top">
           {shown && (clean
-            ? <div className="banner prf-end"><span className="prf-end-seal"><IcCheck /></span><span>{T['ui.endClean']}</span></div>
-            : <div className="prf-end is-helped"><span className="prf-end-seal"><IcCheck /></span><span>{T[filled ? 'ui.endHelped' : 'ui.endSlips']}</span></div>)}
+            ? <div className="banner prf-end"><span className="prf-end-seal"><IcCheck /></span><span>{T[`ui.endClean${R}`]}</span></div>
+            : <div className="prf-end is-helped"><span className="prf-end-seal"><IcCheck /></span><span>{T[`${filled ? 'ui.endHelped' : 'ui.endSlips'}${R}`]}</span></div>)}
           {up && (
             <div className="prf-lvup">
               <span className="prf-ladder" aria-hidden="true">
@@ -58,7 +59,7 @@ export default function EndCard({ problem, rows, clean, filled = true, counted =
                     <td>{(REASONS[r.reason] && (REASONS[r.reason].full || REASONS[r.reason].short)) || ''}</td>
                   </tr>
                 ))}
-                <tr className="prf-table-qed"><td colSpan={2}>{T['btn.qed']}</td></tr>
+                {!read && <tr className="prf-table-qed"><td colSpan={2}>{T['btn.qed']}</td></tr>}
               </tbody>
             </table>
           </div>
