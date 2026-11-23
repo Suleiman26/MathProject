@@ -5,7 +5,8 @@
    two-column table טענה | נימוק with the full reason wording, ending in מ.ש.ל. */
 import React, { useEffect, useState } from 'react';
 import { REASONS } from './reasons.js';
-import { targets } from './core.js';
+import { targets, shapeOf } from './core.js';
+import { STAGES } from './types/index.js';
 import { T, fill } from './texts.js';
 import { St, Tx, IcCheck, IcBook } from './signs.jsx';
 
@@ -16,7 +17,7 @@ export default function EndCard({ problem, rows, clean, filled = true, counted =
   useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
   const p = problem, k = dots.filter((d) => d === true).length;
   const up = event === 'level-up' || event === 'type-done';
-  const read = p.type === 'read-given', R = read ? 'Read' : '';   // type 1 proves nothing: it ends with "סיימנו", not מ.ש.ל.
+  const read = shapeOf(p) === 'given', R = read ? 'Read' : '';   // reading the given proves nothing: it ends with "סיימנו", not מ.ש.ל.
   const lv = event === 'type-done' ? 4 : newLevel || 1;
   return (
     <div className="prf-end-card">
@@ -30,7 +31,7 @@ export default function EndCard({ problem, rows, clean, filled = true, counted =
               <span className="prf-ladder" aria-hidden="true">
                 {[0, 1, 2, 3].map((i) => <i key={i} className={i < lv ? (i === lv - 1 || (lv === 4 && i === 3) ? 'is-new' : 'is-on') : ''} style={{ height: `${10 + i * 7}px` }} />)}
               </span>
-              <span className="prf-lvup-t">{event === 'type-done' ? fill('ui.typeDone', { type: typeName }) : fill('ui.levelUp', { type: typeName, n: lv })}</span>
+              <span className="prf-lvup-t">{event === 'type-done' ? fill('ui.typeDone', { type: typeName }) : fill('ui.levelUp', { type: typeName, stage: STAGES[Math.min(3, lv)] })}</span>
             </div>
           )}
           <div className="prf-end-stats">
@@ -49,7 +50,7 @@ export default function EndCard({ problem, rows, clean, filled = true, counted =
             <p className="prf-page-l"><b>{T['lbl.given']}</b>{' '}
               {(p.givenText || []).map((g, i) => <React.Fragment key={i}>{i > 0 && ', '}{g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />}{g.byOrder && ` ${T['lbl.byOrder']}`}</React.Fragment>)}
             </p>
-            {p.type !== 'read-given' && <p className="prf-page-l"><b>{T['lbl.toProve']}</b>{' '}{targets(p).map((t, i) => <React.Fragment key={t}>{i > 0 && ', '}<St st={p.facts[t]} /></React.Fragment>)}</p>}
+            {!read && <p className="prf-page-l"><b>{T['lbl.toProve']}</b>{' '}{targets(p).map((t, i) => <React.Fragment key={t}>{i > 0 && ', '}<St st={p.facts[t]} /></React.Fragment>)}</p>}
             <table className="prf-table">
               <thead><tr><th scope="col">{T['lbl.claim']}</th><th scope="col">{T['lbl.reason']}</th></tr></thead>
               <tbody>

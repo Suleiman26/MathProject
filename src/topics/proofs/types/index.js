@@ -15,4 +15,8 @@ export const TYPES = [readGiven, congruentParts, proveCongruence, thenConclusion
 export const TABS = [T['tab.warm'], T['tab.1'], T['tab.2'], T['tab.3']];
 /** The sub-tab of a level: 0 = warm-up; 4 (type finished) stays on רמה 3. */
 export const tabOf = (level) => TABS[Math.max(0, Math.min(3, level))];
+/** What the student sees on the help-stage tabs (חימום · מודרך · ביחד · לבד); TABS stay the stored keys. */
+export const STAGES = [T['stage.0'], T['stage.1'], T['stage.2'], T['stage.3']];
+/** The visible help stage of a level: 0 = warm-up; 4 (level finished) stays on the last stage. */
+export const stageOf = (level) => STAGES[Math.max(0, Math.min(3, level))];
 export const typeById = (id) => TYPES.find((t) => t.id === id) || null;

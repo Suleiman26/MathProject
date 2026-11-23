@@ -66,7 +66,7 @@ export default function Warmup({ type, kinds, only = null, seed, onDone, onLeave
     <div className="prf-screen prf-warm">
       <div className="prf-head">
         <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={onLeave}><IcBack /></button>
-        <span className="prf-head-t">{type.name}</span>
+        <span className="prf-head-t">{type.label}</span>
         <span className="prf-pill">{T['tab.warm']}</span>
         <span className="prf-dots" aria-hidden="true">{dots.map((d, i) => <i key={i} className={d === true ? 'is-on' : d === false ? 'is-off' : ''} />)}</span>
       </div>

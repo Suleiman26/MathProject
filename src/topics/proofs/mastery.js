@@ -166,6 +166,8 @@ export const lessHelp = (ts, rec) => ts.lastHelp !== null && rec.n - rec.solo < 
 /* ── storage (§10.3) ──────────────────────────────────────────────────────── */
 export const KEY = 'mp:proofs:v1:';
 export const OPEN_KEY = 'mp:proofs:open';
+/** The subject the landing was last on (device storage; the switcher opens on it). */
+export const SUBJECT_KEY = 'mp:proofs:subject';
 const empty = () => ({ v: 1, types: {} });
 export const whoKey = (account) => (account && account.id ? `u:${account.id}` : 'g');
 

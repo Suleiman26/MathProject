@@ -20,6 +20,8 @@ export const T = {
   'subj.short.congruence': 'חפיפה', 'subj.short.similarity': 'דמיון',
   'subj.when.congruence': 'ינואר–פברואר', 'subj.when.similarity': 'מרץ–אפריל',
   'lbl.levelN': 'רמה {n}',
+  'lbl.subjects': 'הנושאים',
+  'lbl.subjMeta': '{{when}} · {{done}} מתוך {{n}} רמות',
 
   /* ── hint ladder, rungs 1 and 2, by row role (§9.1) ── */
   'hint.given.1': 'התחילו ממה שנתון. הסתכלו על החלקים המהבהבים.',
@@ -105,17 +107,17 @@ export const T = {
   'ui.filled': 'מילאנו את הצעד הזה יחד. הנימוק: {{reason}}.',
   'ui.filledSt': 'מילאנו את הצעד הזה יחד: {st}.',
   'ui.endClean': 'מ.ש.ל. הוכחה נקייה.',
-  'ui.endHelped': 'מ.ש.ל. ההוכחה הושלמה. היה צעד שמילאנו יחד, ולכן היא לא נספרת כנקייה. הרמה לא יורדת.',
-  'ui.endSlips': 'מ.ש.ל. ההוכחה הושלמה. בכמה צעדים היה צריך רמז או ניסיון נוסף, ולכן היא לא נספרת כנקייה. הרמה לא יורדת.',
-  'ui.levelUp': 'עליתם רמה. {{type}} · רמה {{n}}',
-  'ui.typeDone': 'בניתם הוכחות שלמות לבד. {{type}} · רמה 3 הושלמה.',
+  'ui.endHelped': 'מ.ש.ל. ההוכחה הושלמה. היה צעד שמילאנו יחד, ולכן היא לא נספרת כנקייה. השלב לא יורד.',
+  'ui.endSlips': 'מ.ש.ל. ההוכחה הושלמה. בכמה צעדים היה צריך רמז או ניסיון נוסף, ולכן היא לא נספרת כנקייה. השלב לא יורד.',
+  'ui.levelUp': 'עליתם שלב. {{type}} · {{stage}}',
+  'ui.typeDone': 'בניתם הוכחות שלמות לבד. {{type}} · כל השלבים הושלמו.',
   'ui.lessHelp': 'הפעם נעזרתם פחות מבפעם הקודמת.',
   'ui.round': 'סיימתם סבב של 3 הוכחות.',
   'ui.rescue1': 'נעצור רגע ונחזק דבר אחד: {{skill}}.',
   'ui.rescue2': 'נעבור יחד על הוכחה אחת שלמה, צעד אחר צעד.',
-  'ui.rescue3': 'הסוג הזה עוד קשה, וזה בסדר. כדאי לחזק קודם: {{prev}}.',
+  'ui.rescue3': 'הרמה הזאת עוד קשה, וזה בסדר. כדאי לחזק קודם: {{prev}}.',
   'ui.warmDone': 'החימום מאחוריכם. עכשיו מוכיחים.',
-  'ui.locked': 'נפתח אחרי 3 הוכחות נקיות ברמה {{n}}.',
+  'ui.locked': 'נפתח אחרי 3 הוכחות נקיות בשלב {{stage}}.',
 
   /* ── buttons (never a check word or ✓: the tracker would treat them as check buttons) ── */
   'btn.hint': 'רמז', 'btn.hint2': 'עוד רמז', 'btn.show': 'הראו לי', 'btn.add': 'להוסיף שורה',
@@ -252,8 +254,8 @@ export const T = {
   'btn.doneRead': 'סיימנו',
   'sub.sas': 'צלע, זווית, צלע', 'sub.asa': 'זווית, צלע, זווית', 'sub.sss': 'שלוש צלעות',
   'ui.endCleanRead': 'סיימנו. עבודה נקייה.',
-  'ui.endHelpedRead': 'סיימנו. היה צעד שמילאנו יחד, ולכן זה לא נספר כנקי. הרמה לא יורדת.',
-  'ui.endSlipsRead': 'סיימנו. בכמה צעדים היה צריך רמז או ניסיון נוסף, ולכן זה לא נספר כנקי. הרמה לא יורדת.',
+  'ui.endHelpedRead': 'סיימנו. היה צעד שמילאנו יחד, ולכן זה לא נספר כנקי. השלב לא יורד.',
+  'ui.endSlipsRead': 'סיימנו. בכמה צעדים היה צריך רמז או ניסיון נוסף, ולכן זה לא נספר כנקי. השלב לא יורד.',
 
   /* ── one line per type on its landing ── */
   'about.read-given': 'מהמשפט שבנתון אל השוויון שהוא נותן, עם הנימוק הנכון.',
@@ -270,7 +272,8 @@ export const OPEN_POINTS = [
 /** Keys whose text is not drafted in the spec (written by the builder; for Sulaiman's review sheet). */
 export const NEW_DRAFTS = [
   'stage.0', 'stage.1', 'stage.2', 'stage.3', 'subj.congruence', 'subj.similarity', 'subj.short.congruence', 'subj.short.similarity',
-  'subj.when.congruence', 'subj.when.similarity', 'lbl.levelN',
+  'subj.when.congruence', 'subj.when.similarity', 'lbl.levelN', 'lbl.subjects', 'lbl.subjMeta',
+  'ui.endHelped', 'ui.levelUp', 'ui.typeDone', 'ui.rescue3', 'ui.locked',   // reworded 2026-11-23: a help stage is a "שלב" (מודרך · ביחד · לבד), a level ("רמה") is a step of the subject's ladder
   'fb.ok', 'rs.cong.sss1', 'ui.rescue2', 'ui.filledSt',
   'say.angRight', 'lbl.place1', 'lbl.place2', 'lbl.place3',
   'gv.bisect2', 'tx.X', 'tx.K', 'tx.Z', 'tx.T', 'tx.2', 'tx.cevian',

@@ -298,14 +298,29 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-topic > *{min-width:0}
 
 /* ── landing ── */
-#root .prf-in-proof > .prf-team,#root .prf-in-proof > .hdr,#root .prf-in-proof > .prf-path{display:none}
+#root .prf-in-proof > .prf-team,#root .prf-in-proof > .hdr,#root .prf-in-proof > .prf-subjbar,#root .prf-in-proof > .prf-path{display:none}
 #root .prf-in-proof > .prf-ch-open{max-width:none;margin:0;padding:0}
 #root .prf-in-proof > .prf-ch-card{flex:1;display:flex;flex-direction:column;justify-content:center;width:100%;margin:0 auto;padding:16px}
-#root .prf-mast{--prf-wm:clamp(4.6rem,22vw,8.6rem);flex:1 1 auto;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:0;width:100%;max-width:560px;margin:0 auto;padding:4px 16px 0;border:0;border-radius:0;background:none;box-shadow:none;text-align:center}
+#root .prf-mast{--prf-wm:clamp(5rem,26vw,9.4rem);flex:1 1 auto;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:0;width:100%;max-width:560px;margin:0 auto;padding:4px 16px 0;border:0;border-radius:0;background:none;box-shadow:none;text-align:center}
 #root .prf-mast .prf-wm{flex:none;margin:-.06em 0 0;padding:0;font-size:var(--prf-wm);font-weight:800;line-height:.86;white-space:nowrap;color:var(--a-600);background:linear-gradient(180deg,var(--a-300) 0%,var(--a-600) 80%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 #root .prf-mast-fig{flex:1 1 136px;height:auto;min-height:136px;max-height:270px;margin-top:calc(var(--prf-wm) * -.17);padding:0 6px;animation:prf-row .35s var(--ease-out) backwards}
 #root .prf-mast-fig::before{display:none}
 #root .prf-path{flex:none;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:0;width:100%;max-width:560px;margin:2px auto 0;padding:0 16px;overflow:visible;border:0;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;-webkit-mask-image:none;mask-image:none;scroll-snap-type:none}
+/* the subject bar: the switcher (a soft track with a sliding thumb; only when more than one subject shows) and one meta line */
+#root .prf-subjbar{flex:none;display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;max-width:560px;margin:2px auto 8px;padding:0 16px}
+#root .prf-subj{position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(var(--prf-n),minmax(0,1fr));width:100%;max-width:420px;padding:4px;border-radius:999px;background:color-mix(in srgb,var(--a-100) 70%,transparent)}
+#root .prf-subj-thumb{position:absolute;z-index:-1;inset-block:4px;inset-inline-start:4px;width:calc((100% - 8px) / var(--prf-n));border-radius:999px;background:var(--surface);box-shadow:var(--sh-1);transform:translateX(calc(var(--prf-i) * -100%));transition:transform .34s var(--ease-out)}
+#root .prf-subj-b{min-width:0;min-height:40px;margin:0;padding:6px 10px;border:0;border-radius:999px;background:none;box-shadow:none;color:var(--ink-2);font:inherit;font-size:.94rem;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .2s var(--ease-out)}
+#root .prf-subj-b.is-on{color:var(--a-800);font-weight:800}
+#root .prf-subj-b:active{opacity:.7}
+#root .prf-subj-b:focus-visible{outline:2px solid var(--a-600);outline-offset:2px}
+#root .prf-subj-meta{font-size:.8rem;font-weight:600;line-height:1.4;color:var(--ink-3);text-align:center;animation:prf-row .3s var(--ease-out) backwards}
+#root .prf-subj-meta b{color:var(--a-800);font-weight:800}
+/* a subject change: the wordmark and the drawing come in together, from the side the subject sits on */
+#root .prf-mast .prf-subj-in.is-fwd{animation:prf-subj-fwd .42s var(--ease-out) backwards}
+#root .prf-mast .prf-subj-in.is-back{animation:prf-subj-back .42s var(--ease-out) backwards}
+@keyframes prf-subj-fwd{from{opacity:0;transform:translateX(-36px)}}
+@keyframes prf-subj-back{from{opacity:0;transform:translateX(36px)}}
 #root .prf-pt{position:relative}
 #root .prf-pt::before{content:"";position:absolute;inset-inline-start:19px;top:41px;bottom:-4px;width:2px;border-radius:2px;background:var(--line)}
 #root .prf-pt:last-child::before{display:none}
@@ -317,6 +332,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-path .ch-btn:active .prf-pt-n{transform:scale(.94)}
 #root .prf-pt.is-began .prf-pt-n{background:var(--a-50);box-shadow:inset 0 0 0 1.5px var(--a-300);color:var(--a-800)}
 #root .prf-pt.is-open .prf-pt-n{background:var(--a-600);box-shadow:var(--sh-accent);color:#fff}
+#root .prf-pt-tx{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+#root .prf-pt-k{font-size:.7rem;font-weight:700;line-height:1.2;color:var(--ink-3)}
+#root .prf-pt.is-open .prf-pt-k{color:var(--a-700)}
 #root .prf-pt-name{min-width:0}
 #root .prf-pt.is-open .prf-pt-name{color:var(--ink);font-size:1.24rem;font-weight:800}
 #root .prf-pt-next{flex:none;padding:2px 9px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.74rem;font-weight:700;line-height:1.5;white-space:nowrap}
@@ -339,9 +357,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-land-go::before{content:"";position:absolute;inset:auto 0 100% 0;height:22px;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
 #root .prf-land-what{font-size:.8rem;font-weight:600;line-height:1.4;color:var(--ink-3);text-align:center}
 #root .prf-land-go .prf-go{flex:none;width:100%;min-height:52px;font-size:1.1rem}
-#root .prf-path-k{display:none}
 @media (max-height:600px){
-  #root .prf-mast{--prf-wm:clamp(3.6rem,17vw,6rem)}
+  #root .prf-mast{--prf-wm:clamp(3.8rem,19vw,6.4rem)}
   #root .prf-mast-fig{flex-basis:124px;min-height:124px}
 }
 
@@ -412,8 +429,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-intro{font-size:.84rem}
 }
 @media (prefers-reduced-motion: reduce){
-  #root .prf-row.is-new,#root .prf-hint,#root .prf-why,#root .prf-hintb.is-nudge,#root .prf-mast-fig,#root .prf-pt-open,#root .prf-warm-mid,#root .prf-end-card,#root .prf-prev,#root .prf-note.prf-fb{animation:none}
-  #root .prf-pt-n{transition:none}
+  #root .prf-row.is-new,#root .prf-hint,#root .prf-why,#root .prf-hintb.is-nudge,#root .prf-mast-fig,#root .prf-mast .prf-subj-in,#root .prf-subj-meta,#root .prf-pt-open,#root .prf-warm-mid,#root .prf-end-card,#root .prf-prev,#root .prf-note.prf-fb{animation:none}
+  #root .prf-pt-n,#root .prf-subj-thumb,#root .prf-subj-b{transition:none}
 }
 
 /* ══ tablets and computers (from 768 px wide, taller than a phone on its side) ══
@@ -440,7 +457,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-mast-fig .prf-fig > line.prf-sg:nth-of-type(4){animation-delay:.24s}
   #root .prf-mast-fig .prf-fig > line.prf-sg:nth-of-type(5){animation-delay:.32s}
   #root .prf-mast-fig .prf-fig > line.prf-sg:nth-of-type(n+6){animation-delay:.4s}
-  #root .prf-path-k{display:block;margin:0 0 10px;font-size:.84rem;font-weight:700;color:var(--a-700)}
+  #root .prf-subjbar{align-items:flex-start;gap:10px}
+  #root .prf-subj-b{min-height:44px;font-size:1rem}
+  #root .prf-subj-meta{font-size:.9rem;text-align:start}
+  #root .prf-pt-k{font-size:.76rem}
   #root .prf-path .ch-btn{flex:0 1 auto;min-height:48px;font-size:1.1rem}
   #root .prf-pt-row{min-height:52px;gap:12px}
   #root .prf-pt::before{inset-inline-start:21px;top:47px}
@@ -554,7 +574,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-topic:not(.prf-in-proof){padding-block:4px 0}
   #root .prf-topic:not(.prf-in-proof) > .prf-mast{--prf-wm:min(31cqw,17dvh);flex:none;max-width:600px}
   #root .prf-mast-fig{width:min(100%,500px);margin-inline:auto}
-  #root .prf-path{max-width:600px;margin-top:14px}
+  #root .prf-subjbar{max-width:600px;margin-top:14px;align-items:center}
+  #root .prf-subj-meta{text-align:center}
+  #root .prf-path{max-width:600px;margin-top:6px}
   /* the start button stays in reach while the path scrolls (as on a phone, but as a pill with its line beside it) */
   #root .prf-land-go{position:sticky;bottom:0;z-index:5;justify-content:center;max-width:none;margin:8px 0 0;padding:14px 16px max(16px,env(safe-area-inset-bottom,0px));background:var(--bg)}
   #root .prf-land-go::before{content:"";position:absolute;inset:auto 0 100% 0;height:28px;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
@@ -577,9 +599,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 @media (min-width:1024px) and (min-height:501px){
   #root .prf-topic{width:100%;max-width:1360px;margin-inline:auto}
   #root .prf-topic.prf-in-proof{max-width:1480px}
-  #root .prf-topic:not(.prf-in-proof){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.24fr);grid-template-rows:minmax(0,1fr) auto auto auto minmax(0,1fr);grid-template-areas:". mast" "team mast" "path mast" "go mast" ". mast";column-gap:clamp(40px,5.5vw,104px);padding:12px clamp(24px,4vw,56px) 28px}
+  #root .prf-topic:not(.prf-in-proof){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.24fr);grid-template-rows:minmax(0,1fr) auto auto auto auto minmax(0,1fr);grid-template-areas:". mast" "team mast" "subj mast" "path mast" "go mast" ". mast";column-gap:clamp(40px,5.5vw,104px);padding:12px clamp(24px,4vw,56px) 28px}
   #root .prf-topic:not(.prf-in-proof) > .prf-team{grid-area:team;width:auto;max-width:none;margin:0 0 22px;padding:0;text-align:start;font-size:.8rem}
   #root .prf-topic:not(.prf-in-proof) > .prf-mast{grid-area:mast;align-self:center;--prf-wm:min(31cqw,22dvh);max-width:none;margin:0;padding:0}
+  #root .prf-topic:not(.prf-in-proof) > .prf-subjbar{grid-area:subj;max-width:none;margin:0 0 16px;padding:0}
   #root .prf-topic:not(.prf-in-proof) > .prf-path{grid-area:path;max-width:none;margin:0;padding:0}
   #root .prf-topic:not(.prf-in-proof) > .prf-land-go{grid-area:go;max-width:none;margin:28px 0 0;padding:0 56px 0 0}
   #root .prf-pt.is-open .prf-pt-name{font-size:clamp(1.7rem,2.3vw,2.2rem)}
@@ -607,7 +630,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-topic:not(.prf-in-proof){grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
   #root .prf-in-proof:has(> .prf-ch-card){grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
   #root .prf-team{font-size:.86rem}
-  #root .prf-path-k{font-size:.92rem}
+  #root .prf-subj-b{min-height:48px;font-size:1.08rem}
+  #root .prf-subj-meta{font-size:1rem}
+  #root .prf-pt-k{font-size:.84rem}
   #root .prf-path .ch-btn{font-size:1.24rem}
   #root .prf-pt-row{min-height:60px}
   #root .prf-pt-n{width:50px;height:50px;font-size:1.16rem}

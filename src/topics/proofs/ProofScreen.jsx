@@ -44,7 +44,10 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const [planQ, setPlanQ] = useState(() => (!restored && view.plan === 'tris' && (problem.figure.tris || []).length === 2 ? { picked: [] } : null));
   const n = useRef(0), timers = useRef({}), nbEl = useRef(null), workEl = useRef(null), qedDone = useRef(false), intro = useRef(!restored);
   const reduce = useReducedMotion();
-  const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), type.n <= 2 ? ['seg', 'ang'] : null);
+  // how the level is laid out (types/index.js `shape`): reading the given and the parts of a known congruence are
+  // the two small shapes (no triangles to tap, the drawing never outlines an answer); the rest are full proofs
+  const isGiven = type.shape === 'given', isParts = type.shape === 'parts', small = isGiven || isParts;
+  const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), small ? ['seg', 'ang'] : null);
   const p = problem, cur = s.cur, mode = s.view.mode, cong = congOf(p);
   const later = (name, ms, fn) => { clearTimeout(timers.current[name]); timers.current[name] = setTimeout(fn, ms); };
   useEffect(() => () => { Object.values(timers.current).forEach(clearTimeout); }, []);
@@ -94,7 +97,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   function finish(st, clean) {
     if (qedDone.current) return;
     qedDone.current = true;
-    setEnding(type.n >= 3 ? 'move' : 'tint');
+    setEnding(small ? 'tint' : 'move');
     const d = st.decisions.find((x) => x.state === 'filled' && String(x.key).startsWith('rs:'));
     const row = d && st.rows.find((x) => x.fact === d.fact);
     onEnd({ summary: summary(st), errs: st.errs, clean, filledReason: row ? row.reason : null, rows: st.rows });
@@ -148,7 +151,6 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   }
 
   /* ── what the drawing shows ── */
-  const tn = type.n;
   const walkLast = mode === 'walk' && !cur && s.rows.length ? s.rows[s.rows.length - 1] : null;
   // the row being worked on (types 1–2 show its sentence / asked part): the open decision, or in the walk-through the row on display
   const askFact = leans ? leans.fact : cur ? (cur.fact || cur.expect) : mode === 'walk' ? (walkLast ? walkLast.fact : (s.view.steps[0] || {}).fact || null) : null;
@@ -158,15 +160,15 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     const out = [], pre = s.view.pre || [];
     s.done.forEach((fact) => { const i = pre.indexOf(fact); out.push({ fact, style: 'on', delay: intro.current && i >= 0 ? 250 + i * 260 : 0 }); });
     for (const t of targets(p)) {
-      if (s.done.includes(t) || tn === 1) continue;            // type 1: the drawing never shows the answer before it is written
-      if (tn === 2) { if (t === askFact) out.push({ fact: t, style: 'goal', only: p.cue && p.cue[t] }); continue; }   // type 2: only the asked part
+      if (s.done.includes(t) || isGiven) continue;            // type 1: the drawing never shows the answer before it is written
+      if (isParts) { if (t === askFact) out.push({ fact: t, style: 'goal', only: p.cue && p.cue[t] }); continue; }   // type 2: only the asked part
       out.push({ fact: t, style: 'goal' });
     }
     return out;
-  }, [s.done, s.view, p, tn, askFact]);
+  }, [s.done, s.view, p, isGiven, isParts, askFact]);
   const rowNo = s.rows.length + 1;
   const activeFact = leans ? leans.fact : cur ? (cur.kind === 'reason' ? cur.fact : (mode === 'fill' || mode === 'walk') ? cur.fact : null) : null;
-  const cueFact = tn <= 2 && !leans && mode !== 'tap' && ((cur && cur.kind === 'statement') || (mode === 'walk' && !cur && !walkLast)) ? askFact : null;
+  const cueFact = small && !leans && mode !== 'tap' && ((cur && cur.kind === 'statement') || (mode === 'walk' && !cur && !walkLast)) ? askFact : null;
   const focus = useMemo(() => {
     if (cueFact) return cueIds(cueFact);
     const f = activeFact || (walkLast && walkLast.fact);
@@ -236,7 +238,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     }
   } else if (isDone) {
     head = { ask: T['lbl.proofDone'] };
-    body = { t: 'qed', label: tn === 1 ? T['btn.doneRead'] : null };
+    body = { t: 'qed', label: isGiven ? T['btn.doneRead'] : null };
   } else if (mode === 'walk' && !cur) {
     // the walk-through: the guide says what is done and why; nothing is graded, so nothing says "נכון"
     if (!walkLast) {
@@ -266,9 +268,9 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   } else if (cur && cur.kind === 'statement') {
     const step = s.view.steps.find((x) => x.fact === cur.fact);
     const asked = askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' ? askFact : null;
-    now = { st: tn === 2 && asked ? <Ask part={p.facts[asked].x} className="prf-ask-st" /> : null, reason: null, ask: 'st' };
+    now = { st: isParts && asked ? <Ask part={p.facts[asked].x} className="prf-ask-st" /> : null, reason: null, ask: 'st' };
     if ((mode === 'fill' || mode === 'walk') && step && step.options) {
-      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: tn === 1 ? T['q.sentence'] : tn === 2 ? T['q.partner'] : T['lbl.whatClaim'] };
+      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: isGiven ? T['q.sentence'] : isParts ? T['q.partner'] : T['lbl.whatClaim'] };
       const items = step.options.map((st, i) => ({ id: `o${i}`, st, disabled: cur.wrong.includes(norm(p.figure, st)) }));
       body = { t: 'options', items };
       onPick = (id) => dispatch({ t: 'statement', st: items.find((x) => x.id === id).st });
@@ -291,11 +293,11 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       ) };
     }
     // where the answer is read from: the sentence being read (type 1, its gap), or the given congruence (type 2)
-    if (head && tn === 1 && step && step.options) {
+    if (head && isGiven && step && step.options) {
       const g = asked && given.find((x) => x.facts.includes(asked));
       if (g) head.quote = g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />;
     }
-    if (head && tn === 2) head.quote = congQuote;
+    if (head && isParts) head.quote = congQuote;
   }
   if (cur && !planQ && !leans && !isDone) hint = { rung: cur.rung, nudge, wait: cur.rung === 2 && showKey !== cur.key, waitMs: RULES.HINT3_WAIT_MS };
 
@@ -328,7 +330,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
       <div className="prf-head">
         <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={leave}><IcBack /></button>
-        <span className="prf-head-t">{type.name}</span>
+        <span className="prf-head-t">{type.label}</span>
         {levelName && <span className="prf-pill">{levelName}</span>}
         {onSwap && !s.ended && <button type="button" className="prf-swap" onClick={() => onSwap({ nonSolo: s.nonSolo, decisions: s.decisions })}><IcSwap /><span>{T['btn.swap']}</span></button>}
       </div>
@@ -343,7 +345,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       <div className="prf-figcol">
         <div className="prf-stage">
           <ProofFigure problem={p} marks={marks} focus={end || planQ ? [] : focus} selected={planQ ? planQ.picked : tapping ? sel.selected : []} pulse={pulse} question={question}
-            tappable={planQ ? ['tri'] : tapping ? (tn <= 2 ? ['seg', 'ang'] : ['seg', 'ang', 'tri']) : false} onPart={planQ ? (id) => pickPlan(id) : sel.tap} ending={ending} />
+            tappable={planQ ? ['tri'] : tapping ? (small ? ['seg', 'ang'] : ['seg', 'ang', 'tri']) : false} onPart={planQ ? (id) => pickPlan(id) : sel.tap} ending={ending} />
         </div>
       </div>
       <div className="prf-work" ref={workEl}>
@@ -356,10 +358,10 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
                 <ol className="prf-givl">
                   {given.map((g, i) => {
                     const used = g.facts.every((f) => s.done.includes(f)), f0 = p.facts[g.facts[0]];
-                    const on = tn === 1 && !end && !isDone && askFact && g.facts.includes(askFact);       // type 1: the sentence being read
+                    const on = isGiven && !end && !isDone && askFact && g.facts.includes(askFact);       // type 1: the sentence being read
                     return (
-                      <li key={i} className={`prf-gv${used && tn !== 2 ? ' is-used' : ''}${on ? ' is-now' : ''}`}>
-                        <span className="prf-gv-n">{used && tn !== 2 ? <IcCheck /> : i + 1}</span>
+                      <li key={i} className={`prf-gv${used && !isParts ? ' is-used' : ''}${on ? ' is-now' : ''}`}>
+                        <span className="prf-gv-n">{used && !isParts ? <IcCheck /> : i + 1}</span>
                         <span className="prf-gv-t">
                           {g.form !== 'eq' ? <Tx k={g.key} vars={g.vars} /> : f0.kind === 'cong' && lit && !end ? <CongSt st={f0} at={lit.at} color={lit.color} /> : <St st={f0} />}
                           {g.byOrder && <> <span className="prf-fc-note">{T['lbl.byOrder']}</span></>}
@@ -368,15 +370,15 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
                     );
                   })}
                 </ol>
-                {tn !== 1 && <span className="prf-nb-k">{T['lbl.toProve']}</span>}
-                {tn !== 1 && (
+                {!isGiven && <span className="prf-nb-k">{T['lbl.toProve']}</span>}
+                {!isGiven && (
                   <span className="prf-goals">
                     {targets(p).map((t) => {
                       const ok = s.done.includes(t);
                       // while writing the congruence is itself a decision (a statement gap, or Level 3), the goal names the two triangles without the matching order
                       const step = s.view.steps.find((x) => x.fact === t);
                       const open = !ok && t === cong && tris.length === 2 && step && step.ask.includes('statement') && (mode === 'tap' || !!step.options);
-                      return <span key={t} className={`prf-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k="lbl.goalCong" vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : tn === 2 && !ok ? <Ask part={p.facts[t].x} /> : <St st={p.facts[t]} />}</span>;
+                      return <span key={t} className={`prf-goal${ok ? ' is-done' : ''}`}>{ok ? <IcCheck /> : <IcLock />}{open ? <span><Tx k="lbl.goalCong" vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} /></span> : isParts && !ok ? <Ask part={p.facts[t].x} /> : <St st={p.facts[t]} />}</span>;
                     })}
                   </span>
                 )}
