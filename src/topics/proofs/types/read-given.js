@@ -174,4 +174,5 @@ function remake(x) {
 export default {
   id: 'read-given', n: 1, name: T['type.read-given'], button: `1. ${T['type.read-given']}`,
   warm: ['W1', 'W7'], templates: TEMPLATES, make, remake,
+  subject: 'congruence', label: T['type.read-given'], shape: 'given', live: true,
 };

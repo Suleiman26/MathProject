@@ -13,6 +13,13 @@ export const T = {
   'type.prove-congruence': 'הוכחת חפיפה',
   'type.then-conclusion': 'חפיפה ואז מסקנה',
   'tab.warm': 'חימום', 'tab.1': 'רמה 1', 'tab.2': 'רמה 2', 'tab.3': 'רמה 3',
+  /* ── subjects → levels → help stages (spec 2026-11-23 §5.1; all in NEW_DRAFTS). The tab texts above stay the
+     stored keys; these are what the student sees. ── */
+  'stage.0': 'חימום', 'stage.1': 'מודרך', 'stage.2': 'ביחד', 'stage.3': 'לבד',
+  'subj.congruence': 'חפיפת משולשים', 'subj.similarity': 'דמיון משולשים',
+  'subj.short.congruence': 'חפיפה', 'subj.short.similarity': 'דמיון',
+  'subj.when.congruence': 'ינואר–פברואר', 'subj.when.similarity': 'מרץ–אפריל',
+  'lbl.levelN': 'רמה {n}',
 
   /* ── hint ladder, rungs 1 and 2, by row role (§9.1) ── */
   'hint.given.1': 'התחילו ממה שנתון. הסתכלו על החלקים המהבהבים.',
@@ -262,6 +269,8 @@ export const OPEN_POINTS = [
 
 /** Keys whose text is not drafted in the spec (written by the builder; for Sulaiman's review sheet). */
 export const NEW_DRAFTS = [
+  'stage.0', 'stage.1', 'stage.2', 'stage.3', 'subj.congruence', 'subj.similarity', 'subj.short.congruence', 'subj.short.similarity',
+  'subj.when.congruence', 'subj.when.similarity', 'lbl.levelN',
   'fb.ok', 'rs.cong.sss1', 'ui.rescue2', 'ui.filledSt',
   'say.angRight', 'lbl.place1', 'lbl.place2', 'lbl.place3',
   'gv.bisect2', 'tx.X', 'tx.K', 'tx.Z', 'tx.T', 'tx.2', 'tx.cevian',

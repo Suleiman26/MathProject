@@ -76,4 +76,5 @@ function remake(x) {
 export default {
   id: 'then-conclusion', n: 4, name: T['type.then-conclusion'], button: `4. ${T['type.then-conclusion']}`,
   warm: ['W2', 'W4', 'W5', 'W6'], templates: TEMPLATES, make, remake,
+  subject: 'congruence', label: T['type.then-conclusion'], shape: 'then', live: true,
 };

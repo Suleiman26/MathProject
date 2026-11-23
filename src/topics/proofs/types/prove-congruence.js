@@ -50,4 +50,5 @@ function remake(x) {
 export default {
   id: 'prove-congruence', n: 3, name: T['type.prove-congruence'], button: `3. ${T['type.prove-congruence']}`,
   warm: ['W1', 'W2', 'W3', 'W4'], templates: TEMPLATES, make, remake,
+  subject: 'congruence', label: T['type.prove-congruence'], shape: 'prove', live: true,
 };

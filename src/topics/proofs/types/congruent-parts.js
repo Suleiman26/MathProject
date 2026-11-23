@@ -139,4 +139,5 @@ export const cueOf = (p, id) => (p.cue && p.cue[id]) || partsOf(p.facts[id]);
 export default {
   id: 'congruent-parts', n: 2, name: T['type.congruent-parts'], button: `2. ${T['type.congruent-parts']}`,
   warm: ['W5'], templates: TEMPLATES, make, remake,
+  subject: 'congruence', label: T['type.congruent-parts'], shape: 'parts', live: true,
 };

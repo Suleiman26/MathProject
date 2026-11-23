@@ -122,7 +122,7 @@ export function roleOf(p, id) {
   if (p.roles && p.roles[id]) return p.roles[id];
   const f = p.facts[id];
   if (f && f.kind === 'cong') return 'congruence';
-  if ((p.just[id] || []).some((j) => j.reasons.some((r) => CP.includes(r)))) return p.type === 'congruent-parts' ? 'partner' : 'conclusion';
+  if ((p.just[id] || []).some((j) => j.reasons.some((r) => CP.includes(r)))) return shapeOf(p) === 'parts' ? 'partner' : 'conclusion';
   return 'given';
 }
 /** Every reason that some justification of the fact accepts. */
@@ -219,7 +219,7 @@ export function classify(p, done, st) {
       return { c: 'early', fact: id, sub: 'consequence', kind: 'looks-equal', textKey: 'st.consEarly', vars: {} };
     }
     if (required(p).has(id)) return { c: 'ok', fact: id };
-    return { c: 'extra', fact: id, textKey: p.type === 'congruent-parts' ? 'st.notAsked' : 'st.notNeeded', vars: {} };
+    return { c: 'extra', fact: id, textKey: shapeOf(p) === 'parts' ? 'st.notAsked' : 'st.notNeeded', vars: {} };
   }
   const trap = p.traps && p.traps[norm(p.figure, st)];
   if (trap) return { c: 'false', kind: trap.kind, textKey: trap.textKey, vars: { ...(trap.vars || {}) } };
@@ -350,7 +350,7 @@ export function optionsFor(p, id, n = 3, R) {
     const [t1, t2] = partsOf(f), perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
     const maps = perms.map((q) => t1.map((u, i) => [u, t2[q[i]]])).filter((m) => norm(p.figure, { kind: 'cong', map: m }) !== norm(p.figure, f));
     wrong = shuffled(R, maps).map((map) => ({ kind: 'cong', map }));
-  } else if (p.type === 'congruent-parts') {
+  } else if (shapeOf(p) === 'parts') {
     const other = partsOf(p.facts[congOf(p)])[1], k = f.kind;
     const cands = k === 'seg' ? [0, 1, 2].map((i) => other[i] + other[(i + 1) % 3]) : other.map((v, i) => ({ v, r: [other[(i + 1) % 3], other[(i + 2) % 3]] }));
     wrong = cands.map((y) => ({ kind: k, x: f.x, y })).filter((st) => norm(p.figure, st) !== norm(p.figure, f));
@@ -365,7 +365,13 @@ export function optionsFor(p, id, n = 3, R) {
 }
 
 /* ── what each level presents (§7.2–7.4) ──────────────────────────────────── */
-export const TYPE_N = { 'read-given': 1, 'congruent-parts': 2, 'prove-congruence': 3, 'then-conclusion': 4 };
+/* How a problem is laid out (spec 2026-11-23 §11): 'given' (read the given) · 'parts' (from a known congruence to
+   equalities) · 'side' (from a ratio to a missing side) · 'prove' (prove the congruence/similarity) · 'then' (prove,
+   then a conclusion) · 'exam'. A problem may carry its own `shape`; else it follows its type id (also for a problem
+   rebuilt from a saved snapshot). Kept here, not read from types/, so core.js never imports the types (they import it).
+   Every type's `shape` field must match this (subjects.test.mjs); unknown types count as 'prove'. */
+const SHAPE = { 'read-given': 'given', 'congruent-parts': 'parts', 'prove-congruence': 'prove', 'then-conclusion': 'then' };
+export const shapeOf = (p) => (p && p.shape) || SHAPE[p && p.type] || 'prove';
 /**
  * present(problem, level, variant, { counted, R }) → view =
  *   { mode:'walk'|'fill'|'tiles'|'tap', known:[factId] (true from the start, no row: type 2's congruence),
@@ -375,9 +381,10 @@ export const TYPE_N = { 'read-given': 1, 'congruent-parts': 2, 'prove-congruence
  * accept any valid order.
  */
 export function present(p, level, variant, ctx = {}) {
-  const n = TYPE_N[p.type] || 3, R = ctx.R, counted = ctx.counted || 0, big = n >= 3;
-  const rows = p.canon.filter((f) => f !== congOf(p) || n !== 2);
-  const known = n === 2 && congOf(p) ? [congOf(p)] : [];
+  const shape = shapeOf(p), R = ctx.R, counted = ctx.counted || 0;
+  const given = shape === 'given', parts = shape === 'parts', then = shape === 'then', big = !given && !parts;
+  const rows = p.canon.filter((f) => f !== congOf(p) || !parts);
+  const known = parts && congOf(p) ? [congOf(p)] : [];
   const plainGiven = (f) => (p.given || []).includes(f) && roleOf(p, f) === 'given';
   const view = { mode: 'tiles', known, pre: [...known], steps: [], tiles: [], chipsN: 6, whyLine: false, autoHint: false, shortFirst: false, plan: null, ties: false, letters: false };
   const step = (fact, ask, extra = {}) => ({ fact, ask, chips: view.chipsN, ...extra });
@@ -386,7 +393,7 @@ export function present(p, level, variant, ctx = {}) {
   const target = targets(p)[0];
 
   if (level === 1) {
-    view.whyLine = true; view.autoHint = true; view.letters = n === 2; view.plan = n === 4 ? 'tris' : null;
+    view.whyLine = true; view.autoHint = true; view.letters = parts; view.plan = then ? 'tris' : null;
     if (variant === 'A') {
       view.mode = 'walk'; view.chipsN = 3; view.ties = big;
       const last = rows[rows.length - 1];
@@ -395,7 +402,7 @@ export function present(p, level, variant, ctx = {}) {
       view.mode = 'fill'; view.chipsN = 4;
       if (big) {
         view.pre = rows.filter(plainGiven);
-        const gapAt = counted >= 2 ? (n === 3 ? congOf(p) : target) : null;
+        const gapAt = counted >= 2 ? (shape === 'prove' ? congOf(p) : target) : null;
         view.steps = rows.filter((f) => !view.pre.includes(f)).map((f) => (f === gapAt ? { ...gap(f), ask: ['statement', 'reason'] } : step(f, ['reason'])));
       } else view.steps = rows.map(gap);
     }
@@ -403,18 +410,18 @@ export function present(p, level, variant, ctx = {}) {
   }
   const wrongTiles = ((p.tiles && p.tiles.wrong) || []).map((w) => tile(w.st, null, w.why));
   if (level === 2) {
-    view.mode = 'tiles'; view.plan = n === 4 ? 'tris' : null;
+    view.mode = 'tiles'; view.plan = then ? 'tris' : null;
     if (variant === 'A') {
-      view.whyLine = true; view.chipsN = n === 2 ? 4 : 6;
+      view.whyLine = true; view.chipsN = parts ? 4 : 6;
       view.pre = big ? rows.filter((f) => (p.given || []).includes(f)) : [...known];
       const todo = rows.filter((f) => !view.pre.includes(f));
       view.steps = todo.map((f) => step(f, ['statement', 'reason']));
-      const extra = n === 1 ? wrongTiles.slice(0, 2) : n === 2 ? wrongTiles.slice(0, 1) : [];
+      const extra = given ? wrongTiles.slice(0, 2) : parts ? wrongTiles.slice(0, 1) : [];
       view.tiles = [...todo.map((f) => tile(p.facts[f], f)), ...extra];
     } else {
       view.chipsN = big ? 8 : 6;
       view.steps = rows.map((f) => step(f, ['statement', 'reason']));
-      const extra = big ? wrongTiles.slice(0, 2) : n === 1 ? wrongTiles.slice(0, Math.max(0, 6 - rows.length)) : wrongTiles.slice(0, 3);
+      const extra = big ? wrongTiles.slice(0, 2) : given ? wrongTiles.slice(0, Math.max(0, 6 - rows.length)) : wrongTiles.slice(0, 3);
       view.tiles = [...rows.map((f) => tile(p.facts[f], f)), ...extra];
     }
     view.tiles = shuffled(R, view.tiles).map((t, i) => ({ id: `t${i}`, ...t }));
