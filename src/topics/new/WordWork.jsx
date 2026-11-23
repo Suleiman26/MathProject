@@ -95,7 +95,7 @@ export default function WordWork({ work, locked }) {
         <div className="nw-wk-pick">
           {opts.map(([k, t]) => (
             <button type="button" key={k} className={`nw-wk-chip${mode === k ? ' on' : ''}`} aria-pressed={mode === k} onClick={() => pick(k)}>
-              <span className="nw-wk-ico" aria-hidden="true">{k === 'eq' ? <M s="x =" /> : <TableIcon />}</span>{t}
+              <span className="nw-wk-ico" aria-hidden="true">{k === 'eq' ? <i className="nw-wk-x">x</i> : <TableIcon />}</span>{t}
             </button>
           ))}
         </div>

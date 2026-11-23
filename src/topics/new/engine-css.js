@@ -112,12 +112,12 @@ export const NW_CSS = `/* ── math ── */
 #root .nw-wk-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 #root .nw-wk-t{font-size:.92rem;font-weight:700;color:var(--a-900)}
 #root .nw-wk-pick{display:flex;flex-wrap:wrap;gap:8px}
-#root .nw-wk-chip{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:6px 14px 6px 16px;border-radius:var(--r-pill);border:1.5px solid var(--a-200);background:#fff;color:var(--a-800);font:inherit;font-size:.95rem;font-weight:700;cursor:pointer;transition:transform 100ms ease-out,background-color 140ms ease-out,border-color 140ms ease-out,color 140ms ease-out;-webkit-tap-highlight-color:transparent}
+#root .nw-wk-chip{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:6px 14px 6px 16px;border-radius:var(--r-pill);border:1.5px solid var(--a-200);background:#fff;color:var(--a-800);font:inherit;font-size:.95rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:transform 100ms ease-out,background-color 140ms ease-out,border-color 140ms ease-out,color 140ms ease-out;-webkit-tap-highlight-color:transparent}
 #root .nw-wk-chip:active{transform:scale(.97)}
 #root .nw-wk-chip.on{background:var(--a-600);border-color:var(--a-600);color:#fff}
-#root .nw-wk-chip.on .nw-m,#root .nw-wk-chip.on .nw-v{color:inherit}
+
 #root .nw-wk-ico{display:inline-grid;place-items:center;min-width:22px;font-size:.9rem}
-#root .nw-wk-ico .nw-m{font-weight:800}
+#root .nw-wk-x{font-family:Georgia,'Times New Roman',serif;font-size:1.15rem;font-weight:700;line-height:1}
 #root .nw-wk-body{display:grid;gap:10px;margin-top:14px;animation:nw-wk-in 220ms cubic-bezier(.2,.8,.2,1)}
 @keyframes nw-wk-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 #root .nw-wk-lbl{display:block;margin:0;font-size:.95rem;line-height:1.6;font-weight:600;color:var(--ink-2)}
@@ -148,11 +148,11 @@ export const NW_CSS = `/* ── math ── */
 #root .nw-wk-table tr.bad :is(th,td){background:var(--bad-50)}
 #root .nw-wk-cell{width:100%;min-width:0;height:44px;padding:0 4px;text-align:center;direction:ltr;font:inherit;font-weight:700;font-size:1.05rem;color:var(--ink);background:#fff;border:1.5px solid var(--line-strong);border-radius:10px;outline:0}
 #root .nw-wk-cell:focus{border-color:var(--a-500);box-shadow:var(--ring)}
-#root .nw-final-t{margin:20px 0 -8px;font-size:.92rem;font-weight:700;color:var(--a-900)}
+#root .nw-final-t{margin:22px 0 -4px;font-size:.92rem;font-weight:700;color:var(--a-900)}
 @media (max-width:480px){
   #root .nw-wk{padding:12px 10px}
   #root .nw-wk-pick{width:100%}
-  #root .nw-wk-chip{flex:1 1 0;justify-content:center;padding-inline:10px;font-size:.9rem}
+  #root .nw-wk-chip{flex:1 1 0;justify-content:center;gap:5px;padding-inline:8px;font-size:.88rem}
   #root .nw-wk-go{min-width:84px;padding:0 12px}
   #root .nw-wk-table :is(th,td){padding:5px 3px}
   #root .nw-wk-table thead th{font-size:.82rem}
