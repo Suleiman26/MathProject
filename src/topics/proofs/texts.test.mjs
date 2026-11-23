@@ -6,13 +6,14 @@ import assert from 'node:assert/strict';
 import { REASONS, GROUPS, THEOREMS, CP, groupOf, isLaw, reasonInline } from './reasons.js';
 import { T, tx, fill, LABELS, NEW_DRAFTS } from './texts.js';
 
-test('reasons: the 14 ids and their exact chips', () => {
-  assert.deepEqual(Object.keys(REASONS).sort(), ['alternate','altitude','asa','bisector','common-angle','common-side','cp-angles','cp-sides','given','median','midpoint','sas','sss','vertical']);
+test('reasons: the 21 ids and their exact chips', () => {
+  assert.deepEqual(Object.keys(REASONS).sort(), ['aa','alternate','altitude','asa','bisector','common-angle','common-side','corresponding','cp-angles','cp-sides','given','median','midpoint','right-angles','sas','sim-angles','sim-ratio','solve','sss','vertical']);
   assert.equal(REASONS.sas.short, 'צ.ז.צ');
   assert.equal(REASONS['cp-sides'].short, 'צלעות מתאימות במשולשים חופפים');
   assert.equal(REASONS.median.full, 'תיכון מחבר קודקוד עם אמצע הצלע שמולו.');
-  assert.equal(REASONS.alternate.full, null);
-  assert.ok(!Object.values(REASONS).some((r) => r.short === 'זוויות מתאימות בין ישרים מקבילים'));   // not in phase 1
+  assert.equal(REASONS.alternate.full, 'זוויות מתחלפות בין ישרים מקבילים שוות זו לזו.');   // a real reason since similarity
+  assert.ok(!Object.values(REASONS).some((r) => r.short === 'זוויות מתאימות'));   // the parallel chip always says "בין מקבילים"
+  assert.equal(REASONS.corresponding.short, 'מתאימות בין מקבילים'); assert.equal(REASONS.alternate.short, 'מתחלפות בין מקבילים');
   assert.ok(!Object.values(REASONS).some((r) => /ז\.ז\.צ|צ\.צ\.ז/.test(r.short)));
   assert.deepEqual(THEOREMS, ['sas', 'asa', 'sss']); assert.deepEqual(CP, ['cp-sides', 'cp-angles']);
 });
@@ -71,7 +72,7 @@ test('reasons §6.1: the other full texts are today\'s wording as whole sentence
     'cp-angles': 'זוויות מתאימות במשולשים חופפים שוות.',
     'common-side': 'צלע משותפת לשני המשולשים.',
     'common-angle': 'זווית משותפת לשני המשולשים.',
-    alternate: null,                                   // stays a wrong-answer chip until similarity makes it a real reason
+    alternate: 'זוויות מתחלפות בין ישרים מקבילים שוות זו לזו.',   // a real reason since similarity (still a wrong chip on congruence X)
   });
   for (const r of Object.values(REASONS)) if (r.full && r.id !== 'given') assert.ok(r.full.endsWith('.'), r.id);
   assert.ok(!Object.values(REASONS).some((r) => r.full && r.full.startsWith('משפט חפיפה')), 'the old "משפט חפיפה …" stand-ins are gone');
@@ -79,18 +80,20 @@ test('reasons §6.1: the other full texts are today\'s wording as whole sentence
 test('reasons §6.1: kinds, and isLaw = theorem or definition', () => {
   assert.deepEqual(Object.fromEntries(Object.values(REASONS).map((r) => [r.id, r.kind])), {
     given: 'given', 'common-side': 'rule', vertical: 'theorem', bisector: 'definition', median: 'definition', midpoint: 'definition',
-    altitude: 'definition', sas: 'theorem', asa: 'theorem', sss: 'theorem', 'cp-sides': 'rule', 'cp-angles': 'rule', 'common-angle': 'rule', alternate: 'theorem',
+    altitude: 'definition', sas: 'theorem', asa: 'theorem', sss: 'theorem', 'cp-sides': 'rule', 'cp-angles': 'rule', 'common-angle': 'rule',
+    aa: 'theorem', corresponding: 'theorem', alternate: 'theorem', 'right-angles': 'rule', 'sim-angles': 'definition', 'sim-ratio': 'definition', solve: 'rule',
   });
-  assert.deepEqual(Object.keys(REASONS).filter(isLaw).sort(), ['alternate', 'altitude', 'asa', 'bisector', 'median', 'midpoint', 'sas', 'sss', 'vertical']);
+  assert.deepEqual(Object.keys(REASONS).filter(isLaw).sort(), ['aa', 'alternate', 'altitude', 'asa', 'bisector', 'corresponding', 'median', 'midpoint', 'sas', 'sim-angles', 'sim-ratio', 'sss', 'vertical']);
   assert.equal(isLaw('nope'), false);
 });
-test('reasons: chips and Level-3 groups did not move (chips and the two-step pick depend on them)', () => {
-  assert.deepEqual(Object.fromEntries(Object.values(REASONS).map((r) => [r.id, [r.short, r.group]])), {
+test('reasons: the congruence chips and Level-3 groups did not move (chips and the two-step pick depend on them)', () => {
+  const SIM = ['aa', 'corresponding', 'alternate', 'right-angles', 'sim-angles', 'sim-ratio', 'solve'];   // similarity (spec 2026-11-23 §7.3)
+  assert.deepEqual(Object.fromEntries(Object.values(REASONS).filter((r) => !SIM.includes(r.id)).map((r) => [r.id, [r.short, r.group]])), {
     given: ['נתון', 'written'], 'common-side': ['צלע משותפת', 'seen'], vertical: ['זוויות קודקודיות', 'seen'],
     bisector: ['הגדרת חוצה זווית', 'definition'], median: ['הגדרת תיכון', 'definition'], midpoint: ['אמצע קטע', 'definition'],
     altitude: ['הגדרת גובה', 'definition'], sas: ['צ.ז.צ', 'theorem'], asa: ['ז.צ.ז', 'theorem'], sss: ['צ.צ.צ', 'theorem'],
     'cp-sides': ['צלעות מתאימות במשולשים חופפים', 'follows'], 'cp-angles': ['זוויות מתאימות במשולשים חופפים', 'follows'],
-    'common-angle': ['זווית משותפת', 'seen'], alternate: ['זוויות מתחלפות בין ישרים מקבילים', null],
+    'common-angle': ['זווית משותפת', 'seen'],
   });
 });
 test('reasons inside a sentence: no doubled period ("הנימוק: ….")', () => {
@@ -99,7 +102,7 @@ test('reasons inside a sentence: no doubled period ("הנימוק: ….")', () =
     assert.ok(s && !s.endsWith('.'), id);
     for (const k of ['ui.filled', 'coach.reason']) assert.ok(!fill(k, { reason: s }).includes('..'), `${k} ${id}`);
   }
-  assert.equal(reasonInline('sss'), MINISTRY.sss.slice(0, -1)); assert.equal(reasonInline('alternate'), REASONS.alternate.short);
+  assert.equal(reasonInline('sss'), MINISTRY.sss.slice(0, -1)); assert.equal(reasonInline('alternate'), REASONS.alternate.full.slice(0, -1));
 });
 test('every changed reason wording is on the review list', () => {
   for (const r of Object.values(REASONS)) if (r.full && r.id !== 'given') assert.ok(NEW_DRAFTS.includes(`reason.${r.id}`), r.id);

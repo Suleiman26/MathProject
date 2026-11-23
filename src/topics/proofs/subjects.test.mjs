@@ -145,9 +145,9 @@ test('theorem list: every entry exists with its full sentence; theorems first, t
   assert.deepEqual(more, ['bisector', 'median', 'midpoint', 'altitude', 'common-side', 'cp-sides', 'cp-angles']);
   assert.deepEqual(lawsOf('similarity'), { laws: [], more: [] }); assert.deepEqual(lawsOf('nope'), { laws: [], more: [] });
 });
-test('theorem list: a reason without its sentence is left out (alternate, until similarity)', () => {
+test('theorem list: an unknown reason and "נתון" are left out; alternate has its sentence since similarity', () => {
   const fake = { id: 'x', theorems: ['sas', 'alternate', 'nope', 'given', 'median'] };
-  assert.deepEqual(lawsOf(fake), { laws: ['sas'], more: ['median'] });
+  assert.deepEqual(lawsOf(fake), { laws: ['sas', 'alternate'], more: ['median'] });
 });
 test('demos: one per congruence entry; each builds, and its marks are facts that show the pattern honestly', () => {
   const c = SUBJECTS[0];

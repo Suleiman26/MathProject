@@ -10,7 +10,7 @@
                  scale? (length units per drawing unit: a `val` needs it) } */
 import { dist, angle, sub, dot } from '../new/chapters/geometry/geo.js';
 import { T, fill } from './texts.js';
-import { THEOREMS, CP, DEFS, SEEN, REASONS } from './reasons.js';
+import { THEOREMS, CP, DEFS, SEEN, REASONS, PARALLEL, SIMF } from './reasons.js';
 
 /* ── keys ─────────────────────────────────────────────────────────────────── */
 export const segKey = (seg) => [...seg].sort().join('');
@@ -40,11 +40,13 @@ export const kindOf = (part) => (typeof part === 'string' ? 'seg' : Array.isArra
 /** The parts a statement talks about (a congruence: its two triangles, in map order). */
 export function partsOf(st) {
   if (st.kind === 'cong' || st.kind === 'sim') return [st.map.map((p) => p[0]), st.map.map((p) => p[1])];
-  if (st.kind === 'prop') return st.pairs.flat();
+  if (st.kind === 'prop') return Array.isArray(st.pairs) ? st.pairs.flat() : [];
   if (st.kind === 'val') return [st.x];
   return [st.x, st.y];
 }
 const mapKey = (map) => map.map((p) => [...p].sort().join('')).sort().join(',');
+/** Every fraction is two side names (a malformed proportion never throws: norm/holds/checkProp/classify). */
+const okPairs = (fr) => Array.isArray(fr) && fr.every((f) => Array.isArray(f) && f.length === 2 && f.every((x) => typeof x === 'string'));
 /* A proportion as a set of fractions, direction-free as a whole: the statement and its all-flipped twin give
    the same key (the smaller of the two), a mixed direction gives another one. */
 function propKey(pairs) {
@@ -60,7 +62,7 @@ export function norm(fig, st) {
   if (st.kind === 'cong') return 'C:' + mapKey(st.map);
   if (st.kind === 'sim') return 'M:' + mapKey(st.map);
   if (st.kind === 'par') return 'P:' + [segKey(st.x), segKey(st.y)].sort().join('|');
-  if (st.kind === 'prop') return 'R:' + propKey(st.pairs);
+  if (st.kind === 'prop') return okPairs(st.pairs) ? 'R:' + propKey(st.pairs) : `R!${JSON.stringify(st.pairs ?? null)}`;
   if (st.kind === 'val') return 'V:' + segKey(st.x) + '=' + Number(st.v);
   throw new Error(`proofs core: unknown statement kind ${st.kind}`);
 }
@@ -74,7 +76,10 @@ export function measure(fig, part) {
   throw new Error('proofs core: a triangle has no single measure');
 }
 const near = (a, b, tol) => Math.abs(a - b) <= tol * Math.max(Math.abs(a), Math.abs(b)) + 1e-12;   // relative
-/** True in the coordinates (relative tolerance). A right-angle statement also needs 90°. */
+/* A segment name whose two (different) points exist in the figure: the similarity kinds never throw on a typo. */
+const isSeg = (P, s) => typeof s === 'string' && s.length === 2 && s[0] !== s[1] && !!P[s[0]] && !!P[s[1]];
+/** True in the coordinates (relative tolerance). A right-angle statement also needs 90°. Similarity kinds
+    (par, sim, prop, val) are false, never a throw, on a missing point or a malformed statement. */
 export function holds(fig, st, tol = 1e-6) {
   if (st.kind === 'seg' || st.kind === 'ang') {
     const a = measure(fig, st.x), b = measure(fig, st.y);
@@ -83,16 +88,21 @@ export function holds(fig, st, tol = 1e-6) {
   }
   const P = fig.points;
   if (st.kind === 'par') {
-    const d1 = sub(P[st.x[1]], P[st.x[0]]), d2 = sub(P[st.y[1]], P[st.y[0]]);
-    return Math.abs(d1[0] * d2[1] - d1[1] * d2[0]) <= tol * Math.hypot(...d1) * Math.hypot(...d2);
+    if (!isSeg(P, st.x) || !isSeg(P, st.y)) return false;
+    const d1 = sub(P[st.x[1]], P[st.x[0]]), d2 = sub(P[st.y[1]], P[st.y[0]]), n1 = Math.hypot(...d1), n2 = Math.hypot(...d2);
+    if (!(n1 > 1e-9) || !(n2 > 1e-9)) return false;            // a direction of length zero is no line
+    return Math.abs(d1[0] * d2[1] - d1[1] * d2[0]) <= tol * n1 * n2;
   }
   if (st.kind === 'prop') {
-    const r = st.pairs.map(([a, b]) => measure(fig, a) / measure(fig, b));
-    return r.every((x) => near(x, r[0], tol));
+    const fr = st.pairs;
+    if (!Array.isArray(fr) || fr.length < 2 || !fr.every((f) => Array.isArray(f) && f.length === 2 && f.every((x) => isSeg(P, x)))) return false;
+    const r = fr.map(([a, b]) => measure(fig, a) / measure(fig, b));
+    return r.every((x) => Number.isFinite(x) && near(x, r[0], tol));
   }
-  if (st.kind === 'val') return typeof fig.scale === 'number' && near(measure(fig, st.x) * fig.scale, Number(st.v), tol);
+  if (st.kind === 'val') return typeof fig.scale === 'number' && isSeg(P, st.x) && near(measure(fig, st.x) * fig.scale, Number(st.v), tol);
   const m = st.map;
   if (st.kind === 'sim') {                                     // the three angle pairs equal (side ratios follow)
+    if (!Array.isArray(m) || m.length !== 3 || !m.every((q) => Array.isArray(q) && q.length === 2 && q.every((x) => P[x]))) return false;
     const at = (i, s) => angle(P[m[(i + 1) % 3][s]], P[m[i][s]], P[m[(i + 2) % 3][s]]);
     return [0, 1, 2].every((i) => near(at(i, 0), at(i, 1), tol));
   }
@@ -158,12 +168,24 @@ export const congOf = (p) => p.cong || Object.keys(p.facts).find((id) => p.facts
 /** The id of the problem's anchor relation: its congruence or its similarity (same as congOf on a congruence problem). */
 export const anchorOf = (p) => p.cong || p.sim || Object.keys(p.facts).find((id) => p.facts[id].kind === 'cong' || p.facts[id].kind === 'sim') || null;
 const isAnchor = (st) => st && (st.kind === 'cong' || st.kind === 'sim');
-/** A row's role (hints, texts, step labels). */
+/** Is the problem a similarity (its anchor is a `sim` fact)? */
+const isSimP = (p) => { const a = anchorOf(p); return !!a && !!p.facts[a] && p.facts[a].kind === 'sim'; };
+/** A row's role (hints, texts, step labels). Similarity (spec 2026-11-23 §7.3): 'similarity' (the sim row),
+    'ratio' (a proportion), 'number' (a length), 'parallel' (angles between parallel lines), 'sim-partner' (an
+    angle pair that follows from the similarity); a common angle is 'common', vertical angles 'vertical'. */
 export function roleOf(p, id) {
   if (p.roles && p.roles[id]) return p.roles[id];
   const f = p.facts[id];
   if (f && f.kind === 'cong') return 'congruence';
-  if ((p.just[id] || []).some((j) => j.reasons.some((r) => CP.includes(r)))) return shapeOf(p) === 'parts' ? 'partner' : 'conclusion';
+  if (f && f.kind === 'sim') return 'similarity';
+  if (f && f.kind === 'prop') return 'ratio';
+  if (f && f.kind === 'val') return 'number';
+  const rs = (p.just[id] || []).flatMap((j) => j.reasons);
+  if (rs.some((r) => CP.includes(r))) return shapeOf(p) === 'parts' ? 'partner' : 'conclusion';
+  if (rs.some((r) => SIMF.includes(r))) return 'sim-partner';
+  if (rs.some((r) => PARALLEL.includes(r))) return 'parallel';
+  if (isSimP(p) && rs.includes('common-angle')) return 'common';
+  if (isSimP(p) && rs.includes('vertical')) return 'vertical';
   return 'given';
 }
 /** Every reason that some justification of the fact accepts. */
@@ -235,7 +257,9 @@ export function checkMatching(p, tri1, ordered, done = []) {
 /* Right when every fraction pairs a side of one triangle with its matching side of the other (from the
    similarity's vertex map), all fractions point the same way and there are at least two different ones; in a
    calculation (`need = { asked, known }`) one fraction holds the asked side and another has both sides known.
-   The form with the ratio INSIDE each triangle (AD/DE = AB/BC) is true: a neutral note, never a wrong try. */
+   The form with the ratio INSIDE each triangle (AD/DE = AB/BC) is true: a neutral note, never a wrong try.
+   A malformed statement is 'non-matching-sides', never a throw. classify() turns every TRUE proportion that this
+   rule does not accept ('prop-need', 'st.propSame', a true form not built from matching sides) into a neutral note. */
 const pmiss = (kind, textKey) => ({ ok: false, kind, textKey, vars: {} });
 export function checkProp(p, st, { need } = {}) {
   const sid = anchorOf(p), S = sid && p.facts[sid];
@@ -243,7 +267,8 @@ export function checkProp(p, st, { need } = {}) {
   const t1 = S.map.map((m) => m[0]), t2 = S.map.map((m) => m[1]), F = Object.fromEntries(S.map);
   const inT = (t, s) => s.length === 2 && s[0] !== s[1] && t.includes(s[0]) && t.includes(s[1]);
   const img = (s) => segKey(F[s[0]] + F[s[1]]);             // a side of the first triangle → its match in the second
-  const fr = st.pairs || [];
+  const fr = st.pairs;
+  if (!okPairs(fr)) return pmiss('non-matching-sides', 'st.nonMatchingSides');
   const dirs = fr.map(([a, b]) => [inT(t1, a) && img(a) === segKey(b) ? 'f' : null, inT(t1, b) && img(b) === segKey(a) ? 'b' : null].filter(Boolean));
   if (dirs.some((d) => !d.length)) {
     // the ratio inside each triangle: every fraction lies in one triangle, all say the same once mapped to the second
@@ -289,6 +314,10 @@ export function classify(p, done, st) {
     const row = props.find((f) => !done.includes(f)) || props[0];
     const r = checkProp(p, st, { need: row && p.facts[row].need });
     if (r.note) return { c: 'note', textKey: r.note, vars: {} };
+    // a true proportion is never a wrong try (Task 7 review ruling): of no use here, one fraction twice, or true in the
+    // drawing but not built from the similarity's matching sides (AD/DB = AE/EC) → neutral
+    if (r.kind === 'prop-need' || r.textKey === 'st.propSame') return { c: 'note', textKey: r.textKey, vars: {} };
+    if (!r.ok && holds(p.figure, st)) return { c: 'unprovable', textKey: 'st.unprovable', vars: {} };
     if (!r.ok) return { c: 'false', kind: r.kind, textKey: r.textKey, vars: { ...(r.vars || {}) } };
     if (!row) return extraOf(p, null);
     id = row;
@@ -311,7 +340,10 @@ export function classify(p, done, st) {
       }
       if (isoLater(p, done, id)) return { c: 'iso', fact: id, textKey: 'st.isoLater', vars: {} };
       if (targets(p).includes(id)) return { c: 'early', fact: id, sub: 'target', kind: 'goal-as-known', textKey: 'st.goalEarly', vars: {} };
-      const simP = (p.facts[anchorOf(p)] || {}).kind === 'sim';
+      const simP = isSimP(p), aid = anchorOf(p);
+      // a similarity row that leans on an earlier row, not on the similarity (angles between parallel lines before the
+      // parallel given is written): "write that row first", never "this will follow from the similarity"
+      if (simP && !(p.just[id] || []).some((j) => j.needs.includes(aid))) return { c: 'early', fact: id, sub: 'premise', kind: 'too-early', textKey: 'st.needFirst', vars: {} };
       return { c: 'early', fact: id, sub: 'consequence', kind: 'looks-equal', textKey: simP ? 'st.consEarlySim' : 'st.consEarly', vars: {} };
     }
     if (required(p).has(id)) return { c: 'ok', fact: id };
@@ -351,8 +383,62 @@ function theoremMiss(p, done, id, chosen) {
   return miss('wrong-theorem', key);
 }
 const WORD = (def) => T[`word.${def}`];
+/* "כמעט. אלה צלעות, לא זוויות." for a row of the other kind (a proportion is about sides). */
+const otherWords = (f) => { const side = f.kind !== 'ang', S = T['lbl.sidesWord'], A = T['lbl.anglesWord']; return { these: side ? S : A, those: side ? A : S }; };
+/* A wrong reason on a similarity problem (spec 2026-11-23 §7.3, §7.8). Congruence never comes here. */
+function simMiss(p, done, id, r) {
+  const role = roleOf(p, id), f = p.facts[id], acc = acceptedReasons(p, id);
+  if (role === 'similarity') {
+    if (acc.includes(r)) {                                     // ז.ז before both angle rows are written
+      const n = Math.max(0, ...(p.just[id] || []).map((j) => j.needs.filter((x) => done.includes(x)).length));
+      return miss('too-early', 'st.simEarly', { n });
+    }
+    if (THEOREMS.includes(r)) return miss('wrong-theorem', 'rs.sim.cong');
+    if (r === 'given') return miss('wrong-source', 'rs.sim.given');
+    if (SIMF.includes(r) || CP.includes(r)) return miss('wrong-source', 'rs.sim.follows');
+    if ([...PARALLEL, 'common-angle', 'vertical', 'right-angles'].includes(r)) return miss('wrong-source', 'rs.sim.angle');
+    return miss('wrong-source', 'rs.other');
+  }
+  if (role === 'ratio' || role === 'sim-partner') {
+    if (r === 'given') return role === 'ratio' ? miss('wrong-source', 'rs.ratio.given') : miss('goal-as-known', 'rs.simc.given');
+    if (r === 'aa' || THEOREMS.includes(r)) return miss('wrong-source', 'rs.sim.after');
+    if (SIMF.includes(r) && !acc.includes(r)) return miss('wrong-source', 'rs.concl.otherCp', otherWords(f));
+    if (CP.includes(r)) return miss('wrong-source', 'rs.sim.cp');
+    if (role === 'ratio' && r === 'solve') return miss('wrong-source', 'rs.ratio.solve');
+    if (acc.includes(r)) return miss('goal-as-known', 'rs.fact.sim');   // the similarity is not written yet
+    return miss('wrong-source', 'rs.other');
+  }
+  if (role === 'number') {
+    if (r === 'given') return miss('goal-as-known', 'rs.num.given');
+    if (SIMF.includes(r)) return miss('wrong-source', 'rs.num.ratio');
+    return miss('wrong-source', 'rs.other');
+  }
+  // a single fact: given, a common angle, vertical angles, angles between parallel lines
+  if (r === 'aa' || THEOREMS.includes(r)) return miss('too-early', 'rs.fact.simTheorem');
+  if (SIMF.includes(r) || CP.includes(r)) return miss('goal-as-known', 'rs.fact.sim');
+  if (role === 'parallel') {
+    if (PARALLEL.includes(r)) {
+      if (acc.includes(r)) return miss('too-early', 'st.needFirst');            // the parallel given is not written yet
+      return miss('wrong-parallel-reason', acc.includes('corresponding') ? 'rs.par.notAlt' : 'rs.par.notCorr');
+    }
+    if (r === 'given') return miss('wrong-source', 'rs.par.given');
+    if (r === 'vertical' || r === 'common-angle') return miss('wrong-source', 'rs.par.seen');
+    return miss('wrong-source', 'rs.other');
+  }
+  if (role === 'vertical') {
+    if (r === 'given') return miss('wrong-source', 'rs.seen.given');
+    if (PARALLEL.includes(r)) return miss('wrong-source', 'rs.vertical.parallelSim');   // there may well be a parallel given here
+    if (r === 'common-angle' || r === 'common-side') return miss('wrong-source', 'rs.vertical.common');
+  }
+  if (role === 'common' && r === 'given') return miss('wrong-source', 'rs.seen.given');
+  if ((role === 'given' || role === 'given-more') && f.kind === 'ang' && PARALLEL.includes(r) && !Object.values(p.facts).some((x) => x && x.kind === 'par')) {
+    return miss('wrong-source', 'rs.given.noPar');
+  }
+  return miss('wrong-source', 'rs.other');
+}
 export function checkReason(p, done, id, reasonId) {
   if ((p.just[id] || []).some((j) => j.reasons.includes(reasonId) && within(j.needs, done))) return { ok: true };
+  if (isSimP(p)) return simMiss(p, done, id, reasonId);
   const role = roleOf(p, id), f = p.facts[id], acc = acceptedReasons(p, id), r = reasonId;
   if (role === 'congruence') {
     if (THEOREMS.includes(r)) return theoremMiss(p, done, id, r);
@@ -393,8 +479,24 @@ export function checkReason(p, done, id, reasonId) {
 /** { key, vars, law? } of the why-line of a justified row (`reason` = the reason used, for a congruence).
     law = the theorem or definition the row stands on (spec 2026-11-23 §6.2.3): the UI writes its full sentence
     (REASONS[law].full) after the line. Rows that stand on the given or on a rule have none. */
+/* The why-line of a similarity row, or null (then the shared lines below: given, vertical). */
+function simWhy(p, id, reason, role, f) {
+  const acc = acceptedReasons(p, id);
+  if (role === 'similarity') return { key: 'why.aa', vars: { m: f.map.map(([u, v]) => `${u} ↔ ${v}`).join(', ') }, law: 'aa' };
+  if (role === 'parallel') {
+    const r = PARALLEL.includes(reason) ? reason : acc.find((x) => PARALLEL.includes(x)) || 'corresponding';
+    return { key: `why.${r}`, vars: {}, law: r };
+  }
+  if (role === 'common' && f.kind === 'ang') return { key: 'why.commonAngle', vars: {} };
+  if (role === 'ratio') return { key: 'why.ratio', vars: {}, law: 'sim-ratio' };
+  if (role === 'number') return { key: 'why.number', vars: { st: show(f) } };
+  if (role === 'sim-partner') return { key: 'why.sim-partner', vars: f.kind === 'ang' ? { p: f.x.v, q: f.y.v } : { p: f.x, q: f.y }, law: 'sim-angles' };
+  if ((role === 'given' || role === 'given-more') && acc.includes('right-angles') && (reason === 'right-angles' || !acc.includes('given'))) return { key: 'why.right', vars: {} };
+  return null;
+}
 export function whyOf(p, id, reason) {
   const f = p.facts[id], role = roleOf(p, id);
+  if (isSimP(p)) { const w = simWhy(p, id, reason, role, f); if (w) return w; }
   if (role === 'given' || role === 'given-more') return { key: 'why.given', vars: {} };
   if (role === 'given-words') {
     const def = acceptedReasons(p, id).find((r) => DEFS.includes(r));
@@ -415,9 +517,30 @@ export function whyOf(p, id, reason) {
 /* ── chips and options ────────────────────────────────────────────────────── */
 const shuffled = (R, a) => (R ? R.shuffle(a) : [...a]);
 const POOL = ['given', 'vertical', 'common-side', 'common-angle', 'sas', 'asa', 'sss', 'cp-sides', 'cp-angles', 'bisector', 'median', 'midpoint', 'altitude'];
+const SIM_POOL = ['given', 'common-angle', 'vertical', 'corresponding', 'alternate', 'aa', 'sim-angles', 'sim-ratio', 'solve'];
+const CONG_ONLY = new Set([...THEOREMS, ...CP, ...DEFS, 'common-side']);
+/* A similarity row's chips: never a congruence reason (never צ.ז.צ), unless the row accepts it. */
+function simChips(p, id, n, R) {
+  const acc = acceptedReasons(p, id), role = roleOf(p, id);
+  const par = acc.includes('alternate') ? 'corresponding' : 'alternate';            // the other parallel reason tempts most
+  const tempt = {
+    given: ['common-angle', 'vertical', 'corresponding', 'aa'], 'given-more': ['common-angle', 'vertical', 'corresponding', 'aa'],
+    vertical: ['alternate', 'given', 'common-angle', 'corresponding', 'aa'],
+    common: ['given', 'vertical', 'corresponding', 'aa', 'sim-angles'],
+    parallel: [par, 'given', 'vertical', 'common-angle', 'aa', 'sim-angles'],
+    similarity: ['given', 'sim-angles', 'sim-ratio', 'corresponding', 'common-angle'],
+    ratio: ['sim-angles', 'given', 'aa', 'solve'],
+    number: ['sim-ratio', 'given', 'aa'],
+    'sim-partner': ['sim-ratio', 'given', 'aa', 'corresponding', 'vertical'],
+  }[role] || [];
+  const right = Object.values(p.facts).some((x) => x && x.kind === 'ang' && x.right) ? ['right-angles'] : [];
+  const all = [...new Set([...acc, ...tempt, ...SIM_POOL, ...right])].filter((r) => r && REASONS[r] && (acc.includes(r) || !CONG_ONLY.has(r)));
+  return shuffled(R, all.slice(0, Math.max(n, acc.length)));
+}
 /** n reason chips for a fact: every accepted reason + the most tempting wrong ones for its role,
-    shuffled. 'alternate' only on the X figure. Never a chip outside phase 1. */
+    shuffled. Congruence: 'alternate' only on the X figure, never a similarity reason. A similarity: simChips. */
 export function reasonChips(p, id, n, R) {
+  if (isSimP(p)) return simChips(p, id, n, R);
   const acc = acceptedReasons(p, id), role = roleOf(p, id), f = p.facts[id];
   const X = p.family === 'X', th = p.theorem || 'sas';
   const cp = f.kind === 'seg' ? 'cp-sides' : 'cp-angles', other = cp === 'cp-sides' ? 'cp-angles' : 'cp-sides';
@@ -461,7 +584,7 @@ export function optionsFor(p, id, n = 3, R) {
     const seen = new Set([norm(p.figure, f)]);
     wrong = [...own(), ...flips.slice(-1), ...moved, ...flips.slice(0, -1)].filter((st) => {
       const k = norm(p.figure, st), r = checkProp(p, st);
-      if (seen.has(k) || r.ok || r.note) return false;
+      if (seen.has(k) || r.ok || r.note || holds(p.figure, st)) return false;     // a wrong option is never true in the drawing
       seen.add(k); return true;
     });
   } else if (f.kind === 'par' || f.kind === 'val') {

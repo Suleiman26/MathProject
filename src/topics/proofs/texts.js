@@ -42,6 +42,17 @@ export const T = {
   'hint.conclusion.2': 'במשולשים חופפים, חלקים מתאימים שווים. אלה צלעות או זוויות?',
   'hint.partner.1': 'מצאו את האות {letter} בכתיבת החפיפה. באיזה מקום היא כתובה?',
   'hint.partner.2': 'האות שכתובה באותו מקום במשולש השני היא המתאימה.',
+  /* similarity roles (spec 2026-11-23 §7.3; all in NEW_DRAFTS) */
+  'hint.similarity.1': 'כמה זוגות של זוויות שוות כבר כתובים? מה הם אומרים על שני המשולשים?',
+  'hint.similarity.2': 'שני זוגות של זוויות שוות מספיקים כדי ששני משולשים יהיו דומים.',
+  'hint.ratio.1': 'המשולשים דומים. אילו צלעות מתאימות זו לזו?',
+  'hint.ratio.2': 'צלעות מתאימות נמצאות מול זוויות שוות. בכל שבר: למעלה צלע מהמשולש הראשון, ולמטה הצלע המתאימה לה מהמשולש השני.',
+  'hint.number.1': 'הציבו בפרופורציה את האורכים הידועים.',
+  'hint.number.2': 'כופלים בהצלבה, ואחר כך מחלקים כדי למצוא את האורך החסר.',
+  'hint.parallel.1': 'יש בנתון ישרים מקבילים. מצאו את הישר שחותך את שניהם.',
+  'hint.parallel.2': 'בין ישרים מקבילים, זוויות מתאימות שוות וגם זוויות מתחלפות שוות. באיזה צד של החותך נמצאות הזוויות?',
+  'hint.sim-partner.1': 'מצאו את האות של הקודקוד בכתיבת הדמיון. באיזה מקום היא כתובה?',
+  'hint.sim-partner.2': 'האות שכתובה באותו מקום במשולש השני היא המתאימה. במשולשים דומים, זוויות מתאימות שוות.',
 
   /* ── after a right answer: the why-line (§9.2) ── */
   'why.given': 'זה כתוב בנתון.',
@@ -54,6 +65,15 @@ export const T = {
   'why.concl-side': 'הצלעות {x}, {y} נמצאות מול זוויות שוות. אלה צלעות מתאימות.',
   'why.concl-angle': 'הזוויות {x}, {y} נמצאות מול צלעות שוות. אלה זוויות מתאימות.',
   'why.partner': 'האותיות {p}, {q} כתובות באותו מקום בחפיפה.',
+  /* similarity (spec 2026-11-23 §7.3; all in NEW_DRAFTS) */
+  'why.aa': 'שני זוגות של זוויות שוות. ההתאמה: {m}',
+  'why.corresponding': 'הישרים מקבילים, והזוויות נמצאות באותו צד של החותך, באותו מקום ליד כל אחד מהישרים.',
+  'why.alternate': 'הישרים מקבילים, והזוויות נמצאות משני צדי החותך, בין שני הישרים.',
+  'why.commonAngle': 'זו אותה זווית בשני המשולשים.',
+  'why.right': 'לפי הנתון שתי הזוויות ישרות, ולכן הן שוות.',
+  'why.ratio': 'בכל שבר צלע מהמשולש הראשון, והצלע המתאימה לה מהמשולש השני, באותו סדר.',
+  'why.number': 'מציבים בפרופורציה את האורכים הידועים, ומקבלים {st}.',
+  'why.sim-partner': 'האותיות {p}, {q} כתובות באותו מקום בדמיון.',
 
   /* ── a statement was chosen (§9.2) ── */
   'st.written': 'השורה הזו כבר כתובה.',
@@ -76,7 +96,7 @@ export const T = {
   'st.matchingSide': 'בדקו את הסדר. ידוע כבר: {st}, והקודקוד {r} מתאים לקודקוד {s}. לכן הקודקוד {p} מתאים לקודקוד {q}.',
   'st.matchingPlain': 'בדקו את הסדר. חלקים עם אותו סימון מתאימים זה לזה, ובאותו סדר.',
   'st.matchingShared': 'הנקודה {p} שייכת לשני המשולשים, והיא מתאימה לעצמה.',
- /* ── similarity statements (spec 2026-11-23 §7.2, §7.8; all in NEW_DRAFTS) ── */
+  /* ── similarity statements (spec 2026-11-23 §7.2, §7.8; all in NEW_DRAFTS) ── */
   'st.simEarly': 'נכון, אבל מוקדם מדי. לדמיון צריך שני זוגות של זוויות שוות. יש כרגע {n}.',
   'st.consEarlySim': 'זה נראה כך בציור, אבל עוד לא ידוע. זה ינבע מהדמיון, אחרי שנוכיח אותו.',
   'st.ratioFlip': 'הפכתם את היחס באחד השברים. בכל השברים כותבים באותו סדר: למעלה צלע מהמשולש הראשון, ולמטה הצלע המתאימה לה מהמשולש השני.',
@@ -87,6 +107,7 @@ export const T = {
   'st.propNeed': 'היחס נכון, אבל הוא לא עוזר כאן. צריך שבר עם הצלע שמחפשים, ועוד שבר ששתי הצלעות שלו ידועות.',
   'st.falsePar': 'מהנתון אי אפשר לדעת שהישרים {x}, {y} מקבילים.',
   'st.falseVal': 'האורך של הקטע {x} הוא לא {v}. בדקו את החישוב.',
+  'st.needFirst': 'נכון, אבל מוקדם מדי. קודם כותבים את השורה שזה נשען עליה.',
   'st.kinds': 'בוחרים שני חלקים מאותו סוג: שני קטעים, שתי זוויות או שני משולשים.',
 
   /* ── the statement is right, the reason is not (§9.2) ── */
@@ -108,6 +129,26 @@ export const T = {
   'rs.concl.given': 'זה לא נתון. זה מה שצריך להוכיח, והוא נובע מהחפיפה.',
   'rs.concl.theorem': 'משפט החפיפה כבר הוכיח שהמשולשים חופפים. עכשיו צריך נימוק לשוויון שנובע מזה.',
   'rs.concl.otherCp': 'כמעט. אלה {{these}}, לא {{those}}.',
+  /* similarity (spec 2026-11-23 §7.3, §7.8; all in NEW_DRAFTS) */
+  'rs.par.notAlt': 'אלה לא זוויות מתחלפות. הן נמצאות באותו צד של החותך, באותו מקום ליד כל אחד מהישרים המקבילים: אלה זוויות מתאימות.',
+  'rs.par.notCorr': 'אלה לא זוויות מתאימות. הן נמצאות משני צדי החותך, בין שני הישרים המקבילים: אלה זוויות מתחלפות.',
+  'rs.par.given': 'השוויון הזה לא כתוב בנתון. בנתון כתוב שהישרים מקבילים. איזה משפט על ישרים מקבילים נותן אותו?',
+  'rs.par.seen': 'הזוויות נוצרות מהישרים המקבילים ומהישר שחותך אותם. איזה משפט על ישרים מקבילים מתאים?',
+  'rs.vertical.parallelSim': 'הזוויות האלה זו מול זו, בין שני ישרים נחתכים. הן לא נוצרות מהישרים המקבילים.',
+  'rs.given.noPar': 'אין בנתון ישרים מקבילים. את השוויון הזה יודעים מהנתון עצמו.',
+  'rs.fact.simTheorem': 'משפט דמיון מוכיח שמשולשים דומים. כאן צריך נימוק לשוויון אחד.',
+  'rs.fact.sim': 'עוד לא הוכחנו דמיון. אי אפשר להשתמש בו כנימוק.',
+  'rs.sim.cong': 'משפטי החפיפה מוכיחים חפיפה. כאן מוכיחים דמיון, משני זוגות של זוויות שוות. איזה משפט מתאים?',
+  'rs.sim.given': 'הדמיון לא נתון. מוכיחים אותו משני זוגות הזוויות השוות.',
+  'rs.sim.follows': 'זה נימוק למה שנובע מהדמיון, לא לדמיון עצמו.',
+  'rs.sim.angle': 'זה נימוק לזוג זוויות אחד. הדמיון נובע משני זוגות הזוויות: איזה משפט אומר את זה?',
+  'rs.sim.after': 'משפט ז.ז מוכיח שמשולשים דומים. כאן המשולשים כבר דומים, וצריך נימוק למה שנובע מזה.',
+  'rs.sim.cp': 'המשולשים דומים, לא חופפים. מה נובע מדמיון?',
+  'rs.ratio.given': 'היחס לא כתוב בנתון. הוא נובע מהדמיון.',
+  'rs.ratio.solve': 'פתרון הפרופורציה נותן מספר. כאן כותבים את הפרופורציה עצמה, והיא נובעת מהדמיון.',
+  'rs.num.given': 'האורך הזה לא נתון. מחשבים אותו מהפרופורציה.',
+  'rs.num.ratio': 'היחס כבר כתוב בשורה הקודמת. איך מקבלים ממנו את המספר?',
+  'rs.simc.given': 'זה לא נתון. זה נובע מהדמיון.',
   'rs.other': 'הטענה נכונה. הנימוק לא מתאים. מאיפה יודעים את זה?',
   'rs.short': 'הנימוק לא מתאים. נסו שוב.',
 
@@ -168,7 +209,7 @@ export const T = {
   'say.ang': 'הזווית {x} שווה לזווית {y}',
   'say.angRight': 'הזווית {x} שווה לזווית {y}, ושתיהן ישרות',
   'say.cong': 'המשולש {x} חופף למשולש {y}',
- 'say.par': 'הישר {x} מקביל לישר {y}',
+  'say.par': 'הישר {x} מקביל לישר {y}',
   'say.sim': 'המשולש {x} דומה למשולש {y}',
   'say.prop': 'היחסים שווים: {x}',
   'say.val': 'אורך הקטע {x} הוא {v}',
@@ -321,6 +362,14 @@ export const NEW_DRAFTS = [
   // similarity statements (spec 2026-11-23 §7.2): the checker's messages and the screen-reader sentences
   'st.simEarly', 'st.consEarlySim', 'st.ratioFlip', 'st.nonMatchingSides', 'st.propInside', 'st.propNoSim', 'st.propSame', 'st.propNeed',
   'st.falsePar', 'st.falseVal', 'say.par', 'say.sim', 'say.prop', 'say.val',
+  // similarity reasons, roles and messages (spec 2026-11-23 §7.3, §7.8)
+  'reason.aa', 'reason.corresponding', 'reason.alternate', 'reason.right-angles', 'reason.sim-angles', 'reason.sim-ratio', 'reason.solve',
+  'hint.similarity.1', 'hint.similarity.2', 'hint.ratio.1', 'hint.ratio.2', 'hint.number.1', 'hint.number.2',
+  'hint.parallel.1', 'hint.parallel.2', 'hint.sim-partner.1', 'hint.sim-partner.2',
+  'why.aa', 'why.corresponding', 'why.alternate', 'why.commonAngle', 'why.right', 'why.ratio', 'why.number', 'why.sim-partner',
+  'st.needFirst', 'rs.par.notAlt', 'rs.par.notCorr', 'rs.par.given', 'rs.par.seen', 'rs.vertical.parallelSim', 'rs.given.noPar',
+  'rs.fact.simTheorem', 'rs.fact.sim', 'rs.sim.cong', 'rs.sim.given', 'rs.sim.follows', 'rs.sim.angle', 'rs.sim.after', 'rs.sim.cp',
+  'rs.ratio.given', 'rs.ratio.solve', 'rs.num.given', 'rs.num.ratio', 'rs.simc.given',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;
@@ -352,6 +401,9 @@ const ROLE_WORD = {
   vertical: ['רואים בציור', 'רואים בציור'], common: ['רואים בציור', 'רואים בציור'],
   congruence: ['חפיפה', 'משפט חפיפה'],
   conclusion: ['מסקנה', 'מסקנה'], partner: ['מסקנה', 'מסקנה'],
+  // similarity (spec 2026-11-23 §7.3)
+  similarity: ['דמיון', 'משפט דמיון'], ratio: ['יחס', 'מסקנה'], number: ['חישוב', 'חישוב'],
+  parallel: ['ישרים מקבילים', 'ישרים מקבילים'], 'sim-partner': ['מסקנה', 'מסקנה'],
 };
 const roleWord = (role, i) => { const w = ROLE_WORD[role]; if (!w) throw new Error(`proofs texts: no role "${role}"`); return w[i]; };
 export const LABELS = {
