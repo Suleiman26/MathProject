@@ -76,6 +76,17 @@ export const T = {
   'st.matchingSide': 'בדקו את הסדר. ידוע כבר: {st}, והקודקוד {r} מתאים לקודקוד {s}. לכן הקודקוד {p} מתאים לקודקוד {q}.',
   'st.matchingPlain': 'בדקו את הסדר. חלקים עם אותו סימון מתאימים זה לזה, ובאותו סדר.',
   'st.matchingShared': 'הנקודה {p} שייכת לשני המשולשים, והיא מתאימה לעצמה.',
+ /* ── similarity statements (spec 2026-11-23 §7.2, §7.8; all in NEW_DRAFTS) ── */
+  'st.simEarly': 'נכון, אבל מוקדם מדי. לדמיון צריך שני זוגות של זוויות שוות. יש כרגע {n}.',
+  'st.consEarlySim': 'זה נראה כך בציור, אבל עוד לא ידוע. זה ינבע מהדמיון, אחרי שנוכיח אותו.',
+  'st.ratioFlip': 'הפכתם את היחס באחד השברים. בכל השברים כותבים באותו סדר: למעלה צלע מהמשולש הראשון, ולמטה הצלע המתאימה לה מהמשולש השני.',
+  'st.nonMatchingSides': 'בכל שבר צריכות להיות שתי צלעות מתאימות: צלעות שנמצאות מול זוויות שוות, באותו מקום בסדר הדמיון.',
+  'st.propInside': 'נכון. בהוכחה כותבים את היחס בין הצלעות המתאימות.',
+  'st.propNoSim': 'כדי לכתוב יחס צלעות צריך קודם לדעת אילו משולשים דומים.',
+  'st.propSame': 'כתבתם את אותו שבר פעמיים. כל שבר בנוי מזוג אחר של צלעות מתאימות.',
+  'st.propNeed': 'היחס נכון, אבל הוא לא עוזר כאן. צריך שבר עם הצלע שמחפשים, ועוד שבר ששתי הצלעות שלו ידועות.',
+  'st.falsePar': 'מהנתון אי אפשר לדעת שהישרים {x}, {y} מקבילים.',
+  'st.falseVal': 'האורך של הקטע {x} הוא לא {v}. בדקו את החישוב.',
   'st.kinds': 'בוחרים שני חלקים מאותו סוג: שני קטעים, שתי זוויות או שני משולשים.',
 
   /* ── the statement is right, the reason is not (§9.2) ── */
@@ -157,6 +168,10 @@ export const T = {
   'say.ang': 'הזווית {x} שווה לזווית {y}',
   'say.angRight': 'הזווית {x} שווה לזווית {y}, ושתיהן ישרות',
   'say.cong': 'המשולש {x} חופף למשולש {y}',
+ 'say.par': 'הישר {x} מקביל לישר {y}',
+  'say.sim': 'המשולש {x} דומה למשולש {y}',
+  'say.prop': 'היחסים שווים: {x}',
+  'say.val': 'אורך הקטע {x} הוא {v}',
   'say.ask': 'מחפשים את החלק ששווה לחלק {x}',
 
   /* ── the words a given sentence can use (inserted into rs.words.otherDef, why.given-words) ── */
@@ -303,6 +318,9 @@ export const NEW_DRAFTS = [
   'reason.sas', 'reason.asa', 'reason.sss', 'reason.vertical',                          // the Ministry 2015 list, word for word
   'reason.bisector', 'reason.median', 'reason.midpoint', 'reason.altitude',             // today's wording as a sentence (unconfirmed)
   'reason.common-side', 'reason.common-angle', 'reason.cp-sides', 'reason.cp-angles',   // builder drafts (unconfirmed)
+  // similarity statements (spec 2026-11-23 §7.2): the checker's messages and the screen-reader sentences
+  'st.simEarly', 'st.consEarlySim', 'st.ratioFlip', 'st.nonMatchingSides', 'st.propInside', 'st.propNoSim', 'st.propSame', 'st.propNeed',
+  'st.falsePar', 'st.falseVal', 'say.par', 'say.sim', 'say.prop', 'say.val',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

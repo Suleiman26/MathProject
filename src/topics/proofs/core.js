@@ -4,7 +4,10 @@
 
    Parts:      seg 'AO' (two point names, order free) · ang { v:'O', r:['A','C'] } · tri ['A','O','C']
    Statements: { kind:'seg', x, y } | { kind:'ang', x, y, right? } | { kind:'cong', map:[[t1,t2] ×3] }
-   A figure:   { points:{A:[x,y]}, lines:[['A','O','B'], …] (collinear sets), segs, angles, tris, motion } */
+               similarity (spec 2026-11-23 §7.2): { kind:'par', x, y } (DE ∥ BC) | { kind:'sim', map } (△ADE ∼ △ABC)
+               | { kind:'prop', pairs:[[num, den] ×2–3] } (AD/AB = DE/BC) | { kind:'val', x, v } (DE = 6)
+   A figure:   { points:{A:[x,y]}, lines:[['A','O','B'], …] (collinear sets), segs, angles, tris, motion,
+                 scale? (length units per drawing unit: a `val` needs it) } */
 import { dist, angle, sub, dot } from '../new/chapters/geometry/geo.js';
 import { T, fill } from './texts.js';
 import { THEOREMS, CP, DEFS, SEEN, REASONS } from './reasons.js';
@@ -36,15 +39,29 @@ export function angKey(fig, ang) {
 export const kindOf = (part) => (typeof part === 'string' ? 'seg' : Array.isArray(part) ? 'tri' : 'ang');
 /** The parts a statement talks about (a congruence: its two triangles, in map order). */
 export function partsOf(st) {
-  if (st.kind === 'cong') return [st.map.map((p) => p[0]), st.map.map((p) => p[1])];
+  if (st.kind === 'cong' || st.kind === 'sim') return [st.map.map((p) => p[0]), st.map.map((p) => p[1])];
+  if (st.kind === 'prop') return st.pairs.flat();
+  if (st.kind === 'val') return [st.x];
   return [st.x, st.y];
+}
+const mapKey = (map) => map.map((p) => [...p].sort().join('')).sort().join(',');
+/* A proportion as a set of fractions, direction-free as a whole: the statement and its all-flipped twin give
+   the same key (the smaller of the two), a mixed direction gives another one. */
+function propKey(pairs) {
+  const one = (flip) => pairs.map(([a, b]) => (flip ? `${segKey(b)}/${segKey(a)}` : `${segKey(a)}/${segKey(b)}`)).sort().join(',');
+  const [u, v] = [one(false), one(true)];
+  return u < v ? u : v;
 }
 
 /** Normal form of a statement (§6.2): equal keys = the same statement. */
 export function norm(fig, st) {
   if (st.kind === 'seg') return 'S:' + [segKey(st.x), segKey(st.y)].sort().join('=');
   if (st.kind === 'ang') return 'A:' + [angKey(fig, st.x), angKey(fig, st.y)].sort().join('=');
-  if (st.kind === 'cong') return 'C:' + st.map.map((p) => [...p].sort().join('')).sort().join(',');
+  if (st.kind === 'cong') return 'C:' + mapKey(st.map);
+  if (st.kind === 'sim') return 'M:' + mapKey(st.map);
+  if (st.kind === 'par') return 'P:' + [segKey(st.x), segKey(st.y)].sort().join('|');
+  if (st.kind === 'prop') return 'R:' + propKey(st.pairs);
+  if (st.kind === 'val') return 'V:' + segKey(st.x) + '=' + Number(st.v);
   throw new Error(`proofs core: unknown statement kind ${st.kind}`);
 }
 
@@ -64,7 +81,21 @@ export function holds(fig, st, tol = 1e-6) {
     if (!near(a, b, tol)) return false;
     return !(st.kind === 'ang' && st.right) || (near(a, 90, tol) && near(b, 90, tol));
   }
-  const P = fig.points, m = st.map;
+  const P = fig.points;
+  if (st.kind === 'par') {
+    const d1 = sub(P[st.x[1]], P[st.x[0]]), d2 = sub(P[st.y[1]], P[st.y[0]]);
+    return Math.abs(d1[0] * d2[1] - d1[1] * d2[0]) <= tol * Math.hypot(...d1) * Math.hypot(...d2);
+  }
+  if (st.kind === 'prop') {
+    const r = st.pairs.map(([a, b]) => measure(fig, a) / measure(fig, b));
+    return r.every((x) => near(x, r[0], tol));
+  }
+  if (st.kind === 'val') return typeof fig.scale === 'number' && near(measure(fig, st.x) * fig.scale, Number(st.v), tol);
+  const m = st.map;
+  if (st.kind === 'sim') {                                     // the three angle pairs equal (side ratios follow)
+    const at = (i, s) => angle(P[m[(i + 1) % 3][s]], P[m[i][s]], P[m[(i + 2) % 3][s]]);
+    return [0, 1, 2].every((i) => near(at(i, 0), at(i, 1), tol));
+  }
   for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) {
     if (!near(dist(P[m[i][0]], P[m[j][0]]), dist(P[m[i][1]], P[m[j][1]]), tol)) return false;
   }
@@ -74,12 +105,16 @@ export function holds(fig, st, tol = 1e-6) {
 /* ── words ────────────────────────────────────────────────────────────────── */
 const angName = (a) => `∢${a.r[0]}${a.v}${a.r[1]}`;
 const triName = (t) => `△${t.join('')}`;
-/** The maths line of a statement: 'AO = OB', '∢AOC = ∢BOD', '∢ADB = ∢ADC = 90°', '△AOC ≅ △BOD'. */
+/** The maths line of a statement: 'AO = OB', '∢AOC = ∢BOD', '∢ADB = ∢ADC = 90°', '△AOC ≅ △BOD',
+    'DE ∥ BC', '△ADE ∼ △ABC', 'AD/AB = DE/BC' (one left-to-right island), 'DE = 6'. */
 export function show(st) {
   if (st.kind === 'seg') return `${st.x} = ${st.y}`;
   if (st.kind === 'ang') return `${angName(st.x)} = ${angName(st.y)}${st.right ? ' = 90°' : ''}`;
+  if (st.kind === 'par') return `${st.x} ∥ ${st.y}`;
+  if (st.kind === 'prop') return st.pairs.map(([a, b]) => `${a}/${b}`).join(' = ');
+  if (st.kind === 'val') return `${st.x} = ${st.v}`;
   const [t1, t2] = partsOf(st);
-  return `${triName(t1)} ≅ ${triName(t2)}`;
+  return `${triName(t1)} ${st.kind === 'sim' ? '∼' : '≅'} ${triName(t2)}`;
 }
 /** A part's name as maths: 'AO', '∢AOC', '△AOC'. */
 export const showPart = (part) => (kindOf(part) === 'seg' ? part : kindOf(part) === 'ang' ? angName(part) : triName(part));
@@ -90,8 +125,11 @@ export function say(st) {
     const v = { x: angName(st.x).slice(1), y: angName(st.y).slice(1) };
     return fill(st.right ? 'say.angRight' : 'say.ang', v);
   }
+  if (st.kind === 'par') return fill('say.par', { x: st.x, y: st.y });
+  if (st.kind === 'prop') return fill('say.prop', { x: show(st) });
+  if (st.kind === 'val') return fill('say.val', { x: st.x, v: st.v });
   const [t1, t2] = partsOf(st);
-  return fill('say.cong', { x: t1.join(''), y: t2.join('') });
+  return fill(st.kind === 'sim' ? 'say.sim' : 'say.cong', { x: t1.join(''), y: t2.join('') });
 }
 
 /* ── the fact graph (§10.1) ───────────────────────────────────────────────── */
@@ -115,8 +153,11 @@ const within = (needs, done) => needs.every((n) => done.includes(n));
 /** Some justification has all its needs written. */
 export const provable = (p, done, id) => (p.just[id] || []).some((j) => within(j.needs, done));
 export const isDone = (p, done) => targets(p).every((t) => done.includes(t));
-/** The id of the congruence fact. */
+/** The id of the congruence fact (congruence-only code: the motion, the congruence warm-ups). */
 export const congOf = (p) => p.cong || Object.keys(p.facts).find((id) => p.facts[id].kind === 'cong') || null;
+/** The id of the problem's anchor relation: its congruence or its similarity (same as congOf on a congruence problem). */
+export const anchorOf = (p) => p.cong || p.sim || Object.keys(p.facts).find((id) => p.facts[id].kind === 'cong' || p.facts[id].kind === 'sim') || null;
+const isAnchor = (st) => st && (st.kind === 'cong' || st.kind === 'sim');
 /** A row's role (hints, texts, step labels). */
 export function roleOf(p, id) {
   if (p.roles && p.roles[id]) return p.roles[id];
@@ -138,9 +179,10 @@ export const canonRows = (p) => p.canon.map((fact) => ({ fact, st: p.facts[fact]
      2. two known side pairs that meet at that vertex (their common ends match);
      3. one known side pair from that vertex whose other end the student already matched right.
    Nothing known fits → a general sentence that is always true (no vertex named).
+   A similarity (spec 2026-11-23 §7.2): its sides are not equal, so only rule 1 (and the shared vertex) applies.
    `facts` = the fact ids the sentence cites (tests). */
 function matchingMiss(p, pairs, done = []) {
-  const id = congOf(p), M = p.facts[id].map, fig = p.figure;
+  const id = anchorOf(p), M = p.facts[id].map, fig = p.figure, eqSides = p.facts[id].kind === 'cong';
   const t1 = M.map((m) => m[0]), t2 = M.map((m) => m[1]);
   const mine = pairs.map((m) => m[0]);
   const fwd = triKey(mine) === triKey(t1) || triKey(mine) !== triKey(t2);
@@ -151,14 +193,14 @@ function matchingMiss(p, pairs, done = []) {
   const T1 = fwd ? t1 : t2, T2 = fwd ? t2 : t1;                                        // the student's first triangle, its partner
   if (pairs.some(([u]) => !F[u])) return plain;
   const right = (u) => pairs.some(([a, b]) => a === u && b === F[u]);
-  const known = [...new Set([...(p.given || []), ...done])].filter((f) => p.facts[f] && p.facts[f].kind !== 'cong');
+  const known = [...new Set([...(p.given || []), ...done])].filter((f) => p.facts[f] && (p.facts[f].kind === 'seg' || p.facts[f].kind === 'ang'));
   const angAt = (tri, v) => ({ v, r: tri.filter((x) => x !== v) });
   // a known fact, oriented so its first part is in T1 and maps onto the second: { f, kind, a, b, st }
   const oriented = (f) => {
     const st = p.facts[f];
     for (const [x, y] of [[st.x, st.y], [st.y, st.x]]) {
       if (st.kind === 'seg') {
-        if ([...x].every((c) => T1.includes(c)) && segKey([...x].map((c) => F[c]).join('')) === segKey(y)) return { f, kind: 'seg', a: x, b: y, st: { kind: 'seg', x, y } };
+        if (eqSides && [...x].every((c) => T1.includes(c)) && segKey([...x].map((c) => F[c]).join('')) === segKey(y)) return { f, kind: 'seg', a: x, b: y, st: { kind: 'seg', x, y } };
       } else if (T1.includes(x.v) && F[x.v] === y.v && angKey(fig, x) === angKey(fig, angAt(T1, x.v)) && angKey(fig, y) === angKey(fig, angAt(T2, y.v))) {
         return { f, kind: 'ang', a: x, b: y, st: { kind: 'ang', x, y } };
       }
@@ -183,10 +225,45 @@ function matchingMiss(p, pairs, done = []) {
 /** Level 3 vertex matching: ok when every (tri1[i], ordered[i]) is a pair of the congruence, read in
     one direction (either triangle may come first). `done` = the rows written (for the explanation). */
 export function checkMatching(p, tri1, ordered, done = []) {
-  const M = p.facts[congOf(p)].map, pairs = tri1.map((u, i) => [u, ordered[i]]);
+  const M = p.facts[anchorOf(p)].map, pairs = tri1.map((u, i) => [u, ordered[i]]);
   const has = (u, v) => M.some((m) => m[0] === u && m[1] === v);
   if (pairs.every(([u, v]) => has(u, v)) || pairs.every(([u, v]) => has(v, u))) return { ok: true };
   return { ok: false, kind: 'wrong-matching', ...matchingMiss(p, pairs, done) };
+}
+
+/* ── a proportion, checked by rule (spec 2026-11-23 §7.2, binding) ───────────── */
+/* Right when every fraction pairs a side of one triangle with its matching side of the other (from the
+   similarity's vertex map), all fractions point the same way and there are at least two different ones; in a
+   calculation (`need = { asked, known }`) one fraction holds the asked side and another has both sides known.
+   The form with the ratio INSIDE each triangle (AD/DE = AB/BC) is true: a neutral note, never a wrong try. */
+const pmiss = (kind, textKey) => ({ ok: false, kind, textKey, vars: {} });
+export function checkProp(p, st, { need } = {}) {
+  const sid = anchorOf(p), S = sid && p.facts[sid];
+  if (!S || S.kind !== 'sim') return pmiss('non-matching-sides', 'st.propNoSim');
+  const t1 = S.map.map((m) => m[0]), t2 = S.map.map((m) => m[1]), F = Object.fromEntries(S.map);
+  const inT = (t, s) => s.length === 2 && s[0] !== s[1] && t.includes(s[0]) && t.includes(s[1]);
+  const img = (s) => segKey(F[s[0]] + F[s[1]]);             // a side of the first triangle → its match in the second
+  const fr = st.pairs || [];
+  const dirs = fr.map(([a, b]) => [inT(t1, a) && img(a) === segKey(b) ? 'f' : null, inT(t1, b) && img(b) === segKey(a) ? 'b' : null].filter(Boolean));
+  if (dirs.some((d) => !d.length)) {
+    // the ratio inside each triangle: every fraction lies in one triangle, all say the same once mapped to the second
+    const reads = fr.map(([a, b]) => [inT(t1, a) && inT(t1, b) ? { k: `${img(a)}/${img(b)}`, from: 1 } : null, inT(t2, a) && inT(t2, b) ? { k: `${segKey(a)}/${segKey(b)}`, from: 2 } : null].filter(Boolean));
+    const inside = fr.length >= 2 && reads.every((r) => r.length) && reads[0].some(({ k }) => {
+      const at = reads.map((r) => r.filter((x) => x.k === k).map((x) => x.from));
+      return at.every((x) => x.length) && at.some((x, i) => x.includes(1) && at.some((y, j) => j !== i && y.includes(2)));
+    });
+    return inside ? { note: 'st.propInside' } : pmiss('non-matching-sides', 'st.nonMatchingSides');
+  }
+  const way = ['f', 'b'].find((w) => dirs.every((d) => d.includes(w)));
+  if (!way) return pmiss('ratio-flip', 'st.ratioFlip');
+  const sideOf = ([a, b]) => segKey(way === 'f' ? a : b);
+  if (new Set(fr.map(sideOf)).size !== fr.length || fr.length < 2) return pmiss('non-matching-sides', 'st.propSame');
+  if (need) {
+    const K = new Set((need.known || []).map(segKey)), has = (f, s) => f.some((x) => segKey(x) === segKey(s));
+    const i = fr.findIndex((f) => has(f, need.asked));                  // the asked side's partner must be known too (else two unknowns)
+    if (i < 0 || !fr[i].every((x) => segKey(x) === segKey(need.asked) || K.has(segKey(x))) || !fr.some((f, j) => j !== i && f.every((x) => K.has(segKey(x))))) return pmiss('prop-need', 'st.propNeed');
+  }
+  return { ok: true };
 }
 
 /* ── family T: what an isosceles triangle gives (lead ruling on review I3) ── */
@@ -204,28 +281,47 @@ export function isoLater(p, done, id) {
 }
 
 /* ── classify a statement (§10.2) ─────────────────────────────────────────── */
+const extraOf = (p, id) => ({ c: 'extra', fact: id, textKey: shapeOf(p) === 'parts' ? 'st.notAsked' : 'st.notNeeded', vars: {} });
 export function classify(p, done, st) {
-  const id = findFact(p, st);
+  let id = findFact(p, st);
+  if (!id && st.kind === 'prop') {                     // by rule (§7.2), then the problem's proportion row
+    const props = Object.keys(p.facts).filter((f) => p.facts[f].kind === 'prop');
+    const row = props.find((f) => !done.includes(f)) || props[0];
+    const r = checkProp(p, st, { need: row && p.facts[row].need });
+    if (r.note) return { c: 'note', textKey: r.note, vars: {} };
+    if (!r.ok) return { c: 'false', kind: r.kind, textKey: r.textKey, vars: { ...(r.vars || {}) } };
+    if (!row) return extraOf(p, null);
+    id = row;
+  }
+  if (!id && st.kind === 'sim') {                      // tested in the drawing first (§7.2): true on the same triangles = the similarity
+    const aid = anchorOf(p), a = aid && p.facts[aid];
+    if (a && a.kind === 'sim' && holds(p.figure, st)) {
+      const [x, y] = partsOf(a).map(triKey), [u, v] = partsOf(st).map(triKey);
+      if ((x === u && y === v) || (x === v && y === u)) id = aid;
+    }
+  }
   if (id) {
     if (done.includes(id)) return { c: 'written', fact: id, textKey: 'st.written', vars: {} };
     if (!provable(p, done, id)) {
       const f = p.facts[id];
-      if (f.kind === 'cong') {
+      if (isAnchor(f)) {
         const n = Math.max(0, ...(p.just[id] || []).map((j) => j.needs.filter((x) => done.includes(x)).length));
+        if (f.kind === 'sim') return { c: 'early', fact: id, sub: 'similarity', kind: 'too-early', textKey: 'st.simEarly', vars: { n } };
         return { c: 'early', fact: id, sub: 'congruence', kind: 'too-early', textKey: 'st.congEarly', vars: { n } };
       }
       if (isoLater(p, done, id)) return { c: 'iso', fact: id, textKey: 'st.isoLater', vars: {} };
       if (targets(p).includes(id)) return { c: 'early', fact: id, sub: 'target', kind: 'goal-as-known', textKey: 'st.goalEarly', vars: {} };
-      return { c: 'early', fact: id, sub: 'consequence', kind: 'looks-equal', textKey: 'st.consEarly', vars: {} };
+      const simP = (p.facts[anchorOf(p)] || {}).kind === 'sim';
+      return { c: 'early', fact: id, sub: 'consequence', kind: 'looks-equal', textKey: simP ? 'st.consEarlySim' : 'st.consEarly', vars: {} };
     }
     if (required(p).has(id)) return { c: 'ok', fact: id };
-    return { c: 'extra', fact: id, textKey: shapeOf(p) === 'parts' ? 'st.notAsked' : 'st.notNeeded', vars: {} };
+    return extraOf(p, id);
   }
   const trap = p.traps && p.traps[norm(p.figure, st)];
   if (trap) return { c: 'false', kind: trap.kind, textKey: trap.textKey, vars: { ...(trap.vars || {}) } };
-  if (st.kind === 'cong') {
-    const cid = congOf(p);
-    if (cid) {
+  if (isAnchor(st)) {
+    const cid = anchorOf(p);
+    if (cid && p.facts[cid].kind === st.kind) {
       const [a, b] = partsOf(p.facts[cid]).map(triKey), [x, y] = partsOf(st).map(triKey);
       if ((a === x && b === y) || (a === y && b === x)) return { c: 'false', kind: 'wrong-matching', ...matchingMiss(p, st.map, done) };
     }
@@ -233,6 +329,9 @@ export function classify(p, done, st) {
   if (holds(p.figure, st)) return { c: 'unprovable', textKey: 'st.unprovable', vars: {} };
   if (st.kind === 'seg') return { c: 'false', kind: 'false-statement', textKey: 'st.falseSeg', vars: { x: st.x, y: st.y } };
   if (st.kind === 'ang') return { c: 'false', kind: 'false-statement', textKey: 'st.falseAng', vars: { x: showPart(st.x), y: showPart(st.y) } };
+  if (st.kind === 'par') return { c: 'false', kind: 'false-statement', textKey: 'st.falsePar', vars: { x: st.x, y: st.y } };
+  if (st.kind === 'val') return { c: 'false', kind: 'calc', textKey: 'st.falseVal', vars: { x: st.x, v: st.v } };
+  if (!anchorOf(p)) return { c: 'false', kind: 'false-statement', textKey: 'st.matchingPlain', vars: {} };
   return { c: 'false', kind: 'false-statement', ...matchingMiss(p, st.map, done) };
 }
 
@@ -348,19 +447,34 @@ function falseOptions(p, kind, avoid = []) {
 export function optionsFor(p, id, n = 3, R) {
   const f = p.facts[id];
   let wrong;
-  if (f.kind === 'cong') {
+  const own = () => ((p.tiles && p.tiles.wrong) || []).filter((w) => w.for === id).map((w) => w.st);
+  if (isAnchor(f)) {
     const [t1, t2] = partsOf(f), perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
-    const maps = perms.map((q) => t1.map((u, i) => [u, t2[q[i]]])).filter((m) => norm(p.figure, { kind: 'cong', map: m }) !== norm(p.figure, f));
-    wrong = shuffled(R, maps).map((map) => ({ kind: 'cong', map }));
+    const maps = perms.map((q) => t1.map((u, i) => [u, t2[q[i]]])).filter((m) => norm(p.figure, { kind: f.kind, map: m }) !== norm(p.figure, f)
+      && (f.kind === 'cong' || !holds(p.figure, { kind: 'sim', map: m })));
+    wrong = shuffled(R, maps).map((map) => ({ kind: f.kind, map }));
+  } else if (f.kind === 'prop') {
+    // a flipped fraction (ratio-flip) first, then sides moved to the wrong fraction (non-matching), never a right one
+    const n = f.pairs.length, at = (i, pr) => ({ kind: 'prop', pairs: f.pairs.map((x, j) => (j === i ? pr : x)) });
+    const flips = f.pairs.map(([a, b], i) => at(i, [b, a]));
+    const moved = f.pairs.map(([a], i) => ({ kind: 'prop', pairs: f.pairs.map(([x, y], j) => (j === i ? [a, f.pairs[(i + 1) % n][1]] : j === (i + 1) % n ? [x, f.pairs[i][1]] : [x, y])) }));
+    const seen = new Set([norm(p.figure, f)]);
+    wrong = [...own(), ...flips.slice(-1), ...moved, ...flips.slice(0, -1)].filter((st) => {
+      const k = norm(p.figure, st), r = checkProp(p, st);
+      if (seen.has(k) || r.ok || r.note) return false;
+      seen.add(k); return true;
+    });
+  } else if (f.kind === 'par' || f.kind === 'val') {
+    wrong = own();                                             // a number's chips come from its family (§7.5)
   } else if (shapeOf(p) === 'parts') {
-    const other = partsOf(p.facts[congOf(p)])[1], k = f.kind;
+    const other = partsOf(p.facts[anchorOf(p)])[1], k = f.kind;
     const cands = k === 'seg' ? [0, 1, 2].map((i) => other[i] + other[(i + 1) % 3]) : other.map((v, i) => ({ v, r: [other[(i + 1) % 3], other[(i + 2) % 3]] }));
     wrong = cands.map((y) => ({ kind: k, x: f.x, y })).filter((st) => norm(p.figure, st) !== norm(p.figure, f));
   } else {
-    const own = ((p.tiles && p.tiles.wrong) || []).filter((w) => w.for === id).map((w) => w.st);
-    const near = falseOptions(p, f.kind, [f, ...own]);
+    const mine = own();
+    const near = falseOptions(p, f.kind, [f, ...mine]);
     const touches = (st) => [st.x, st.y].some((q) => [f.x, f.y].some((g) => JSON.stringify(g) === JSON.stringify(q)));
-    wrong = [...own, ...near.filter(touches), ...near.filter((st) => !touches(st))];
+    wrong = [...mine, ...near.filter(touches), ...near.filter((st) => !touches(st))];
   }
   const pick = R ? [...wrong.slice(0, 1), ...shuffled(R, wrong.slice(1))] : wrong;
   return shuffled(R, [f, ...pick.slice(0, n - 1)]);
@@ -385,8 +499,8 @@ export const shapeOf = (p) => (p && p.shape) || SHAPE[p && p.type] || 'prove';
 export function present(p, level, variant, ctx = {}) {
   const shape = shapeOf(p), R = ctx.R, counted = ctx.counted || 0;
   const given = shape === 'given', parts = shape === 'parts', then = shape === 'then', big = !given && !parts;
-  const rows = p.canon.filter((f) => f !== congOf(p) || !parts);
-  const known = parts && congOf(p) ? [congOf(p)] : [];
+  const rows = p.canon.filter((f) => f !== anchorOf(p) || !parts);
+  const known = parts && anchorOf(p) ? [anchorOf(p)] : [];
   const plainGiven = (f) => (p.given || []).includes(f) && roleOf(p, f) === 'given';
   const view = { mode: 'tiles', known, pre: [...known], steps: [], tiles: [], chipsN: 6, whyLine: false, autoHint: false, shortFirst: false, plan: null, ties: false, letters: false };
   const step = (fact, ask, extra = {}) => ({ fact, ask, chips: view.chipsN, ...extra });
@@ -399,12 +513,12 @@ export function present(p, level, variant, ctx = {}) {
     if (variant === 'A') {
       view.mode = 'walk'; view.chipsN = 3; view.ties = big;
       const last = rows[rows.length - 1];
-      view.steps = rows.map((f) => (big ? step(f, f === congOf(p) ? ['reason'] : []) : f === last ? gap(f) : step(f, [])));
+      view.steps = rows.map((f) => (big ? step(f, f === anchorOf(p) ? ['reason'] : []) : f === last ? gap(f) : step(f, [])));
     } else {
       view.mode = 'fill'; view.chipsN = 4;
       if (big) {
         view.pre = rows.filter(plainGiven);
-        const gapAt = counted >= 2 ? (shape === 'prove' ? congOf(p) : target) : null;
+        const gapAt = counted >= 2 ? (shape === 'prove' ? anchorOf(p) : target) : null;
         view.steps = rows.filter((f) => !view.pre.includes(f)).map((f) => (f === gapAt ? { ...gap(f), ask: ['statement', 'reason'] } : step(f, ['reason'])));
       } else view.steps = rows.map(gap);
     }

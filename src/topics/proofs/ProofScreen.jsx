@@ -8,7 +8,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { start, act, ready, summary } from './session.js';
-import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, congOf, acceptedReasons, showPart } from './core.js';
+import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, anchorOf, acceptedReasons, showPart } from './core.js';
 import { partId } from './figure-core.js';
 import { REASONS, reasonInline } from './reasons.js';
 import { RULES } from './mastery.js';
@@ -56,7 +56,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   // the two small shapes (no triangles to tap, the drawing never outlines an answer); the rest are full proofs
   const isGiven = type.shape === 'given', isParts = type.shape === 'parts', small = isGiven || isParts;
   const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), small ? ['seg', 'ang'] : null);
-  const p = problem, cur = s.cur, mode = s.view.mode, cong = congOf(p);
+  const p = problem, cur = s.cur, mode = s.view.mode, cong = anchorOf(p);
   const later = (name, ms, fn) => { clearTimeout(timers.current[name]); timers.current[name] = setTimeout(fn, ms); };
   useEffect(() => () => { Object.values(timers.current).forEach(clearTimeout); }, []);
   useEffect(() => { if (onState) onState(sRef.current); }, []); // eslint-disable-line react-hooks/exhaustive-deps
