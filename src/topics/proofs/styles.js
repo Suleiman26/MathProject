@@ -170,6 +170,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-row.is-open .prf-row-op .prf-ic{transform:rotate(180deg)}
 #root .prf-row-law{margin:0;padding-block:0 9px;padding-inline:34px 10px;animation:prf-row .25s var(--ease-out) backwards}
 @keyframes prf-row{from{opacity:0;transform:translateY(8px)}}
+@keyframes prf-fade{from{opacity:0}}
 @keyframes prf-qpulse{50%{background:var(--a-100)}}
 
 /* ── the sheet: the row and what is asked, one question, the answers ── */
@@ -207,7 +208,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-why-law{display:block;margin-top:3px}
 #root .prf-coach-t .prf-why-law{margin-top:5px}
 /* reading a theorem before choosing it: its sentence and the "בחירה" button, above the chips (they never move) */
-#root .prf-q-law{display:flex;align-items:flex-end;gap:10px;margin-top:4px;padding-inline-start:10px;border-inline-start:3px solid var(--a-300);animation:prf-row .2s var(--ease-out) backwards}
+#root .prf-q.is-pin{position:sticky;top:-12px;z-index:3;margin-inline:-16px;padding:10px 16px 6px;background:var(--surface);box-shadow:0 8px 8px -8px rgb(28 27 25 / .16)}
+#root .prf-q-law{display:flex;align-items:flex-end;gap:10px;margin-top:6px;padding-inline-start:10px;border-inline-start:3px solid var(--a-300);animation:prf-fade .2s ease-out backwards}
 #root .prf-q-law-t{flex:1;min-width:0;margin:0}
 #root .prf-q-law .prf-law{font-size:.84rem}
 #root .prf-q-law .prf-choose{flex:none;min-height:40px;padding-inline:18px;font-size:.92rem;box-shadow:none}
@@ -551,6 +553,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-row:last-child{border-bottom:0}
   #root .prf-tray{flex:none;min-height:0;max-height:none;overflow:visible;gap:10px;padding:16px 22px 22px;border-radius:0;border-top:1px solid var(--line);box-shadow:none;background:var(--surface-2)}
   #root .prf-tray .prf-prev{position:relative;top:auto;box-shadow:inset 0 0 0 1.5px var(--a-300)}
+  #root .prf-q.is-pin{position:static;margin-inline:0;padding:0;background:none;box-shadow:none}
   #root .prf-q-k{font-size:.88rem}
   #root .prf-q-h{font-size:1.32rem}
   #root .prf-q-quote{font-size:1.06rem;padding:6px 12px}

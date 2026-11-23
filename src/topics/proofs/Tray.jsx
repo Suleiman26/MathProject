@@ -9,7 +9,10 @@
 
    Reading a theorem before choosing it (spec 2026-11-23 §6.2.2): a chip with `law` is a toggle (aria-pressed);
    `head.law = { id, onChoose }` shows its full sentence in .prf-q-law with the "בחירה" button. That preview is
-   plain text inside the question: it is never a .fb / feedback node, so the tracker counts nothing. */
+   plain text inside the step: it is never a .fb / feedback node, so the tracker counts nothing. While it is
+   open the question (row line, hint button, heading) is pinned to the sheet's top, the feedback lines stay, and
+   the pressed chip is described by the sentence and its "בחירה" button (aria-describedby; ProofScreen also reads
+   it out in the live region). */
 import React, { useLayoutEffect, useRef } from 'react';
 import { T } from './texts.js';
 import { show } from './core.js';
@@ -50,7 +53,7 @@ function Body({ body, onPick, onNext, onQed, qedBusy, onChipDown }) {
     return (
       <div className={`prf-chips prf-cols-${cols}`}>
         {body.chips.map((c) => (
-          <button type="button" key={c.id} className={`prf-chip${c.dim ? ' is-dim' : ''}${c.yes ? ' is-yes' : ''}${c.on ? ' is-on' : ''}`} disabled={!!c.disabled} aria-pressed={c.law ? !!c.on : undefined} data-chip={c.id} onClick={(e) => { if (onChipDown) onChipDown(c.id, e.currentTarget); onPick(c.id); }}>{c.sub ? <span className="prf-chip-2"><span>{c.label}</span><small>{c.sub}</small></span> : c.label}</button>
+          <button type="button" key={c.id} className={`prf-chip${c.dim ? ' is-dim' : ''}${c.yes ? ' is-yes' : ''}${c.on ? ' is-on' : ''}`} disabled={!!c.disabled} aria-pressed={c.law ? !!c.on : undefined} aria-describedby={c.on ? 'prf-q-law' : undefined} data-chip={c.id} onClick={(e) => { if (onChipDown) onChipDown(c.id, e.currentTarget); onPick(c.id); }}>{c.sub ? <span className="prf-chip-2"><span>{c.label}</span><small>{c.sub}</small></span> : c.label}</button>
         ))}
       </div>
     );
@@ -82,11 +85,18 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
     const chip = [...box.querySelectorAll('[data-chip]')].find((b) => b.getAttribute('data-chip') === a.id);
     if (!chip) return;
     let d = chip.getBoundingClientRect().top - a.top;
-    if (Math.abs(d) < 1) return;
-    const was = box.scrollTop;
-    box.scrollTop = was + d;
-    d -= box.scrollTop - was;
-    if (Math.abs(d) >= 1 && typeof window !== 'undefined') window.scrollBy(0, d);
+    if (Math.abs(d) >= 1) {
+      const was = box.scrollTop;
+      box.scrollTop = was + d;
+      d -= box.scrollTop - was;
+      if (Math.abs(d) >= 1 && typeof window !== 'undefined') window.scrollBy(0, d);
+    }
+    // the question stays pinned at the sheet's top (.prf-q.is-pin); the sentence is never left under it
+    const pin = box.querySelector('.prf-q.is-pin'), law = box.querySelector('.prf-q-law');
+    if (pin && law && getComputedStyle(pin).position === 'sticky') {
+      const under = pin.getBoundingClientRect().bottom - law.getBoundingClientRect().top;
+      if (under > 0) box.scrollTop -= under;
+    }
   }, [lawId]);
   // a new answer line: the sheet starts from its top (on a short phone it can be taller than its room; the line is read first)
   useLayoutEffect(() => { if (el.current && (fbs.length || why)) el.current.scrollTop = 0; }, [fbs, why]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -97,7 +107,7 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
       <div className="step-card prf-step">
         <span className="step-label prf-sr" aria-hidden="true">{label}</span>
         {head && (
-          <div className="prf-q">
+          <div className={`prf-q${head.law ? ' is-pin' : ''}`}>
             {(head.kicker || hint || onCancel) && (
               <div className="prf-q-top">
                 <span className="prf-q-k">{head.kicker}</span>
@@ -110,12 +120,12 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
             {head.coach && <div className="prf-coach"><span className="prf-coach-av" aria-hidden="true"><IcPen /></span><p className="prf-coach-t">{head.coach}</p></div>}
             {head.quote && <div className="prf-q-quote">{head.quote}</div>}
             {head.ask && <h3 className="prf-q-h">{head.ask}</h3>}
-            {head.law && (
-              <div className="prf-q-law" key={head.law.id}>
-                <p className="prf-q-law-t"><Law id={head.law.id} /></p>
-                <button type="button" className="prf-go prf-choose" onClick={head.law.onChoose}>{T['btn.choose']}</button>
-              </div>
-            )}
+          </div>
+        )}
+        {head && head.law && (
+          <div className="prf-q-law" id="prf-q-law" key={head.law.id}>
+            <p className="prf-q-law-t"><Law id={head.law.id} /></p>
+            <button type="button" className="prf-go prf-choose" onClick={head.law.onChoose}>{T['btn.choose']}</button>
           </div>
         )}
         {hintLine && <p className="prf-hint" key={hintLine.id}><Tx k={hintLine.key} vars={hintLine.vars} /></p>}

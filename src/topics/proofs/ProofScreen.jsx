@@ -16,7 +16,7 @@ import ProofRows from './ProofRows.jsx';
 import Tray from './Tray.jsx';
 import EndCard from './EndCard.jsx';
 import { useSelection, TapStatement, GroupPick } from './TapBuild.jsx';
-import { St, Tx, Mx, Ask, CongSt, Law, hasLaw, IcBack, IcCheck, IcLock, IcSwap } from './signs.jsx';
+import { St, Tx, Mx, Ask, CongSt, Law, hasLaw, lawWord, IcBack, IcCheck, IcLock, IcSwap } from './signs.jsx';
 
 const PAIR = { 1: 'var(--prf-p1)', 2: 'var(--prf-p2)', 3: 'var(--prf-p3)' };
 const ids = (problem, fact) => (problem.facts[fact] ? partsOf(problem.facts[fact]).map((x) => partId(x, problem.figure)) : []);
@@ -269,7 +269,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     if (mode === 'tap') {
       // a list of theorems with their sentences is long: while it is open the big question and the lines about the row before step aside
       const key = cur.key;
-      body = { t: 'node', node: <GroupPick key={key} wrong={cur.wrong} onPick={(id) => dispatch({ t: 'reason', id })} onGroup={(g) => { setLawList(g ? key : null); if (g) { setFbs([]); setWhy(null); setSaid(null); } }} /> };
+      body = { t: 'node', node: <GroupPick key={key} wrong={cur.wrong} onPick={(id) => dispatch({ t: 'reason', id })} onGroup={(g) => { setLawList(g ? key : null); if (g) { setFbs((f) => (f.some((x) => x.cls === 'err') ? f : [])); setWhy(null); setSaid(null); } }} /> };
       if (lawList === key) head.ask = null;
     } else {
       const all = chipsFor(fact), acc = acceptedReasons(p, fact);
@@ -280,10 +280,11 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       const choose = (id) => { setPeek(null); dispatch({ t: 'reason', id }); };
       body = { t: 'chips', chips: all.map((id) => ({ id, label: REASONS[id].short, sub: T[`sub.${id}`], disabled: cur.wrong.includes(id), dim: !keep.includes(id), law: hasLaw(id), on: at === id })) };
       onPick = (id) => {
-        if (at === id && Date.now() - peek.t < 350) return;       // the tail of a double tap is not a choice: nothing is picked by accident while reading
+        if (peek && peek.key === cur.key && Date.now() - peek.t < 350) return;   // right after a sentence opened no chip chooses (the tail of a double tap, a chip that moved): nothing is picked by accident while reading
         if (!hasLaw(id) || at === id) { choose(id); return; }
+        // the feedback lines stay where they are (an error line is what the student needs for the next pick); the sentence is read out too
         setPeek({ key: cur.key, id, t: Date.now() });
-        setFbs([]); setWhy(null); setSaid(null);                          // the lines about the row before have been read: the sheet stays short (removing a line is no event for the tracker)
+        setLive(`${REASONS[id].short}. ${lawWord(id)}: ${REASONS[id].full} ${T['btn.choose']}`);
       };
       if (at) head.law = { id: at, onChoose: () => choose(at) };
     }
