@@ -161,11 +161,20 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-qslot{display:inline-grid;place-items:center;min-width:56px;height:26px;padding-inline:8px;border-radius:8px;border:1.5px dashed var(--a-500);color:var(--a-700);font-size:.9rem;font-weight:800;animation:prf-qpulse 1.6s ease-in-out infinite}
 #root .prf-row-full{padding:0 34px 8px;font-size:.86rem;color:var(--ink-2)}
 #root .prf-row-full b{font-weight:600;color:var(--ink)}
+/* the theorems stay in sight (spec 2026-11-23 §6.2): the full sentence is muted, smaller and never cut */
+#root .prf-law{font-size:.8rem;font-weight:400;line-height:1.5;color:var(--ink-2)}
+#root .prf-law-k{display:inline-block;margin-inline-end:3px;padding-inline:6px;border-radius:6px;background:var(--a-50);box-shadow:inset 0 0 0 1px var(--a-200);color:var(--a-800);font-size:.7rem;font-weight:700;line-height:1.5;vertical-align:.08em}
+#root .prf-row-rt{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;min-width:0}
+#root .prf-row-op{display:inline-flex;align-items:center;gap:1px;color:var(--a-700);font-size:.72rem;font-weight:700;white-space:nowrap;text-decoration:underline;text-decoration-color:var(--a-300);text-underline-offset:3px}
+#root .prf-row-op .prf-ic{font-size:13px;transition:transform .2s var(--ease-out)}
+#root .prf-row.is-open .prf-row-op .prf-ic{transform:rotate(180deg)}
+#root .prf-row-law{margin:0;padding-block:0 9px;padding-inline:34px 10px;animation:prf-row .25s var(--ease-out) backwards}
 @keyframes prf-row{from{opacity:0;transform:translateY(8px)}}
 @keyframes prf-qpulse{50%{background:var(--a-100)}}
 
 /* ── the sheet: the row and what is asked, one question, the answers ── */
-#root .prf-tray{flex:none;display:flex;flex-direction:column;gap:8px;min-height:120px;max-height:56dvh;overflow-y:auto;overscroll-behavior:contain;padding:12px 16px max(14px,env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:var(--surface);box-shadow:0 0 0 1px var(--line),0 -12px 30px -10px rgb(28 27 25 / .14)}
+#root .prf-tray{flex:0 1 auto;display:flex;flex-direction:column;gap:8px;min-height:120px;max-height:56dvh;overflow-y:auto;overscroll-behavior:contain;padding:12px 16px max(14px,env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:var(--surface);box-shadow:0 0 0 1px var(--line),0 -12px 30px -10px rgb(28 27 25 / .14)}
+#root .prf-tray > *{flex:none}
 #root .prf-step,#root .prf-fbc{margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;animation:none}
 #root .prf-q{display:flex;flex-direction:column;gap:4px}
 #root .prf-q-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px}
@@ -195,6 +204,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-x .prf-ic{font-size:15px;color:var(--a-600)}
 #root .prf-hint{margin-top:4px;padding-inline-start:10px;border-inline-start:3px solid var(--a-300);font-size:.92rem;line-height:1.45;color:var(--ink-2);animation:prf-row .25s var(--ease-out) backwards}
 #root .prf-why{padding-inline-start:10px;border-inline-start:3px solid var(--ok-200);font-size:.9rem;line-height:1.45;color:var(--ink-2);animation:prf-row .25s var(--ease-out) backwards}
+#root .prf-why-law{display:block;margin-top:3px}
+#root .prf-coach-t .prf-why-law{margin-top:5px}
+/* reading a theorem before choosing it: its sentence and the "בחירה" button, above the chips (they never move) */
+#root .prf-q-law{display:flex;align-items:flex-end;gap:10px;margin-top:4px;padding-inline-start:10px;border-inline-start:3px solid var(--a-300);animation:prf-row .2s var(--ease-out) backwards}
+#root .prf-q-law-t{flex:1;min-width:0;margin:0}
+#root .prf-q-law .prf-law{font-size:.84rem}
+#root .prf-q-law .prf-choose{flex:none;min-height:40px;padding-inline:18px;font-size:.92rem;box-shadow:none}
 @keyframes prf-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes prf-nudge{0%,100%{transform:none}30%{transform:scale(1.09)}60%{transform:scale(.98)}}
 
@@ -208,6 +224,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-chip:disabled{opacity:.4;text-decoration:line-through}
 #root .prf-chip.is-dim{opacity:.4}
 #root .prf-chip.is-yes{opacity:1;border-color:var(--ok-500);background:var(--ok-50);color:var(--ok-800);text-decoration:none}
+#root .prf-chip.is-on{border-color:var(--a-600);background:var(--a-50);box-shadow:inset 0 0 0 1px var(--a-600);color:var(--a-900);font-weight:700}
+#root .prf-chip.prf-lawc{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:8px 12px;text-align:start}
+#root .prf-laws .prf-chip{justify-content:flex-start;padding-inline:12px;font-weight:700;text-align:start}
+#root .prf-lawc-n{font-weight:700}
+#root .prf-lawc-t{font-size:.78rem;font-weight:400;line-height:1.45;color:var(--ink-2)}
+#root .prf-chip.prf-lawc:disabled{text-decoration:none}
+#root .prf-chip.prf-lawc:disabled .prf-lawc-n{text-decoration:line-through}
 #root .prf-tile{font-size:1.04rem;box-shadow:0 2px 0 var(--line-strong)}
 #root .prf-go-row{display:flex;gap:8px;margin-top:8px}
 #root .prf-go{flex:1;width:auto;height:auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding-inline:22px;border:0;border-radius:999px;background:var(--prf-btn);box-shadow:var(--sh-accent);color:#fff;font-size:1rem;font-weight:700}
@@ -289,6 +312,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-table td + td{color:var(--ink-2)}
 #root .prf-table-n{display:inline-block;min-width:1.3em;color:var(--ink-3);font-variant-numeric:tabular-nums}
 #root .prf-table .prf-table-qed td{width:auto;border:0;padding-top:9px;text-align:end;font-weight:800;color:var(--ink)}
+#root .prf-table-r{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px}
+#root .prf-table-op{display:inline-flex;align-items:center;gap:1px;min-height:40px;margin-block:-11px;padding:0 4px;border:0;border-radius:8px;background:transparent;box-shadow:none;color:var(--a-700);font-size:.74rem;font-weight:700;text-decoration:underline;text-decoration-color:var(--a-300);text-underline-offset:3px}
+#root .prf-table-op .prf-ic{font-size:13px;transition:transform .2s var(--ease-out)}
+#root .prf-table-op[aria-expanded="true"] .prf-ic{transform:rotate(180deg)}
+#root .prf-table tr.is-open td{border-bottom-color:transparent}
+#root .prf-table .prf-table-law td{width:auto;padding-top:0;border-inline-end:0;white-space:normal}
 #root .prf-end-btns{flex:none;display:flex;gap:8px;padding:10px 14px max(12px,env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--surface-2)}
 @keyframes prf-grow{from{transform:scaleY(.2);opacity:.4}}
 
@@ -429,8 +458,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-intro{font-size:.84rem}
 }
 @media (prefers-reduced-motion: reduce){
-  #root .prf-row.is-new,#root .prf-hint,#root .prf-why,#root .prf-hintb.is-nudge,#root .prf-mast-fig,#root .prf-mast .prf-subj-in,#root .prf-subj-meta,#root .prf-pt-open,#root .prf-warm-mid,#root .prf-end-card,#root .prf-prev,#root .prf-note.prf-fb{animation:none}
-  #root .prf-pt-n,#root .prf-subj-thumb,#root .prf-subj-b{transition:none}
+  #root .prf-row.is-new,#root .prf-row-law,#root .prf-q-law,#root .prf-hint,#root .prf-why,#root .prf-hintb.is-nudge,#root .prf-mast-fig,#root .prf-mast .prf-subj-in,#root .prf-subj-meta,#root .prf-pt-open,#root .prf-warm-mid,#root .prf-end-card,#root .prf-prev,#root .prf-note.prf-fb{animation:none}
+  #root .prf-pt-n,#root .prf-subj-thumb,#root .prf-subj-b,#root .prf-row-op .prf-ic,#root .prf-table-op .prf-ic{transition:none}
 }
 
 /* ══ tablets and computers (from 768 px wide, taller than a phone on its side) ══
@@ -513,9 +542,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-row-st{font-size:1.14rem}
   #root .prf-row-r{font-size:.95rem}
   #root .prf-row-full{padding:0 46px 10px;font-size:.96rem}
+  #root .prf-law{font-size:.9rem}
+  #root .prf-law-k,#root .prf-row-op,#root .prf-table-op{font-size:.78rem}
+  #root .prf-row-law{padding-block:0 11px;padding-inline:46px 14px}
+  #root .prf-q-law .prf-law{font-size:.95rem}
+  #root .prf-lawc-t{font-size:.86rem}
   #root .prf-qslot{min-width:70px;height:30px;font-size:1rem}
   #root .prf-row:last-child{border-bottom:0}
-  #root .prf-tray{min-height:0;max-height:none;overflow:visible;gap:10px;padding:16px 22px 22px;border-radius:0;border-top:1px solid var(--line);box-shadow:none;background:var(--surface-2)}
+  #root .prf-tray{flex:none;min-height:0;max-height:none;overflow:visible;gap:10px;padding:16px 22px 22px;border-radius:0;border-top:1px solid var(--line);box-shadow:none;background:var(--surface-2)}
   #root .prf-tray .prf-prev{position:relative;top:auto;box-shadow:inset 0 0 0 1.5px var(--a-300)}
   #root .prf-q-k{font-size:.88rem}
   #root .prf-q-h{font-size:1.32rem}

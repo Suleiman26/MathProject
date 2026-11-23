@@ -135,6 +135,7 @@ test('checkMatching: any consistent order', () => {
 /* ── Task 9: what each level presents (§7.2–7.4) ── */
 import { present, reasonChips, decisionsOf, optionsFor, whyOf } from './core.js';
 import { seeded, makeR } from '../new/core.js';
+import { REASONS, isLaw } from './reasons.js';
 test('present: decisions per level for the X-SAS conclusion proof', () => {
   const R = makeR(seeded(1)), n = (l, v, c = 0) => decisionsOf(present(P, l, v, { counted: c, R }));
   assert.equal(n(1, 'A'), 1); assert.equal(n(1, 'B', 0), 3); assert.equal(n(1, 'B', 2), 4);
@@ -176,10 +177,18 @@ test('options for a statement gap: one right, the others wrong', () => {
   }
 });
 test('whyOf: the why-line of each role', () => {
-  assert.equal(whyOf(P, 'a').key, 'why.given'); assert.deepEqual(whyOf(P, 'c'), { key: 'why.vertical', vars: { pt: 'O' } });
-  assert.deepEqual(whyOf(P, 'cong', 'sas'), { key: 'why.sas', vars: { m: 'A ↔ B, O ↔ O, C ↔ D' } });
+  assert.equal(whyOf(P, 'a').key, 'why.given'); assert.deepEqual(whyOf(P, 'c'), { key: 'why.vertical', vars: { pt: 'O' }, law: 'vertical' });
+  assert.deepEqual(whyOf(P, 'cong', 'sas'), { key: 'why.sas', vars: { m: 'A ↔ B, O ↔ O, C ↔ D' }, law: 'sas' });
   assert.deepEqual(whyOf(P, 'goal'), { key: 'why.concl-side', vars: { x: 'AC', y: 'BD' } });
   assert.equal(whyOf(P, 'e1').key, 'why.concl-angle');
+});
+test('whyOf: a row that stands on a theorem or a definition names it as `law` (its full sentence follows the why-line)', () => {
+  assert.equal(whyOf(P, 'cong', 'sas').law, 'sas');                       // a congruence row → its theorem
+  assert.equal(whyOf(P, 'cong').law, 'sas', 'no reason passed: the theorem of the first justification');
+  assert.equal(whyOf(P, 'c', 'vertical').law, 'vertical');                // a vertical-angles row
+  assert.equal('law' in whyOf(P, 'a', 'given'), false);                   // a given row: nothing to quote
+  assert.equal('law' in whyOf(P, 'goal', 'cp-sides'), false);             // a conclusion stands on a rule
+  for (const id of Object.keys(P.facts)) { const w = whyOf(P, id); if (w.law) assert.ok(isLaw(w.law) && REASONS[w.law].full, id); }
 });
 
 /* ── review I4: the wrong-matching sentence cites only what is known, with a valid argument ── */

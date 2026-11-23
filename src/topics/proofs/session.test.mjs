@@ -72,6 +72,16 @@ test('hints: rung 1 is free, rung 2 makes "helped", rung 3 fills the step and sh
   assert.ok(o.fx.some((f) => f.t === 'filled' && f.reason === 'vertical')); assert.ok(o.fx.some((f) => f.t === 'fb' && f.key === 'ui.filled' && f.vars.reason === 'זוויות קדקודיות שוות זו לזו'));
   assert.deepEqual(o.s.decisions.map((d) => d.state), ['solo', 'solo', 'solo', 'solo', 'solo', 'filled']);
 });
+test('the why effect names the theorem / definition of the row (law); a given row has none', () => {
+  const W = { ...V, whyLine: true };
+  let o = act(start(P, W), { t: 'statement', st: P.facts.a }); o = act(o.s, { t: 'reason', id: 'given' });
+  const g = o.fx.find((f) => f.t === 'why'); assert.equal(g.key, 'why.given'); assert.equal('law' in g, false);
+  o = act(o.s, { t: 'statement', st: P.facts.c }); o = act(o.s, { t: 'reason', id: 'vertical' });
+  assert.equal(o.fx.find((f) => f.t === 'why').law, 'vertical');
+  o = act(o.s, { t: 'statement', st: P.facts.b }); o = act(o.s, { t: 'reason', id: 'given' });
+  o = act(o.s, { t: 'statement', st: P.facts.cong }); o = act(o.s, { t: 'reason', id: 'sas' });
+  assert.deepEqual([o.fx.find((f) => f.t === 'why').key, o.fx.find((f) => f.t === 'why').law], ['why.sas', 'sas']);
+});
 test('two wrong statements: the app places the expected row; the label names the decision kind', () => {
   let o = act(start(P, V), { t: 'statement', st: { kind: 'seg', x: 'AO', y: 'CO' } });
   assert.equal(o.s.cur.label, 'טענה · נתון');

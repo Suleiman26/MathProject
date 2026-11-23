@@ -9,7 +9,7 @@
    Actions: { t:'statement', st } · { t:'reason', id } · { t:'matching', tri1, order } · { t:'hint' }
             · { t:'cancel' } · { t:'next' } (walk-through) · { t:'qed' }
    Effects: { t:'fb', cls:'ok'|'err'|'note', key, vars, kind? } · { t:'mark', fact } · { t:'question', parts }
-            · { t:'why', key, vars } · { t:'filled', fact, reason } · { t:'hint', rung, key, vars, parts }
+            · { t:'why', key, vars, law? } · { t:'filled', fact, reason } · { t:'hint', rung, key, vars, parts }
             · { t:'end', clean } (clean = endClean(s), the mastery rule)
    fb.cls → the tracker (spec §10.4): 'ok' only for right on the first try; a right second try is 'note'. */
 import { classify, checkReason, checkMatching, isDone, roleOf, acceptedReasons, partsOf, show, whyOf, congOf, required, norm } from './core.js';
@@ -78,7 +78,7 @@ function writeRow(s, fx, fact, reason, by) {
   s.rows.push({ fact, reason, by });
   s.done.push(fact);
   fx.push({ t: 'mark', fact });
-  if (s.view.whyLine) { const w = whyOf(s.problem, fact, reason); fx.push({ t: 'why', key: w.key, vars: w.vars }); }
+  if (s.view.whyLine) { const w = whyOf(s.problem, fact, reason); fx.push({ t: 'why', key: w.key, vars: w.vars, ...(w.law ? { law: w.law } : {}) }); }
 }
 
 /* role of the open decision, for hints ('given' becomes 'given-more' once another given is used) */

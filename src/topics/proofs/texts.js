@@ -252,6 +252,7 @@ export const T = {
   'coach.reason': 'הנימוק: {{reason}}.',
   'btn.gotIt': 'הבנתי, לשורה הבאה',
   'btn.doneRead': 'סיימנו',
+  'lbl.law.theorem': 'המשפט', 'lbl.law.definition': 'ההגדרה', 'btn.choose': 'בחירה',
   'sub.sas': 'צלע, זווית, צלע', 'sub.asa': 'זווית, צלע, זווית', 'sub.sss': 'שלוש צלעות',
   'ui.endCleanRead': 'סיימנו. עבודה נקייה.',
   'ui.endHelpedRead': 'סיימנו. היה צעד שמילאנו יחד, ולכן זה לא נספר כנקי. השלב לא יורד.',
@@ -292,6 +293,7 @@ export const NEW_DRAFTS = [
   'why.given', 'why.given-words', 'why.vertical', 'why.common', 'why.sas', 'why.asa', 'why.sss', 'why.concl-side', 'why.concl-angle', 'why.partner', 'btn.swap',   // reworded 2026-11-22: no "נכון" (the feedback line already says it), one island for the matching
   'w.W2', 'w.W3', 'st.partner',                       // reworded after the review (the spec drafts read less clearly)
   // the reasons' full sentences (reasons.js, spec 2026-11-23 §6.1): `reason.<id>` = REASONS[id].full
+  'lbl.law.theorem', 'lbl.law.definition', 'btn.choose',                                 // the theorems on screen (spec 2026-11-23 §6.2)
   'reason.sas', 'reason.asa', 'reason.sss', 'reason.vertical',                          // the Ministry 2015 list, word for word
   'reason.bisector', 'reason.median', 'reason.midpoint', 'reason.altitude',             // today's wording as a sentence (unconfirmed)
   'reason.common-side', 'reason.common-angle', 'reason.cp-sides', 'reason.cp-angles',   // builder drafts (unconfirmed)

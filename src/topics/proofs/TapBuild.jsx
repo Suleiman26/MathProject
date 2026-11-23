@@ -8,7 +8,7 @@ import React, { useMemo, useState } from 'react';
 import { partsIndex } from './ProofFigure.jsx';
 import { GROUPS, REASONS } from './reasons.js';
 import { T } from './texts.js';
-import { St, Mx, IcList, IcClose } from './signs.jsx';
+import { St, Mx, IcList, IcClose, hasLaw } from './signs.jsx';
 
 const KINDS = [['seg', 'lbl.segs'], ['ang', 'lbl.angs'], ['tri', 'lbl.tris']];
 
@@ -108,9 +108,12 @@ export function TapStatement({ sel, onAdd, onMatching }) {
   );
 }
 
-/** The two-step reason pick: where do we know it from → which reason. */
-export function GroupPick({ wrong = [], onPick }) {
-  const [g, setG] = useState(null);
+/** The two-step reason pick: where do we know it from → which reason. In the second step every theorem and
+    definition is listed with its full sentence under its name (spec 2026-11-23 §6.2.2): one tap chooses. */
+export function GroupPick({ wrong = [], onPick, onGroup }) {
+  const [g, setG0] = useState(null);
+  // the parent hears which list is open: a list of theorems is long, so the sheet makes room for it
+  const setG = (id) => { setG0(id); if (onGroup) { const x = GROUPS.find((y) => y.id === id); onGroup(x && x.reasons.some(hasLaw) ? id : null); } };
   const group = GROUPS.find((x) => x.id === g);
   if (!group) {
     return (
@@ -122,8 +125,12 @@ export function GroupPick({ wrong = [], onPick }) {
   return (
     <div className="prf-groupin">
       <div className="prf-group-h"><span className="prf-group-t">{group.he}</span><button type="button" className="prf-x" onClick={() => setG(null)}><span>{T['btn.back']}</span></button></div>
-      <div className={`prf-chips ${group.reasons.every((r) => [...REASONS[r].short].length <= 7) ? 'prf-cols-3' : 'prf-cols-2'}`}>
-        {group.reasons.map((r) => <button type="button" key={r} className="prf-chip" disabled={wrong.includes(r)} onClick={() => onPick(r)}>{REASONS[r].short}</button>)}
+      <div className={`prf-chips ${group.reasons.some(hasLaw) ? 'prf-cols-1 prf-laws' : group.reasons.every((r) => [...REASONS[r].short].length <= 7) ? 'prf-cols-3' : 'prf-cols-2'}`}>
+        {group.reasons.map((r) => (
+          <button type="button" key={r} className={`prf-chip${hasLaw(r) ? ' prf-lawc' : ''}`} disabled={wrong.includes(r)} onClick={() => onPick(r)}>
+            {hasLaw(r) ? <><span className="prf-lawc-n">{REASONS[r].short}</span><small className="prf-lawc-t">{REASONS[r].full}</small></> : REASONS[r].short}
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -2,18 +2,20 @@
 /* The proofs section: the end of a proof (spec §7.7). A small result line (the tracker's "win"
    node when the proof is clean: session.endClean, the one mastery rule), the four dots, the quiet "proofs completed" line, a level-up
    ladder when a level was earned, and the proof as a notebook page: נתון / צ״ל and a real
-   two-column table טענה | נימוק with the full reason wording, ending in מ.ש.ל. */
+   two-column table טענה | נימוק, ending in מ.ש.ל. The נימוק column is what a student writes in class (the short
+   name, "צ.ז.צ"); a row that stands on a theorem or a definition has a small "המשפט" opener for its full sentence. */
 import React, { useEffect, useState } from 'react';
 import { REASONS } from './reasons.js';
 import { targets, shapeOf } from './core.js';
 import { STAGES } from './types/index.js';
 import { T, fill } from './texts.js';
-import { St, Tx, IcCheck, IcBook } from './signs.jsx';
+import { St, Tx, Law, hasLaw, lawWord, IcCheck, IcBook, IcDown } from './signs.jsx';
 
 export default function EndCard({ problem, rows, clean, filled = true, counted = true, dots = [], done = 0, lessHelp, event, levelName, typeName, newLevel, round, onMore, onFinish }) {
   // the result line mounts one frame after the card: a small new node of its own (tracker rule: a
   // new node with more than 40 descendants is not read as feedback)
   const [shown, setShown] = useState(false);
+  const [lawOpen, setLawOpen] = useState(null);       // the row whose theorem is open
   useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
   const p = problem, k = dots.filter((d) => d === true).length;
   const up = event === 'level-up' || event === 'type-done';
@@ -54,12 +56,23 @@ export default function EndCard({ problem, rows, clean, filled = true, counted =
             <table className="prf-table">
               <thead><tr><th scope="col">{T['lbl.claim']}</th><th scope="col">{T['lbl.reason']}</th></tr></thead>
               <tbody>
-                {rows.map((r, i) => (
-                  <tr key={r.fact}>
-                    <td><span className="prf-table-n">{i + 1}.</span> <St st={p.facts[r.fact]} /></td>
-                    <td>{(REASONS[r.reason] && (REASONS[r.reason].full || REASONS[r.reason].short)) || ''}</td>
-                  </tr>
-                ))}
+                {rows.map((r, i) => {
+                  const law = hasLaw(r.reason), open = law && lawOpen === r.fact;
+                  return (
+                    <React.Fragment key={r.fact}>
+                      <tr className={open ? 'is-open' : undefined}>
+                        <td><span className="prf-table-n">{i + 1}.</span> <St st={p.facts[r.fact]} /></td>
+                        <td>
+                          <span className="prf-table-r">
+                            <span>{(REASONS[r.reason] && REASONS[r.reason].short) || ''}</span>
+                            {law && <button type="button" className="prf-table-op" aria-expanded={open} onClick={() => setLawOpen(open ? null : r.fact)}>{lawWord(r.reason)}<IcDown /></button>}
+                          </span>
+                        </td>
+                      </tr>
+                      {open && <tr className="prf-table-law"><td colSpan={2}><Law id={r.reason} /></td></tr>}
+                    </React.Fragment>
+                  );
+                })}
                 {!read && <tr className="prf-table-qed"><td colSpan={2}>{T['btn.qed']}</td></tr>}
               </tbody>
             </table>

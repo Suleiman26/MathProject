@@ -291,20 +291,22 @@ export function checkReason(p, done, id, reasonId) {
 }
 
 /* ── the why-line after a right row (§9.2 "After a right answer") ─────────── */
-/** { key, vars } of the why-line of a justified row (`reason` = the reason used, for a congruence). */
+/** { key, vars, law? } of the why-line of a justified row (`reason` = the reason used, for a congruence).
+    law = the theorem or definition the row stands on (spec 2026-11-23 §6.2.3): the UI writes its full sentence
+    (REASONS[law].full) after the line. Rows that stand on the given or on a rule have none. */
 export function whyOf(p, id, reason) {
   const f = p.facts[id], role = roleOf(p, id);
   if (role === 'given' || role === 'given-more') return { key: 'why.given', vars: {} };
   if (role === 'given-words') {
     const def = acceptedReasons(p, id).find((r) => DEFS.includes(r));
-    return def ? { key: 'why.given-words', vars: { word: T[`word.${def}`], st: show(f) } } : { key: 'why.given', vars: {} };
+    return def ? { key: 'why.given-words', vars: { word: T[`word.${def}`], st: show(f) }, law: def } : { key: 'why.given', vars: {} };
   }
-  if (role === 'vertical') return { key: 'why.vertical', vars: { pt: f.x.v } };
+  if (role === 'vertical') return { key: 'why.vertical', vars: { pt: f.x.v }, law: 'vertical' };
   if (role === 'common') return { key: 'why.common', vars: {} };
   if (role === 'congruence') {
     const th = THEOREMS.includes(reason) ? reason : (p.just[id][0].reasons.find((r) => THEOREMS.includes(r)) || 'sas');
     const m = f.map.map(([u, v]) => `${u} ↔ ${v}`).join(', ');      // one island: it never breaks into a garbled line (RTL)
-    return { key: `why.${th}`, vars: { m } };
+    return { key: `why.${th}`, vars: { m }, law: th };
   }
   // type 2: the letters written in the same places (a side: both its letters; an angle: its vertex)
   if (role === 'partner') return { key: 'why.partner', vars: f.kind === 'ang' ? { p: f.x.v, q: f.y.v } : { p: f.x, q: f.y } };

@@ -16,7 +16,7 @@ import ProofRows from './ProofRows.jsx';
 import Tray from './Tray.jsx';
 import EndCard from './EndCard.jsx';
 import { useSelection, TapStatement, GroupPick } from './TapBuild.jsx';
-import { St, Tx, Mx, Ask, CongSt, IcBack, IcCheck, IcLock, IcSwap } from './signs.jsx';
+import { St, Tx, Mx, Ask, CongSt, Law, hasLaw, IcBack, IcCheck, IcLock, IcSwap } from './signs.jsx';
 
 const PAIR = { 1: 'var(--prf-p1)', 2: 'var(--prf-p2)', 3: 'var(--prf-p3)' };
 const ids = (problem, fact) => (problem.facts[fact] ? partsOf(problem.facts[fact]).map((x) => partId(x, problem.figure)) : []);
@@ -33,6 +33,9 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const [leans, setLeans] = useState(null);
   const [openRow, setOpenRow] = useState(null);
   const [badTiles, setBadTiles] = useState([]);
+  const [lawList, setLawList] = useState(null);       // Level 3: the decision whose list of theorems (with their sentences) is open in the sheet
+  const [said, setSaid] = useState(null);             // the row whose theorem the sheet is quoting right now: the notebook holds that sentence back (it is on screen once, not twice)
+  const [peek, setPeek] = useState(null);             // { key, id }: the theorem chip being read before it is chosen (§6.2.2); a preview, never a decision
   const [lead, setLead] = useState([]);
   const [fresh, setFresh] = useState(null);
   const [showKey, setShowKey] = useState(null);       // the decision whose "הראו לי" is unlocked
@@ -42,7 +45,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const [live, setLive] = useState('');
   // type 4: the unscored plan question "באילו שני משולשים נמצאים …?" before the first row (not a decision, no row)
   const [planQ, setPlanQ] = useState(() => (!restored && view.plan === 'tris' && (problem.figure.tris || []).length === 2 ? { picked: [] } : null));
-  const n = useRef(0), timers = useRef({}), nbEl = useRef(null), workEl = useRef(null), qedDone = useRef(false), intro = useRef(!restored);
+  const n = useRef(0), timers = useRef({}), nbEl = useRef(null), workEl = useRef(null), qedDone = useRef(false), intro = useRef(!restored), wasOpen = useRef(null);
   const reduce = useReducedMotion();
   // how the level is laid out (types/index.js `shape`): reading the given and the parts of a known congruence are
   // the two small shapes (no triangles to tap, the drawing never outlines an answer); the rest are full proofs
@@ -70,7 +73,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
         // a right second try looks right (green) but stays a private note for the tracker (§10.4)
         out.push({ id: ++n.current, cls: f.cls, key: f.key, vars: f.vars, label, look: f.cls === 'note' && f.key === 'fb.ok' ? 'ok' : null });
         said.push(fill(f.key, f.vars));
-      } else if (f.t === 'why') w = { id: ++n.current, key: f.key, vars: f.vars };
+      } else if (f.t === 'why') w = { id: ++n.current, key: f.key, vars: f.vars, law: f.law };
       else if (f.t === 'hint') h = f;
       else if (f.t === 'question') { setQuestion(f.parts.map((x) => partId(x, p.figure))); later('q', RULES.Q_BADGE_MS, () => setQuestion([])); }
       else if (f.t === 'filled') filled = f;
@@ -80,8 +83,11 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     if (filled) {
       const row = r.s.rows.find((x) => x.fact === filled.fact);
       if (row && !w) { const q = whyOf(p, filled.fact, row.reason); w = { id: ++n.current, key: q.key, vars: q.vars }; }
+      if (w && filled.reason) w.law = null;                // the "מילאנו יחד" note already quotes the sentence: once is enough
       setLeans({ fact: filled.fact, picked: null });
     }
+    const wrote = r.s.rows.length > prev.rows.length ? r.s.rows[r.s.rows.length - 1] : null;
+    setSaid(wrote && ((w && w.law) || (filled && filled.reason && hasLaw(filled.reason))) ? wrote.fact : null);
     setFbs(out); setWhy(w);
     if (h) {
       setHintLine({ id: ++n.current, key: h.key, vars: h.vars, rung: h.rung });
@@ -120,15 +126,17 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   // the row being worked on stays in view inside the notebook (on a phone the notebook scrolls between the drawing and the sheet)
   useLayoutEffect(() => {
     const box = nbEl.current;
+    const opened = openRow && openRow !== wasOpen.current;                 // a finished row was just opened (its theorem): that row, with its sentence, comes into view
+    wasOpen.current = openRow;
     if (!box || box.scrollHeight <= box.clientHeight + 1) return;
-    const el = box.querySelector('.prf-row.is-now') || box.querySelector('.prf-row:not(.is-ghost):last-of-type');
+    const el = (opened && box.querySelector('.prf-row.is-open')) || box.querySelector('.prf-row.is-now') || box.querySelector('.prf-row:not(.is-ghost):last-of-type');
     if (!el) return;
     const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
     let d = 0;
-    if (r.bottom > b.bottom - 24) d = r.bottom - b.bottom + 30;          // a little of the next (empty) row shows under it
+    if (r.bottom > b.bottom - 24) d = Math.min(r.bottom - b.bottom + 30, r.top - b.top - 6);   // a little of the next (empty) row shows under it; a tall row (its theorem under it) keeps its first line in view
     else if (r.top < b.top + 4) d = r.top - b.top - 10;
     if (d) box.scrollTo({ top: box.scrollTop + d, behavior: reduce || intro.current ? 'auto' : 'smooth' });
-  }, [s.rows.length, curKey, leans, planQ, end, fbs, why, hintLine]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.rows.length, curKey, leans, planQ, end, fbs, why, hintLine, openRow, peek, said, lawList]); // eslint-disable-line react-hooks/exhaustive-deps
   // on a computer the page itself scrolls (the sheet is as tall as its rows): keep the sheet's foot, where the tray is, in view
   useEffect(() => {
     const el = workEl.current;
@@ -136,7 +144,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     if (end && cardOn) { window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); return; }   // the end: the result line first, the notebook page under it
     const over = el.getBoundingClientRect().bottom - window.innerHeight + 16;
     if (over > 0) window.scrollBy({ top: over, behavior: reduce ? 'auto' : 'smooth' });
-  }, [s.rows.length, curKey, cardOn, fbs, why, hintLine, leans, planQ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.rows.length, curKey, cardOn, fbs, why, hintLine, leans, planQ, openRow, peek]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* type 4's plan question: tap the two triangles (in the drawing or as chips); the reply is a private note */
   function pickPlan(id) {
@@ -247,7 +255,9 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       now = { st: null, reason: null, ask: null };
     } else {
       const at = s.rows.length - 1, role = roleOf(p, walkLast.fact), rs = REASONS[walkLast.reason] ? walkLast.reason : 'given', w = whyOf(p, walkLast.fact, walkLast.reason);
-      head = { kicker: fill('lbl.rowShow', { n: at + 1 }), coach: role === 'given' || role === 'given-more' ? T['coach.given'] : <><Tx k={w.key} vars={w.vars} /> {fill('coach.reason', { reason: reasonInline(rs) })}</> };
+      // a row that stands on a theorem / definition: the guide quotes its full sentence (§6.2.3); the others name their reason in a word
+      head = { kicker: fill('lbl.rowShow', { n: at + 1 }), coach: role === 'given' || role === 'given-more' ? T['coach.given'] : w.law && w.law === rs ? <><Tx k={w.key} vars={w.vars} /><Law id={w.law} className="prf-why-law" /></> : <><Tx k={w.key} vars={w.vars} /> {fill('coach.reason', { reason: reasonInline(rs) })}</> };
+      if (w.law && w.law === rs && !(role === 'given' || role === 'given-more')) head.said = walkLast.fact;
       body = { t: 'next', label: T['btn.gotIt'] };
       now = { at };
       whyShown = null;
@@ -257,12 +267,25 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     head = { kicker: fill('lbl.rowReason', { n: rowNo }), ask: role === 'congruence' ? T['q.whyCong'] : role === 'conclusion' ? T['q.whyConcl'] : T['q.whyRow'] };
     now = { st: <St st={p.facts[fact]} color={colorOf(fact)} />, reason: null, ask: 'reason' };
     if (mode === 'tap') {
-      body = { t: 'node', node: <GroupPick key={cur.key} wrong={cur.wrong} onPick={(id) => dispatch({ t: 'reason', id })} /> };
+      // a list of theorems with their sentences is long: while it is open the big question and the lines about the row before step aside
+      const key = cur.key;
+      body = { t: 'node', node: <GroupPick key={key} wrong={cur.wrong} onPick={(id) => dispatch({ t: 'reason', id })} onGroup={(g) => { setLawList(g ? key : null); if (g) { setFbs([]); setWhy(null); setSaid(null); } }} /> };
+      if (lawList === key) head.ask = null;
     } else {
       const all = chipsFor(fact), acc = acceptedReasons(p, fact);
       const keep = cur.rung >= 2 ? [...all.filter((c) => acc.includes(c)), ...all.filter((c) => !acc.includes(c) && !cur.wrong.includes(c))].slice(0, 3) : all;
-      body = { t: 'chips', chips: all.map((id) => ({ id, label: REASONS[id].short, sub: T[`sub.${id}`], disabled: cur.wrong.includes(id), dim: !keep.includes(id) })) };
-      onPick = (id) => dispatch({ t: 'reason', id });
+      // a theorem / definition chip is read first: tap = its full sentence in the sheet, a second tap or "בחירה" = choose (§6.2.2).
+      // Other chips choose at once. Where the app itself writes the row (the walk-through, "הראו לי") there is no tap at all.
+      const at = peek && peek.key === cur.key && all.includes(peek.id) && !cur.wrong.includes(peek.id) ? peek.id : null;
+      const choose = (id) => { setPeek(null); dispatch({ t: 'reason', id }); };
+      body = { t: 'chips', chips: all.map((id) => ({ id, label: REASONS[id].short, sub: T[`sub.${id}`], disabled: cur.wrong.includes(id), dim: !keep.includes(id), law: hasLaw(id), on: at === id })) };
+      onPick = (id) => {
+        if (at === id && Date.now() - peek.t < 350) return;       // the tail of a double tap is not a choice: nothing is picked by accident while reading
+        if (!hasLaw(id) || at === id) { choose(id); return; }
+        setPeek({ key: cur.key, id, t: Date.now() });
+        setFbs([]); setWhy(null); setSaid(null);                          // the lines about the row before have been read: the sheet stays short (removing a line is no event for the tracker)
+      };
+      if (at) head.law = { id: at, onChoose: () => choose(at) };
     }
     if (s.pending && (mode === 'tiles' || mode === 'tap')) onCancel = () => dispatch({ t: 'cancel' });
   } else if (cur && cur.kind === 'statement') {
@@ -300,6 +323,9 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     if (head && isParts) head.quote = congQuote;
   }
   if (cur && !planQ && !leans && !isDone) hint = { rung: cur.rung, nudge, wait: cur.rung === 2 && showKey !== cur.key, waitMs: RULES.HINT3_WAIT_MS };
+
+  // the sheet is quoting this row's theorem now (the why-line, the guide's bubble, the "מילאנו יחד" note): the notebook shows it when the sheet moves on
+  const saidRow = end ? null : head && head.said ? head.said : said;
 
   // Level 1: while the congruence's reason is open, the rows it stands on stay lit (no extra button)
   const congNeeds = useMemo(() => {
@@ -384,7 +410,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
                 )}
               </div>
               {s.view.plan === 'line' && <p className="prf-plan">{T['lbl.planL3']}</p>}
-              <ProofRows problem={p} rows={s.rows} total={totalRows} now={end ? null : now} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={leadRows} />
+              <ProofRows problem={p} rows={s.rows} total={totalRows} now={end ? null : now} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={leadRows} said={saidRow} />
             </div>
             {!end && (
               <Tray label={label} head={head} body={body} fbs={fbs} why={whyShown} hintLine={hintLine} hint={hint}

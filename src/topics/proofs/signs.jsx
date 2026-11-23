@@ -3,7 +3,8 @@
    small inline SVGs (Rubik has no such glyphs; spec §11 "Signs"). Each sign has a Hebrew name for
    screen readers. Also the small line icons the screens share (never an emoji, never a "✓" char). */
 import React from 'react';
-import { tx, fill } from './texts.js';
+import { T, tx, fill } from './texts.js';
+import { REASONS, isLaw } from './reasons.js';
 import { show, say, showPart } from './core.js';
 
 const SIGNS = {
@@ -74,6 +75,16 @@ export function Tx({ k, vars }) {
   return <>{tx(k, vars).map((p, i) => (p.t === 'm' ? <Mx key={i} s={p.v} /> : <React.Fragment key={i}>{p.v}</React.Fragment>))}</>;
 }
 
+/** Does this reason have a sentence to show (a theorem or a definition with its full wording)? */
+export const hasLaw = (id) => isLaw(id) && !!REASONS[id].full;
+/** "המשפט" for a theorem, "ההגדרה" for a definition. */
+export const lawWord = (id) => T[`lbl.law.${(REASONS[id] || {}).kind}`] || T['lbl.law.theorem'];
+/** A theorem's or definition's full sentence behind its small tag (spec 2026-11-23 §6.2): muted, never cut. */
+export function Law({ id, className }) {
+  if (!hasLaw(id)) return null;
+  return <span className={`prf-law${className ? ` ${className}` : ''}`}><b className="prf-law-k">{lawWord(id)}</b> {REASONS[id].full}</span>;
+}
+
 /* ── line icons (currentColor) ── */
 const I = (d, vb = 20, sw = 2) => function Icon({ className }) {
   return <svg className={`prf-ic${className ? ` ${className}` : ''}`} viewBox={`0 0 ${vb} ${vb}`} fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{d}</svg>;
@@ -88,6 +99,7 @@ export const IcSwap = I(<><path d="M4 7.5h11.5M12.5 4.5l3 3-3 3" /><path d="M16 
 export const IcClose = I(<path d="M5.5 5.5l9 9M14.5 5.5l-9 9" />, 20, 2);
 export const IcBook = I(<><path d="M4 4.5h5a2 2 0 012 2V16a1.5 1.5 0 00-1.5-1.5H4z" /><path d="M16 4.5h-5a2 2 0 00-2 2V16a1.5 1.5 0 011.5-1.5H16z" /></>, 20, 1.6);
 export const IcPen = I(<><path d="M12.8 4.6l2.6 2.6L7.6 15H5v-2.6z" /><path d="M11 6.4l2.6 2.6" /></>, 20, 1.7);
+export const IcDown = I(<path d="M5.5 8l4.5 4.5L14.5 8" />, 20, 2.2);
 export const IcHand = I(<><circle cx="10" cy="10" r="2.2" fill="currentColor" stroke="none" /><circle cx="10" cy="10" r="6.2" /></>, 20, 1.6);
 
 /** The pair glyph beside a finished row: n ticks or n arcs (or a square) in the pair colour. */
