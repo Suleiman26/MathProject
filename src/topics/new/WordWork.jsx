@@ -31,7 +31,7 @@ function EquationPad({ xs, locked }) {
       <label className="nw-wk-lbl" htmlFor="nw-wk-eq"><Rich text="כתבו את המשוואה שיוצאת מהסיפור (הנעלם [[x]])" /></label>
       <div className="nw-wk-eqrow">
         <input id="nw-wk-eq" {...BOX} dir="ltr" className={`nw-wk-in${msg && msg.ok ? ' ok' : ''}`} value={src} readOnly={locked}
-          placeholder="למשל 3x + 5 = 20" maxLength={60}
+          placeholder="3x + 5 = 20" maxLength={60}
           onChange={(e) => { setSrc(e.target.value); setMsg(null); }}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); check(); } }} />
         {!locked && <button type="button" className="btn nw-wk-go" data-kp-ok="" onClick={check}>בודקים</button>}
