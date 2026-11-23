@@ -356,7 +356,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const showCard = end && cardOn;
 
   return (
-    <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}${head && head.law ? ' is-peek' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
+    <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
       <div className="prf-head">
         <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={leave}><IcBack /></button>
         <span className="prf-head-t">{type.label}</span>
