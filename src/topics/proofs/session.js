@@ -8,11 +8,15 @@
          decisions:[{ key, label, state, fact }], errs:{ kind:n }, nonSolo, ended, … }
    Actions: { t:'statement', st } · { t:'reason', id } · { t:'matching', tri1, order } · { t:'hint' }
             · { t:'cancel' } · { t:'next' } (walk-through) · { t:'qed' }
+            · similarity (spec 2026-11-23 §7.5–§7.6): { t:'number', text } (the keypad's raw text for the open number row:
+              a format slip is a note and no try) · { t:'pair', a, b } (לבד: one fraction of a ratio, side a over side b;
+              the last one judges the ratio by rule) · { t:'unpair' } (take the last fraction back)
+   cur.pairs = the fractions of the ratio being built (kept in the snapshot, like every decision).
    Effects: { t:'fb', cls:'ok'|'err'|'note', key, vars, kind? } · { t:'mark', fact } · { t:'question', parts }
             · { t:'why', key, vars, law? } · { t:'filled', fact, reason } · { t:'hint', rung, key, vars, parts, law? }
             · { t:'end', clean } (clean = endClean(s), the mastery rule)
    fb.cls → the tracker (spec §10.4): 'ok' only for right on the first try; a right second try is 'note'. */
-import { classify, checkReason, checkMatching, isDone, roleOf, acceptedReasons, partsOf, show, whyOf, congOf, required, norm } from './core.js';
+import { classify, checkReason, checkMatching, isDone, roleOf, acceptedReasons, partsOf, show, whyOf, anchorOf, required, norm } from './core.js';
 import { RULES, isClean } from './mastery.js';
 import { LABELS, T } from './texts.js';
 import { DEFS, REASONS, isLaw, reasonInline } from './reasons.js';
@@ -26,7 +30,7 @@ const firstReason = (p, id, done) => { const js = p.just[id] || []; return (js.f
 function clone(s) {
   return {
     ...s, done: [...s.done], rows: [...s.rows], pending: s.pending && { ...s.pending },
-    cur: s.cur && { ...s.cur, wrong: [...s.cur.wrong] }, decisions: [...s.decisions], errs: { ...s.errs },
+    cur: s.cur && { ...s.cur, wrong: [...s.cur.wrong], ...(s.cur.pairs ? { pairs: s.cur.pairs.map((x) => [...x]) } : {}) }, decisions: [...s.decisions], errs: { ...s.errs },
     stash: { ...s.stash }, placed: [...s.placed],
   };
 }
@@ -37,10 +41,16 @@ function expectedFact(s) {
   const p = s.problem;
   if (ORDERED(s.view)) { const st = s.view.steps[s.stepI]; return st ? st.fact : null; }
   const req = required(p), open = p.canon.filter((f) => req.has(f) && !s.done.includes(f));
-  const ready = open.find((f) => (p.just[f] || []).some((j) => within(j.needs, s.done)));
-  return ready || open[0] || null;
+  const ready = open.filter((f) => (p.just[f] || []).some((j) => within(j.needs, s.done)));
+  // the asked length comes first once its ratio is written: its row is a keypad, never one of the tiles
+  return ready.find((f) => p.facts[f].kind === 'val') || ready[0] || open[0] || null;
 }
-const isTapCong = (s, fact) => s.view.mode === 'tap' && fact && fact === congOf(s.problem);
+/* the open decision's fact, and: is it the number row (a `val` statement)? */
+const curFact = (s) => (s.cur ? s.cur.fact || s.cur.expect : null);
+const isNumber = (s) => !!s.cur && s.cur.kind === 'statement' && !!s.problem.facts[curFact(s)] && s.problem.facts[curFact(s)].kind === 'val';
+const isSim = (p) => { const a = anchorOf(p); return !!a && p.facts[a].kind === 'sim'; };
+/* Level 3: the congruence / similarity row is a vertex matching */
+const isTapCong = (s, fact) => s.view.mode === 'tap' && fact && fact === anchorOf(s.problem);
 const stmtLabel = (s, fact) => (isTapCong(s, fact) ? LABELS.matching : LABELS.stmt(roleOf(s.problem, fact)));
 
 function openStatement(s, fact = null) {
@@ -84,8 +94,10 @@ function writeRow(s, fx, fact, reason, by) {
 /* role of the open decision, for hints ('given' becomes 'given-more' once another given is used) */
 function hintRole(s) {
   const p = s.problem, c = s.cur, fact = c.fact || c.expect;
-  if (c.kind === 'statement' && isTapCong(s, fact)) return 'matching';
-  const r = roleOf(p, fact);
+  if (c.kind === 'statement' && isTapCong(s, fact)) return isSim(p) ? 'matching-sim' : 'matching';   // a similarity has no side ticks to read
+  const r = roleOf(p, fact), f = p.facts[fact];
+  if (r === 'common' && f.kind === 'ang') return 'common-angle';                    // "a side is equal to itself" would be about the wrong thing
+  if ((r === 'given' || r === 'given-more') && f.kind === 'par') return 'given-par';   // not an equality
   if (r === 'given' && (p.given || []).some((g) => g !== fact && s.done.includes(g))) return 'given-more';
   return r;
 }
@@ -149,7 +161,7 @@ function wrongTry(s, fx, kind, key, vars, dedupe) {
   const short = s.view.shortFirst && c.kind === 'reason' && c.tries === 1;
   fx.push({ t: 'fb', cls: 'err', key: short ? 'rs.short' : key, vars: short ? {} : vars, kind });
   if (s.view.autoHint && c.tries === 1 && c.rung < 1) { c.rung = 1; fx.push(hintFx(s, 1)); }
-  if (c.tries >= RULES.MAX_TRIES) fillCur(s, fx);
+  if (c.tries >= (isNumber(s) ? RULES.MAX_TRIES_NUM : RULES.MAX_TRIES)) fillCur(s, fx);
 }
 const rightState = (c) => (c.tries > 0 ? 'missed' : c.rung >= 2 ? 'helped' : 'solo');
 const rightFb = (state) => ({ t: 'fb', cls: state === 'missed' ? 'note' : 'ok', key: 'fb.ok', vars: {} });
@@ -201,7 +213,8 @@ function onReason(s0, id) {
 
 function onMatching(s0, tri1, order) {
   if (s0.ended || !s0.cur || s0.cur.kind !== 'statement') return same(s0);
-  const p = s0.problem, st = { kind: 'cong', map: tri1.map((u, i) => [u, order[i]]) };
+  const p = s0.problem, anc = anchorOf(p);
+  const st = { kind: anc && p.facts[anc].kind === 'sim' ? 'sim' : 'cong', map: tri1.map((u, i) => [u, order[i]]) };
   const m = checkMatching(p, tri1, order, s0.done);
   if (m.ok) return onStatement(s0, st, true);
   const k = 'M:' + tri1.map((u, i) => u + order[i]).join(',');
@@ -210,6 +223,51 @@ function onMatching(s0, tri1, order) {
   s.cur.label = LABELS.matching;
   wrongTry(s, fx, m.kind, m.textKey, m.vars, k);
   return { s, fx };
+}
+
+/* ── the number row and the ratio built pair by pair (spec 2026-11-23 §7.5–§7.6) ── */
+/** The keypad's text as a number: { v } or { slip: text key, vars } for a format slip (empty, a lone ".", "06", too long). */
+export function numberOf(text) {
+  const t = String(text == null ? '' : text).trim();
+  if (t === '') return { slip: 'st.numEmpty', vars: {} };
+  if (t.length > 6) return { slip: 'st.numLong', vars: {} };
+  if (!/^\d*\.?\d*$/.test(t) || !/\d/.test(t)) return { slip: 'st.numDot', vars: {} };
+  if (/^0\d/.test(t)) return { slip: 'st.numZero', vars: { good: t.replace(/^0+(?=\d)/, ''), bad: t } };
+  const v = Number(t);
+  if (!(v > 0)) return { slip: 'st.numNone', vars: {} };
+  return { v };
+}
+const noteOnly = (s0, key, vars = {}) => ({ s: clone(s0), fx: [{ t: 'fb', cls: 'note', key, vars }] });
+function onNumber(s0, text) {
+  if (s0.ended || !isNumber(s0)) return same(s0);
+  const p = s0.problem, n = numberOf(text);
+  if (n.slip) return noteOnly(s0, n.slip, n.vars);                     // the box says what is wrong: never a try
+  const st = { kind: 'val', x: p.facts[curFact(s0)].x, v: n.v };
+  if (s0.cur.wrong.includes(norm(p.figure, st))) return noteOnly(s0, 'st.numAgain');
+  return onStatement(s0, st, false);
+}
+/* how many fractions the ratio being built needs: the problem's open ratio row (two in a calculation, three for the full ratio) */
+function pairsNeeded(s) {
+  const p = s.problem, props = Object.keys(p.facts).filter((f) => p.facts[f].kind === 'prop');
+  const row = props.find((f) => !s.done.includes(f)) || props[0];
+  return row ? p.facts[row].pairs.length : 2;
+}
+const isSide = (p, x) => typeof x === 'string' && x.length === 2 && x[0] !== x[1] && !!p.figure.points[x[0]] && !!p.figure.points[x[1]];
+function onPair(s0, a, b) {
+  const p = s0.problem;
+  if (s0.ended || !s0.cur || s0.cur.kind !== 'statement' || ORDERED(s0.view) || !isSim(p) || isNumber(s0)) return same(s0);
+  if (!isSide(p, a) || !isSide(p, b) || [...a].sort().join('') === [...b].sort().join('')) return same(s0);
+  const s = clone(s0), pairs = [...(s.cur.pairs || []), [a, b]];
+  if (pairs.length < pairsNeeded(s)) { s.cur.pairs = pairs; return { s, fx: [] }; }
+  s.cur.pairs = [];                                                    // judged as one statement; right or wrong, the builder starts clean
+  const r = onStatement(s, { kind: 'prop', pairs }, false);
+  return r.s === s ? { s, fx: [{ t: 'fb', cls: 'note', key: 'st.propAgain', vars: {} }] } : r;   // the same wrong ratio again: no second try
+}
+function onUnpair(s0) {
+  if (s0.ended || !s0.cur || !s0.cur.pairs || !s0.cur.pairs.length) return same(s0);
+  const s = clone(s0);
+  s.cur.pairs = s.cur.pairs.slice(0, -1);
+  return { s, fx: [] };
 }
 
 function onHint(s0) {
@@ -264,6 +322,9 @@ export function act(s, a) {
     case 'statement': return onStatement(s, a.st, false);
     case 'reason': return onReason(s, a.id);
     case 'matching': return onMatching(s, a.tri1, a.order);
+    case 'number': return onNumber(s, a.text);
+    case 'pair': return onPair(s, a.a, a.b);
+    case 'unpair': return onUnpair(s);
     case 'hint': return onHint(s);
     case 'cancel': return onCancel(s);
     case 'next': return onNext(s);
@@ -304,7 +365,8 @@ export function restore(json, make) {
     const ok = Array.isArray(st.done) && st.done.every(isFact) && Array.isArray(st.rows) && st.rows.every((r) => r && isFact(r.fact))
       && Array.isArray(st.decisions) && Array.isArray(st.placed) && st.view && typeof st.view.mode === 'string' && Array.isArray(st.view.steps)
       && (st.pending === null || (st.pending && isFact(st.pending.fact)))
-      && (st.cur === null || (st.cur && typeof st.cur.key === 'string' && Array.isArray(st.cur.wrong) && (st.cur.kind === 'statement' || st.cur.kind === 'reason')))
+      && (st.cur === null || (st.cur && typeof st.cur.key === 'string' && Array.isArray(st.cur.wrong) && (st.cur.kind === 'statement' || st.cur.kind === 'reason')
+        && (st.cur.pairs === undefined || (Array.isArray(st.cur.pairs) && st.cur.pairs.every((x) => Array.isArray(x) && x.length === 2 && x.every((y) => typeof y === 'string'))))))
       && Number.isFinite(st.nonSolo) && Number.isFinite(st.stepI) && st.errs && typeof st.errs === 'object' && st.stash && typeof st.stash === 'object';
     if (!ok) return null;
     return { v: 1, problem, ...Object.fromEntries(KEEP.map((k) => [k, st[k]])) };

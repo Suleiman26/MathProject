@@ -56,6 +56,12 @@ export const T = {
   'hint.number.2': 'כופלים בהצלבה, ואחר כך מחלקים כדי למצוא את האורך החסר.',
   'hint.parallel.1': 'יש בנתון ישרים מקבילים. מצאו את הישר שחותך את שניהם.',
   'hint.parallel.2': 'בין ישרים מקבילים, זוויות מתאימות שוות וגם זוויות מתחלפות שוות. באיזה צד של החותך נמצאות הזוויות?',
+  'hint.common-angle.1': 'יש זווית ששייכת לשני המשולשים.',
+  'hint.common-angle.2': 'זווית תמיד שווה לעצמה.',
+  'hint.given-par.1': 'התחילו ממה שנתון: אילו ישרים מקבילים?',
+  'hint.given-par.2': 'הנתון הזה כתוב בשאלה.',
+  'hint.matching-sim.1': 'הסתכלו על הזוויות המסומנות: זוויות עם אותו סימון נמצאות בקודקודים מתאימים.',
+  'hint.matching-sim.2': 'כתבו את הקודקודים של המשולש השני באותו סדר: קודקוד מול קודקוד שהזווית שלו שווה.',
   'hint.sim-partner.1': 'מצאו את האות של הקודקוד בכתיבת הדמיון. באיזה מקום היא כתובה?',
   'hint.sim-partner.2': 'האות שכתובה באותו מקום במשולש השני היא המתאימה. במשולשים דומים, זוויות מתאימות שוות.',
 
@@ -112,6 +118,16 @@ export const T = {
   'st.propNeed': 'היחס נכון, אבל הוא לא עוזר כאן. צריך שבר עם הצלע שמחפשים, ועוד שבר ששתי הצלעות שלו ידועות.',
   'st.falsePar': 'מהנתון אי אפשר לדעת שהישרים {x}, {y} מקבילים.',
   'st.falseVal': 'האורך של הקטע {x} הוא לא {v}. בדקו את החישוב.',
+  /* the number row and the ratio built by tapping (spec 2026-11-23 §7.5–§7.6; Task 11; all in NEW_DRAFTS) */
+  'st.numFlip': 'הפכתם את היחס. בשני השברים כותבים באותו סדר: למעלה צלע מהמשולש הראשון, ולמטה הצלע המתאימה לה מהמשולש השני.',
+  'st.numCalc': 'הפרופורציה נכונה, בדקו את החישוב.',
+  'st.numEmpty': 'כתבו קודם את המספר במקשים.',
+  'st.numDot': 'זה עוד לא מספר. כתבו ספרות, ונקודה רק בין ספרות.',
+  'st.numZero': 'מספר לא מתחיל באפס. כתבו {good} במקום {bad}.',
+  'st.numLong': 'המספר ארוך מדי. האורך כאן הוא מספר שלם, או מספר עם חצי.',
+  'st.numNone': 'אורך של קטע הוא מספר גדול מאפס.',
+  'st.numAgain': 'את המספר הזה כבר ניסיתם. חשבו שוב, וכתבו מספר אחר.',
+  'st.propAgain': 'את היחס הזה כבר ניסיתם. בנו אותו שוב, שבר אחרי שבר.',
   'st.needFirst': 'את זה יודעים מהנתון. כותבים קודם, בשורה משלו, את הנתון שזה נשען עליו, ואחר כך את השורה הזאת.',
   'st.needRow': 'קודם כותבים את השורה שזה נשען עליה, ואחר כך את השורה הזאת.',
   'st.kinds': 'בוחרים שני חלקים מאותו סוג: שני קטעים, שתי זוויות או שני משולשים.',
@@ -304,6 +320,23 @@ export const T = {
   'btn.these': 'אלה השניים',
   'ui.planOk': 'נכון: החלקים האלה נמצאים במשולשים {t1}, {t2}. נוכיח קודם שהמשולשים חופפים.',
 
+  /* ── the number row, the keypad and the ratio built by tapping (spec 2026-11-23 §7.5–§7.6; Task 11; all in NEW_DRAFTS) ── */
+  'btn.answer': 'זו התשובה',
+  'btn.unpair': 'למחוק את השבר האחרון',
+  'q.number': 'מה האורך של {x}?',
+  'lbl.kp': 'מקשי מספרים',
+  'lbl.kpDel': 'מחיקה',
+  'lbl.kpDot': 'נקודה עשרונית',
+  'lbl.work': 'מציבים',
+  'lbl.cross': 'כופלים בהצלבה',
+  'lbl.tapSim': 'געו בציור בשני חלקים: שתי זוויות שוות, שני משולשים דומים, או צלע והצלע המתאימה לה.',
+  'lbl.tapPair1': 'עכשיו געו בצלע המתאימה לה, מהמשולש השני.',
+  'lbl.tapPair2': 'עוד שבר: געו בצלע, ואחר כך בצלע המתאימה לה.',
+  'say.frac': '{x} חלקי {y}',
+  'say.numBox': 'המספר שכתבתם: {v}',
+  'say.numLabel': 'אורך הקטע {x} הוא {v}',
+  'say.numAsk': 'האורך של הקטע {x} הוא מה שמחפשים',
+
   /* ── the notebook screen (2026-11-22 redesign; all in NEW_DRAFTS) ── */
   'lbl.rowOf': 'שורה {{n}} מתוך {{t}}',
   'lbl.allRows': 'כל השורות כתובות',
@@ -394,6 +427,11 @@ export const NEW_DRAFTS = [
   // the similarity levels (spec 2026-11-23 §5.2, §7.6)
   'type.sim-parts', 'type.sim-side', 'type.prove-sim', 'type.sim-calc', 'about.sim-parts', 'about.sim-side', 'about.prove-sim', 'about.sim-calc',
   'lbl.byOrderSim', 'lbl.planL3Sim', 'lbl.planL3SimCalc', 'say.askProp', 'say.askVal', 'lbl.goalSim', 'q.partnerSim',
+  // the number row, the keypad, the ratio built by tapping, the similarity hints (spec 2026-11-23 §7.5–§7.6; Task 11)
+  'st.numFlip', 'st.numCalc', 'st.numEmpty', 'st.numDot', 'st.numZero', 'st.numLong', 'st.numNone', 'st.numAgain', 'st.propAgain',
+  'btn.answer', 'btn.unpair', 'q.number', 'lbl.kp', 'lbl.kpDel', 'lbl.kpDot', 'lbl.work', 'lbl.cross', 'lbl.tapSim', 'lbl.tapPair1', 'lbl.tapPair2',
+  'say.frac', 'say.numBox', 'say.numLabel', 'say.numAsk',
+  'hint.common-angle.1', 'hint.common-angle.2', 'hint.given-par.1', 'hint.given-par.2', 'hint.matching-sim.1', 'hint.matching-sim.2',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

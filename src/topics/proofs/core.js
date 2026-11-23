@@ -300,6 +300,42 @@ export function checkProp(p, st, { need } = {}) {
   return { ok: true };
 }
 
+/* ── a missing length: the numbers of its proportion (spec 2026-11-23 §7.5) ───── */
+/* The calculation of a `val` row: its proportion's fraction with the asked side and a fraction whose two sides are
+   known ({ top: the asked side is the numerator, other: the number beside it, kn / kd: the known fraction }), or null. */
+function calcOf(p, id) {
+  const f = p.facts[id];
+  if (!f || f.kind !== 'val') return null;
+  const pid = (p.just[id] || []).flatMap((j) => j.needs).find((n) => p.facts[n] && p.facts[n].kind === 'prop');
+  const pr = pid && p.facts[pid];
+  if (!pr || !okPairs(pr.pairs)) return null;
+  const V = {};
+  for (const [s, n] of Object.entries(p.values || {})) V[segKey(s)] = n;
+  const asked = segKey(f.x), val = (s) => V[segKey(s)];
+  const fi = pr.pairs.findIndex((fr) => fr.some((s) => segKey(s) === asked));
+  const ki = pr.pairs.findIndex((fr, i) => i !== fi && fr.every((s) => val(s) != null));
+  if (fi < 0 || ki < 0) return null;
+  const top = segKey(pr.pairs[fi][0]) === asked, other = val(pr.pairs[fi][top ? 1 : 0]);
+  if (other == null) return null;
+  return { fi, ki, top, other, kn: val(pr.pairs[ki][0]), kd: val(pr.pairs[ki][1]) };
+}
+/** The answer a student gets with the known ratio upside down (x/10 = 15/4 for x/10 = 4/15), or null. */
+export function flipOf(p, id) {
+  const c = calcOf(p, id);
+  if (!c) return null;
+  return c.top ? (c.other * c.kd) / c.kn : (c.other * c.kn) / c.kd;
+}
+/** The work line under the ratio row (§7.5): the substitution built from the labels, x for the asked side, and the
+    cross-multiplication. → { sub:[[top, bottom] ×2] (strings, in the ratio's order), text:'4/10 = x/15', cross:'x · 10 = 4 · 15' } | null */
+export function workOf(p, id) {
+  const c = calcOf(p, id);
+  if (!c) return null;
+  const mine = c.top ? ['x', String(c.other)] : [String(c.other), 'x'], known = [String(c.kn), String(c.kd)];
+  const sub = c.fi < c.ki ? [mine, known] : [known, mine];
+  const cross = c.top ? `x · ${c.kd} = ${c.other} · ${c.kn}` : `x · ${c.kn} = ${c.other} · ${c.kd}`;
+  return { sub, text: sub.map(([a, b]) => `${a}/${b}`).join(' = '), cross };
+}
+
 /* ── family T: what an isosceles triangle gives (lead ruling on review I3) ── */
 /* Once AB = AC is known (given or written), the base angles are equal, and the bisector, the median and
    the altitude from the apex are one line (any one of them gives the other two). Phase 1 has no reason
@@ -376,7 +412,13 @@ export function classify(p, done, st) {
   if (st.kind === 'seg') return { c: 'false', kind: 'false-statement', textKey: 'st.falseSeg', vars: { x: st.x, y: st.y } };
   if (st.kind === 'ang') return { c: 'false', kind: 'false-statement', textKey: 'st.falseAng', vars: { x: showPart(st.x), y: showPart(st.y) } };
   if (st.kind === 'par') return { c: 'false', kind: 'false-statement', textKey: 'st.falsePar', vars: { x: st.x, y: st.y } };
-  if (st.kind === 'val') return { c: 'false', kind: 'calc', textKey: 'st.falseVal', vars: { x: st.x, v: st.v } };
+  if (st.kind === 'val') {
+    // a wrong number for the asked length (§7.5): the known ratio upside down, else a slip in the calculation
+    const vid = Object.keys(p.facts).find((f) => p.facts[f].kind === 'val' && typeof st.x === 'string' && segKey(p.facts[f].x) === segKey(st.x));
+    const flip = vid ? flipOf(p, vid) : null;
+    if (flip != null) return near(flip, Number(st.v), 1e-9) ? { c: 'false', kind: 'ratio-flip', textKey: 'st.numFlip', vars: {} } : { c: 'false', kind: 'calc', textKey: 'st.numCalc', vars: {} };
+    return { c: 'false', kind: 'calc', textKey: 'st.falseVal', vars: { x: st.x, v: st.v } };
+  }
   if (!anchorOf(p)) return { c: 'false', kind: 'false-statement', textKey: 'st.matchingPlain', vars: {} };
   return { c: 'false', kind: 'false-statement', ...matchingMiss(p, st.map, done) };
 }

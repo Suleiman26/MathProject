@@ -12,6 +12,7 @@ export const RULES = {
   RESCUE_STREAK: 2,         // not-clean proofs in a row before the rescue ladder steps in
   STUCK: 6,                 // counted proofs at a level without levelling up → the kind card
   MAX_TRIES: 2,             // wrong tries on one decision before the app fills it
+  MAX_TRIES_NUM: 3,         // a number row (similarity): three wrong numbers before the app fills it; a format slip is no try
   HINT3_WAIT_MS: 4000,      // "הראו לי" unlocks this long after hint 2
   IDLE_MS: 20000,           // no tap this long (Levels 1–2): the hint button pulses once
   ROUND: 3,                 // "סיימתם סבב של 3 הוכחות."

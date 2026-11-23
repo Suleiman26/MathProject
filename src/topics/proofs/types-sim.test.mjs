@@ -76,7 +76,7 @@ for (const id of SIM) for (const [level, variant] of STAGES) {
         else assert.equal(classify(p, [], x.st).c === 'ok', false, `${p.template}: a wrong tile is right`);
       }
       // each wrong tile is rejected with the kind it was made for (never counted right, never a true statement called false)
-      const KIND = { consequence: ['looks-equal'], 'letter-swap': ['false-statement'], 'wrong-order': ['wrong-matching'], position: ['wrong-matching'], 'next-letter': ['wrong-matching'], ratio: ['ratio-flip', 'non-matching-sides'], 'num-flip': ['calc'], 'num-slip': ['calc'], 'num-near': ['calc'] };
+      const KIND = { consequence: ['looks-equal'], 'letter-swap': ['false-statement'], 'wrong-order': ['wrong-matching'], position: ['wrong-matching'], 'next-letter': ['wrong-matching'], ratio: ['ratio-flip', 'non-matching-sides'], 'num-flip': ['ratio-flip'], 'num-slip': ['calc'], 'num-near': ['calc'] };
       const after = [...p.given, ...(p.canon.includes('prop') ? p.canon.slice(0, p.canon.indexOf('prop') + 1) : [])];
       for (const w of p.tiles.wrong) {
         const c = classify(p, w.st.kind === 'val' ? after : p.given, w.st);
