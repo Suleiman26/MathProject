@@ -10,10 +10,11 @@ import { accountApi, useAccount } from "@/lib/account";
 import { chapterStats } from "@/home/chapters";
 import { calcAllowed, eqnAllowed } from "@/lib/calc-topics";
 import { isAdminFrame } from "@/lib/admin-frame";
+import { keyText } from "@/lib/mp-key";
 
 // the side calculator: its code is fetched only when a student opens it
 const Calculator = lazy(() => import("./Calculator"));
-const activeChapter = () => { const b = document.querySelector("#root :is(.ch-btn, .nav-btn, .ph).active"); return b ? b.textContent : ""; };
+const activeChapter = () => { const b = document.querySelector("#root :is(.ch-btn, .nav-btn, .ph).active"); return keyText(b); }; // data-mp-key, else the text
 
 export default function TopicView({ slug }) {
   const meta = TOPICS[slug];
@@ -41,7 +42,7 @@ export default function TopicView({ slug }) {
     let alive = true; const solved = new Set();
     const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
     const mark = () => document.querySelectorAll("#root :is(.ch-btn, .nav-btn, .ph)").forEach((b) => {
-      const on = solved.has(norm(b.textContent));
+      const on = solved.has(norm(keyText(b)));
       if (b.hasAttribute("data-solved") !== on) b.toggleAttribute("data-solved", on);
     });
     accountApi.topic(slug).then((d) => {
@@ -79,7 +80,7 @@ export default function TopicView({ slug }) {
     const iv = setInterval(() => {
       tries++;
       const w = want[at];
-      const btn = [...document.querySelectorAll(w.sel)].find((b) => norm(b.textContent) === w.text);
+      const btn = [...document.querySelectorAll(w.sel)].find((b) => norm(keyText(b)) === w.text); // ?ch / &sub carry stored names (data-mp-key)
       if (btn && btn.classList.contains("active")) {
         if (++stable >= 3) { stable = 0; tries = 0; if (++at >= want.length) done(); }
         return;

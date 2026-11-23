@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { readPlace } from "@/admin/review/data";
 import { pickQuestion } from "@/admin/review/snapshot";
+import { keyText } from "@/lib/mp-key";
 
 const CH_SEL = "#root :is(.ch-btn, .nav-btn, .ph)";
 const SUB_SEL = "#root :is(.sub-tab, .sub-tab-btn, .sub-btn, .tab)";
@@ -103,11 +104,11 @@ export function useFrame(onPlace, onClick) {
   /** click the chapter (and sub-tabs) in the open page; false when the button isn't there */
   const openChapter = useCallback((chapter, subs = []) => {
     const d = doc(); if (!d) return false;
-    const btn = [...d.querySelectorAll(CH_SEL)].find((b) => nrm(b.textContent) === nrm(chapter));
+    const btn = [...d.querySelectorAll(CH_SEL)].find((b) => nrm(keyText(b)) === nrm(chapter)); // stored names (data-mp-key), as readPlace gives
     if (!btn) return false;
     if (!btn.classList.contains("active")) btn.click();
     subs.forEach((s, i) => later(() => {
-      const b = [...d.querySelectorAll(SUB_SEL)].find((x) => nrm(x.textContent) === nrm(s));
+      const b = [...d.querySelectorAll(SUB_SEL)].find((x) => nrm(keyText(x)) === nrm(s));
       if (b && !b.classList.contains("active")) b.click();
     }, 250 * (i + 1)));
     return true;

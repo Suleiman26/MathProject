@@ -282,13 +282,16 @@ const verdictWord = (s) => (s.done ? "נכון" : s.bad ? "לא נכון" : s.ok
 
 /* ── reading the live frame (browser only) ─────────────────────────────── */
 const norm = (t) => flat(t);
+/** the stored name of a chapter / sub-tab button: data-mp-key, else its text.
+ *  Same as keyText in src/lib/mp-key.js (copied: this file has no imports on purpose). */
+const keyText = (el) => (el && el.dataset && el.dataset.mpKey) || (el && el.textContent) || "";
 /** The place the page is on: the active chapter button and the FULL active sub-tab path (nested tabs too). */
 export function readPlace(doc) {
   const root = doc && doc.getElementById("root");
   if (!root) return { chapter: "", subs: [] };
   const ch = root.querySelector(":is(.ch-btn, .nav-btn, .ph).active");
-  const subs = [...root.querySelectorAll(":is(.sub-tab, .sub-tab-btn, .sub-btn, .tab).active")].map((b) => norm(b.textContent)).filter(Boolean);
-  return { chapter: ch ? norm(ch.textContent) : "", subs };
+  const subs = [...root.querySelectorAll(":is(.sub-tab, .sub-tab-btn, .sub-btn, .tab).active")].map((b) => norm(keyText(b))).filter(Boolean);
+  return { chapter: ch ? norm(keyText(ch)) : "", subs };
 }
 
 /**

@@ -16,6 +16,7 @@
    ========================================================================== */
 import { mpData } from "./mp-data";
 import { isAdminFrame, anonStatsOff } from "./admin-frame";
+import { keyText } from "./mp-key";
 
 let started = false;
 
@@ -197,9 +198,11 @@ export function initRuntime() {
   // student is signed in, the same rows go to their own progress.
   function clean(s, max) { return (s || "").replace(/\s+/g, " ").trim().slice(0, max) || null; }
   function textOf(sel, root) { var el = (root || doc).querySelector(sel); return el ? el.textContent : ""; }
+  // chapter / sub-tab names: data-mp-key when the button has one (its stored name), else its text
+  function keyOf(sel) { return keyText(doc.querySelector(sel)); }
   function chapterOf() {
-    var main = textOf(".ch-btn.active, .nav-btn.active, .ph.active");
-    var sub = textOf("#root .sub-tab.active, #root .sub-tab-btn.active, #root .sub-btn.active, #root .tab.active");
+    var main = keyOf(".ch-btn.active, .nav-btn.active, .ph.active");
+    var sub = keyOf("#root .sub-tab.active, #root .sub-tab-btn.active, #root .sub-btn.active, #root .tab.active");
     return clean([main, sub].filter(Boolean).join(" › "), 150);
   }
   function stepOf(el) {
