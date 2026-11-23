@@ -239,7 +239,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   if (rescue) {
     // no warm-up kinds on this level: the warm-up step of the rescue ladder becomes the worked example
     const step = rescue.step === 1 && !hasWarm ? 2 : rescue.step;
-    const go = () => (step === 1 ? startWarm({ only: rescue.warm || 'W1', then: 'proof' }) : rescue.step === 2 ? startProof(level, { walk: true }) : startProof(level));
+    const go = () => (step === 1 ? startWarm({ only: rescue.warm || 'W1', then: 'proof' }) : step === 2 ? startProof(level, { walk: true }) : startProof(level));
     return frame(tabs, (
       <div className="content prf-ch prf-ch-card">
         <div className="prf-rescue">

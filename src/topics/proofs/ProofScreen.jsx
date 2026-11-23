@@ -145,7 +145,21 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     let d = 0;
     if (r.bottom > b.bottom - 24) d = Math.min(r.bottom - b.bottom + 30, r.top - b.top - 6);   // a little of the next (empty) row shows under it; a tall row (its theorem under it) keeps its first line in view
     else if (r.top < b.top + 4) d = r.top - b.top - 10;
-    if (d) box.scrollTo({ top: box.scrollTop + d, behavior: reduce || intro.current ? 'auto' : 'smooth' });
+    // the notebook's top edge never cuts a line of the given or the צ״ל block (a goal chip half under the drawing): what it
+    // would cut stays whole in view while the row still fits under it, else it is scrolled fully past
+    if (d) {
+      const at = (x) => x.getBoundingClientRect().top - b.top + box.scrollTop, room = box.clientHeight - 6, rowEnd = r.bottom - b.top + box.scrollTop;
+      let top = box.scrollTop + d;
+      for (const x of box.querySelectorAll('.prf-intro,.prf-gv,.prf-goals,.prf-plan,.prf-nb-th')) {
+        const t = at(x) - 4, e = at(x) + x.getBoundingClientRect().height + 3;
+        if (t < top && top < e) top = rowEnd - t <= room ? Math.max(0, t) : e;
+      }
+      // scrolled fully past, the block may need more room under the last row than the notebook has: add it below
+      const over = top - (box.scrollHeight - box.clientHeight);
+      if (over > 0.5) box.style.paddingBottom = `${parseFloat(getComputedStyle(box).paddingBottom) + Math.ceil(over)}px`;
+      d = top - box.scrollTop;
+    }
+    if (Math.abs(d) >= 1) box.scrollTo({ top: box.scrollTop + d, behavior: reduce || intro.current ? 'auto' : 'smooth' });
   }, [s.rows.length, curKey, leans, planQ, end, fbs, why, hintLine, openRow, peek, said, lawList]); // eslint-disable-line react-hooks/exhaustive-deps
   // on a computer the page itself scrolls (the sheet is as tall as its rows): keep the sheet's foot, where the tray is, in view
   useEffect(() => {

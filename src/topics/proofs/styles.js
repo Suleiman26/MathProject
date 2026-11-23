@@ -86,9 +86,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-work{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
 
 /* ── head ── */
-#root .prf-head{flex:none;display:flex;align-items:center;gap:8px;height:44px;padding-inline:4px 14px}
+#root .prf-head{flex:none;display:flex;align-items:center;gap:8px;min-height:44px;padding-inline:4px 14px}
 #root .prf-back{flex:none;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:transparent;box-shadow:none;color:var(--a-700);font-size:20px}
-#root .prf-head-t{flex:0 1 auto;min-width:0;font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the level's name is never cut: on a narrow phone it takes two lines (balanced) instead of an ellipsis */
+#root .prf-head-t{flex:0 1 auto;min-width:0;font-size:1rem;font-weight:700;line-height:1.15;white-space:normal;text-wrap:balance}
 #root .prf-pill{flex:none;padding:2px 9px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.78rem;font-weight:600;line-height:1.5}
 #root .prf-dots{flex:none;display:flex;gap:5px;margin-inline-start:auto}
 #root .prf-dots i{display:block;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line-strong)}
@@ -479,7 +480,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 }
 @media (max-width:399px){
   #root .prf-head{gap:5px;padding-inline:2px 8px}
-  #root .prf-head-t{font-size:.88rem}
+  #root .prf-head-t{font-size:.88rem;line-height:1.12}
   #root .prf-pill{padding-inline:7px}
   #root .prf-lawsb{gap:5px;padding-inline:9px;font-size:.8rem}
   #root .prf-lawsb .prf-ic{font-size:17px}
@@ -566,7 +567,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 }
 /* short phones (an iPhone SE in Safari shows about 550px): one-line strip with the goal first, a lower drawing */
 @media (max-height:600px) and (max-width:767px) and (orientation:portrait){
-  #root .prf-head{height:40px}
+  #root .prf-head{min-height:40px}
   #root .prf-figcol .prf-stage{height:118px}
   #root .prf-strip{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-block:2px;padding-inline-end:34px;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 30px);mask-image:linear-gradient(to right,transparent 0,#000 30px)}
   #root .prf-strip::-webkit-scrollbar{display:none}
