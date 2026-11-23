@@ -8,7 +8,7 @@ import { seeded, makeR } from '../new/core.js';
 import { start, act, ready, summary } from './session.js';
 import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, congOf, acceptedReasons, showPart } from './core.js';
 import { partId } from './figure-core.js';
-import { REASONS } from './reasons.js';
+import { REASONS, reasonInline } from './reasons.js';
 import { RULES } from './mastery.js';
 import { T, LABELS, fill } from './texts.js';
 import ProofFigure, { useReducedMotion } from './ProofFigure.jsx';
@@ -246,8 +246,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       body = { t: 'next', label: T['btn.start'] };
       now = { st: null, reason: null, ask: null };
     } else {
-      const at = s.rows.length - 1, role = roleOf(p, walkLast.fact), rs = REASONS[walkLast.reason] || REASONS.given, w = whyOf(p, walkLast.fact, walkLast.reason);
-      head = { kicker: fill('lbl.rowShow', { n: at + 1 }), coach: role === 'given' || role === 'given-more' ? T['coach.given'] : <><Tx k={w.key} vars={w.vars} /> {fill('coach.reason', { reason: rs.full || rs.short })}</> };
+      const at = s.rows.length - 1, role = roleOf(p, walkLast.fact), rs = REASONS[walkLast.reason] ? walkLast.reason : 'given', w = whyOf(p, walkLast.fact, walkLast.reason);
+      head = { kicker: fill('lbl.rowShow', { n: at + 1 }), coach: role === 'given' || role === 'given-more' ? T['coach.given'] : <><Tx k={w.key} vars={w.vars} /> {fill('coach.reason', { reason: reasonInline(rs) })}</> };
       body = { t: 'next', label: T['btn.gotIt'] };
       now = { at };
       whyShown = null;

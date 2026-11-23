@@ -161,7 +161,7 @@ function Sheet({ q }) {
         {OPEN_POINTS.map((t, i) => <p key={i} className="prf-lab-p">{t}</p>)}
         <h1 className="prf-lab-h">דף בדיקה · ניסוחים שנכתבו בבנייה ({NEW_DRAFTS.length})</h1>
         <p className="prf-lab-p">הטקסטים האלה לא מנוסחים במפרט. כל אחד מהם מחכה לאישור או לתיקון.</p>
-        <table className="prf-table prf-lab-texts"><tbody>{NEW_DRAFTS.map((k) => <tr key={k} className="prf-lab-card"><td dir="ltr">{k}</td><td>{TXT[k]}</td></tr>)}</tbody></table>
+        <table className="prf-table prf-lab-texts"><tbody>{NEW_DRAFTS.map((k) => <tr key={k} className="prf-lab-card"><td dir="ltr">{k}</td><td>{k in TXT ? TXT[k] : (REASONS[k.slice(7)] || {}).full}</td></tr>)}</tbody></table>
         <h1 className="prf-lab-h">הנימוקים (מפרט 6.3) · ניסוח שעוד לא אושר</h1>
         <table className="prf-table prf-lab-texts"><tbody>{Object.values(REASONS).map((r) => <tr key={r.id} className="prf-lab-card"><td>{r.short}</td><td>{r.full || '(רק כתשובה שגויה)'}</td></tr>)}</tbody></table>
       </div>

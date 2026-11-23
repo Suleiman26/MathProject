@@ -69,7 +69,7 @@ test('hints: rung 1 is free, rung 2 makes "helped", rung 3 fills the step and sh
   o = act(o.s, { t: 'reason', id: 'given' });
   o = act(o.s, { t: 'statement', st: P.facts.c }); o = act(o.s, { t: 'hint' }); assert.deepEqual(o.fx[0].vars, { pt: 'O' });
   o = act(o.s, { t: 'hint' }); assert.equal(o.s.nonSolo, 1); o = act(o.s, { t: 'hint' });
-  assert.ok(o.fx.some((f) => f.t === 'filled' && f.reason === 'vertical')); assert.ok(o.fx.some((f) => f.t === 'fb' && f.key === 'ui.filled' && f.vars.reason === 'זוויות קודקודיות שוות זו לזו'));
+  assert.ok(o.fx.some((f) => f.t === 'filled' && f.reason === 'vertical')); assert.ok(o.fx.some((f) => f.t === 'fb' && f.key === 'ui.filled' && f.vars.reason === 'זוויות קדקודיות שוות זו לזו'));
   assert.deepEqual(o.s.decisions.map((d) => d.state), ['solo', 'solo', 'solo', 'solo', 'solo', 'filled']);
 });
 test('two wrong statements: the app places the expected row; the label names the decision kind', () => {

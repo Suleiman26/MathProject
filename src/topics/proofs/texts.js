@@ -291,6 +291,10 @@ export const NEW_DRAFTS = [
   'btn.gotIt', 'btn.doneRead', 'sub.sas', 'sub.asa', 'sub.sss', 'ui.endCleanRead', 'ui.endHelpedRead', 'ui.endSlipsRead',
   'why.given', 'why.given-words', 'why.vertical', 'why.common', 'why.sas', 'why.asa', 'why.sss', 'why.concl-side', 'why.concl-angle', 'why.partner', 'btn.swap',   // reworded 2026-11-22: no "נכון" (the feedback line already says it), one island for the matching
   'w.W2', 'w.W3', 'st.partner',                       // reworded after the review (the spec drafts read less clearly)
+  // the reasons' full sentences (reasons.js, spec 2026-11-23 §6.1): `reason.<id>` = REASONS[id].full
+  'reason.sas', 'reason.asa', 'reason.sss', 'reason.vertical',                          // the Ministry 2015 list, word for word
+  'reason.bisector', 'reason.median', 'reason.midpoint', 'reason.altitude',             // today's wording as a sentence (unconfirmed)
+  'reason.common-side', 'reason.common-angle', 'reason.cp-sides', 'reason.cp-angles',   // builder drafts (unconfirmed)
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

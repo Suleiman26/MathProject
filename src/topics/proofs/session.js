@@ -15,7 +15,7 @@
 import { classify, checkReason, checkMatching, isDone, roleOf, acceptedReasons, partsOf, show, whyOf, congOf, required, norm } from './core.js';
 import { RULES, isClean } from './mastery.js';
 import { LABELS, T } from './texts.js';
-import { REASONS, DEFS } from './reasons.js';
+import { DEFS, reasonInline } from './reasons.js';
 
 const ORDERED = (v) => v.mode === 'walk' || v.mode === 'fill';
 const same = (s) => ({ s, fx: [] });
@@ -112,7 +112,7 @@ function fillCur(s, fx) {
     const r = firstReason(p, c.fact, s.done);
     decide(s, 'filled', c.fact);
     fx.push({ t: 'filled', fact: c.fact, reason: r });
-    fx.push({ t: 'fb', cls: 'note', key: 'ui.filled', vars: { reason: REASONS[r].full || REASONS[r].short } });
+    fx.push({ t: 'fb', cls: 'note', key: 'ui.filled', vars: { reason: reasonInline(r) } });
     writeRow(s, fx, c.fact, r, 'app');
     afterRow(s, fx);
     return;
