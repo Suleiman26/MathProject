@@ -275,18 +275,20 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       const all = chipsFor(fact), acc = acceptedReasons(p, fact);
       const keep = cur.rung >= 2 ? [...all.filter((c) => acc.includes(c)), ...all.filter((c) => !acc.includes(c) && !cur.wrong.includes(c))].slice(0, 3) : all;
       // a theorem / definition chip is read first: tap = its full sentence in the sheet, a second tap or "בחירה" = choose (§6.2.2).
-      // Other chips choose at once. Where the app itself writes the row (the walk-through, "הראו לי") there is no tap at all.
+      // While a sentence is open, a tap on ANY other chip only moves the preview there (a plain chip shows its name and "בחירה"):
+      // the sheet's layout may have moved, so a decision is made only by "בחירה" or a second tap on the pressed chip.
+      // With no preview open, a plain chip chooses at once. Where the app writes the row itself there is no tap at all.
       const at = peek && peek.key === cur.key && all.includes(peek.id) && !cur.wrong.includes(peek.id) ? peek.id : null;
       const choose = (id) => { setPeek(null); dispatch({ t: 'reason', id }); };
-      body = { t: 'chips', chips: all.map((id) => ({ id, label: REASONS[id].short, sub: T[`sub.${id}`], disabled: cur.wrong.includes(id), dim: !keep.includes(id), law: hasLaw(id), on: at === id })) };
+      body = { t: 'chips', chips: all.map((id) => ({ id, label: REASONS[id].short, sub: T[`sub.${id}`], disabled: cur.wrong.includes(id), dim: !keep.includes(id), law: hasLaw(id) || !!at, on: at === id })) };
       onPick = (id) => {
-        if (peek && peek.key === cur.key && Date.now() - peek.t < 350) return;   // right after a sentence opened no chip chooses (the tail of a double tap, a chip that moved): nothing is picked by accident while reading
-        if (!hasLaw(id) || at === id) { choose(id); return; }
-        // the feedback lines stay where they are (an error line is what the student needs for the next pick); the sentence is read out too
+        if (at === id) { if (Date.now() - peek.t >= 350) choose(id); return; }      // the tail of a double tap on the pressed chip is not a choice
+        if (!at && !hasLaw(id)) { choose(id); return; }
+        // the feedback lines stay where they are (an error line is what the student needs for the next pick); the preview is read out too
         setPeek({ key: cur.key, id, t: Date.now() });
-        setLive(`${REASONS[id].short}. ${lawWord(id)}: ${REASONS[id].full} ${T['btn.choose']}`);
+        setLive(hasLaw(id) ? `${REASONS[id].short}. ${lawWord(id)}: ${REASONS[id].full} ${T['btn.choose']}` : `${REASONS[id].short}. ${T['btn.choose']}`);
       };
-      if (at) head.law = { id: at, onChoose: () => choose(at) };
+      if (at) head.law = { id: at, name: hasLaw(at) ? null : REASONS[at].short, onChoose: () => choose(at) };
     }
     if (s.pending && (mode === 'tiles' || mode === 'tap')) onCancel = () => dispatch({ t: 'cancel' });
   } else if (cur && cur.kind === 'statement') {
@@ -354,7 +356,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const showCard = end && cardOn;
 
   return (
-    <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
+    <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}${head && head.law ? ' is-peek' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
       <div className="prf-head">
         <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={leave}><IcBack /></button>
         <span className="prf-head-t">{type.label}</span>

@@ -125,6 +125,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-nb{flex:1;min-height:96px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:10px 14px 14px;border-top:1px solid var(--line);background:var(--surface)}
 #root .prf-intro{padding-block:0 6px;font-size:.88rem;line-height:1.5;color:var(--ink-2)}
 #root .prf-plan{width:fit-content;margin-block:2px 6px;padding:3px 10px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.82rem;font-weight:500}
+#root .prf-screen.is-peek .prf-nb{min-height:48px}
 #root .prf-nb-head{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline;gap:5px 8px;margin-bottom:10px;font-size:.92rem;line-height:1.4}
 #root .prf-nb-k{font-weight:700;color:var(--ink-2)}
 #root .prf-givl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -211,6 +212,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-q.is-pin{position:sticky;top:-12px;z-index:3;margin-inline:-16px;padding:10px 16px 6px;background:var(--surface);box-shadow:0 8px 8px -8px rgb(28 27 25 / .16)}
 #root .prf-q-law{display:flex;align-items:flex-end;gap:10px;margin-top:6px;padding-inline-start:10px;border-inline-start:3px solid var(--a-300);animation:prf-fade .2s ease-out backwards}
 #root .prf-q-law-t{flex:1;min-width:0;margin:0}
+#root .prf-q-pick{display:block;padding-block:9px;font-size:.95rem;font-weight:700;line-height:1.4;color:var(--ink)}
 #root .prf-q-law .prf-law{font-size:.84rem}
 #root .prf-q-law .prf-choose{flex:none;min-height:40px;padding-inline:18px;font-size:.92rem;box-shadow:none}
 @keyframes prf-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}

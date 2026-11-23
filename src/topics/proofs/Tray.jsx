@@ -8,7 +8,8 @@
    whose .step-label names the decision kind. The labels are hidden: they name the answer.
 
    Reading a theorem before choosing it (spec 2026-11-23 §6.2.2): a chip with `law` is a toggle (aria-pressed);
-   `head.law = { id, onChoose }` shows its full sentence in .prf-q-law with the "בחירה" button. That preview is
+   `head.law = { id, name?, onChoose }` shows its full sentence in .prf-q-law with the "בחירה" button (`name`: a
+   plain reason previewed while a sentence was open, shown by its name only). The pressed chip is kept in view. That preview is
    plain text inside the step: it is never a .fb / feedback node, so the tracker counts nothing. While it is
    open the question (row line, hint button, heading) is pinned to the sheet's top, the feedback lines stay, and
    the pressed chip is described by the sentence and its "בחירה" button (aria-describedby; ProofScreen also reads
@@ -96,6 +97,14 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
     if (pin && law && getComputedStyle(pin).position === 'sticky') {
       const under = pin.getBoundingClientRect().bottom - law.getBoundingClientRect().top;
       if (under > 0) box.scrollTop -= under;
+      // the pressed chip is always in view, whole, under the pinned question (this comes before the sentence's first lines)
+      const c = chip.getBoundingClientRect(), b = box.getBoundingClientRect();
+      if (c.bottom > b.bottom - 8) box.scrollTop += c.bottom - b.bottom + 8;
+      const hid = pin.getBoundingClientRect().bottom + 4 - chip.getBoundingClientRect().top;
+      if (hid > 0) box.scrollTop -= hid;
+    } else if (typeof window !== 'undefined') {
+      const over = chip.getBoundingClientRect().bottom + 12 - window.innerHeight;
+      if (over > 0) window.scrollBy(0, over);
     }
   }, [lawId]);
   // a new answer line: the sheet starts from its top (on a short phone it can be taller than its room; the line is read first)
@@ -124,7 +133,7 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
         )}
         {head && head.law && (
           <div className="prf-q-law" id="prf-q-law" key={head.law.id}>
-            <p className="prf-q-law-t"><Law id={head.law.id} /></p>
+            <p className="prf-q-law-t">{head.law.name ? <b className="prf-q-pick">{head.law.name}</b> : <Law id={head.law.id} />}</p>
             <button type="button" className="prf-go prf-choose" onClick={head.law.onChoose}>{T['btn.choose']}</button>
           </div>
         )}
