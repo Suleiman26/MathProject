@@ -234,6 +234,9 @@ export const T = {
   'tx.T': 'הנקודה {p} נמצאת על הצלע {s} במשולש {t}.',
   'tx.2': 'בציור שני משולשים: {t1}, {t2}.',
   'tx.cevian': 'בציור המשולש {t}.',
+  'tx.P': 'במשולש {t} הנקודה {d} נמצאת על הצלע {s1}, והנקודה {e} נמצאת על הצלע {s2}.',
+  'tx.H': 'במשולש ישר הזווית {t} הנקודה {d} נמצאת על היתר {s}.',
+  'gv.math': '{s}',                                  // a given written in maths only (∢ACB = 90°, CD ⊥ AB, AD = 4): one island
 
   /* ── warm-up (§7.1) ── */
   'w.W1': 'נתון: {st}. געו בציור בשני הקטעים האלה.',
@@ -371,6 +374,7 @@ export const NEW_DRAFTS = [
   'st.needFirst', 'st.needRow', 'rs.par.notAlt', 'rs.par.notCorr', 'rs.par.given', 'rs.par.seen', 'rs.vertical.parallelSim', 'rs.given.noPar',
   'rs.fact.simTheorem', 'rs.fact.sim', 'rs.sim.cong', 'rs.sim.given', 'rs.sim.follows', 'rs.sim.angle', 'rs.sim.after', 'rs.sim.cp',
   'rs.ratio.given', 'rs.ratio.solve', 'rs.num.given', 'rs.num.ratio', 'rs.simc.given',
+  'tx.P', 'tx.H',                                                                          // similarity family intros (P and N share tx.P; B uses tx.X)
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;
