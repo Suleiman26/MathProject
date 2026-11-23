@@ -3,14 +3,15 @@
    theorem page], hero:{ type, template, seed } | null, demos:{ [reasonId]: { type, template, seed, marks } } }.
    A demo = the small drawing beside a theorem on the "המשפטים" page (§6.3): one fixed instance of an existing
    template with only the theorem's own pattern marked (`marks` = fact ids of that problem; a congruence id
-   tints its two triangles). The test checks every demo builds and marks exactly what its theorem says.
+   tints its two triangles; `solo` = draw only the points of the triangles and of the marked facts, see soloFigure).
+   The test checks every demo builds, marks exactly what its theorem says, and that an angle mark is wide enough to see.
    Adding a subject later (משולש שווה שוקיים) = its types + one entry here, in Ministry calendar order.
    Pure: no window. Callers pass the host and whether the page sits in the admin review frame. */
 import { T } from './texts.js';
 import { typeById } from './types/index.js';
 import { REASONS } from './reasons.js';
 
-const demo = (type, template, seed, marks) => ({ type, template, seed, marks });
+const demo = (type, template, seed, marks, solo = false) => ({ type, template, seed, marks, solo });
 const subject = (id, o) => ({ id, name: T[`subj.${id}`], when: T[`subj.when.${id}`], short: T[`subj.short.${id}`], ...o });
 
 export const SUBJECTS = [
@@ -27,10 +28,11 @@ export const SUBJECTS = [
       'common-side': demo('prove-congruence', '3-K-SSS', 20261123, ['sAC']),
       'cp-sides': demo('congruent-parts', '2-a', 20261123, ['cong', 'sAB']),             // the congruent pair + one pair of matching sides
       'cp-angles': demo('congruent-parts', '2-a', 20261123, ['cong', 'aB']),
-      bisector: demo('read-given', '1-a', 20261123, ['f1']),
-      median: demo('read-given', '1-c', 20261123, ['f1']),
+      // a definition's drawing shows its own line only (`solo`): the template's second line is taken out
+      bisector: demo('read-given', '1-b', 20261123, ['f2'], true),                       // a wide angle (78°), so both arcs are easy to see
+      median: demo('read-given', '1-a', 20261104, ['f1'], true),
       midpoint: demo('read-given', '1-e', 20261123, ['f1']),
-      altitude: demo('read-given', '1-b', 20261123, ['f1']),
+      altitude: demo('read-given', '1-b', 20261123, ['f1'], true),
     },
   }),
   subject('similarity', { live: false, types: [], theorems: [], hero: null, demos: {} }),
@@ -74,6 +76,29 @@ export function lawsOf(subjectOrId) {
   const of = (kind) => ids.filter((id) => REASONS[id].kind === kind);
   return { laws: of('theorem'), more: [...of('definition'), ...of('rule')] };
 }
+const lettersOf = (st) => (st.kind === 'seg' ? [...st.x, ...st.y] : st.kind === 'ang' ? [st.x.v, ...st.x.r, st.y.v, ...st.y.r] : st.map.flat());
+/** A figure with only its triangles' corners and the points of the facts `marks`: every other point goes, with the
+    lines through it; a side it cut is drawn whole again. (The read-given drawings carry two special lines; a
+    theorem's demo shows one.) Pure: returns a new figure. */
+export function soloFigure(problem, marks) {
+  const fig = problem.figure, keep = new Set([...(fig.tris || []).flat(), ...marks.flatMap((m) => lettersOf(problem.facts[m]))]);
+  const has = (sg) => [...sg].some((q) => !keep.has(q));
+  const whole = [], lines = [];
+  for (const ln of fig.lines || []) {
+    const rest = ln.filter((q) => keep.has(q));
+    if (rest.length === ln.length) { lines.push(ln); continue; }
+    if (rest.length >= 3) lines.push(rest);
+    for (let i = 0; i + 1 < rest.length; i++) if (ln.indexOf(rest[i + 1]) - ln.indexOf(rest[i]) > 1) whole.push(rest[i] + rest[i + 1]);   // the pieces around a point that went
+  }
+  return {
+    ...fig,
+    points: Object.fromEntries(Object.entries(fig.points).filter(([q]) => keep.has(q))),
+    lines,
+    segs: (fig.segs || []).filter((sg) => !has(sg)),
+    plain: [...(fig.plain || []).filter((sg) => !has(sg)), ...whole],
+    angles: (fig.angles || []).filter((g) => keep.has(g.v) && g.r.every((q) => keep.has(q))),
+  };
+}
 const built = new Map();
 /** A theorem's small drawing: { problem, marks:[fact ids] }, or null (no demo, or it does not build). Built once. */
 export function demoOf(subjectId, reasonId) {
@@ -83,7 +108,7 @@ export function demoOf(subjectId, reasonId) {
   let out = null;
   try {
     const problem = t ? t.remake({ template: d.template, seed: d.seed, level: 1, variant: 'A', meta: null }) : null;
-    if (problem && d.marks.every((m) => problem.facts[m])) out = { problem, marks: d.marks };
+    if (problem && d.marks.every((m) => problem.facts[m])) out = { problem: d.solo ? { ...problem, figure: soloFigure(problem, d.marks) } : problem, marks: d.marks };
   } catch { out = null; }
   built.set(key, out);
   return out;

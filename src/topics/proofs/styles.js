@@ -471,20 +471,35 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-tolaws .prf-ic:last-child{margin-inline-start:5px;font-size:15px;color:var(--ink-3)}
 #root .prf-tolaws:active{opacity:.7}
 #root .prf-in-proof > .prf-tolaws{display:none}
-/* a narrow phone: the header holds back, the level's name (never cut), the stage, "המשפטים" and "תרגיל אחר" */
-@media (max-width:399px){
-  #root .prf-head{gap:6px;padding-inline-end:10px}
-  #root .prf-head-t{font-size:.9rem}
-  #root .prf-pill{padding-inline:7px}
-  #root .prf-swap{gap:4px;padding-inline:5px;font-size:.8rem}
-}
-@media (max-width:374px){
-  #root .prf-swap span{display:none}
-  #root .prf-swap{min-width:40px;justify-content:center}
-}
-@media (min-width:480px){
-  #root .prf-lawsb{padding-inline:13px}
+/* the header on a phone: back, the level's name (never cut), the stage, "המשפטים" WITH its word (from 360px:
+   always in sight) and "תרגיל אחר", which gives way first: under 480px it is its icon alone (its name is read out) */
+@media (min-width:360px){
+  #root .prf-lawsb{padding-inline:11px}
   #root .prf-lawsb span{display:inline}
+}
+@media (max-width:399px){
+  #root .prf-head{gap:5px;padding-inline:2px 8px}
+  #root .prf-head-t{font-size:.88rem}
+  #root .prf-pill{padding-inline:7px}
+  #root .prf-lawsb{gap:5px;padding-inline:9px;font-size:.8rem}
+  #root .prf-lawsb .prf-ic{font-size:17px}
+}
+@media (max-width:479px){
+  #root .prf-swap{justify-content:center;min-width:40px;padding-inline:0}
+  #root .prf-swap span{display:none}
+}
+/* the landing below 1024px: the start button stays under the thumb over the whole page, the theorem notebook
+   included. The first screen's parts and the notebook share one column (.prf-book); the button is the column's
+   last item and sticks to the bottom, so everything above it can always be scrolled clear of it. */
+@media (max-width:1023px),(max-height:500px){
+  #root .prf-book{display:flex;flex-direction:column;min-height:calc(100dvh - var(--prf-top))}
+  #root .prf-book > .prf-topic:not(.prf-in-proof){display:contents}
+  #root .prf-book > .prf-th-page{order:2;flex:none}
+  #root .prf-book > .prf-topic:not(.prf-in-proof) > .prf-land-go{order:3;max-width:none;margin-top:auto}
+}
+@media (max-width:767px){
+  #root .prf-book > .prf-topic:not(.prf-in-proof) .prf-mast-fig{flex:none;height:clamp(124px,calc(100dvh - 530px),270px);min-height:0}
+  #root .prf-book > .prf-topic:not(.prf-in-proof) > .prf-land-go .prf-go{align-self:center;max-width:528px}
 }
 @media (min-width:768px) and (min-height:501px){
   #root .prf-th{--prf-rule:34px;--prf-th-m:60px;font-size:17px}

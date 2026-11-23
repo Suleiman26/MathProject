@@ -7,7 +7,9 @@ import assert from 'node:assert/strict';
 import { seeded, makeR } from '../new/core.js';
 import { TYPES, typeById } from './types/index.js';
 import { SUBJECTS, subjectOf, levelNo, typesOf, prevInSubject, canShow, lawsOf, demoOf } from './subjects.js';
-import { shapeOf, present, decisionsOf, acceptedReasons, roleOf, congOf } from './core.js';
+import { shapeOf, present, decisionsOf, acceptedReasons, roleOf, congOf, measure } from './core.js';
+import { layout } from './figure-core.js';
+const lettersOf = (st) => (st.kind === 'seg' ? [...st.x, ...st.y] : [st.x.v, ...st.x.r, st.y.v, ...st.y.r]);
 import { REASONS, isLaw } from './reasons.js';
 import { T, fill, NEW_DRAFTS } from './texts.js';
 import { load, save, emptyType, KEY } from './mastery.js';
@@ -175,6 +177,19 @@ test('demos: one per congruence entry; each builds, and its marks are facts that
       if (id === 'vertical') assert.equal(roleOf(p, d.marks[0]), 'vertical');
       if (id === 'altitude') assert.equal(f(d.marks[0]).right, true);
       if (id === 'common-side') assert.equal(f(d.marks[0]).kind, 'seg');
+    }
+    // review fix 1: an angle mark is wide enough to see (each marked angle ≥ 30°; a right angle has its square)
+    for (const m of d.marks) if (f(m).kind === 'ang' && !f(m).right) for (const part of [f(m).x, f(m).y]) assert.ok(measure(p.figure, part) >= 30, `${id}: ${m} is ${Math.round(measure(p.figure, part))}°`);
+    // review fix 1: a definition's drawing shows ONE special line, its own (the template's second line is taken out)
+    if (['bisector', 'median', 'altitude'].includes(id)) {
+      const fig = p.figure, tri = fig.tris[0], own = new Set([...tri, ...d.marks.flatMap((m) => lettersOf(f(m)))]);
+      assert.deepEqual(Object.keys(fig.points).sort(), [...own].sort(), id); assert.equal(Object.keys(fig.points).length, 4, id);
+      const foot = [...own].find((q) => !tri.includes(q)), all = [...fig.segs, ...(fig.plain || [])];
+      assert.ok(all.every((sg) => [...sg].every((q) => own.has(q))), id);
+      assert.equal(all.filter((sg) => sg.includes(foot)).length, 3, id);            // the line itself + the two pieces of the side it meets
+      assert.equal(fig.lines.length, 1, id); assert.ok(fig.angles.every((g) => own.has(g.v) && g.r.every((q) => own.has(q))), id);
+      assert.equal(layout(fig).segs.length, 5, id);                                  // 2 whole sides + 2 pieces + the line: it still lays out
+      if (id === 'bisector') assert.ok(measure(fig, f(d.marks[0]).x) + measure(fig, f(d.marks[0]).y) >= 60, id);
     }
   }
   assert.equal(demoOf(c.id, 'given'), null); assert.equal(demoOf('similarity', 'sas'), null); assert.equal(demoOf('nope', 'sas'), null);
