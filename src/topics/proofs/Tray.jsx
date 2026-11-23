@@ -134,7 +134,7 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
             {head.ask && <h3 className="prf-q-h">{head.ask}</h3>}
           </div>
         )}
-        {hintLine && <p className="prf-hint" key={hintLine.id}><Tx k={hintLine.key} vars={hintLine.vars} /></p>}
+        {hintLine && <p className="prf-hint" key={hintLine.id}><Tx k={hintLine.key} vars={hintLine.vars} />{hintLine.law && <Law id={hintLine.law} className="prf-why-law" />}</p>}
         <Body body={body} onPick={onPick} onNext={onNext} onQed={onQed} qedBusy={qedBusy} law={head && head.law} onChipDown={(id, b) => { anchor.current = { id, top: b.getBoundingClientRect().top }; }} />
       </div>
     </div>

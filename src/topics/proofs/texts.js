@@ -253,6 +253,11 @@ export const T = {
   'btn.gotIt': 'הבנתי, לשורה הבאה',
   'btn.doneRead': 'סיימנו',
   'lbl.law.theorem': 'המשפט', 'lbl.law.definition': 'ההגדרה', 'btn.choose': 'בחירה',
+  /* ── the "המשפטים" page and sheet (spec 2026-11-23 §6.2.4–§6.3; all in NEW_DRAFTS) ── */
+  'lbl.laws': 'המשפטים', 'lbl.lawsIn': 'המשפטים ב{{subject}}', 'lbl.lawsOf': 'המשפטים של הנושא',
+  'lbl.lawsSub': 'אלה המשפטים של הנושא. הם ילוו אתכם גם בכיתות הגבוהות.',
+  'lbl.lawsMore': 'הגדרות וכללים', 'lbl.lawNow': 'משתמשים בו בשורה הזאת', 'lbl.lawFig': 'ציור לדוגמה: {{name}}',
+  'btn.close': 'סגירה',
   'sub.sas': 'צלע, זווית, צלע', 'sub.asa': 'זווית, צלע, זווית', 'sub.sss': 'שלוש צלעות',
   'ui.endCleanRead': 'סיימנו. עבודה נקייה.',
   'ui.endHelpedRead': 'סיימנו. היה צעד שמילאנו יחד, ולכן זה לא נספר כנקי. השלב לא יורד.',
@@ -294,6 +299,7 @@ export const NEW_DRAFTS = [
   'w.W2', 'w.W3', 'st.partner',                       // reworded after the review (the spec drafts read less clearly)
   // the reasons' full sentences (reasons.js, spec 2026-11-23 §6.1): `reason.<id>` = REASONS[id].full
   'lbl.law.theorem', 'lbl.law.definition', 'btn.choose',                                 // the theorems on screen (spec 2026-11-23 §6.2)
+  'lbl.laws', 'lbl.lawsIn', 'lbl.lawsOf', 'lbl.lawsSub', 'lbl.lawsMore', 'lbl.lawNow', 'lbl.lawFig', 'btn.close',   // the "המשפטים" page and sheet (§6.2.4–§6.3)
   'reason.sas', 'reason.asa', 'reason.sss', 'reason.vertical',                          // the Ministry 2015 list, word for word
   'reason.bisector', 'reason.median', 'reason.midpoint', 'reason.altitude',             // today's wording as a sentence (unconfirmed)
   'reason.common-side', 'reason.common-angle', 'reason.cp-sides', 'reason.cp-angles',   // builder drafts (unconfirmed)

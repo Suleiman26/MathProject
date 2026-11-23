@@ -9,13 +9,13 @@
    Actions: { t:'statement', st } · { t:'reason', id } · { t:'matching', tri1, order } · { t:'hint' }
             · { t:'cancel' } · { t:'next' } (walk-through) · { t:'qed' }
    Effects: { t:'fb', cls:'ok'|'err'|'note', key, vars, kind? } · { t:'mark', fact } · { t:'question', parts }
-            · { t:'why', key, vars, law? } · { t:'filled', fact, reason } · { t:'hint', rung, key, vars, parts }
+            · { t:'why', key, vars, law? } · { t:'filled', fact, reason } · { t:'hint', rung, key, vars, parts, law? }
             · { t:'end', clean } (clean = endClean(s), the mastery rule)
    fb.cls → the tracker (spec §10.4): 'ok' only for right on the first try; a right second try is 'note'. */
 import { classify, checkReason, checkMatching, isDone, roleOf, acceptedReasons, partsOf, show, whyOf, congOf, required, norm } from './core.js';
 import { RULES, isClean } from './mastery.js';
 import { LABELS, T } from './texts.js';
-import { DEFS, reasonInline } from './reasons.js';
+import { DEFS, REASONS, isLaw, reasonInline } from './reasons.js';
 
 const ORDERED = (v) => v.mode === 'walk' || v.mode === 'fill';
 const same = (s) => ({ s, fx: [] });
@@ -89,6 +89,15 @@ function hintRole(s) {
   if (r === 'given' && (p.given || []).some((g) => g !== fact && s.done.includes(g))) return 'given-more';
   return r;
 }
+/** The theorem / definition a rung-2 hint names, whose full sentence is shown with it (spec 2026-11-23 §6.2.6), or null.
+    A given in words: rung 1 already named the word, so rung 2 quotes its definition. Vertical angles: the theorem,
+    but only while the STATEMENT is open; while the reason is open the sentence would name the chip, and rung 2
+    names the idea, never the chip (P1 §9.1). The congruence hint never names its theorem. */
+export function hintLaw(role, kind, p, fact) {
+  const law = role === 'given-words' ? acceptedReasons(p, fact).find((r) => DEFS.includes(r))
+    : role === 'vertical' && kind === 'statement' ? 'vertical' : null;
+  return law && isLaw(law) && REASONS[law].full ? law : null;
+}
 function hintFx(s, rung) {
   const p = s.problem, fact = s.cur.fact || s.cur.expect, f = p.facts[fact], role = hintRole(s);
   const vars = {};
@@ -97,7 +106,8 @@ function hintFx(s, rung) {
   if (role === 'partner') vars.letter = typeof f.x === 'string' ? f.x[0] : f.x.v;
   // while the statement is open, types 1 and 2 point only where to look (p.cue): both parts would give the answer away
   const cue = s.cur.kind === 'statement' && p.cue && p.cue[fact];
-  return { t: 'hint', rung, key: `hint.${role}.${rung}`, vars, parts: cue || partsOf(f) };
+  const law = rung === 2 ? hintLaw(role, s.cur.kind, p, fact) : null;
+  return { t: 'hint', rung, key: `hint.${role}.${rung}`, vars, parts: cue || partsOf(f), ...(law ? { law } : {}) };
 }
 function taint(s) { if (!s.cur.tainted) { s.cur.tainted = true; s.nonSolo += 1; } }
 function decide(s, state, fact, label = s.cur.label) {

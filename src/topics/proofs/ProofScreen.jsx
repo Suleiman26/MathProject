@@ -2,7 +2,9 @@
 /* The proofs section: screen C, one proof (spec §11.1; 2026-11-22 redesign "מחברת"). Header ("תרגיל אחר"),
    a "שורה X מתוך Y" bar, the drawing (always in view), the notebook (נתון, צ״ל and a טענה | נימוק table with
    the open row and the empty rows still to come), and the bottom sheet with one clear question. It drives session.js: every tap is an
-   action, the reducer answers with the next state and effects, and this file only shows them. */
+   action, the reducer answers with the next state and effects, and this file only shows them.
+   The header's "המשפטים" button opens the subject's theorem notebook (./Theorems.jsx, spec 2026-11-23 §6.2.4):
+   plain screen state, never a session action, never recorded as help. */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { start, act, ready, summary } from './session.js';
@@ -16,7 +18,9 @@ import ProofRows from './ProofRows.jsx';
 import Tray from './Tray.jsx';
 import EndCard from './EndCard.jsx';
 import { useSelection, TapStatement, GroupPick } from './TapBuild.jsx';
-import { St, Tx, Mx, Ask, CongSt, Law, hasLaw, lawWord, IcBack, IcCheck, IcLock, IcSwap } from './signs.jsx';
+import { St, Tx, Mx, Ask, CongSt, Law, hasLaw, lawWord, IcBack, IcBook, IcCheck, IcLock, IcSwap } from './signs.jsx';
+import Theorems from './Theorems.jsx';
+import { lawsOf } from './subjects.js';
 
 const PAIR = { 1: 'var(--prf-p1)', 2: 'var(--prf-p2)', 3: 'var(--prf-p3)' };
 const ids = (problem, fact) => (problem.facts[fact] ? partsOf(problem.facts[fact]).map((x) => partId(x, problem.figure)) : []);
@@ -35,6 +39,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const [badTiles, setBadTiles] = useState([]);
   const [lawList, setLawList] = useState(null);       // Level 3: the decision whose list of theorems (with their sentences) is open in the sheet
   const [said, setSaid] = useState(null);             // the row whose theorem the sheet is quoting right now: the notebook holds that sentence back (it is on screen once, not twice)
+  const [lawsOpen, setLawsOpen] = useState(false);    // the "המשפטים" sheet (the student's theorem notebook): never an action, never help
   const [peek, setPeek] = useState(null);             // { key, id }: the theorem chip being read before it is chosen (§6.2.2); a preview, never a decision
   const [lead, setLead] = useState([]);
   const [fresh, setFresh] = useState(null);
@@ -90,9 +95,10 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     setSaid(wrote && ((w && w.law) || (filled && filled.reason && hasLaw(filled.reason))) ? wrote.fact : null);
     setFbs(out); setWhy(w);
     if (h) {
-      setHintLine({ id: ++n.current, key: h.key, vars: h.vars, rung: h.rung });
+      setHintLine({ id: ++n.current, key: h.key, vars: h.vars, rung: h.rung, law: h.law || null });   // a hint that names a theorem shows its sentence (§6.2.6)
       setPulse([]); later('p0', 20, () => setPulse(h.parts.map((x) => partId(x, p.figure)))); later('p', 1900, () => setPulse([]));
       said.push(fill(h.key, h.vars));
+      if (h.law) said.push(REASONS[h.law].full);
       if (h.rung === 2) { const key = r.s.cur && r.s.cur.key; later('show', RULES.HINT3_WAIT_MS, () => setShowKey(key)); }
     } else if (!r.s.cur || !prev.cur || r.s.cur.key !== prev.cur.key) setHintLine(null);
     if (r.s.rows.length > prev.rows.length) setFresh(r.s.rows[r.s.rows.length - 1].fact);
@@ -351,6 +357,18 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   const curN = isDone || s.ended ? 0 : leans ? rowAt(leans.fact) + 1 : mode === 'walk' && !cur ? Math.max(1, s.rows.length) : Math.min(rowNo, totalRows);
   const progText = curN ? fill('lbl.rowOf', { n: curN, t: totalRows }) : T['lbl.allRows'];
 
+  // "המשפטים": only at מודרך (the app guides every step) the sheet shows which theorem this row stands on. At ביחד and לבד
+  // choosing it is the counted decision, so the sheet highlights nothing there.
+  const hasLaws = useMemo(() => { const l = lawsOf(type.subject); return l.laws.length + l.more.length > 0; }, [type.subject]);
+  const lawNow = (() => {
+    if (level !== 1 || end || isDone || planQ) return null;
+    const fact = leans ? leans.fact : cur ? (cur.fact || cur.expect) : walkLast ? walkLast.fact : null;
+    if (!fact || !p.facts[fact]) return null;
+    const row = s.rows.find((x) => x.fact === fact), js = p.just[fact] || [];
+    const r = row ? row.reason : ((js.find((j) => j.needs.every((f) => s.done.includes(f))) || js[0] || {}).reasons || [])[0];
+    return r && r !== 'given' ? r : null;
+  })();
+
   const tapping = mode === 'tap' && !end && !planQ && !!cur && cur.kind === 'statement' && !leans && !isDone;
   const leave = () => onLeave && onLeave({ nonSolo: s.nonSolo, decisions: s.decisions, ended: s.ended });
   const showCard = end && cardOn;
@@ -361,7 +379,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
         <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={leave}><IcBack /></button>
         <span className="prf-head-t">{type.label}</span>
         {levelName && <span className="prf-pill">{levelName}</span>}
-        {onSwap && !s.ended && <button type="button" className="prf-swap" onClick={() => onSwap({ nonSolo: s.nonSolo, decisions: s.decisions })}><IcSwap /><span>{T['btn.swap']}</span></button>}
+        {hasLaws && <button type="button" className="prf-lawsb" aria-haspopup="dialog" aria-expanded={lawsOpen} aria-label={T['lbl.laws']} title={T['lbl.laws']} onClick={() => setLawsOpen(true)}><IcBook /><span aria-hidden="true">{T['lbl.laws']}</span></button>}
+        {onSwap && !s.ended && <button type="button" className="prf-swap" aria-label={T['btn.swap']} onClick={() => onSwap({ nonSolo: s.nonSolo, decisions: s.decisions })}><IcSwap /><span>{T['btn.swap']}</span></button>}
       </div>
       {!showCard && (
         <div className="prf-prog">
@@ -423,6 +442,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
         )}
       </div>
       <div className="prf-sr" aria-live="polite">{live}</div>
+      {lawsOpen && <Theorems subject={type.subject} mode="sheet" current={lawNow} onClose={() => setLawsOpen(false)} />}
     </div>
   );
 }

@@ -4,7 +4,9 @@
    help stages inside a level (חימום · מודרך · ביחד · לבד: ./ProofChapter.jsx).
    The landing shows one subject at a time: its short name as a giant wordmark with a drawing in front,
    the subject switcher (only when more than one subject can show), one meta line (when it is taught,
-   levels done) and the ladder; the open level shows what it is about and its help stages.
+   levels done) and the ladder; the open level shows what it is about and its help stages. Under that first
+   screen comes the subject's theorem notebook ("המשפטים", ./Theorems.jsx, §6.2.5); a quiet link under the
+   ladder leads to it.
    Stored names never change: a level button carries its tracker key in data-mp-key (type.button), the
    visible text is free. A `?ch=<key>` link to a level of the subject not on screen lands on a hidden
    stub that switches the subject and opens the level.
@@ -12,13 +14,14 @@
    (§5, §10.1) · the proof screen: ./ProofScreen.jsx · the pure core: core.js, session.js, mastery.js. */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { TYPES, typeById, stageOf } from './types/index.js';
-import { SUBJECTS, typesOf, levelNo, canShow } from './subjects.js';
+import { SUBJECTS, typesOf, levelNo, canShow, lawsOf } from './subjects.js';
 import { typeState, SUBJECT_KEY } from './mastery.js';
 import { targets } from './core.js';
 import { T, fill } from './texts.js';
 import ProofChapter, { readOpen, peekState, deviceStore } from './ProofChapter.jsx';
 import ProofFigure from './ProofFigure.jsx';
-import { IcCheck } from './signs.jsx';
+import Theorems from './Theorems.jsx';
+import { IcCheck, IcBook, IcDown } from './signs.jsx';
 import { isAdminFrame } from '@/lib/admin-frame';
 
 /* the drawing in the hero: one fixed, good-looking instance per level; a level without one shows its subject's */
@@ -99,6 +102,13 @@ export default function App({ devRescue }) {
   } : null;
 
   const hero = useMemo(() => heroOf(type, subject), [type, subject]);
+  const hasLaws = useMemo(() => { const l = lawsOf(subject.id); return l.laws.length + l.more.length > 0; }, [subject]);
+  const toLaws = () => {
+    const el = document.getElementById('prf-laws');
+    if (!el) return;
+    const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try { window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 64, behavior: calm ? 'auto' : 'smooth' }); } catch { el.scrollIntoView(); }
+  };
   const slide = dir ? ` prf-subj-in is-${dir}` : '';
 
   /* the subject bar (switcher + meta line) and the ladder of this subject; `inner` (what the open level is about +
@@ -143,12 +153,14 @@ export default function App({ devRescue }) {
             );
           })}
         </nav>
+        {hasLaws && <button type="button" className="prf-tolaws" onClick={toLaws}><IcBook /><span>{T['lbl.lawsOf']}</span><IcDown /></button>}
       </>
     );
-  }, [at, si, shown]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [at, si, shown, hasLaws]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className={`prf prf-topic${inProof ? ' prf-in-proof' : ''}`}>
+    <div className="prf prf-book">
+    <div className={`prf-topic${inProof ? ' prf-in-proof' : ''}`}>
       <div className="hdr prf-mast" {...swipe}>
         <h1 className={`prf-wm${slide}`} key={subject.id} aria-label={`${T['lbl.title']} · ${subject.name}`}>{subject.short}</h1>
         {hero && <div className={`prf-stage prf-mast-fig${slide}`} key={type.id}><ProofFigure problem={hero.p} marks={hero.marks} label={T['lbl.sample']} /></div>}
@@ -160,6 +172,8 @@ export default function App({ devRescue }) {
           {shown.map((x, i) => (i === si ? null : x.levels.map((t, k) => <button type="button" key={t.id} className="ch-btn" tabIndex={-1} data-mp-key={t.button} onClick={() => pick(x.s.id, k)} />)))}
         </div>
       )}
+    </div>
+    {!inProof && hasLaws && <Theorems subject={subject.id} mode="page" key={subject.id} />}
     </div>
   );
 }

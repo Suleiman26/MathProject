@@ -6,9 +6,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { seeded, makeR } from '../new/core.js';
 import { TYPES, typeById } from './types/index.js';
-import { SUBJECTS, subjectOf, levelNo, typesOf, prevInSubject, canShow } from './subjects.js';
-import { shapeOf, present, decisionsOf } from './core.js';
-import { REASONS } from './reasons.js';
+import { SUBJECTS, subjectOf, levelNo, typesOf, prevInSubject, canShow, lawsOf, demoOf } from './subjects.js';
+import { shapeOf, present, decisionsOf, acceptedReasons, roleOf, congOf } from './core.js';
+import { REASONS, isLaw } from './reasons.js';
 import { T, fill, NEW_DRAFTS } from './texts.js';
 import { load, save, emptyType, KEY } from './mastery.js';
 import { snapshot, start, restore } from './session.js';
@@ -130,4 +130,57 @@ test('texts: help stages, subject names and months, level label (all drafts)', (
   for (const k of ['stage.0', 'stage.1', 'stage.2', 'stage.3', 'subj.congruence', 'subj.similarity', 'subj.short.congruence', 'subj.short.similarity', 'subj.when.congruence', 'subj.when.similarity', 'lbl.levelN']) assert.ok(NEW_DRAFTS.includes(k), k);
   // the stored tab keys are untouched
   assert.deepEqual([T['tab.warm'], T['tab.1'], T['tab.2'], T['tab.3']], ['חימום', 'רמה 1', 'רמה 2', 'רמה 3']);
+});
+
+/* Task 6 (spec 2026-11-23 §6.2.4–§6.3): the "המשפטים" page. */
+test('theorem list: every entry exists with its full sentence; theorems first, then definitions and rules', () => {
+  const c = SUBJECTS[0];
+  assert.equal(new Set(c.theorems).size, c.theorems.length);
+  for (const id of c.theorems) { assert.ok(REASONS[id], id); assert.equal(typeof REASONS[id].full, 'string', id); assert.notEqual(REASONS[id].kind, 'given', id); }
+  for (const id of ['sas', 'asa', 'sss', 'vertical', 'bisector', 'median', 'midpoint', 'altitude']) { assert.ok(c.theorems.includes(id)); assert.equal(isLaw(id), true, id); }
+  const { laws, more } = lawsOf(c.id);
+  assert.deepEqual(laws, ['sas', 'asa', 'sss', 'vertical']);
+  assert.deepEqual(more, ['bisector', 'median', 'midpoint', 'altitude', 'common-side', 'cp-sides', 'cp-angles']);
+  assert.deepEqual(lawsOf('similarity'), { laws: [], more: [] }); assert.deepEqual(lawsOf('nope'), { laws: [], more: [] });
+});
+test('theorem list: a reason without its sentence is left out (alternate, until similarity)', () => {
+  const fake = { id: 'x', theorems: ['sas', 'alternate', 'nope', 'given', 'median'] };
+  assert.deepEqual(lawsOf(fake), { laws: ['sas'], more: ['median'] });
+});
+test('demos: one per congruence entry; each builds, and its marks are facts that show the pattern honestly', () => {
+  const c = SUBJECTS[0];
+  assert.deepEqual(Object.keys(c.demos).sort(), [...c.theorems].sort());
+  for (const id of c.theorems) {
+    const d = demoOf(c.id, id);
+    assert.ok(d, id);
+    const p = d.problem, f = (m) => p.facts[m];
+    assert.equal(p.template, c.demos[id].template, id);
+    assert.ok(d.marks.length > 0, id);
+    assert.equal(new Set(d.marks).size, d.marks.length, id);
+    for (const m of d.marks) assert.ok(f(m), `${id}: ${m}`);
+    const kinds = d.marks.map((m) => f(m).kind).sort().join(' ');
+    if (['sas', 'asa', 'sss'].includes(id)) {
+      // exactly the three equalities the theorem needs, in a proof that uses this theorem
+      const j = p.just[congOf(p)].find((x) => x.reasons.includes(id));
+      assert.ok(j, id); assert.deepEqual([...d.marks].sort(), [...j.needs].sort(), id);
+      assert.equal(kinds, { sas: 'ang seg seg', asa: 'ang ang seg', sss: 'seg seg seg' }[id]);
+    } else if (id === 'cp-sides' || id === 'cp-angles') {
+      // the two congruent triangles and ONE pair of matching parts
+      assert.deepEqual(d.marks.filter((m) => f(m).kind === 'cong'), [congOf(p)], id);
+      const rest = d.marks.filter((m) => f(m).kind !== 'cong');
+      assert.equal(rest.length, 1, id); assert.equal(f(rest[0]).kind, id === 'cp-sides' ? 'seg' : 'ang'); assert.ok(acceptedReasons(p, rest[0]).includes(id), id);
+    } else {
+      assert.equal(d.marks.length, 1, id);
+      assert.ok(acceptedReasons(p, d.marks[0]).includes(id), id);
+      if (id === 'vertical') assert.equal(roleOf(p, d.marks[0]), 'vertical');
+      if (id === 'altitude') assert.equal(f(d.marks[0]).right, true);
+      if (id === 'common-side') assert.equal(f(d.marks[0]).kind, 'seg');
+    }
+  }
+  assert.equal(demoOf(c.id, 'given'), null); assert.equal(demoOf('similarity', 'sas'), null); assert.equal(demoOf('nope', 'sas'), null);
+});
+test('texts: the theorem page and sheet (all drafts)', () => {
+  assert.equal(T['lbl.laws'], 'המשפטים');
+  assert.equal(fill('lbl.lawsIn', { subject: T['subj.congruence'] }), 'המשפטים בחפיפת משולשים');
+  for (const k of ['lbl.laws', 'lbl.lawsIn', 'lbl.lawsOf', 'lbl.lawsSub', 'lbl.lawsMore', 'lbl.lawNow', 'lbl.lawFig', 'btn.close']) { assert.ok(T[k], k); assert.ok(NEW_DRAFTS.includes(k), k); }
 });

@@ -415,6 +415,107 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-rescue-b{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 #root .prf-rescue-b .prf-go{flex:none;width:100%}
 
+/* ── theorems: "המשפטים", the subject's notebook (a page on the landing, a sheet from the proof header) ──
+   Ruled paper: every height inside is a multiple of --prf-rule, so each line of text sits on a ruled line.
+   No frames: entries are separated by an empty line; the drawing is drawn straight on the paper. */
+#root .prf-th{--prf-rule:30px;--prf-th-m:38px;--prf-th-line:color-mix(in srgb,var(--ink) 15%,transparent);color:var(--ink);font-size:16px;text-align:start}
+#root .prf-th-paper{position:relative;isolation:isolate;padding-block:calc(var(--prf-rule) * 2);padding-inline:calc(var(--prf-th-m) + 14px) 18px}
+#root .prf-th-paper::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(to bottom,transparent calc(var(--prf-rule) - 1px),var(--prf-th-line) calc(var(--prf-rule) - 1px));background-size:100% var(--prf-rule);background-position:0 -7px}
+#root .prf-th-paper::after{content:"";position:absolute;z-index:-1;top:0;bottom:0;inset-inline-start:var(--prf-th-m);width:1.5px;pointer-events:none;background:color-mix(in srgb,var(--bad-500) 36%,transparent)}
+#root .prf-th-page{width:100%;margin:10px auto 0}
+#root .prf-th-page .prf-th-paper::before,#root .prf-th-page .prf-th-paper::after{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 56px,#000 calc(100% - 56px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 56px,#000 calc(100% - 56px),transparent 100%)}
+#root .prf-th-head{margin-bottom:var(--prf-rule)}
+#root .prf-th-h{margin:0;padding:0;font-size:1.42rem;font-weight:800;line-height:var(--prf-rule);color:var(--ink);text-wrap:balance}
+#root .prf-th-sub{margin:0;font-size:.9rem;line-height:var(--prf-rule);color:var(--ink-2)}
+#root .prf-th-h2{margin:calc(var(--prf-rule) * 2) 0 0;padding:0;font-size:1.08rem;font-weight:800;line-height:var(--prf-rule);color:var(--ink)}
+#root .prf-th-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);row-gap:var(--prf-rule)}
+#root .prf-th-e{position:relative;display:grid;grid-template-columns:minmax(0,1fr);margin:0;padding:0}
+#root .prf-th-n{position:absolute;top:0;inset-inline-start:calc(-14px - var(--prf-th-m));width:var(--prf-th-m);font-size:.8rem;font-weight:700;line-height:var(--prf-rule);color:var(--ink-3);text-align:center;font-variant-numeric:tabular-nums}
+#root .prf-th-tx{min-width:0}
+#root .prf-th-k{display:flex;flex-wrap:wrap;align-items:center;gap:0 9px;min-height:var(--prf-rule);margin:0}
+#root .prf-th-pill{display:inline-block;padding-inline:11px;border-radius:999px;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink);font-size:.84rem;font-weight:700;line-height:24px;white-space:nowrap}
+#root .prf-th-e.is-theorem .prf-th-pill{background:var(--prf-btn);box-shadow:none;color:#fff}
+#root .prf-th-s{margin:0;font-size:1rem;font-weight:400;line-height:var(--prf-rule);color:var(--ink);text-wrap:pretty}
+#root .prf-th-fig{height:calc(var(--prf-rule) * 4);padding-block:5px}
+#root .prf-th-fig .prf-lb{font-size:19px;stroke-width:5px;stroke:var(--bg)}
+#root .prf-th-sheet .prf-th-fig .prf-lb{stroke:var(--surface)}
+#root .prf-th-fig .prf-mk{stroke-width:2.7}
+#root .prf-th-fig .prf-sg{stroke-width:2.2}
+#root .prf-th-fig .prf-tri.is-on{fill-opacity:.12}
+/* מודרך: the theorem of the row being worked on, marked like with a highlighter pen and named in words */
+#root .prf-th-e.is-now .prf-th-mark{padding:3px 3px;margin-inline:-3px;border-radius:5px;background:color-mix(in srgb,var(--a-300) 46%,transparent);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+#root .prf-th-e.is-now .prf-th-n{color:var(--a-700);font-size:.92rem;font-weight:800}
+#root .prf-th-now{font-size:.78rem;font-weight:700;line-height:1.3;color:var(--a-800)}
+#root .prf-th-sheet{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;justify-content:flex-end}
+#root .prf-th-scrim{position:absolute;inset:0;background:rgb(28 27 25 / .42);animation:prf-fade .22s ease-out backwards;transition:opacity .19s ease-in}
+#root .prf-th-panel{position:relative;display:flex;flex-direction:column;min-height:0;max-height:calc(100dvh - 52px);overflow:hidden;border-radius:22px 22px 0 0;background:var(--surface);box-shadow:0 -16px 40px -14px rgb(28 27 25 / .4);animation:prf-th-up .34s var(--ease-out) backwards;transition:transform .19s ease-in}
+#root .prf-th-sheet.is-out .prf-th-scrim{opacity:0}
+#root .prf-th-sheet.is-out .prf-th-panel{transform:translateY(100%)}
+#root .prf-th-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:58px;padding-block:8px;padding-inline:18px 10px;border-bottom:1.5px solid var(--ink)}
+#root .prf-th-bar .prf-th-h{min-width:0;font-size:1.14rem;line-height:1.3}
+#root .prf-th-x{flex:none;display:grid;place-items:center;width:40px;height:40px;margin:0;padding:0;border:0;border-radius:50%;background:var(--surface-3);box-shadow:none;color:var(--ink-2);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#root .prf-th-x:focus-visible{outline:2px solid var(--a-600);outline-offset:2px}
+#root .prf-th-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;outline:none}
+#root .prf-th-body:focus-visible{box-shadow:inset 0 0 0 2px var(--a-600)}
+#root .prf-th-sheet .prf-th-paper{padding-block:var(--prf-rule) calc(var(--prf-rule) * 2 + env(safe-area-inset-bottom,0px))}
+@keyframes prf-th-up{from{transform:translateY(100%)}}
+@keyframes prf-th-side{from{transform:translateX(-100%)}}
+/* the header button (a phone shows the book alone, its name is read out) and the quiet link under the ladder */
+#root .prf-lawsb{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:40px;min-height:40px;margin:0;margin-inline-start:auto;padding:0;border:0;border-radius:999px;background:var(--a-50);box-shadow:none;color:var(--a-800);font-size:.84rem;font-weight:700;white-space:nowrap;cursor:pointer}
+#root .prf-lawsb .prf-ic{font-size:19px}
+#root .prf-lawsb span{display:none}
+#root .prf-lawsb + .prf-swap{margin-inline-start:0}
+#root .prf-lawsb:focus-visible,#root .prf-tolaws:focus-visible{outline:2px solid var(--a-600);outline-offset:2px}
+#root .prf-tolaws{flex:none;display:flex;align-items:center;justify-content:flex-start;gap:0;width:100%;max-width:560px;min-height:40px;margin:0 auto;padding:0 16px;border:0;border-radius:0;background:none;box-shadow:none;color:var(--ink-2);font:inherit;font-size:.9rem;font-weight:600;line-height:1.3;text-align:start;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#root .prf-tolaws .prf-ic:first-child{margin-inline:10px 22px;font-size:20px;color:var(--a-700)}
+#root .prf-tolaws .prf-ic:last-child{margin-inline-start:5px;font-size:15px;color:var(--ink-3)}
+#root .prf-tolaws:active{opacity:.7}
+#root .prf-in-proof > .prf-tolaws{display:none}
+/* a narrow phone: the header holds back, the level's name (never cut), the stage, "המשפטים" and "תרגיל אחר" */
+@media (max-width:399px){
+  #root .prf-head{gap:6px;padding-inline-end:10px}
+  #root .prf-head-t{font-size:.9rem}
+  #root .prf-pill{padding-inline:7px}
+  #root .prf-swap{gap:4px;padding-inline:5px;font-size:.8rem}
+}
+@media (max-width:374px){
+  #root .prf-swap span{display:none}
+  #root .prf-swap{min-width:40px;justify-content:center}
+}
+@media (min-width:480px){
+  #root .prf-lawsb{padding-inline:13px}
+  #root .prf-lawsb span{display:inline}
+}
+@media (min-width:768px) and (min-height:501px){
+  #root .prf-th{--prf-rule:34px;--prf-th-m:60px;font-size:17px}
+  #root .prf-th-page{max-width:860px;margin-top:28px}
+  #root .prf-th-page .prf-th-paper{padding-inline-end:40px}
+  #root .prf-th-page .prf-th-paper::before{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 64px,#000 calc(100% - 64px),transparent 100%),linear-gradient(to right,transparent 0,#000 56px,#000 calc(100% - 20px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 64px,#000 calc(100% - 64px),transparent 100%),linear-gradient(to right,transparent 0,#000 56px,#000 calc(100% - 20px),transparent 100%);-webkit-mask-composite:source-in;mask-composite:intersect}
+  #root .prf-th-page .prf-th-h{font-size:2rem;line-height:calc(var(--prf-rule) * 2)}
+  #root .prf-th-page .prf-th-sub{font-size:1rem}
+  #root .prf-th-page .prf-th-e{grid-template-columns:minmax(0,1fr) 250px;column-gap:32px;align-items:start}
+  #root .prf-th-page .prf-th-e.is-plain{grid-template-columns:minmax(0,1fr)}
+  #root .prf-th-page .prf-th-fig .prf-lb{font-size:17px}
+  #root .prf-th-pill{font-size:.88rem;line-height:26px}
+  #root .prf-th-h2{font-size:1.2rem}
+  #root .prf-th-sheet{flex-direction:row;justify-content:flex-end}
+  #root .prf-th-panel{width:min(540px,92vw);height:100%;max-height:none;border-radius:0 26px 26px 0;box-shadow:16px 0 44px -16px rgb(28 27 25 / .4);animation-name:prf-th-side}
+  #root .prf-th-sheet.is-out .prf-th-panel{transform:translateX(-100%)}
+  #root .prf-th-bar{min-height:68px;padding-inline:26px 14px}
+  #root .prf-th-bar .prf-th-h{font-size:1.3rem}
+  #root .prf-th-x{width:44px;height:44px}
+  #root .prf-lawsb{min-height:44px;padding-inline:15px;font-size:.95rem}
+  #root .prf-tolaws{min-height:44px;font-size:1rem}
+  #root .prf-tolaws .prf-ic:first-child{margin-inline:12px 24px}
+}
+@media (min-width:1024px) and (min-height:501px){
+  #root .prf-topic:not(.prf-in-proof) > .prf-tolaws{grid-area:tolaws;max-width:none;margin:4px 0 0;padding:0}
+  #root .prf-th-page{max-width:920px;margin-top:0;padding-inline:24px}
+}
+@media (prefers-reduced-motion: reduce){
+  #root .prf-th-scrim,#root .prf-th-panel{animation:none;transition:none}
+}
+
 /* ── lab ── (the dev lab's review sheet; never on a student's screen) */
 #root .prf-lab-sheet{max-width:1100px;margin:0 auto;padding:16px;color:var(--ink);text-align:start}
 #root .prf-lab-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:.86rem}
@@ -637,7 +738,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 @media (min-width:1024px) and (min-height:501px){
   #root .prf-topic{width:100%;max-width:1360px;margin-inline:auto}
   #root .prf-topic.prf-in-proof{max-width:1480px}
-  #root .prf-topic:not(.prf-in-proof){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.24fr);grid-template-rows:minmax(0,1fr) auto auto auto auto minmax(0,1fr);grid-template-areas:". mast" "team mast" "subj mast" "path mast" "go mast" ". mast";column-gap:clamp(40px,5.5vw,104px);padding:12px clamp(24px,4vw,56px) 28px}
+  #root .prf-topic:not(.prf-in-proof){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.24fr);grid-template-rows:minmax(0,1fr) auto auto auto auto auto minmax(0,1fr);grid-template-areas:". mast" "team mast" "subj mast" "path mast" "tolaws mast" "go mast" ". mast";column-gap:clamp(40px,5.5vw,104px);padding:12px clamp(24px,4vw,56px) 28px}
   #root .prf-topic:not(.prf-in-proof) > .prf-team{grid-area:team;width:auto;max-width:none;margin:0 0 22px;padding:0;text-align:start;font-size:.8rem}
   #root .prf-topic:not(.prf-in-proof) > .prf-mast{grid-area:mast;align-self:center;--prf-wm:min(31cqw,22dvh);max-width:none;margin:0;padding:0}
   #root .prf-topic:not(.prf-in-proof) > .prf-subjbar{grid-area:subj;max-width:none;margin:0 0 16px;padding:0}

@@ -3,7 +3,7 @@
    double taps (Review Focus 2), the end, and the saved open proof. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { start, act, summary, canSwapFree, snapshot, restore, endClean } from './session.js';
+import { start, act, summary, canSwapFree, snapshot, restore, endClean, hintLaw } from './session.js';
 import { isClean } from './mastery.js';
 import { canonRows, present } from './core.js';
 import { xsas } from './fixtures.mjs';
@@ -150,4 +150,32 @@ test('clean at the end is the mastery rule (review I1): 2 of 8 decisions missed 
   for (const [f, r] of [['b', 'given'], ['cong', 'sas'], ['goal', 'cp-sides']]) { t = act(t, { t: 'statement', st: P.facts[f] }).s; t = act(t, { t: 'reason', id: r }).s; }
   assert.deepEqual(summary(t), { n: 10, solo: 8, helped: 0, missed: 2, filled: 0 });
   assert.deepEqual(act(t, { t: 'qed' }).fx, [{ t: 'end', clean: true }]);
+});
+
+/* Task 6 (spec 2026-11-23 §6.2.6): a rung-2 hint that names a theorem / definition carries it (`law`), and the sheet shows its sentence. */
+test('hints: rung 2 carries the law it names; never the chip of the open reason decision; rung 1 never', async () => {
+  // vertical angles: while the STATEMENT is open the theorem's sentence comes with the hint; while its REASON is open it would name the chip
+  // an ordered view (fill), so the open decision is the vertical-angles row
+  let o, s;
+  const VF = { ...V, mode: 'fill', steps: canonRows(P).map((r) => ({ fact: r.fact, ask: ['statement', 'reason'], options: [P.facts[r.fact]] })) };
+  s = start(P, VF);
+  for (const f of canonRows(P).map((r) => r.fact)) {
+    if (f === 'c') break;
+    s = act(s, { t: 'statement', st: P.facts[f] }).s; s = act(s, { t: 'reason', id: 'given' }).s;
+  }
+  o = act(s, { t: 'hint' }); assert.deepEqual([o.fx[0].key, o.fx[0].law], ['hint.vertical.1', undefined]);
+  o = act(o.s, { t: 'hint' }); assert.deepEqual([o.fx[0].key, o.fx[0].law], ['hint.vertical.2', 'vertical']);
+  s = act(s, { t: 'statement', st: P.facts.c }).s; assert.equal(s.cur.kind, 'reason');
+  o = act(s, { t: 'hint' }); o = act(o.s, { t: 'hint' }); assert.deepEqual([o.fx[0].key, o.fx[0].law], ['hint.vertical.2', undefined]);
+  // a given in words: rung 1 already named the word, rung 2 quotes its definition (statement and reason alike)
+  const { typeById } = await import('./types/index.js');
+  const t = typeById('read-given'), p = t.remake({ template: '1-a', seed: 20261124, level: 2, variant: 'A', meta: null });
+  const rows = canonRows(p), vf = { ...V, mode: 'fill', steps: rows.map((r) => ({ fact: r.fact, ask: ['statement', 'reason'], options: [p.facts[r.fact]] })) };
+  s = start(p, vf);
+  o = act(s, { t: 'hint' }); assert.deepEqual([o.fx[0].key, o.fx[0].law], ['hint.given-words.1', undefined]);
+  o = act(o.s, { t: 'hint' }); assert.deepEqual([o.fx[0].key, o.fx[0].law], ['hint.given-words.2', rows[0].reason]);
+  s = act(s, { t: 'statement', st: p.facts[rows[0].fact] }).s; assert.equal(s.cur.kind, 'reason');
+  o = act(s, { t: 'hint' }); o = act(o.s, { t: 'hint' }); assert.deepEqual([o.fx[0].key, o.fx[0].law], ['hint.given-words.2', rows[0].reason]);
+  // no other role carries one (the congruence hint must not name the theorem)
+  for (const r of ['given', 'given-more', 'common', 'congruence', 'matching', 'conclusion', 'partner']) assert.equal(hintLaw(r, 'statement', P, 'cong'), null, r);
 });
