@@ -189,6 +189,7 @@ function onReason(s0, id) {
   if (s0.ended || !s0.cur || s0.cur.kind !== 'reason' || s0.cur.wrong.includes(id)) return same(s0);
   const s = clone(s0), fx = [], c = s.cur, p = s.problem;
   const r = checkReason(p, s.done, c.fact, id);
+  if (r.note) { fx.push({ t: 'fb', cls: 'note', key: r.textKey, vars: r.vars || {} }); return { s, fx }; }   // right reason, a row missing first: no try
   if (!r.ok) { wrongTry(s, fx, r.kind, r.textKey, r.vars, id); return { s, fx }; }
   const state = rightState(c);
   decide(s, state, c.fact);

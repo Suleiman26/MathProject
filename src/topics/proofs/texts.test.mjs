@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { REASONS, GROUPS, THEOREMS, CP, groupOf, isLaw, reasonInline } from './reasons.js';
 import { T, tx, fill, LABELS, NEW_DRAFTS } from './texts.js';
 
-test('reasons: the 21 ids and their exact chips', () => {
+test('reasons: the 20 ids and their exact chips', () => {
   assert.deepEqual(Object.keys(REASONS).sort(), ['aa','alternate','altitude','asa','bisector','common-angle','common-side','corresponding','cp-angles','cp-sides','given','median','midpoint','right-angles','sas','sim-angles','sim-ratio','solve','sss','vertical']);
   assert.equal(REASONS.sas.short, 'צ.ז.צ');
   assert.equal(REASONS['cp-sides'].short, 'צלעות מתאימות במשולשים חופפים');

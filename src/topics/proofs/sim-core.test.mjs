@@ -324,7 +324,7 @@ test('checkReason: a P-family angle row accepts corresponding; alternate is wron
 test('checkReason: the similarity row accepts ז.ז only after both angle rows; congruence theorems are the wrong theorem', () => {
   const p = proofP();
   assert.equal(checkReason(p, ['par', 'a1'], 'sim', 'aa').ok, false);
-  assert.equal(checkReason(p, ['par', 'a1'], 'sim', 'aa').kind, 'too-early');
+  assert.equal(checkReason(p, ['par', 'a1'], 'sim', 'aa').note, true);              // right reason, a row missing: neutral
   assert.deepEqual(checkReason(p, ['par', 'a1', 'a2'], 'sim', 'aa'), { ok: true });
   const d = ['par', 'a1', 'a2'];
   for (const th of ['sas', 'asa', 'sss']) assert.deepEqual([checkReason(p, d, 'sim', th).kind, checkReason(p, d, 'sim', th).textKey], ['wrong-theorem', 'rs.sim.cong']);
@@ -429,10 +429,38 @@ test('classify: a proportion that is true in the drawing but not from the simila
   r = classify(p, d, prop('AD/AB', 'AE/BC'));
   assert.deepEqual([r.c, r.kind], ['false', 'non-matching-sides']);
 });
-test('classify: a parallel-angle row written before the parallel given is "early", never "follows from the similarity"', () => {
+test('classify: a parallel-angle row written before the parallel given is a neutral note (true and known: only the order is missing)', () => {
   const r = classify(proofP(), ['a1'], proofP().facts.a2);
-  assert.deepEqual([r.c, r.kind, r.textKey], ['early', 'too-early', 'st.needFirst']);
+  assert.deepEqual([r.c, r.kind, r.textKey], ['note', undefined, 'st.needFirst']);
   assert.ok(T['st.needFirst'] && NEW_DRAFTS.includes('st.needFirst'));
+  assert.ok(!T['st.needFirst'].startsWith('נכון, אבל מוקדם מדי'));
+});
+test('session: that statement uses no try, makes no decision and records no error kind', async () => {
+  const { start, act } = await import('./session.js');
+  const p = proofP(), V = { mode: 'tiles', pre: [], known: [], steps: p.canon.map((fact) => ({ fact, ask: ['statement', 'reason'] })), tiles: [], chipsN: 8, whyLine: false, autoHint: false, shortFirst: false, plan: null, ties: false, letters: false };
+  const o = act(start(p, V), { t: 'statement', st: p.facts.a2 });
+  assert.deepEqual([o.fx[0].cls, o.fx[0].key], ['note', 'st.needFirst']);
+  assert.deepEqual([o.s.cur.tries, o.s.decisions.length, o.s.nonSolo, o.s.errs], [0, 0, 0, {}]);
+});
+test('checkReason: a right reason before the rows it leans on is a neutral note, never a wrong try', async () => {
+  const p = proofP();
+  assert.deepEqual(checkReason(p, [], 'a2', 'corresponding'), { ok: false, note: true, textKey: 'st.needFirst', vars: {} });
+  assert.deepEqual(checkReason(p, ['par', 'a1'], 'sim', 'aa'), { ok: false, note: true, textKey: 'st.simEarly', vars: { n: 1 } });
+  assert.deepEqual(checkReason(p, ['par', 'a1', 'a2'], 'prop', 'sim-ratio'), { ok: false, note: true, textKey: 'rs.fact.sim', vars: {} });
+  assert.deepEqual(checkReason(p, ['par', 'a1', 'a2', 'sim'], 'val', 'solve'), { ok: false, note: true, textKey: 'st.needRow', vars: {} });
+  assert.ok(T['st.needRow'] && NEW_DRAFTS.includes('st.needRow'));
+  // in the session: a reason-only view that skips the parallel row, so the angle row's reason opens before it
+  const { start, act } = await import('./session.js');
+  const V = { mode: 'fill', pre: [], known: [], steps: [{ fact: 'a2', ask: ['reason'] }, { fact: 'par', ask: ['reason'] }], tiles: [], chipsN: 4, whyLine: false, autoHint: false, shortFirst: false, plan: null, ties: false, letters: false };
+  const s = start(p, V);
+  assert.deepEqual([s.cur.kind, s.cur.fact], ['reason', 'a2']);
+  const o = act(s, { t: 'reason', id: 'corresponding' });
+  assert.deepEqual([o.fx[0].cls, o.fx[0].key, o.s.cur.tries, o.s.errs, o.s.decisions.length], ['note', 'st.needFirst', 0, {}, 0]);
+});
+test('reasonChips: right-angles can appear as a tempting chip when the problem has a right angle', () => {
+  const p = proofP(); p.facts = { ...p.facts, rt: { kind: 'ang', x: A('A', ['D', 'E']), y: A('A', ['D', 'E']), right: true } };
+  assert.ok(reasonChips(p, 'a1', 8, makeR(seeded(1))).includes('right-angles'));
+  assert.ok(!reasonChips(proofP(), 'a1', 8, makeR(seeded(1))).includes('right-angles'));
 });
 test('optionsFor: no wrong proportion option is true in the drawing', () => {
   for (const q of [proofP(), ISO, SC]) for (let s = 1; s <= 40; s++) {

@@ -107,7 +107,8 @@ export const T = {
   'st.propNeed': 'היחס נכון, אבל הוא לא עוזר כאן. צריך שבר עם הצלע שמחפשים, ועוד שבר ששתי הצלעות שלו ידועות.',
   'st.falsePar': 'מהנתון אי אפשר לדעת שהישרים {x}, {y} מקבילים.',
   'st.falseVal': 'האורך של הקטע {x} הוא לא {v}. בדקו את החישוב.',
-  'st.needFirst': 'נכון, אבל מוקדם מדי. קודם כותבים את השורה שזה נשען עליה.',
+  'st.needFirst': 'את זה יודעים מהנתון. כותבים קודם, בשורה משלו, את הנתון שזה נשען עליו, ואחר כך את השורה הזאת.',
+  'st.needRow': 'קודם כותבים את השורה שזה נשען עליה, ואחר כך את השורה הזאת.',
   'st.kinds': 'בוחרים שני חלקים מאותו סוג: שני קטעים, שתי זוויות או שני משולשים.',
 
   /* ── the statement is right, the reason is not (§9.2) ── */
@@ -367,7 +368,7 @@ export const NEW_DRAFTS = [
   'hint.similarity.1', 'hint.similarity.2', 'hint.ratio.1', 'hint.ratio.2', 'hint.number.1', 'hint.number.2',
   'hint.parallel.1', 'hint.parallel.2', 'hint.sim-partner.1', 'hint.sim-partner.2',
   'why.aa', 'why.corresponding', 'why.alternate', 'why.commonAngle', 'why.right', 'why.ratio', 'why.number', 'why.sim-partner',
-  'st.needFirst', 'rs.par.notAlt', 'rs.par.notCorr', 'rs.par.given', 'rs.par.seen', 'rs.vertical.parallelSim', 'rs.given.noPar',
+  'st.needFirst', 'st.needRow', 'rs.par.notAlt', 'rs.par.notCorr', 'rs.par.given', 'rs.par.seen', 'rs.vertical.parallelSim', 'rs.given.noPar',
   'rs.fact.simTheorem', 'rs.fact.sim', 'rs.sim.cong', 'rs.sim.given', 'rs.sim.follows', 'rs.sim.angle', 'rs.sim.after', 'rs.sim.cp',
   'rs.ratio.given', 'rs.ratio.solve', 'rs.num.given', 'rs.num.ratio', 'rs.simc.given',
 ];

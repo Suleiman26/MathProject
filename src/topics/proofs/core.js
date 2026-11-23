@@ -160,6 +160,15 @@ export function findFact(p, st) {
   return null;
 }
 const within = (needs, done) => needs.every((n) => done.includes(n));
+/* What a similarity row still leans on, as a text key: only given rows missing → 'st.needFirst' (true and known from
+   the question, only the order is missing), the similarity missing → 'rs.fact.sim', another row → 'st.needRow'. */
+function missingKey(p, done, id) {
+  const js = p.just[id] || [];
+  const j = [...js].sort((u, v) => u.needs.filter((n) => !done.includes(n)).length - v.needs.filter((n) => !done.includes(n)).length)[0];
+  const miss = j ? j.needs.filter((n) => !done.includes(n)) : [];
+  if (miss.includes(anchorOf(p))) return 'rs.fact.sim';
+  return miss.every((n) => (p.given || []).includes(n)) ? 'st.needFirst' : 'st.needRow';
+}
 /** Some justification has all its needs written. */
 export const provable = (p, done, id) => (p.just[id] || []).some((j) => within(j.needs, done));
 export const isDone = (p, done) => targets(p).every((t) => done.includes(t));
@@ -342,8 +351,13 @@ export function classify(p, done, st) {
       if (targets(p).includes(id)) return { c: 'early', fact: id, sub: 'target', kind: 'goal-as-known', textKey: 'st.goalEarly', vars: {} };
       const simP = isSimP(p), aid = anchorOf(p);
       // a similarity row that leans on an earlier row, not on the similarity (angles between parallel lines before the
-      // parallel given is written): "write that row first", never "this will follow from the similarity"
-      if (simP && !(p.just[id] || []).some((j) => j.needs.includes(aid))) return { c: 'early', fact: id, sub: 'premise', kind: 'too-early', textKey: 'st.needFirst', vars: {} };
+      // parallel given is written): true and known from the question, only the row order is missing → a neutral note
+      // (never a wrong try, never "this will follow from the similarity")
+      if (simP && !(p.just[id] || []).some((j) => j.needs.includes(aid))) {
+        const k = missingKey(p, done, id);
+        if (k === 'st.needFirst') return { c: 'note', fact: id, textKey: k, vars: {} };
+        return { c: 'early', fact: id, sub: 'premise', kind: 'too-early', textKey: 'st.needRow', vars: {} };   // leans on a row not proved yet
+      }
       return { c: 'early', fact: id, sub: 'consequence', kind: 'looks-equal', textKey: simP ? 'st.consEarlySim' : 'st.consEarly', vars: {} };
     }
     if (required(p).has(id)) return { c: 'ok', fact: id };
@@ -385,14 +399,20 @@ function theoremMiss(p, done, id, chosen) {
 const WORD = (def) => T[`word.${def}`];
 /* "כמעט. אלה צלעות, לא זוויות." for a row of the other kind (a proportion is about sides). */
 const otherWords = (f) => { const side = f.kind !== 'ang', S = T['lbl.sidesWord'], A = T['lbl.anglesWord']; return { these: side ? S : A, those: side ? A : S }; };
+/* A right reason whose rows are not all written yet: never a wrong try, a neutral note ({ ok:false, note:true }:
+   the session shows it and uses no try). */
+const early = (textKey, vars = {}) => ({ ok: false, note: true, textKey, vars });
 /* A wrong reason on a similarity problem (spec 2026-11-23 §7.3, §7.8). Congruence never comes here. */
 function simMiss(p, done, id, r) {
   const role = roleOf(p, id), f = p.facts[id], acc = acceptedReasons(p, id);
-  if (role === 'similarity') {
-    if (acc.includes(r)) {                                     // ז.ז before both angle rows are written
+  if (acc.includes(r)) {                                       // the right reason, before the rows it leans on
+    if (role === 'similarity') {
       const n = Math.max(0, ...(p.just[id] || []).map((j) => j.needs.filter((x) => done.includes(x)).length));
-      return miss('too-early', 'st.simEarly', { n });
+      return early('st.simEarly', { n });
     }
+    return early(missingKey(p, done, id));
+  }
+  if (role === 'similarity') {
     if (THEOREMS.includes(r)) return miss('wrong-theorem', 'rs.sim.cong');
     if (r === 'given') return miss('wrong-source', 'rs.sim.given');
     if (SIMF.includes(r) || CP.includes(r)) return miss('wrong-source', 'rs.sim.follows');
@@ -405,7 +425,6 @@ function simMiss(p, done, id, r) {
     if (SIMF.includes(r) && !acc.includes(r)) return miss('wrong-source', 'rs.concl.otherCp', otherWords(f));
     if (CP.includes(r)) return miss('wrong-source', 'rs.sim.cp');
     if (role === 'ratio' && r === 'solve') return miss('wrong-source', 'rs.ratio.solve');
-    if (acc.includes(r)) return miss('goal-as-known', 'rs.fact.sim');   // the similarity is not written yet
     return miss('wrong-source', 'rs.other');
   }
   if (role === 'number') {
@@ -417,10 +436,7 @@ function simMiss(p, done, id, r) {
   if (r === 'aa' || THEOREMS.includes(r)) return miss('too-early', 'rs.fact.simTheorem');
   if (SIMF.includes(r) || CP.includes(r)) return miss('goal-as-known', 'rs.fact.sim');
   if (role === 'parallel') {
-    if (PARALLEL.includes(r)) {
-      if (acc.includes(r)) return miss('too-early', 'st.needFirst');            // the parallel given is not written yet
-      return miss('wrong-parallel-reason', acc.includes('corresponding') ? 'rs.par.notAlt' : 'rs.par.notCorr');
-    }
+    if (PARALLEL.includes(r)) return miss('wrong-parallel-reason', acc.includes('corresponding') ? 'rs.par.notAlt' : 'rs.par.notCorr');
     if (r === 'given') return miss('wrong-source', 'rs.par.given');
     if (r === 'vertical' || r === 'common-angle') return miss('wrong-source', 'rs.par.seen');
     return miss('wrong-source', 'rs.other');
@@ -534,7 +550,7 @@ function simChips(p, id, n, R) {
     'sim-partner': ['sim-ratio', 'given', 'aa', 'corresponding', 'vertical'],
   }[role] || [];
   const right = Object.values(p.facts).some((x) => x && x.kind === 'ang' && x.right) ? ['right-angles'] : [];
-  const all = [...new Set([...acc, ...tempt, ...SIM_POOL, ...right])].filter((r) => r && REASONS[r] && (acc.includes(r) || !CONG_ONLY.has(r)));
+  const all = [...new Set([...acc, ...tempt, ...right, ...SIM_POOL])].filter((r) => r && REASONS[r] && (acc.includes(r) || !CONG_ONLY.has(r)));
   return shuffled(R, all.slice(0, Math.max(n, acc.length)));
 }
 /** n reason chips for a fact: every accepted reason + the most tempting wrong ones for its role,
