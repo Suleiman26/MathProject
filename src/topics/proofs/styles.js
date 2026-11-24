@@ -125,6 +125,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 
 /* ── the notebook: נתון, צ״ל, then the טענה | נימוק table ── */
 #root .prf-nb{flex:1;min-height:96px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:10px 14px 14px;border-top:1px solid var(--line);background:var(--surface)}
+/* the extra room ProofScreen adds under the rows (padding-bottom) is there at once: the site's reduced-motion rule gives every
+   property a 1ms transition, and the scroll made right after the change was clamped to the old height (a theorem line stayed cut) */
+#root .prf-nb{transition-property:none}
 #root .prf-intro{padding-block:0 6px;font-size:.88rem;line-height:1.5;color:var(--ink-2)}
 #root .prf-plan{width:fit-content;margin-block:2px 6px;padding:3px 10px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.82rem;font-weight:500}
 #root .prf-nb-head{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline;gap:5px 8px;margin-bottom:10px;font-size:.92rem;line-height:1.4}
