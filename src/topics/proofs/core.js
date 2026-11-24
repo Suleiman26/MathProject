@@ -214,6 +214,16 @@ export function roleOf(p, id) {
   if (isSimP(p) && rs.includes('vertical')) return 'vertical';
   return 'given';
 }
+/** What a written row leans on, for the "what does this row lean on?" question: 'seen' (in the drawing),
+    'rows' (earlier rows) or 'given'. Type 2's partner leans on the given congruence; a ratio or an angle from the
+    similarity leans on the given only when the similarity itself is given; the similarity and a number always on rows. */
+export function leanOf(p, id) {
+  const role = roleOf(p, id);
+  if (role === 'vertical' || role === 'common') return 'seen';
+  if (role === 'congruence' || role === 'conclusion' || role === 'similarity' || role === 'number') return 'rows';
+  if (role === 'ratio' || role === 'sim-partner') return (p.given || []).includes(anchorOf(p)) ? 'given' : 'rows';
+  return 'given';
+}
 /** Every reason that some justification of the fact accepts. */
 export const acceptedReasons = (p, id) => [...new Set((p.just[id] || []).flatMap((j) => j.reasons))];
 /** The rows as the app writes them: canon order, first reason of the first justification. */
@@ -298,12 +308,17 @@ export function checkProp(p, st, { need } = {}) {
   const dirs = fr.map(([a, b]) => [inT(t1, a) && img(a) === segKey(b) ? 'f' : null, inT(t1, b) && img(b) === segKey(a) ? 'b' : null].filter(Boolean));
   if (dirs.some((d) => !d.length)) {
     // the ratio inside each triangle: every fraction lies in one triangle, all say the same once mapped to the second
-    const reads = fr.map(([a, b]) => [inT(t1, a) && inT(t1, b) ? { k: `${img(a)}/${img(b)}`, from: 1 } : null, inT(t2, a) && inT(t2, b) ? { k: `${segKey(a)}/${segKey(b)}`, from: 2 } : null].filter(Boolean));
-    const inside = fr.length >= 2 && reads.every((r) => r.length) && reads[0].some(({ k }) => {
-      const at = reads.map((r) => r.filter((x) => x.k === k).map((x) => x.from));
-      return at.every((x) => x.length) && at.some((x, i) => x.includes(1) && at.some((y, j) => j !== i && y.includes(2)));
-    });
-    return inside ? { note: 'st.propInside' } : pmiss('non-matching-sides', 'st.nonMatchingSides');
+    const isInside = (fs) => {
+      const reads = fs.map(([a, b]) => [inT(t1, a) && inT(t1, b) ? { k: `${img(a)}/${img(b)}`, from: 1 } : null, inT(t2, a) && inT(t2, b) ? { k: `${segKey(a)}/${segKey(b)}`, from: 2 } : null].filter(Boolean));
+      return fs.length >= 2 && reads.every((r) => r.length) && reads[0].some(({ k }) => {
+        const at = reads.map((r) => r.filter((x) => x.k === k).map((x) => x.from));
+        return at.every((x) => x.length) && at.some((x, i) => x.includes(1) && at.some((y, j) => j !== i && y.includes(2)));
+      });
+    };
+    if (isInside(fr)) return { note: 'st.propInside' };
+    // the inside form with some fractions turned over (AD/DE = BC/AB): the sides match, only the direction is wrong
+    for (let m = 1; m < 1 << fr.length; m++) if (isInside(fr.map((f, i) => (m >> i) & 1 ? [f[1], f[0]] : f))) return pmiss('ratio-flip', 'st.ratioFlip');
+    return pmiss('non-matching-sides', 'st.nonMatchingSides');
   }
   const way = ['f', 'b'].find((w) => dirs.every((d) => d.includes(w)));
   if (!way) return pmiss('ratio-flip', 'st.ratioFlip');

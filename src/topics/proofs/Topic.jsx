@@ -82,6 +82,7 @@ function firstSpot(shown) {
 
 export default function App({ devRescue }) {
   const shown = useMemo(shownSubjects, []);
+  const [framed] = useState(isAdminFrame);                       // the admin's content-review frame (the exam shows open there)
   const [at, setAt] = useState(() => firstSpot(shown));          // { subject, ch }: the subject on screen and its open level
   const [dir, setDir] = useState(null);                          // the last subject change: 'fwd' | 'back' (the hero slides that way)
   const [inProof, setInProof] = useState(false);
@@ -130,7 +131,7 @@ export default function App({ devRescue }) {
   const path = useCallback(({ state, inner }) => {
     const all = cur.levels.map((t) => typeState(state, t.id));
     const spot = all.every((ts) => ts.level >= 4) ? -1 : spotOf(cur.levels, state);   // the recommended order is the ladder's (the exam: §8)
-    const open = examOpen(state, subject.id), last = lastProofOf(subject.id);
+    const open = examOpen(state, subject.id) || framed, last = lastProofOf(subject.id);   // the admin review frame: nothing locked
     const done = all.filter((ts) => ts.level >= 4).length, won = subjectMastered(state, subject.id), nudge = nudgeOf(state, subject.id);
     return (
       <>

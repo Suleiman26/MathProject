@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { seeded, makeR } from '../new/core.js';
 import { TYPES, typeById } from './types/index.js';
 import { SUBJECTS, typesOf, levelNo, prevInSubject, demoOf, lawsOf } from './subjects.js';
-import { present, decisionsOf, shapeOf, targets, classify, checkReason, canonRows, anchorOf, acceptedReasons, roleOf, measure, angKey, segKey, holds, checkProp, required } from './core.js';
+import { present, decisionsOf, shapeOf, targets, classify, checkReason, canonRows, anchorOf, acceptedReasons, roleOf, leanOf, measure, angKey, segKey, holds, checkProp, required } from './core.js';
 import { REASONS } from './reasons.js';
 import { T, NEW_DRAFTS } from './texts.js';
 import { liesSim } from './families/sim-kit.js';
@@ -237,4 +237,22 @@ test('demos: every similarity theorem with a drawing builds, its marks are facts
 
 test('texts: the similarity screen words exist and are drafts', () => {
   for (const k of ['lbl.byOrderSim', 'lbl.planL3Sim', 'lbl.planL3SimCalc', 'say.askProp', 'say.askVal', 'lbl.goalSim', 'q.partnerSim']) { assert.ok(T[k], k); assert.ok(NEW_DRAFTS.includes(k), k); }
+});
+
+test('"what does this row lean on?": a similarity row, a ratio and a number lean on rows unless the similarity is given', () => {
+  const R = makeR(seeded(41));
+  for (const id of [...SIM, 'sim-exam']) for (const [level, variant] of STAGES) for (let i = 0; i < 10; i++) {
+    const p = typeById(id).make(R, level, variant, { recent: [], last: null }, {});
+    const simGiven = (p.given || []).includes(anchorOf(p));
+    for (const fact of p.canon) {
+      const role = roleOf(p, fact), lean = leanOf(p, fact), at = `${p.template} ${fact} ${role}`;
+      if (role === 'similarity' || role === 'number') assert.equal(lean, 'rows', at);
+      else if (role === 'ratio' || role === 'sim-partner') assert.equal(lean, simGiven ? 'given' : 'rows', at);
+      else if (role === 'common' || role === 'vertical') assert.equal(lean, 'seen', at);
+      else if (role === 'given' || role === 'parallel') assert.equal(lean, 'given', at);
+    }
+    if (id === 'sim-calc' || id === 'prove-sim') assert.equal(leanOf(p, anchorOf(p)), 'rows', p.template);
+    if (id === 'sim-calc') assert.deepEqual([leanOf(p, 'prop'), leanOf(p, 'val')], ['rows', 'rows'], p.template);
+    if (id === 'sim-side') assert.deepEqual([leanOf(p, 'prop'), leanOf(p, 'val')], ['given', 'rows'], p.template);
+  }
 });

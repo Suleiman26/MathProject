@@ -54,6 +54,9 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const stateRef = useRef(state), whoRef = useRef(who);
   const ts = typeState(state, type.id);
   const isExam = type.shape === 'exam';
+  // the admin's content-review frame: every help stage and the exam are open (Sulaiman checks locked content there;
+  // nothing is saved: writes go to the copy in memory). Students never see this.
+  const [review] = useState(() => isAdminFrame());
   // a level without warm-up kinds (none today; kept as a safety for a level added later) has no חימום tab; the exam has
   // none either (its warm-up kinds serve only the rescue card)
   const hasWarm = (type.warm || []).length > 0 && !isExam;
@@ -208,11 +211,11 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   /* ── what is on screen ── */
   const level = Math.min(3, ts.level), passed = ts.level >= 4;
   const began = ts.done > 0 || ts.walked || ts.warm.done;
-  const lockedNext = level < 3 ? level + 1 : null;
+  const lockedNext = level < 3 && !review ? level + 1 : null;
   // rescue step 3 ("go back one") stays inside the subject: the level before, from the subject's first level its warm-up
   const back = stepBack(type.id), prev = back && back.type ? typeById(back.type) : null;
   // the exam opens when the subject's last proof level has reached לבד (§8); until then it shows only what opens it
-  const locked = isExam && !examOpen(state, type.subject);
+  const locked = isExam && !review && !examOpen(state, type.subject);
 
   // the exam: one help stage, לבד (stored as "רמה 3"), and חימום while a rescue warm-up runs (the tracker's key)
   const shownTabs = tabsOf(type, !!warm);
@@ -220,7 +223,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     <div className="sub-tabs prf-tabs">
       {TABS.map((name, i) => {
         if (!shownTabs.includes(i)) return null;
-        const locked = i > level, done = !locked && ((i === 0 ? began : i < level) || passed);
+        const locked = i > level && !review, done = !locked && ((i === 0 ? began : i < level) || passed);
         return (
           <button type="button" key={name} data-mp-key={name} className={`sub-tab${i === tab ? ' active' : ''}${done ? ' prf-is-done' : ''}`} disabled={locked} onClick={() => setTab(i)}>
             {locked ? <IcLock /> : done ? <IcCheck /> : null}{STAGES[i]}
@@ -300,11 +303,18 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
 
   // the main button starts what the open tab says: the warm-up (a first visit), or a proof at that level
   const viaWarm = tab === 0 && hasWarm;
-  const goLevel = Math.min(Math.max(1, tab), level);
+  const goLevel = review ? Math.min(3, Math.max(1, tab)) : Math.min(Math.max(1, tab), level);
   const k = dots(ts, level).filter((d) => d === true).length;
   if (locked) {
-    // what opens it is said on the ladder (Topic.jsx); here only what the level is about, and no start button
-    return frame(<p className="prf-pt-about">{T[`about.${type.id}`]}</p>, null);
+    // the exam is closed: the main button takes the student to the level that opens it (the subject's last proof
+    // level), with why. A "next step" link (?ch=<exam key>) from the home railway so always lands on a working step.
+    const last = lastProofOf(type.subject);
+    return frame(<p className="prf-pt-about">{T[`about.${type.id}`]}</p>, last && (
+      <div className="content prf-ch prf-land-go">
+        <p className="prf-land-what">{fill('lbl.examLocked', { level: fill('lbl.levelN', { n: levelNo(last.id) }) })}</p>
+        <button type="button" className="prf-go" onClick={() => onGoType && onGoType(last.id)}>{`${fill('lbl.levelN', { n: levelNo(last.id) })} · ${last.label}`}</button>
+      </div>
+    ));
   }
   const inner = (
     <>

@@ -14,7 +14,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { start, act, ready, summary } from './session.js';
-import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, anchorOf, acceptedReasons, showPart, workOf, sectionOf } from './core.js';
+import { reasonChips, partsOf, targets, roleOf, leanOf, norm, required, whyOf, anchorOf, acceptedReasons, showPart, workOf, sectionOf } from './core.js';
 import { partId } from './figure-core.js';
 import { REASONS, reasonInline } from './reasons.js';
 import { RULES } from './mastery.js';
@@ -308,8 +308,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       </>
     ) };
   } else if (leans) {
-    const role = roleOf(p, leans.fact), at = rowAt(leans.fact);
-    const answer = role === 'vertical' || role === 'common' ? 'seen' : role === 'congruence' || role === 'conclusion' ? 'rows' : 'given';   // type 2's partner leans on the given congruence
+    const at = rowAt(leans.fact), answer = leanOf(p, leans.fact);
     const done = !!leans.picked;
     head = { kicker: fill('lbl.row', { n: at + 1 || rowNo }), ask: T['lbl.leans'] };
     now = { at };

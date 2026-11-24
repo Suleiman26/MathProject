@@ -123,7 +123,11 @@ test('checkProp: by rule from the similarity (matching sides, one direction, at 
   assert.deepEqual(checkProp(ISO, prop('AD/DE', 'AB/BC')), { note: 'st.propInside' });
   assert.deepEqual(checkProp(ISO, prop('DE/AD', 'BC/AB')), { note: 'st.propInside' });
   r = checkProp(ISO, prop('AD/DE', 'BC/AB'));            // inside, but the two fractions point opposite ways
-  assert.equal(r.ok, false);
+  assert.deepEqual([r.ok, r.kind, r.textKey], [false, 'ratio-flip', 'st.ratioFlip']);   // only the direction is wrong (→ S2)
+  r = checkProp(ISO, prop('DE/AD', 'AB/BC'));
+  assert.deepEqual([r.ok, r.kind], [false, 'ratio-flip']);
+  r = checkProp(ISO, prop('AD/DE', 'AC/BC'));            // inside each triangle, but not the same sides
+  assert.deepEqual([r.ok, r.kind], [false, 'non-matching-sides']);
   r = checkProp(ISO, prop('AD/AB', 'AD/AB'));            // one fraction twice is not two
   assert.equal(r.ok, false);
 });
