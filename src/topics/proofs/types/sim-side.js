@@ -6,7 +6,7 @@
    make(R, level, variant, avoid, ctx) → problem (§10.1); ctx.only pins a template. Pure: randomness only through R. */
 import { seeded, makeR } from '../../new/core.js';
 import { T } from '../texts.js';
-import { SIM_FAMS, pickSim, givenSim, simGivenLine, propWrongs, numberWrongs } from './sim-tools.js';
+import { SIM_FAMS, pickSim, givenSim, simGivenLine, propWrongs, numberWrongs, numberTraps } from './sim-tools.js';
 
 const TEMPLATES = [
   { id: '7-P', family: 'P', variant: 'P-CC', theorem: 'aa', crossed: false },
@@ -26,6 +26,7 @@ function buildFrom(t, seed, level, variant) {
     ask: base.ask, asks: [...base.asks], values: { ...base.values }, traps: {}, meta: null,
   };
   problem.tiles = { wrong: [...propWrongs(problem, 3), ...numberWrongs(problem)] };
+  problem.traps = numberTraps(problem, problem.tiles.wrong);
   return problem;
 }
 

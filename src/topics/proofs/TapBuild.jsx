@@ -3,12 +3,16 @@
    the drawing → a preview chip → "להוסיף שורה". Only the confirmed statement is judged: a mis-tap is
    never a mistake. Near two parts → a small chooser. "רשימת חלקים" is the same thing without
    pointing (keyboard, screen reader). A congruence: two triangles, then the vertices of the second
-   in matching order. Reasons: the two-step pick "מאיפה יודעים?". */
+   in matching order. Reasons: the two-step pick "מאיפה יודעים?".
+   A similarity (spec 2026-11-23 §7.6): two triangles build "△… ∼ △…"; two SIDES are one fraction of a ratio (the side
+   tapped first over its partner). The fractions pile up in the preview ("AD/AB = AE/▢"); the last one waits for
+   "להוסיף שורה", and only then is the whole ratio judged. "למחוק את השבר האחרון" takes one back. */
 import React, { useMemo, useState } from 'react';
 import { partsIndex } from './ProofFigure.jsx';
 import { groupsFor, REASONS } from './reasons.js';
-import { T } from './texts.js';
-import { St, Mx, IcList, IcClose, hasLaw } from './signs.jsx';
+import { T, fill } from './texts.js';
+import { angKey } from './core.js';
+import { St, Mx, Sign, Frac, Fracs, IcList, IcClose, hasLaw } from './signs.jsx';
 
 const KINDS = [['seg', 'lbl.segs'], ['ang', 'lbl.angs'], ['tri', 'lbl.tris']];
 
@@ -41,12 +45,25 @@ export function useSelection(problem, onNote, kinds = null) {
   const tris = problem.figure.tris || [];
   const shared = parts.length === 1 && kind === 'seg' && tris.length > 1 && tris.every((t) => [...parts[0].part].every((q) => t.includes(q)));
   if (shared && self) preview = { kind: 'seg', x: parts[0].part, y: parts[0].part };
-  return { shared: shared && !self, setSelf, list, index, selected, parts, kind, preview, chooser, order, setOrder, open, setOpen, pick, tap, clear, pickFromChooser: pick, closeChooser: () => setChooser(null) };
+  // an angle that belongs to both triangles (a common angle: ∢KRM = ∢SRT is one angle with two names): stated as equal to itself
+  let both = null;
+  if (parts.length === 1 && kind === 'ang' && tris.length > 1) {
+    const fig = problem.figure, v = parts[0].part.v, k = angKey(fig, parts[0].part);
+    const names = tris.map((t) => (t.includes(v) ? { v, r: t.filter((q) => q !== v) } : null));
+    if (names.every((a) => a && angKey(fig, a) === k)) both = { kind: 'ang', x: names[0], y: names[1] };
+  }
+  if (both && self) preview = both;
+  return { sharedAng: both && !self ? both : null, shared: shared && !self, setSelf, list, index, selected, parts, kind, preview, chooser, order, setOrder, open, setOpen, pick, tap, clear, pickFromChooser: pick, closeChooser: () => setChooser(null) };
 }
 
 /** The tray while a Level-3 statement is being built. */
-export function TapStatement({ sel, onAdd, onMatching }) {
-  const { parts, kind, preview, chooser, order } = sel;
+export function TapStatement({ sel, onAdd, onMatching, sim = false, ratio = null, onPair, onUnpair }) {
+  const { parts, kind, chooser, order } = sel;
+  // a similarity: two sides are a fraction, never an equality
+  const built = ratio ? ratio.pairs : [], fracOn = !!ratio && (kind === 'seg' || (!parts.length && built.length > 0));
+  const preview = ratio && kind === 'seg' ? null : sel.preview;
+  const last = fracOn && parts.length === 2 && built.length + 1 >= ratio.need;      // the fraction that completes the ratio: it waits for the button
+  const eq = sim ? 'sim' : 'cong';
   if (chooser) {
     return (
       <div className="prf-tap">
@@ -63,13 +80,21 @@ export function TapStatement({ sel, onAdd, onMatching }) {
   const left = twoTris ? t2.filter((v) => !order.includes(v)) : [];
   return (
     <div className="prf-tap">
-      {parts.length > 0 && (
+      {fracOn && (
+        <div className="prf-prev prf-prev-frac">
+          <Fracs className="prf-prev-st" pairs={[...built, ...(parts.length === 2 ? [[parts[0].part, parts[1].part]] : [])]}
+            label={[...built, ...(parts.length === 2 ? [[parts[0].part, parts[1].part]] : [])].map(([a, b]) => fill('say.frac', { x: a, y: b })).join(' = ')}
+            tail={parts.length === 2 ? null : <>{built.length > 0 && <span className="prf-frac-eq" aria-hidden="true">=</span>}<Frac className="is-open" top={parts.length ? parts[0].part : <i className="prf-slot is-next" />} bottom={<i className={`prf-slot${parts.length ? ' is-next' : ''}`} />} /></>} />
+          {last && <button type="button" className="prf-go prf-add" onClick={() => onPair(parts[0].part, parts[1].part)}>{T['btn.add']}</button>}
+        </div>
+      )}
+      {!fracOn && parts.length > 0 && (
         <div className="prf-prev">
           {preview && <St st={preview} className="prf-prev-st" />}
-          {!preview && !twoTris && <span className="prf-prev-st prf-m" dir="ltr"><Mx s={kind === 'tri' ? `△${parts[0].part.join('')}` : kind === 'ang' ? `∢${parts[0].part.r[0]}${parts[0].part.v}${parts[0].part.r[1]}` : parts[0].part} /> <span className="prf-prev-eq">{kind === 'tri' ? <Mx s="≅" /> : '='}</span> <i className="prf-slot is-wide" /></span>}
+          {!preview && !twoTris && <span className="prf-prev-st prf-m" dir="ltr"><Mx s={kind === 'tri' ? `△${parts[0].part.join('')}` : kind === 'ang' ? `∢${parts[0].part.r[0]}${parts[0].part.v}${parts[0].part.r[1]}` : parts[0].part} /> <span className="prf-prev-eq">{kind === 'tri' ? <Sign name={eq} /> : '='}</span> <i className="prf-slot is-wide" /></span>}
           {twoTris && (
             <span className="prf-prev-st prf-m" dir="ltr" aria-label={`${parts[0].he}, ${parts[1].he}`}>
-              <Mx s={`△${t1.join('')} ≅ △`} />{[0, 1, 2].map((i) => <i key={i} className={`prf-slot${order[i] ? ' is-set' : i === order.length ? ' is-next' : ''}`}>{order[i] || ''}</i>)}
+              <Mx s={`△${t1.join('')} ${sim ? '∼' : '≅'} △`} />{[0, 1, 2].map((i) => <i key={i} className={`prf-slot${order[i] ? ' is-set' : i === order.length ? ' is-next' : ''}`}>{order[i] || ''}</i>)}
             </span>
           )}
           {(preview || (twoTris && order.length === 3)) && (
@@ -77,8 +102,11 @@ export function TapStatement({ sel, onAdd, onMatching }) {
           )}
         </div>
       )}
-      {sel.shared && (
+      {sel.shared && !ratio && (
         <button type="button" className="prf-chip prf-self" onClick={() => sel.setSelf(true)}><St st={{ kind: 'seg', x: parts[0].part, y: parts[0].part }} /><span>{T['lbl.sameSeg']}</span></button>
+      )}
+      {sel.sharedAng && (
+        <button type="button" className="prf-chip prf-self" onClick={() => sel.setSelf(true)}><St st={sel.sharedAng} /><span>{T['lbl.sameAng']}</span></button>
       )}
       {twoTris && order.length < 3 && (
         <div className="prf-chips prf-cols-3 prf-verts">
@@ -87,7 +115,8 @@ export function TapStatement({ sel, onAdd, onMatching }) {
       )}
       <div className="prf-tap-foot">
         <button type="button" className={`prf-listb${sel.open ? ' is-open' : ''}`} aria-expanded={sel.open} onClick={() => sel.setOpen(!sel.open)}><IcList /><span>{T['btn.parts']}</span></button>
-        {parts.length > 0 && <button type="button" className="prf-x" onClick={sel.clear}><IcClose /><span>{T['btn.cancel']}</span></button>}
+        {parts.length > 0 ? <button type="button" className="prf-x" onClick={sel.clear}><IcClose /><span>{T['btn.cancel']}</span></button>
+          : built.length > 0 && <button type="button" className="prf-x prf-unpair" onClick={onUnpair}><IcClose /><span>{T['btn.unpair']}</span></button>}
       </div>
       {sel.open && (
         <div className="prf-parts">

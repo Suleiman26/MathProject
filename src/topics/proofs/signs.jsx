@@ -1,6 +1,7 @@
 'use client';
-/* The proofs section: maths as left-to-right islands inside Hebrew text, with ∢ △ ≅ ↔ drawn as
-   small inline SVGs (Rubik has no such glyphs; spec §11 "Signs"). Each sign has a Hebrew name for
+/* The proofs section: maths as left-to-right islands inside Hebrew text, with ∢ △ ≅ ↔ ∥ ∼ drawn as
+   small inline SVGs (Rubik has no such glyphs; spec §11 "Signs"). A ratio is written as stacked fractions in one
+   island (spec 2026-11-23 §10.2). Each sign has a Hebrew name for
    screen readers. Also the small line icons the screens share (never an emoji, never a "✓" char). */
 import React from 'react';
 import { T, tx, fill } from './texts.js';
@@ -8,15 +9,17 @@ import { REASONS, isLaw } from './reasons.js';
 import { show, say, showPart } from './core.js';
 
 const SIGNS = {
-  '∢': 'angle', '△': 'tri', '≅': 'cong', '↔': 'match',
+  '∢': 'angle', '△': 'tri', '≅': 'cong', '↔': 'match', '∥': 'par', '∼': 'sim',
 };
-const NAMES = { angle: 'זווית', tri: 'משולש', cong: 'חופף ל', match: 'מתאים ל' };
+const NAMES = { angle: 'זווית', tri: 'משולש', cong: 'חופף ל', match: 'מתאים ל', par: 'מקביל ל', sim: 'דומה ל' };
 /* drawn on a 20 × 14 grid: the cap height of the letters beside them */
 const PATHS = {
   angle: <><path d="M16.5 2.2L3.5 12.3h14" /><path d="M9.6 12.3a7.4 7.4 0 0 0-1.7-3.4" /></>,
   tri: <path d="M10 1.9l7.3 10.6H2.7z" />,
   cong: <><path d="M3 4.3c2.3-2.4 4.6-2.4 7 0s4.7 2.4 7 0" /><path d="M3 8.4h14M3 12.2h14" /></>,
   match: <><path d="M2.6 7h14.8" /><path d="M6.3 3.2L2.5 7l3.8 3.8M13.7 3.2L17.5 7l-3.8 3.8" /></>,
+  par: <path d="M6.6 12.6L9.4 1.4M10.6 12.6L13.4 1.4" />,
+  sim: <path d="M3 8.6c2.3-3.2 4.6-3.2 7-1.2s4.7 2 7-1.2" />,
 };
 
 /** One sign: `name` ∈ 'angle' | 'tri' | 'cong' | 'match'. */
@@ -45,9 +48,33 @@ export function Mx({ s, label, className, style }) {
     </span>
   );
 }
-/** A statement island, read aloud as a Hebrew sentence. `color` paints it in a pair colour (Level 1). */
+/** One stacked fraction: `top` over `bottom` (strings or nodes), read "… חלקי …". */
+export function Frac({ top, bottom, className }) {
+  return <span className={`prf-frac${className ? ` ${className}` : ''}`}><span className="prf-frac-t">{top}</span><span className="prf-frac-b">{bottom}</span></span>;
+}
+/** Stacked fractions joined by "=" in ONE left-to-right island: a ratio (AD/AB = DE/BC), a substitution (4/10 = x/15).
+    `tail` = what follows the last fraction (the fraction still being built). */
+export function Fracs({ pairs, label, className, style, tail }) {
+  return (
+    <span className={`prf-m prf-fracs${className ? ` ${className}` : ''}`} dir="ltr" role={label ? 'img' : undefined} aria-label={label || undefined} style={style}>
+      {pairs.map(([a, b], i) => <React.Fragment key={i}>{i > 0 && <span className="prf-frac-eq" aria-hidden="true">=</span>}<Frac top={a} bottom={b} /></React.Fragment>)}
+      {tail}
+    </span>
+  );
+}
+/** A statement island, read aloud as a Hebrew sentence. `color` paints it in a pair colour (Level 1).
+    A ratio is stacked fractions; ∥ and ∼ are drawn signs (through Mx). */
 export function St({ st, color, className }) {
+  if (st.kind === 'prop' && Array.isArray(st.pairs)) return <Fracs pairs={st.pairs} label={say(st)} className={className} style={color ? { color } : undefined} />;
   return <Mx s={show(st)} label={say(st)} className={className} style={color ? { color } : undefined} />;
+}
+/** The open number row: the asked side and what has been typed so far ("DE = 7.5"), or an empty box. */
+export function NumSt({ x, text, className }) {
+  return (
+    <span className={`prf-m prf-askst${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={fill('say.askVal', { x })}>
+      <span aria-hidden="true">{x} = <i className={`prf-slot is-num${text ? ' is-set' : ''}`}>{text || ''}</i></span>
+    </span>
+  );
 }
 /** What the proof is after (צ״ל): the statement, or for a length its name and a question mark ("ST = ?"): the number
     is the answer, never shown before it is found. */
@@ -68,7 +95,7 @@ export function AskProp({ st, className }) {
   const tops = st.pairs.map((f) => f[0]);
   return (
     <span className={`prf-m prf-askst${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={fill('say.askProp', { x: tops.join(', ') })}>
-      <span aria-hidden="true">{tops.map((x, i) => <React.Fragment key={x}>{i > 0 && ' = '}<span>{x}/</span><i className="prf-slot" /></React.Fragment>)}</span>
+      <span aria-hidden="true" className="prf-fracs">{tops.map((x, i) => <React.Fragment key={x}>{i > 0 && <span className="prf-frac-eq">=</span>}<Frac top={x} bottom={<i className="prf-slot" />} /></React.Fragment>)}</span>
     </span>
   );
 }
@@ -79,7 +106,7 @@ export function CongSt({ st, at = [], color, className }) {
   const tri = (t) => <><Sign name="tri" quiet />{t.map((q, i) => (at.includes(i) ? <span key={i} className="prf-lk" style={color ? { color } : undefined}>{q}</span> : <span key={i}>{q}</span>))}</>;
   return (
     <span className={`prf-m${className ? ` ${className}` : ''}`} dir="ltr" role="img" aria-label={say(st)}>
-      <span aria-hidden="true">{tri(t1)} {st.kind === 'sim' ? <span>∼</span> : <Sign name="cong" quiet />} {tri(t2)}</span>
+      <span aria-hidden="true">{tri(t1)} <Sign name={st.kind === 'sim' ? 'sim' : 'cong'} quiet /> {tri(t2)}</span>
     </span>
   );
 }

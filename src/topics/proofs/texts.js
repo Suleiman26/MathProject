@@ -119,7 +119,7 @@ export const T = {
   'st.falsePar': 'מהנתון אי אפשר לדעת שהישרים {x}, {y} מקבילים.',
   'st.falseVal': 'האורך של הקטע {x} הוא לא {v}. בדקו את החישוב.',
   /* the number row and the ratio built by tapping (spec 2026-11-23 §7.5–§7.6; Task 11; all in NEW_DRAFTS) */
-  'st.numFlip': 'הפכתם את היחס. בשני השברים כותבים באותו סדר: למעלה צלע מהמשולש הראשון, ולמטה הצלע המתאימה לה מהמשולש השני.',
+  'st.numFlip': 'הפכתם את היחס. בשני השברים אותו סדר: למעלה צלע ממשולש אחד, ולמטה הצלע המתאימה לה.',
   'st.numCalc': 'הפרופורציה נכונה, בדקו את החישוב.',
   'st.numEmpty': 'כתבו קודם את המספר במקשים.',
   'st.numDot': 'זה עוד לא מספר. כתבו ספרות, ונקודה רק בין ספרות.',
@@ -330,6 +330,9 @@ export const T = {
   'lbl.work': 'מציבים',
   'lbl.cross': 'כופלים בהצלבה',
   'lbl.tapSim': 'געו בציור בשני חלקים: שתי זוויות שוות, שני משולשים דומים, או צלע והצלע המתאימה לה.',
+  'lbl.sameAng': 'אותה זווית בשני המשולשים',
+  'lbl.tapSimParts': 'געו בציור בשני חלקים: שתי זוויות שוות, או צלע והצלע המתאימה לה.',
+  'lbl.rowN': 'שורה {{n}}',
   'lbl.tapPair1': 'עכשיו געו בצלע המתאימה לה, מהמשולש השני.',
   'lbl.tapPair2': 'עוד שבר: געו בצלע, ואחר כך בצלע המתאימה לה.',
   'say.frac': '{x} חלקי {y}',
@@ -429,7 +432,7 @@ export const NEW_DRAFTS = [
   'lbl.byOrderSim', 'lbl.planL3Sim', 'lbl.planL3SimCalc', 'say.askProp', 'say.askVal', 'lbl.goalSim', 'q.partnerSim',
   // the number row, the keypad, the ratio built by tapping, the similarity hints (spec 2026-11-23 §7.5–§7.6; Task 11)
   'st.numFlip', 'st.numCalc', 'st.numEmpty', 'st.numDot', 'st.numZero', 'st.numLong', 'st.numNone', 'st.numAgain', 'st.propAgain',
-  'btn.answer', 'btn.unpair', 'q.number', 'lbl.kp', 'lbl.kpDel', 'lbl.kpDot', 'lbl.work', 'lbl.cross', 'lbl.tapSim', 'lbl.tapPair1', 'lbl.tapPair2',
+  'btn.answer', 'btn.unpair', 'q.number', 'lbl.kp', 'lbl.kpDel', 'lbl.kpDot', 'lbl.work', 'lbl.cross', 'lbl.tapSim', 'lbl.tapSimParts', 'lbl.sameAng', 'lbl.rowN', 'lbl.tapPair1', 'lbl.tapPair2',
   'say.frac', 'say.numBox', 'say.numLabel', 'say.numAsk',
   'hint.common-angle.1', 'hint.common-angle.2', 'hint.given-par.1', 'hint.given-par.2', 'hint.matching-sim.1', 'hint.matching-sim.2',
 ];

@@ -4,11 +4,14 @@
    the open row and the empty rows still to come), and the bottom sheet with one clear question. It drives session.js: every tap is an
    action, the reducer answers with the next state and effects, and this file only shows them.
    The header's "המשפטים" button opens the subject's theorem notebook (./Theorems.jsx, spec 2026-11-23 §6.2.4):
-   plain screen state, never a session action, never recorded as help. */
+   plain screen state, never a session action, never recorded as help.
+   Similarity (spec 2026-11-23 §7.5–§7.6): a length row is answered with three number chips (מודרך) or the number
+   keypad (./Keypad.jsx; the typed text is screen state, the judged number is a session decision); at לבד a ratio is
+   built by tapping side pairs; the substitution sits under the written ratio row (ProofRows `work`). */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { start, act, ready, summary } from './session.js';
-import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, anchorOf, acceptedReasons, showPart } from './core.js';
+import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, anchorOf, acceptedReasons, showPart, workOf } from './core.js';
 import { partId } from './figure-core.js';
 import { REASONS, reasonInline } from './reasons.js';
 import { RULES } from './mastery.js';
@@ -18,7 +21,8 @@ import ProofRows from './ProofRows.jsx';
 import Tray from './Tray.jsx';
 import EndCard from './EndCard.jsx';
 import { useSelection, TapStatement, GroupPick } from './TapBuild.jsx';
-import { St, Goal, Tx, Mx, Ask, AskProp, CongSt, Law, hasLaw, lawWord, IcBack, IcBook, IcCheck, IcLock, IcSwap } from './signs.jsx';
+import Keypad, { typeKey } from './Keypad.jsx';
+import { St, Goal, NumSt, Tx, Mx, Ask, AskProp, CongSt, Law, hasLaw, lawWord, IcBack, IcBook, IcCheck, IcLock, IcSwap } from './signs.jsx';
 import Theorems from './Theorems.jsx';
 import { lawsOf } from './subjects.js';
 
@@ -57,7 +61,9 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   // how the level is laid out (types/index.js `shape`): reading the given and the parts of a known congruence are
   // the two small shapes (no triangles to tap, the drawing never outlines an answer); the rest are full proofs
   const isGiven = type.shape === 'given', isParts = type.shape === 'parts', small = isGiven || isParts;
-  const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), small ? ['seg', 'ang'] : null);
+  const noTris = small || type.shape === 'side';                       // the relation is given: no triangle is ever tapped
+  const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), noTris ? ['seg', 'ang'] : null);
+  const [num, setNum] = useState({ key: null, text: '', stale: false });   // the keypad's text for the open number row (stale = a wrong try: the next key starts over)
   const p = problem, cur = s.cur, mode = s.view.mode, cong = anchorOf(p);
   const simP = !!cong && p.facts[cong].kind === 'sim';                 // a similarity: its own words where congruence ones would lie
   const byOrder = T[simP ? 'lbl.byOrderSim' : 'lbl.byOrder'];
@@ -95,6 +101,9 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       if (w && filled.reason) w.law = null;                // the "מילאנו יחד" note already quotes the sentence: once is enough
       setLeans({ fact: filled.fact, picked: null });
     }
+    // the number comes next (its chips or the keypad make a tall sheet on a phone): the row's theorem sentence goes straight to the notebook, the sheet keeps the short why-line
+    const nc = r.s.cur, kpNext = !!nc && nc.kind === 'statement' && (p.facts[nc.fact || nc.expect] || {}).kind === 'val';
+    if (w && kpNext) w.law = null;
     const wrote = r.s.rows.length > prev.rows.length ? r.s.rows[r.s.rows.length - 1] : null;
     setSaid(wrote && ((w && w.law) || (filled && filled.reason && hasLaw(filled.reason))) ? wrote.fact : null);
     setFbs(out); setWhy(w);
@@ -133,26 +142,53 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     return () => clearTimeout(t);
   }, [curKey, tries, level]);
 
+  // the notebook's own height (the sheet under it grows and shrinks: a preview, the keypad, a hint): the open row is brought back into view
+  const [nbH, setNbH] = useState(0);
+  useEffect(() => {
+    const box = nbEl.current;
+    if (!box || typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(() => setNbH(Math.round(box.clientHeight)));
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [end, cardOn]);
   // the row being worked on stays in view inside the notebook (on a phone the notebook scrolls between the drawing and the sheet)
   useLayoutEffect(() => {
     const box = nbEl.current;
     const opened = openRow && openRow !== wasOpen.current;                 // a finished row was just opened (its theorem): that row, with its sentence, comes into view
     wasOpen.current = openRow;
+    if (box) box.style.paddingBottom = '';                                  // the extra room a past scroll added (below) never piles up, and never stays on a layout that does not scroll
     if (!box || box.scrollHeight <= box.clientHeight + 1) return;
     const el = (opened && box.querySelector('.prf-row.is-open')) || box.querySelector('.prf-row.is-now') || box.querySelector('.prf-row:not(.is-ghost):last-of-type');
     if (!el) return;
-    const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
+    // a row that was just written is still sliding in (transform): it is measured where it will rest
+    const rest = (x) => {
+      let dy = 0;
+      for (let y = x; y && y !== box; y = y.parentElement) { const tf = getComputedStyle(y).transform; if (tf && tf !== 'none') dy += parseFloat(tf.slice(tf.indexOf('(') + 1).split(',')[5]) || 0; }
+      const q = x.getBoundingClientRect();
+      return { top: q.top - dy, bottom: q.bottom - dy, height: q.height };
+    };
+    const b = box.getBoundingClientRect(), r = rest(el);
     let d = 0;
     if (r.bottom > b.bottom - 24) d = Math.min(r.bottom - b.bottom + 30, r.top - b.top - 6);   // a little of the next (empty) row shows under it; a tall row (its theorem under it) keeps its first line in view
     else if (r.top < b.top + 4) d = r.top - b.top - 10;
     // the notebook's top edge never cuts a line of the given or the צ״ל block (a goal chip half under the drawing): what it
     // would cut stays whole in view while the row still fits under it, else it is scrolled fully past
-    if (d) {
-      const at = (x) => x.getBoundingClientRect().top - b.top + box.scrollTop, room = box.clientHeight - 6, rowEnd = r.bottom - b.top + box.scrollTop;
+    {
+      const at = (x) => rest(x).top - b.top + box.scrollTop, room = box.clientHeight - 6, rowEnd = r.bottom - b.top + box.scrollTop;
       let top = box.scrollTop + d;
-      for (const x of box.querySelectorAll('.prf-intro,.prf-gv,.prf-goals,.prf-plan,.prf-nb-th')) {
-        const t = at(x) - 4, e = at(x) + x.getBoundingClientRect().height + 3;
-        if (t < top && top < e) top = rowEnd - t <= room ? Math.max(0, t) : e;
+      // the number row: the substitution above it ("4/10 = x/15") is what the student computes from, so it stays in view while both fit
+      const wk = box.closest('.is-kp') && box.querySelector('.prf-row-work');
+      if (wk && rowEnd - at(wk) <= box.clientHeight) top = Math.min(top, at(wk));
+      // …nor a line of a finished row (its fractions, its theorem, its work line: each is a unit). A unit the edge would
+      // cut is shown whole when the open row still fits under it (and nothing already passed comes back), else passed;
+      // never past the top of the row being worked on.
+      const lim = r.top - b.top + box.scrollTop;
+      let floor = 0;
+      for (const x of box.querySelectorAll('.prf-intro,.prf-gv,.prf-goals,.prf-plan,.prf-nb-th,.prf-rowlist > .prf-row:not(.is-now):not(.is-ghost) > *')) {
+        const m = x.parentNode.classList.contains('prf-row') ? 0 : 2;       // a row's lines sit flush against each other
+        const t = at(x) - m, e = at(x) + x.getBoundingClientRect().height + m;
+        if (!(t < top && top < e)) continue;
+        if (rowEnd - t <= room && t >= floor) top = Math.max(0, t); else { top = Math.min(e, Math.max(lim, t)); floor = top; }
       }
       // scrolled fully past, the block may need more room under the last row than the notebook has: add it below
       const over = top - (box.scrollHeight - box.clientHeight);
@@ -160,7 +196,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       d = top - box.scrollTop;
     }
     if (Math.abs(d) >= 1) box.scrollTo({ top: box.scrollTop + d, behavior: reduce || intro.current ? 'auto' : 'smooth' });
-  }, [s.rows.length, curKey, leans, planQ, end, fbs, why, hintLine, openRow, peek, said, lawList]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.rows.length, curKey, leans, planQ, end, fbs, why, hintLine, openRow, peek, said, lawList, nbH]); // eslint-disable-line react-hooks/exhaustive-deps
   // on a computer the page itself scrolls (the sheet is as tall as its rows): keep the sheet's foot, where the tray is, in view
   useEffect(() => {
     const el = workEl.current;
@@ -236,6 +272,22 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   let head = null, body = null, label = cur ? cur.label : '', hint = null, onCancel = null, onPick = () => {}, now = null, whyShown = why;
 
   const tris = p.figure.tris || [];
+  // a length row: the fact whose number is asked now; the ratio being built by pairs (לבד)
+  const openFact = cur && cur.kind === 'statement' ? (cur.fact || cur.expect) : null;
+  const numFact = openFact && p.facts[openFact] && p.facts[openFact].kind === 'val' ? openFact : null;
+  const numText = numFact && num.key === cur.key ? num : { key: cur ? cur.key : null, text: '', stale: false };
+  const ratio = useMemo(() => {
+    if (!simP || mode !== 'tap') return null;
+    const props = Object.keys(p.facts).filter((f) => p.facts[f].kind === 'prop'), row = props.find((f) => !s.done.includes(f)) || props[0];
+    return row ? { pairs: (cur && cur.pairs) || [], need: p.facts[row].pairs.length } : null;
+  }, [simP, mode, p, s.done, cur]);
+  const valId = useMemo(() => Object.keys(p.facts).find((f) => p.facts[f].kind === 'val') || null, [p]);
+  const work = useMemo(() => {
+    const w = valId && workOf(p, valId);
+    if (!w) return null;
+    const fact = (p.just[valId] || []).flatMap((j) => j.needs).find((f) => p.facts[f] && p.facts[f].kind === 'prop');
+    return { fact, sub: w.sub, text: w.text, cross: level === 1 ? w.cross : null };
+  }, [p, valId, level]);
   if (planQ) {
     const gp = partsOf(p.facts[targets(p)[0]]).map(showPart), both = planQ.picked.length === 2;
     head = { kicker: T['lbl.beforeStart'], ask: <Tx k="lbl.planTris" vars={{ x: gp[0], y: gp[1] }} /> };
@@ -318,6 +370,25 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       if (at) head.law = { id: at, name: hasLaw(at) ? null : REASONS[at].short, onChoose: () => choose(at) };
     }
     if (s.pending && (mode === 'tiles' || mode === 'tap')) onCancel = () => dispatch({ t: 'cancel' });
+  } else if (numFact) {
+    // the number of a length: three chips at מודרך, the keypad at ביחד and לבד; the open row shows what is typed
+    const f = p.facts[numFact], step = s.view.steps.find((x) => x.fact === cur.fact);
+    head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: <Tx k="q.number" vars={{ x: f.x }} /> };
+    if ((mode === 'fill' || mode === 'walk') && step && step.options) {
+      now = { st: <NumSt x={f.x} text="" className="prf-ask-st" />, reason: null, ask: 'st' };
+      const items = step.options.map((st, i) => ({ id: `o${i}`, st, label: String(st.v), num: true, disabled: cur.wrong.includes(norm(p.figure, st)) }));
+      body = { t: 'chips', cols: 3, chips: items };
+      onPick = (id) => dispatch({ t: 'statement', st: items.find((x) => x.id === id).st });
+    } else {
+      now = { st: <NumSt x={f.x} text={numText.stale ? '' : numText.text} className="prf-ask-st" />, reason: null, ask: 'st' };
+      const key = cur.key;
+      const submit = () => {
+        const r = dispatch({ t: 'number', text: numText.text });
+        if (r.fx.some((x) => x.t === 'fb' && x.cls === 'err')) setNum({ key, text: numText.text, stale: true });
+      };
+      head.ask = null; head.kicker = <>{fill('lbl.rowN', { n: rowNo })} · <Tx k="q.number" vars={{ x: f.x }} /></>;
+      body = { t: 'node', pin: 'end', node: <Keypad name={f.x} text={numText.text} stale={numText.stale} onKey={(k) => setNum({ key, text: typeKey(numText.text, k, numText.stale), stale: false })} onSubmit={submit} /> };
+    }
   } else if (cur && cur.kind === 'statement') {
     const step = s.view.steps.find((x) => x.fact === cur.fact);
     const asked = askFact && p.facts[askFact] && p.facts[askFact].kind !== 'cong' ? askFact : null;
@@ -338,9 +409,11 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       };
     } else if (mode === 'tap') {
       const two = sel.parts.length === 2, both = sel.kind === 'tri' && two;
-      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: sel.chooser ? null : both ? T['lbl.matchOrder'] : sel.parts.length === 1 ? T['lbl.tapSecond'] : two ? null : T['lbl.tapTwo'] };
+      const sides = !!ratio && sel.kind === 'seg', building = !!ratio && ratio.pairs.length > 0;
+      head = { kicker: fill('lbl.rowStmt', { n: rowNo }), ask: sel.chooser ? null : both ? T['lbl.matchOrder'] : sel.parts.length === 1 ? T[sides ? 'lbl.tapPair1' : 'lbl.tapSecond'] : two ? null : building ? T['lbl.tapPair2'] : T[!simP ? 'lbl.tapTwo' : noTris ? 'lbl.tapSimParts' : 'lbl.tapSim'] };
       body = { t: 'node', node: (
-        <TapStatement sel={sel}
+        <TapStatement sel={sel} sim={simP} ratio={ratio}
+          onPair={(a, b) => { dispatch({ t: 'pair', a, b }); sel.clear(); }} onUnpair={() => dispatch({ t: 'unpair' })}
           onAdd={(st) => { dispatch({ t: 'statement', st }); sel.clear(); }}
           onMatching={(tri1, order) => { dispatch({ t: 'matching', tri1, order }); sel.clear(); }} />
       ) };
@@ -390,12 +463,19 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     return r && r !== 'given' ? r : null;
   })();
 
-  const tapping = mode === 'tap' && !end && !planQ && !!cur && cur.kind === 'statement' && !leans && !isDone;
+  const tapping = mode === 'tap' && !end && !planQ && !!cur && cur.kind === 'statement' && !numFact && !leans && !isDone;
+  // לבד, a ratio: a side and its partner are one fraction at once (only the fraction that completes the ratio waits for the button)
+  const pairKey = tapping && ratio && sel.kind === 'seg' && sel.parts.length === 2 && ratio.pairs.length + 1 < ratio.need ? `${sel.parts[0].part}/${sel.parts[1].part}` : null;
+  useEffect(() => {
+    if (!pairKey) return;
+    const [a, b] = pairKey.split('/');
+    dispatch({ t: 'pair', a, b }); sel.clear();
+  }, [pairKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const leave = () => onLeave && onLeave({ nonSolo: s.nonSolo, decisions: s.decisions, ended: s.ended });
   const showCard = end && cardOn;
 
   return (
-    <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
+    <div className={`prf-screen prf-mode-${mode}${end ? ' is-ended' : ''}${body && body.pin === 'end' && !end ? ' is-kp' : ''}`} data-pf={JSON.stringify({ template: p.template, seed: p.seed, level: p.level, variant: p.variant, meta: p.meta || null })}>
       <div className="prf-head">
         <button type="button" className="prf-back" aria-label={T['btn.back']} onClick={leave}><IcBack /></button>
         <span className="prf-head-t">{type.label}</span>
@@ -453,7 +533,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
                 )}
               </div>
               {s.view.plan === 'line' && <p className="prf-plan">{T[!simP ? 'lbl.planL3' : type.shape === 'then' ? 'lbl.planL3SimCalc' : 'lbl.planL3Sim']}</p>}
-              <ProofRows problem={p} rows={s.rows} total={totalRows} now={end ? null : now} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={leadRows} said={saidRow} />
+              <ProofRows problem={p} rows={s.rows} total={totalRows} now={end ? null : now} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={leadRows} said={saidRow} work={work} />
             </div>
             {!end && (
               <Tray label={label} head={head} body={body} fbs={fbs} why={whyShown} hintLine={hintLine} hint={hint}

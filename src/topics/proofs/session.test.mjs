@@ -231,6 +231,8 @@ test('a wrong number: the flipped ratio → st.numFlip (ratio-flip); another num
     const a = act(s, { t: 'number', text: String(flip) });
     assert.deepEqual(a.fx.find((f) => f.t === 'fb'), { t: 'fb', cls: 'err', key: 'st.numFlip', vars: {}, kind: 'ratio-flip' });
     assert.equal(a.s.cur.tries, 1); assert.equal(a.s.errs['ratio-flip'], 1);
+    // a flipped answer is rarely round: typed to one or two decimals it is still the flipped ratio
+    for (const t of [flip.toFixed(1), flip.toFixed(2)]) assert.equal(act(s, { t: 'number', text: String(Number(t)) }).fx.find((f) => f.t === 'fb').key, 'st.numFlip', `${p.id}: ${t}`);
     const slip = [x + 1, x + 2, x + 3].find((v) => v !== flip);
     const b = act(a.s, { t: 'number', text: String(slip) });
     assert.deepEqual(b.fx.find((f) => f.t === 'fb'), { t: 'fb', cls: 'err', key: 'st.numCalc', vars: {}, kind: 'calc' });
@@ -290,7 +292,7 @@ test('snapshot in the middle of a number → restore → the same decision is op
   assert.equal(o.s.rows.at(-1).fact, 'val'); assert.ok(isReady(o.s));
 });
 test('the number chips at מודרך: three, the right one, the flipped ratio, a slip; whole or x.5, all different', () => {
-  let flips = 0;
+  let flips = 0, total = 0;
   for (const [id, variant] of [['sim-side', 'A'], ['sim-side', 'B'], ['sim-calc', 'B']]) for (const only of tplsOf(typeOf(id), 1, variant)) for (let seed = 1; seed <= 50; seed++) {
     const { p, view } = simProblem(id, 1, variant, seed, { only });
     const step = view.steps.find((z) => z.fact === 'val'), vs = step.options.map((st) => st.v);
@@ -298,13 +300,16 @@ test('the number chips at מודרך: three, the right one, the flipped ratio, a
     assert.ok(vs.every((v) => v >= 1 && Number.isInteger(v * 2)), `${p.id}: ${vs}`);
     assert.ok(vs.includes(p.facts.val.v));
     const whys = p.tiles.wrong.filter((w) => w.for === 'val').map((w) => w.why);
-    if (whys.includes('num-flip')) { flips++; assert.ok(vs.includes(flipOf(p, 'val')), `${p.id}: the flipped chip`); }
+    // the flipped-ratio chip: the flipped answer itself, or its nearest half when it is not a round number
+    const flipChip = (p.tiles.wrong.find((w) => w.for === 'val' && w.why === 'num-flip') || { st: {} }).st.v;
+    if (flipChip != null) { flips++; assert.ok(vs.includes(flipChip)); assert.ok(Math.abs(flipChip - flipOf(p, 'val')) <= 0.25, `${p.id}: the flipped chip ${flipChip} vs ${flipOf(p, 'val')}`); }
     for (const st of step.options) if (st.v !== p.facts.val.v) {
       const o = act(toNumber(p, view), { t: 'statement', st }).fx.find((f) => f.t === 'fb');
-      assert.deepEqual([o.key, o.kind], st.v === flipOf(p, 'val') ? ['st.numFlip', 'ratio-flip'] : ['st.numCalc', 'calc'], p.id);
+      assert.deepEqual([o.key, o.kind], st.v === flipChip ? ['st.numFlip', 'ratio-flip'] : ['st.numCalc', 'calc'], p.id);
     }
+    total++;
   }
-  assert.ok(flips > 100, `the flipped chip is the usual first wrong chip (${flips})`);
+  assert.ok(flips >= total * 0.95, `the flipped ratio is one of the chips almost always (${flips} of ${total})`);
 });
 test('the work line: the substitution from the labels, with x for the asked side; the cross-multiplication', () => {
   for (const id of ['sim-side', 'sim-calc']) for (const only of typeOf(id).templates.map((t) => t.id)) for (let seed = 1; seed <= 50; seed++) {

@@ -58,7 +58,7 @@ function Body({ body, onPick, onNext, onQed, qedBusy, onChipDown, law }) {
       <div className={`prf-chips prf-cols-${cols}`}>
         {body.chips.map((c, i) => (
           <React.Fragment key={c.id}>
-            <button type="button" className={`prf-chip${c.dim ? ' is-dim' : ''}${c.yes ? ' is-yes' : ''}${c.on ? ' is-on' : ''}`} disabled={!!c.disabled} aria-pressed={c.law ? !!c.on : undefined} aria-describedby={c.on ? 'prf-q-law' : undefined} data-chip={c.id} onClick={(e) => { if (onChipDown) onChipDown(c.id, e.currentTarget); onPick(c.id); }}>{c.sub ? <span className="prf-chip-2"><span>{c.label}</span><small>{c.sub}</small></span> : c.label}</button>
+            <button type="button" className={`prf-chip${c.num ? ' is-num' : ''}${c.dim ? ' is-dim' : ''}${c.yes ? ' is-yes' : ''}${c.on ? ' is-on' : ''}`} disabled={!!c.disabled} aria-pressed={c.law ? !!c.on : undefined} aria-describedby={c.on ? 'prf-q-law' : undefined} data-chip={c.id} onClick={(e) => { if (onChipDown) onChipDown(c.id, e.currentTarget); onPick(c.id); }}>{c.sub ? <span className="prf-chip-2"><span>{c.label}</span><small>{c.sub}</small></span> : c.num ? <span className="prf-m" dir="ltr">{c.label}</span> : c.label}</button>
             {i === after && (
               <div className="prf-q-law" id="prf-q-law" key={`law-${law.id}`}>
                 <p className="prf-q-law-t">{law.name ? <b className="prf-q-pick">{law.name}</b> : <Law id={law.id} />}</p>
@@ -112,6 +112,10 @@ export default function Tray({ label, head, body, fbs = [], why, hintLine, hint,
   }, [lawId]);
   // a new answer line: the sheet starts from its top (on a short phone it can be taller than its room; the line is read first)
   useLayoutEffect(() => { if (el.current && (fbs.length || why)) el.current.scrollTop = 0; }, [fbs, why]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the number keypad (body.pin = 'end') is always whole in view: on a short phone the sheet rests at its foot, and the
+  // lines above the keys are a short scroll away. A wrong-try line is the one thing read first: then the sheet starts from its top.
+  const pinEnd = !!body && body.pin === 'end', errNow = fbs.some((f) => f.cls === 'err');
+  useLayoutEffect(() => { if (el.current && pinEnd && !errNow) el.current.scrollTop = el.current.scrollHeight; }, [pinEnd, errNow, fbs, why, hintLine]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="prf-tray" ref={el}>
       {fbs.map((f) => <Feedback key={f.id} f={f} />)}

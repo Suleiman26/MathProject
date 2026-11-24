@@ -8,17 +8,21 @@
    opener (the row is the button). Rows with נתון or a rule keep the short form. While the sheet itself is quoting
    the newest row's sentence (`said`: the why-line, the guide's bubble) the row waits, so it is on screen once.
 
+   The work line (spec 2026-11-23 §7.5): under the written ratio row of a calculation, the substitution built from the
+   labels ("4/10 = x/15", one left-to-right island) and, at מודרך only, the cross-multiplication.
+   work = null | { fact, sub:[[top, bottom] ×2], text, cross: string|null }
+
    now = null | { at: index of a finished row being shown (walk-through, "על אילו שורות זה נשען?") }
               | { st: node|null, reason: node|null, ask: 'st'|'reason'|null }   (the open row)   */
 import React from 'react';
 import { REASONS } from './reasons.js';
 import { T } from './texts.js';
-import { St, Glyph, IcCheck, IcDown, Law, hasLaw, lawWord } from './signs.jsx';
+import { St, Mx, Fracs, Glyph, IcCheck, IcDown, Law, hasLaw, lawWord } from './signs.jsx';
 
 const Slot = () => <span className="prf-qslot" aria-hidden="true">?</span>;
 const Bar = ({ w }) => <span className="prf-ghost-bar" style={{ width: w }} aria-hidden="true" />;
 
-export default function ProofRows({ problem, rows, total = rows.length, now = null, openRow, onOpen, fresh, lead = [], said = null }) {
+export default function ProofRows({ problem, rows, total = rows.length, now = null, openRow, onOpen, fresh, lead = [], said = null, work = null }) {
   const open1 = now && now.at == null;                     // an open (not yet written) row
   const ghosts = Math.max(0, total - rows.length - (open1 ? 1 : 0));
   const lawAt = rows.reduce((k, r, i) => (hasLaw(r.reason) ? i : k), -1);   // the newest row that stands on a theorem / definition
@@ -47,6 +51,12 @@ export default function ProofRows({ problem, rows, total = rows.length, now = nu
                 : <button type="button" className="prf-row-b" aria-expanded={open} onClick={() => onOpen(open ? null : r.fact)}>{cells}</button>}
               {law && (newest ? !held : open) && <p className="prf-row-law"><Law id={reason.id} /></p>}
               {!law && open && <p className="prf-row-full"><b>{T['lbl.reason']}:</b> {reason.full || reason.short}</p>}
+              {work && work.fact === r.fact && (
+                <p className="prf-row-work">
+                  <span className="prf-work-s"><span className="prf-work-k">{T['lbl.work']}</span><Fracs pairs={work.sub} label={work.text} className="prf-work-m" /></span>
+                  {work.cross && <span className="prf-work-s"><span className="prf-work-k">{T['lbl.cross']}</span><Mx s={work.cross} className="prf-work-m" /></span>}
+                </p>
+              )}
             </li>
           );
         })}

@@ -1,7 +1,7 @@
 /* Shared pieces of the four similarity levels (spec 2026-11-23 §7.4–§7.6): the families, the template pick with the
    "second chance soon" rule for similarity reasons, and the wrong tiles / number chips. Pure: randomness only
    through R. */
-import { optionsFor, holds, norm, segKey } from '../core.js';
+import { optionsFor, holds, norm, segKey, flipOf } from '../core.js';
 import { pickTemplate, letterSwap, plain } from './tiles.js';
 import { piecesOf } from '../families/sim-kit.js';
 import P from '../families/p.js'; import B from '../families/b.js';
@@ -32,7 +32,8 @@ export const allowed = (t, level, variant) => !t.crossed || (level === 3 && vari
 
 const half = (v) => Number.isFinite(v) && Math.abs(v * 2 - Math.round(v * 2)) < 1e-9;
 /**
- * Two wrong number chips for the `val` row (spec §7.5): the ratio flipped, then a whole side read as one of its pieces
+ * Two wrong number chips for the `val` row (spec §7.5): the ratio flipped (to the nearest half when it is not a round
+ * number: `numberTraps` keeps its "you flipped the ratio" message), then a whole side read as one of its pieces
  * (AB taken as DB), then a near number. Every chip is whole or x.5, at least 1, different from the answer and from
  * each other. → [{ st:{ kind:'val', x, v }, why, for:'val' }]
  */
@@ -43,7 +44,8 @@ export function numberWrongs(p) {
   const [a, b] = pr.pairs[fi], [kn, kd] = pr.pairs[1 - fi], top = segKey(a) === asked;
   const solve = (val) => (top ? (val(b) * val(kn)) / val(kd) : (val(a) * val(kd)) / val(kn));
   const plainV = (s) => V[segKey(s)];
-  const cands = [[top ? (plainV(b) * plainV(kd)) / plainV(kn) : (plainV(a) * plainV(kn)) / plainV(kd), 'num-flip']];
+  const flip = flipOf(p, 'val') ?? (top ? (plainV(b) * plainV(kd)) / plainV(kn) : (plainV(a) * plainV(kn)) / plainV(kd));
+  const cands = [[Math.round(flip * 2) / 2, 'num-flip']];
   for (const s of [a, b, kn, kd]) {
     if (segKey(s) === asked) continue;
     for (const q of piecesOf(p.figure, s).length > 1 ? piecesOf(p.figure, s) : []) cands.push([solve((z) => (segKey(z) === segKey(s) ? V[segKey(q)] : V[segKey(z)])), 'num-slip']);
@@ -57,6 +59,9 @@ export function numberWrongs(p) {
   }
   return out;
 }
+
+/** The checker's message for a flipped-ratio chip that was rounded to a half (a round flip is recognised by value). */
+export const numberTraps = (p, wrong) => Object.fromEntries(wrong.filter((w) => w.why === 'num-flip').map((w) => [norm(p.figure, w.st), { kind: 'ratio-flip', textKey: 'st.numFlip', vars: {} }]));
 
 /** Wrong proportions (a flipped fraction first, then sides moved to the wrong fraction), never true in the drawing. */
 export const propWrongs = (p, n) => optionsFor(p, 'prop', n + 1, null).slice(1).map((st) => ({ st, why: 'ratio', for: 'prop' }));

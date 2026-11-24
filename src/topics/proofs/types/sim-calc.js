@@ -6,7 +6,7 @@
    make(R, level, variant, avoid, ctx) → problem (§10.1); ctx.only pins a template. Pure: randomness only through R. */
 import { seeded, makeR } from '../../new/core.js';
 import { T } from '../texts.js';
-import { SIM_FAMS, templatesOf, allowed, pickSim, angleWrong, wrongOrder, propWrongs, numberWrongs } from './sim-tools.js';
+import { SIM_FAMS, templatesOf, allowed, pickSim, angleWrong, wrongOrder, propWrongs, numberWrongs, numberTraps } from './sim-tools.js';
 
 const TEMPLATES = templatesOf(9, ['P', 'B', 'H']);
 
@@ -18,7 +18,7 @@ function buildFrom(t, seed, level, variant) {
   return {
     ...p,
     id: `${t.id}:${seed}`, type: 'sim-calc', template: t.id, seed, level, variant,
-    tiles: { wrong }, traps: {}, meta: null,
+    tiles: { wrong }, traps: numberTraps(p, wrong), meta: null,
   };
 }
 

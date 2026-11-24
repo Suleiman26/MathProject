@@ -823,5 +823,71 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 @media (prefers-reduced-motion: reduce){
   #root .prf-mast-fig,#root .prf-mast-fig .prf-fig > line.prf-sg{animation:none}
 }
+
+/* ══ similarity: ∥ and ∼, stacked fractions, the work line, numbers on the drawing, the number keypad (spec 2026-11-23 §7.5, §10.2) ══ */
+#root .prf-sign-par{margin-inline:-.14em}
+#root .prf-sign-sim{margin-inline:.3em}
+#root .prf-m.prf-fracs,#root .prf-fracs{display:inline-flex;align-items:center;gap:.42em;vertical-align:middle}
+#root .prf-frac{display:inline-flex;flex-direction:column;align-items:center;font-size:.9em;line-height:1.2}
+#root .prf-frac-t{min-width:1.5em;padding:0 .26em .08em;border-bottom:1.5px solid currentColor;text-align:center}
+#root .prf-frac-b{min-width:1.5em;padding:.08em .26em 0;text-align:center}
+#root .prf-frac-eq{font-weight:500;opacity:.75}
+#root .prf-frac .prf-slot{display:block;width:1.9em;height:1.12em;margin:1px auto;vertical-align:0}
+#root .prf-row-work{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin:0;padding-block:0 9px;padding-inline:34px 10px;animation:prf-row .25s var(--ease-out) backwards}
+#root .prf-work-s{display:inline-flex;align-items:center;gap:8px;min-width:0}
+#root .prf-work-k{flex:none;padding-inline:6px;border-radius:6px;background:var(--a-50);box-shadow:inset 0 0 0 1px var(--a-200);color:var(--a-800);font-size:.7rem;font-weight:700;line-height:1.5}
+#root .prf-work-m{font-size:.96rem;color:var(--ink)}
+#root .prf-num{font:600 13px var(--font);font-variant-numeric:tabular-nums;fill:var(--ink-2);stroke:var(--surface);stroke-width:2.6px;paint-order:stroke;stroke-linejoin:round;text-anchor:middle;pointer-events:none}
+#root .prf-num.is-ask{fill:var(--prf-goal);font-size:13.5px;font-weight:800;font-style:italic}
+#root .prf-num.is-found{fill:var(--ok-800);font-weight:800}
+#root .prf-chip.is-num{min-height:52px;font-size:1.22rem;font-weight:700}
+#root .prf-slot.is-num{width:2.6em}
+#root .prf-slot.is-num.is-set{min-width:1em;color:var(--a-800);font-weight:800}
+#root .prf-prev-frac{min-height:58px}
+#root .prf-prev-frac .prf-prev-st{flex:1;justify-content:flex-start}
+#root .prf-unpair{min-height:40px}
+#root .prf-kp{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+#root .prf-kp-top{display:flex;align-items:stretch;gap:8px}
+#root .prf-kp-box{flex:1;min-width:0;display:flex;align-items:center;gap:.36em;min-height:48px;padding-inline:14px;overflow:hidden;border-radius:14px;background:var(--a-50);box-shadow:inset 0 0 0 1.5px var(--a-300);direction:ltr;text-align:left;white-space:nowrap;color:var(--a-900);font-size:1.22rem;font-weight:700;font-variant-numeric:tabular-nums}
+#root .prf-kp-name{font-weight:600;color:var(--ink-2)}
+#root .prf-kp-box.is-stale .prf-kp-val{color:var(--ink-3);text-decoration:line-through;text-decoration-thickness:1.5px}
+#root .prf-kp-caret{flex:none;width:2px;height:1.15em;margin-inline-start:-.2em;border-radius:1px;background:var(--a-600);animation:prf-caret 1.1s steps(1) infinite}
+#root .prf-kp-box.is-stale .prf-kp-caret{display:none}
+@keyframes prf-caret{50%{opacity:0}}
+#root .prf-go.prf-kp-go{flex:0 0 auto;min-height:48px;padding-inline:18px;white-space:nowrap}
+#root .prf-kp-keys{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;direction:ltr}
+#root .prf-kp-k{display:flex;align-items:center;justify-content:center;width:auto;height:auto;min-width:40px;min-height:46px;margin:0;padding:0;border:0;border-radius:12px;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line-strong),0 2px 0 var(--line-strong);color:var(--ink);font-size:1.26rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;transition:transform .08s var(--ease-out)}
+#root .prf-kp-k:active{transform:translateY(2px)}
+#root .prf-kp-k:disabled{opacity:.35}
+#root .prf-kp-k.is-del{color:var(--a-700)}
+#root .prf-kp-k .prf-ic{width:26px;height:22px}
+/* the keypad sheet is tall: on a phone the notebook keeps just the open row in view above it; a short phone gets tighter keys */
+@media (max-width:767px),(max-height:500px){
+  #root .prf-screen.is-kp .prf-nb{min-height:54px}
+}
+@media (max-height:720px) and (max-width:767px){
+  #root .prf-kp{gap:6px}
+  #root .prf-kp-k{min-height:42px}
+  #root .prf-kp-box,#root .prf-go.prf-kp-go{min-height:44px}
+}
+@media (max-width:359px){
+  #root .prf-kp-keys{gap:5px}
+  #root .prf-go.prf-kp-go{padding-inline:13px;font-size:.94rem}
+  #root .prf-kp-box{padding-inline:11px;font-size:1.12rem}
+}
+@media (min-width:768px) and (min-height:501px){
+  #root .prf-row-work{padding-block:0 11px;padding-inline:46px 14px;gap:8px 24px}
+  #root .prf-work-m{font-size:1.1rem}
+  #root .prf-work-k{font-size:.78rem}
+  #root .prf-kp{max-width:460px}
+  #root .prf-kp-k{min-height:52px;font-size:1.36rem}
+  #root .prf-kp-box{min-height:52px;font-size:1.36rem}
+  #root .prf-go.prf-kp-go{min-height:52px}
+  #root .prf-chip.is-num{min-height:58px;font-size:1.36rem}
+}
+@media (prefers-reduced-motion: reduce){
+  #root .prf-row-work,#root .prf-kp-caret{animation:none}
+  #root .prf-kp-k{transition:none}
+}
 `;
 export default css;

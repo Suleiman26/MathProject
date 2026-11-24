@@ -2,13 +2,17 @@
 /* The proofs section: the drawing. One SVG that only shows what it is told: marks (ticks / arcs in
    the pair colour, or the dashed coral "goal" style with no ticks), focus, selection, a pulse for a
    hint, the red "?" badge, tappable hit shapes (Level 3) and the ending motion (spec §7.6, §11.3).
-   Geometry comes from figure-core.js; nothing here judges anything. */
+   Geometry comes from figure-core.js; nothing here judges anything.
+   Similarity (spec 2026-11-23 §7.5): the known lengths are written beside their segments (placed by measuring, never on
+   a line: sim-kit `numberLabels`), "x" beside the asked side until its number is found. A parallel given is never
+   marked (ticks would say "equal"). */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { layout, markGeom, triEcho, partsNear, partId, partName, motionMatrix, motionFrames } from './figure-core.js';
-import { partsOf } from './core.js';
+import { partsOf, segKey } from './core.js';
+import { numberLabels } from './families/sim-kit.js';
 import { RULES } from './mastery.js';
 import { distPointSeg } from '../new/chapters/geometry/geo.js';
-import { T } from './texts.js';
+import { T, fill } from './texts.js';
 
 const r1 = (n) => Math.round(n * 10) / 10;
 const pts = (list) => list.map((p) => `${r1(p[0])},${r1(p[1])}`).join(' ');
@@ -57,6 +61,18 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
     }
     return { seg, ang, tri };
   }, [marks, problem, fig]);
+
+  // the numbers: every labelled piece, and the asked side ("x", then its number once the row is written)
+  const numbers = useMemo(() => {
+    const labels = fig.labels || {}, ask = problem.ask || null;
+    if (!Object.keys(labels).length && !ask) return [];
+    const valId = ask && Object.keys(problem.facts).find((f) => problem.facts[f].kind === 'val' && segKey(problem.facts[f].x) === segKey(ask));
+    const found = !!valId && marks.some((m) => m.fact === valId && m.style === 'on');
+    const items = [...Object.entries(labels).map(([seg, v]) => ({ seg, text: String(v) })), ...(ask ? [{ seg: ask, text: found ? String(problem.facts[valId].v) : 'x', ask: true, found }] : [])];
+    let placed = numberLabels(L, items.map(({ seg, text }) => ({ seg, text }))).labels;
+    if (found && !placed.some((l) => l.seg === ask)) placed = numberLabels(L, items.map(({ seg, text, ask: a }) => ({ seg, text: a ? 'x' : text }))).labels.map((l) => (l.seg === ask ? { ...l, text: String(problem.facts[valId].v) } : l));   // no room for the longer text: it keeps x's place
+    return placed.map((l) => ({ ...l, ...(items.find((i) => i.seg === l.seg) || {}), x: l.x, y: l.y }));
+  }, [fig, L, problem, marks]);
 
   const dimAll = focus.length > 0 && !focus.some((id) => id.startsWith('t:'));
   // focus: the row's parts stand out, the unmarked lines step back; a marked (coloured) part is never washed out
@@ -172,6 +188,10 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
       {[...new Set(pulse)].map((id) => halo(id, 'prf-pulse', `p${id}`))}
       {end && tri1 && <polygon ref={mover} className="prf-mover" points={pts(tri1)} />}
       {L.labels.map((l) => <text key={l.p} className="prf-lb" x={r1(l.x)} y={r1(l.y)} dy=".36em">{l.p}</text>)}
+      {numbers.map((l) => (
+        <text key={`n${l.seg}`} className={`prf-num${l.ask ? (l.found ? ' is-found' : ' is-ask') : ''}`} x={r1(l.x)} y={r1(l.y)} dy=".36em" data-num={l.seg}
+          aria-label={l.ask && !l.found ? fill('say.numAsk', { x: l.seg }) : fill('say.numLabel', { x: l.seg, v: l.text })}>{l.text}</text>
+      ))}
       {[...new Set(question)].map((id) => {
         const c = badgeAt(id);
         return c && (

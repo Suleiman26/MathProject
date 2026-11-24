@@ -416,7 +416,8 @@ export function classify(p, done, st) {
     // a wrong number for the asked length (§7.5): the known ratio upside down, else a slip in the calculation
     const vid = Object.keys(p.facts).find((f) => p.facts[f].kind === 'val' && typeof st.x === 'string' && segKey(p.facts[f].x) === segKey(st.x));
     const flip = vid ? flipOf(p, vid) : null;
-    if (flip != null) return near(flip, Number(st.v), 1e-9) ? { c: 'false', kind: 'ratio-flip', textKey: 'st.numFlip', vars: {} } : { c: 'false', kind: 'calc', textKey: 'st.numCalc', vars: {} };
+    // (a flipped answer is rarely a round number: 4.5714… typed as 4.57 or 4.6 is still the flipped ratio)
+    if (flip != null) return Math.abs(flip - Number(st.v)) <= 0.05 + 1e-9 ? { c: 'false', kind: 'ratio-flip', textKey: 'st.numFlip', vars: {} } : { c: 'false', kind: 'calc', textKey: 'st.numCalc', vars: {} };
     return { c: 'false', kind: 'calc', textKey: 'st.falseVal', vars: { x: st.x, v: st.v } };
   }
   if (!anchorOf(p)) return { c: 'false', kind: 'false-statement', textKey: 'st.matchingPlain', vars: {} };
