@@ -321,13 +321,13 @@ test('all types are present, in key order (congruence 1–4 + exam 5, similarity
 });
 
 /* ── wiring (plan Task 20) ── */
-test('wiring: registered, coral, public on the home lists (Abed, 2026-11-21)', async () => {
+test('wiring: registered, coral, hidden from the home lists and search (Abed, 2026-11-24)', async () => {
   const fs = await import('node:fs');
   const src = fs.readFileSync(new URL('../registry.js', import.meta.url), 'utf8');
-  assert.match(src, /"proofs": \{"title": "הוכחות", "topic": "orange", "file": "proofs\.html"\}/);
+  assert.match(src, /"proofs": \{"title": "הוכחות", "topic": "orange", "file": "proofs\.html", "hidden": true\}/);
   assert.match(src, /"proofs": \(\) => import\('\.\/proofs\/Topic\.jsx'\)/); assert.match(src, /"proofs": \(\) => import\('\.\/proofs\/styles\.js'\)/);
   const { CHAPTERS } = await import('../../home/chapters.js'); assert.deepEqual(CHAPTERS.proofs, TYPES.map((t) => t.button));
-  const cat = fs.readFileSync(new URL('../../home/catalog.js', import.meta.url), 'utf8'); assert.match(cat, /slug: "proofs", name: "הוכחות", grades: "כיתה ח׳", g: \["8"\]/);
+  const cat = fs.readFileSync(new URL('../../home/catalog.js', import.meta.url), 'utf8'); assert.doesNotMatch(cat, /slug: "proofs"/);
   const page = fs.readFileSync(new URL('../../../app/topics/[slug]/page.tsx', import.meta.url), 'utf8');
   assert.match(page, /hidden \? \{ robots: \{ index: false, follow: false \} \}/);
 });

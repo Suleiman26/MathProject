@@ -35,7 +35,6 @@ const DEFAULT_CATALOG = (() => {
     ["סטטיסטיקה והסתברות", "statistics.html", ["g7", "g8", "g9"], "chart", "orange", "c3"],
     ["זוויות ומקבילים", "angles-parallel.html", ["g7"], "parallel", "teal", "c2"],
     ["משולשים", "triangles.html", ["g7", "g8"], "triangle", "sky", "c2"],
-    ["הוכחות", "proofs.html", ["g8"], "proof", "orange", "c2"],
     ["מרובעים", "quadrilaterals.html", ["g8"], "quad", "cyan", "c2"],
     ["פיתגורס", "pythagoras.html", ["g8"], "right", "indigo", "c2"],
     ["דמיון משולשים", "similar-triangles.html", ["g9"], "similar", "orange", "c2"],

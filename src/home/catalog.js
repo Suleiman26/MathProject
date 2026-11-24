@@ -38,8 +38,7 @@ export const TOPICS = [
   { cat: "num", slug: "statistics", name: "סטטיסטיקה והסתברות", grades: "כיתה ז׳–ח׳", g: ["7", "8"], icon: "chart", color: "orange" },
   { cat: "geo", slug: "angles-parallel", name: "זוויות ומקבילים", grades: "כיתה ז׳", g: ["7"], icon: "parallel", color: "teal" },
   { cat: "geo", slug: "triangles", name: "משולשים", grades: "כיתה ז׳–ח׳", g: ["7", "8"], icon: "triangle", color: "sky" },
-  // proofs section (public 2026-11-21, Abed): grade 8 congruence proofs, right after the triangles
-  { cat: "geo", slug: "proofs", name: "הוכחות", grades: "כיתה ח׳", g: ["8"], icon: "proof", color: "orange" },
+  // proofs section: hidden again 2026-11-24 (Abed: "not clear, messy") until it is rebuilt; still at /topics/proofs, not listed
   { cat: "geo", slug: "quadrilaterals", name: "מרובעים", grades: "כיתה ח׳", g: ["8"], icon: "quad", color: "cyan" },
   { cat: "geo", slug: "pythagoras", name: "פיתגורס", grades: "כיתה ח׳", g: ["8"], icon: "right", color: "indigo" },
   { cat: "geo", slug: "similar-triangles", name: "דמיון משולשים", grades: "כיתה ט׳", g: ["9"], icon: "similar", color: "orange" },
