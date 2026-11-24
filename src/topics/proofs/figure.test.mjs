@@ -84,10 +84,11 @@ test('the goal echo of a triangle stays inside it, clear of the ticks; a small t
 /* ── Task 12 (spec 2026-11-23 §7.6, the ending): the small triangle grows onto the big one ── */
 test('similarity ending: the final matrix lays △1 on △2 along the sim map (P, B, H, N, 1e-6 in screen space)', async () => {
   const { seeded, makeR } = await import('../new/core.js');
-  const FAMS = await Promise.all(['p', 'b', 'h', 'n'].map((f) => import(`./families/${f}.js`).then((m) => m.default)));
+  const NAMES = ['p', 'b', 'h', 'n'], FAMS = await Promise.all(NAMES.map((f) => import(`./families/${f}.js`).then((m) => m.default)));
   const R = makeR(seeded(1212));
   let flips = 0, turns = 0;
-  for (const fam of FAMS) for (const v of Object.keys(fam.variants)) for (const ask of [false, true]) for (let i = 0; i < 25; i++) {
+  const hnFlips = { h: 0, n: 0 };
+  for (const [fi, fam] of FAMS.entries()) for (const v of Object.keys(fam.variants)) for (const ask of [false, true]) for (let i = 0; i < 25; i++) {
     const b = fam.build(R, v, { ask }), Lb = layout(b.figure), m = motionMatrix(Lb, b);
     const ap = ([x, y]) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
     for (const [u, w] of b.facts.sim.map) { const q = ap(Lb.pts[u]); assert.ok(Math.hypot(q[0] - Lb.pts[w][0], q[1] - Lb.pts[w][1]) < 1e-6, `${v} ${u}→${w}`); }
@@ -95,7 +96,7 @@ test('similarity ending: the final matrix lays △1 on △2 along the sim map (P
     assert.ok(Math.abs(k - b.ratio.p / b.ratio.q) < 1e-6, `${v}: scale ${k} vs ${b.ratio.p}/${b.ratio.q} (the small one grows)`);
     // a similarity: a turn and a scale (a = d, b = −c), or with a flip (a = −d, b = c)
     if (det > 0) { turns++; assert.ok(Math.abs(m[0] - m[3]) < 1e-6 && Math.abs(m[1] + m[2]) < 1e-6, v); }
-    else { flips++; assert.ok(Math.abs(m[0] + m[3]) < 1e-6 && Math.abs(m[1] - m[2]) < 1e-6, v); }
+    else { flips++; if (NAMES[fi] in hnFlips) hnFlips[NAMES[fi]]++; assert.ok(Math.abs(m[0] + m[3]) < 1e-6 && Math.abs(m[1] - m[2]) < 1e-6, v); }
     const fr = motionFrames(m, 16), close = (x, y) => x.every((q, j) => Math.abs(q - y[j]) < 1e-6);
     assert.equal(fr.length, 17); assert.ok(close(fr[0], [1, 0, 0, 1, 0, 0]), v); assert.ok(close(fr[16], m), v);
     // it grows all the way (a turn: a similarity in every frame, its scale rising from 1 to k)
@@ -113,7 +114,8 @@ test('similarity ending: the final matrix lays △1 on △2 along the sim map (P
     }
   }
   assert.ok(turns > 0, 'some endings turn and grow');
-  assert.ok(flips + turns > 0);
+  assert.ok(flips > 0, 'some endings flip');
+  assert.ok(hnFlips.h > 0 && hnFlips.n > 0, `H and N endings flip (${JSON.stringify(hnFlips)})`);
 });
 test('similarity frames: a flip grows too, through the axis squash, and ends on M', () => {
   const close = (x, y) => x.every((q, j) => Math.abs(q - y[j]) < 1e-6);

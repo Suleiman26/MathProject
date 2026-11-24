@@ -25,4 +25,11 @@ export const tabOf = (level) => TABS[Math.max(0, Math.min(3, level))];
 export const STAGES = [T['stage.0'], T['stage.1'], T['stage.2'], T['stage.3']];
 /** The visible help stage of a level: 0 = warm-up; 4 (level finished) stays on the last stage. */
 export const stageOf = (level) => STAGES[Math.max(0, Math.min(3, level))];
+/** The help-stage tabs a level shows (indices into TABS/STAGES): all four; no חימום without warm-up kinds; the exam
+    only לבד (3), plus חימום (0) while its rescue warm-up runs, so the tracker keys that warm-up "<exam key> › חימום"
+    like every other level's. */
+export const tabsOf = (type, warming = false) => {
+  const warm = (type.warm || []).length > 0;
+  return [0, 1, 2, 3].filter((i) => (type.shape === 'exam' ? i === 3 || (i === 0 && warming && warm) : i !== 0 || warm));
+};
 export const typeById = (id) => TYPES.find((t) => t.id === id) || null;

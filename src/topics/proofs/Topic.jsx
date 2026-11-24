@@ -4,7 +4,7 @@
    help stages inside a level (חימום · מודרך · ביחד · לבד: ./ProofChapter.jsx).
    The landing shows one subject at a time: its short name as a giant wordmark with a drawing in front,
    the subject switcher (only when more than one subject can show), one meta line (when it is taught,
-   levels done) and the ladder; the open level shows what it is about and its help stages. Under that first
+   levels done, how far to "שולטים בנושא"), a quiet prerequisite line on a first visit (§9, mastery.nudgeOf) and the ladder; the open level shows what it is about and its help stages. Under that first
    screen comes the subject's theorem notebook ("המשפטים", ./Theorems.jsx, §6.2.5); a quiet link under the
    ladder leads to it.
    Stored names never change: a level button carries its tracker key in data-mp-key (type.button), the
@@ -17,7 +17,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { TYPES, typeById, stageOf } from './types/index.js';
 import { SUBJECTS, typesOf, levelNo, canShow, lawsOf } from './subjects.js';
-import { typeState, SUBJECT_KEY, examOpen, subjectMastered, lastProofOf } from './mastery.js';
+import { typeState, SUBJECT_KEY, examOpen, subjectMastered, lastProofOf, nudgeOf } from './mastery.js';
 import { targets } from './core.js';
 import { T, fill } from './texts.js';
 import ProofChapter, { readOpen, peekState, deviceStore } from './ProofChapter.jsx';
@@ -131,7 +131,7 @@ export default function App({ devRescue }) {
     const all = cur.levels.map((t) => typeState(state, t.id));
     const spot = all.every((ts) => ts.level >= 4) ? -1 : spotOf(cur.levels, state);   // the recommended order is the ladder's (the exam: §8)
     const open = examOpen(state, subject.id), last = lastProofOf(subject.id);
-    const done = all.filter((ts) => ts.level >= 4).length;
+    const done = all.filter((ts) => ts.level >= 4).length, won = subjectMastered(state, subject.id), nudge = nudgeOf(state, subject.id);
     return (
       <>
         <div className="prf-subjbar">
@@ -151,7 +151,10 @@ export default function App({ devRescue }) {
           <p className="prf-subj-meta" key={subject.id}>
             {!many && <b>{subject.name}</b>}{!many && <span aria-hidden="true"> · </span>}
             <span>{fill('lbl.subjMeta', { when: subject.when, done, n: all.length })}</span>
+            <span aria-hidden="true"> · </span>
+            {won ? <span className="prf-subj-won"><IcSeal />{T['lbl.mastered']}</span> : <span>{T['lbl.toMastered']}</span>}
           </p>
+          {nudge && <p className="prf-subj-nudge" key={`n-${subject.id}`}>{T[nudge]}</p>}
         </div>
         <nav className="ch-btns prf-path" aria-label={T['lbl.order']} key={subject.id}>
           {cur.levels.map((t, i) => {

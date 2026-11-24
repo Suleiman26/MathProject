@@ -589,7 +589,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-intro{font-size:.84rem}
 }
 @media (prefers-reduced-motion: reduce){
-  #root .prf-row.is-new,#root .prf-row-law,#root .prf-q-law,#root .prf-hint,#root .prf-why,#root .prf-hintb.is-nudge,#root .prf-mast-fig,#root .prf-mast .prf-subj-in,#root .prf-subj-meta,#root .prf-pt-open,#root .prf-warm-mid,#root .prf-end-card,#root .prf-prev,#root .prf-note.prf-fb{animation:none}
+  #root .prf-row.is-new,#root .prf-row-law,#root .prf-q-law,#root .prf-hint,#root .prf-why,#root .prf-hintb.is-nudge,#root .prf-mast-fig,#root .prf-mast .prf-subj-in,#root .prf-subj-meta,#root .prf-subj-nudge,#root .prf-pt-open,#root .prf-warm-mid,#root .prf-end-card,#root .prf-prev,#root .prf-note.prf-fb{animation:none}
   #root .prf-pt-n,#root .prf-subj-thumb,#root .prf-subj-b,#root .prf-row-op .prf-ic,#root .prf-table-op .prf-ic{transition:none}
 }
 
@@ -620,6 +620,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-subjbar{align-items:flex-start;gap:10px}
   #root .prf-subj-b{min-height:44px;font-size:1rem}
   #root .prf-subj-meta{font-size:.9rem;text-align:start}
+  #root .prf-subj-nudge{font-size:.86rem;text-align:start}
   #root .prf-pt-k{font-size:.76rem}
   #root .prf-path .ch-btn{flex:0 1 auto;min-height:48px;font-size:1.1rem}
   #root .prf-pt-row{min-height:52px;gap:12px}
@@ -741,7 +742,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-topic:not(.prf-in-proof) > .prf-mast{--prf-wm:min(31cqw,17dvh);flex:none;max-width:600px}
   #root .prf-mast-fig{width:min(100%,500px);margin-inline:auto}
   #root .prf-subjbar{max-width:600px;margin-top:14px;align-items:center}
-  #root .prf-subj-meta{text-align:center}
+  #root .prf-subj-meta,#root .prf-subj-nudge{text-align:center}
   #root .prf-path{max-width:600px;margin-top:6px}
   /* the start button stays in reach while the path scrolls (as on a phone, but as a pill with its line beside it) */
   #root .prf-land-go{position:sticky;bottom:0;z-index:5;justify-content:center;max-width:none;margin:8px 0 0;padding:14px 16px max(16px,env(safe-area-inset-bottom,0px));background:var(--bg)}
@@ -927,6 +928,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-subj-b.is-won{display:inline-flex;align-items:center;justify-content:center;gap:5px}
 #root .prf-subj-nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
 #root .prf-subj-seal{flex:none;font-size:17px;color:var(--a-600)}
+/* the meta line: how far to "שולטים בנושא", or the seal once it is reached; the quiet first-visit nudge under it (§9) */
+#root .prf-subj-won{display:inline-flex;align-items:center;gap:3px;color:var(--a-700);font-weight:700;vertical-align:bottom}
+#root .prf-subj-won .prf-ic{font-size:15px}
+#root .prf-subj-nudge{max-width:36ch;margin:-2px 0 0;font-size:.8rem;font-weight:500;line-height:1.45;color:var(--ink-3);text-align:center;text-wrap:balance;animation:prf-row .3s .1s var(--ease-out) backwards}
 /* the end card: "שולטים בנושא", calm and proud: a seal that settles, a ring that opens around it, the words */
 #root .prf-mastered{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px 8px;text-align:center}
 #root .prf-mastered-seal{position:relative;display:grid;place-items:center;width:68px;height:68px;margin-bottom:8px;border-radius:50%;background:var(--a-600);box-shadow:var(--sh-accent);color:#fff;font-size:38px;animation:prf-seal .7s .1s var(--ease-out) backwards}

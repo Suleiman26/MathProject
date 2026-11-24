@@ -4,7 +4,8 @@
    around it comes from Topic.jsx as `path`), the warm-up (screen B), the proof flow, mastery (saved on the device), the rescue cards
    (screen F), and the open proof that survives a refresh.
    Mastery does not depend on the answer tracker: record() is called here with the decision states.
-   The exam level (spec 2026-11-23 §8, type.shape 'exam'): one help-stage tab, לבד (stored as "רמה 3"); locked until
+   The exam level (spec 2026-11-23 §8, type.shape 'exam'): one help-stage tab, לבד (stored as "רמה 3"; during a rescue
+   warm-up also חימום, so the tracker stores "<exam key> › חימום" as on every level); locked until
    the subject's last proof level reaches לבד; always variant B; its rescue card sends back to that level or goes on. */
 import React, { useEffect, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
@@ -12,7 +13,7 @@ import { useAccount, accountApi } from '@/lib/account';
 import { present, decisionsOf } from './core.js';
 import { snapshot, restore } from './session.js';
 import { RULES, rescueKinds, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord, takeRescue, examOpen, lastProofOf } from './mastery.js';
-import { TYPES, TABS, STAGES, typeById } from './types/index.js';
+import { TYPES, TABS, STAGES, typeById, tabsOf } from './types/index.js';
 import { typesOf, levelNo, stepBack, subjectOf } from './subjects.js';
 import { T, fill } from './texts.js';
 import ProofScreen from './ProofScreen.jsx';
@@ -133,8 +134,8 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     if (opts.walk) view = { ...view, ties: false, steps: view.steps.map((s) => ({ ...s, ask: [] })) };   // a fully worked example
     if (t.force === 'A' && !opts.walk) putType(clearForce(t));
     last.current = { family: problem.family, theorem: problem.theorem };
-    setEnd(null); setRescue(null); setTab(level);
-    setOpen({ key: ++n.current, problem, view, level, variant, counted, walk: !!opts.walk, restored: null });
+    setEnd(null); setRescue(null); setTab(lv);                       // the forced level (the exam: לבד = 3; a walk-through: מודרך)
+    setOpen({ key: ++n.current, problem, view, level: lv, variant, counted, walk: !!opts.walk, restored: null });
   }
 
   /* ── the warm-up (§7.1): never blocks, never counts; `only` = one kind, two tasks (rescue step 1) ── */
@@ -213,11 +214,12 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   // the exam opens when the subject's last proof level has reached לבד (§8); until then it shows only what opens it
   const locked = isExam && !examOpen(state, type.subject);
 
+  // the exam: one help stage, לבד (stored as "רמה 3"), and חימום while a rescue warm-up runs (the tracker's key)
+  const shownTabs = tabsOf(type, !!warm);
   const tabs = locked ? null : (
     <div className="sub-tabs prf-tabs">
       {TABS.map((name, i) => {
-        if (i === 0 && !hasWarm) return null;
-        if (isExam && i !== 3) return null;                 // the exam: one help stage, לבד (stored as "רמה 3")
+        if (!shownTabs.includes(i)) return null;
         const locked = i > level, done = !locked && ((i === 0 ? began : i < level) || passed);
         return (
           <button type="button" key={name} data-mp-key={name} className={`sub-tab${i === tab ? ' active' : ''}${done ? ' prf-is-done' : ''}`} disabled={locked} onClick={() => setTab(i)}>

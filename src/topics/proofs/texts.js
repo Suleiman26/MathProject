@@ -30,6 +30,8 @@ export const T = {
   'lbl.levelN': 'רמה {n}',
   'lbl.subjects': 'הנושאים',
   'lbl.subjMeta': '{{when}} · {{done}} מתוך {{n}} רמות',
+  'lbl.toMastered': 'עד "שולטים בנושא"',
+  'lbl.simNudge': 'דמיון דומה מאוד להוכחת חפיפה. אפשר להתחיל כאן.',
 
   /* ── hint ladder, rungs 1 and 2, by row role (§9.1) ── */
   'hint.given.1': 'התחילו ממה שנתון. הסתכלו על החלקים המהבהבים.',
@@ -408,8 +410,8 @@ export const T = {
   'about.sim-side': 'שני משולשים דומים: כותבים את היחס ומוצאים צלע חסרה.',
   'about.prove-sim': 'משתי זוויות שוות מוכיחים ששני משולשים דומים.',
   'about.sim-calc': 'קודם מוכיחים דמיון, ואחר כך כותבים יחס ומוצאים צלע חסרה.',
-  'about.cong-exam': 'שרטוט אחד וכמה סעיפים, כמו בבחינה: בלי עזרה, ואתם בוחרים כל משפט.',
-  'about.sim-exam': 'שרטוט אחד וכמה סעיפים, כמו בבחינה: מוכיחים דמיון, כותבים יחס ומחשבים. בלי עזרה.',
+  'about.cong-exam': 'שרטוט אחד וכמה סעיפים, כמו במבחן: בלי עזרה, ואתם בוחרים כל משפט.',
+  'about.sim-exam': 'שרטוט אחד וכמה סעיפים, כמו במבחן: מוכיחים דמיון, כותבים יחס ומחשבים. בלי עזרה.',
 
   /* ── the exam level "כמו במבחן" and "שולטים בנושא" (spec 2026-11-23 §8; all in NEW_DRAFTS) ── */
   'exam.sec.1': 'א', 'exam.sec.2': 'ב', 'exam.sec.3': 'ג',
@@ -484,6 +486,8 @@ export const NEW_DRAFTS = [
   // the exam level and "שולטים בנושא" (spec 2026-11-23 §8; Task 14)
   'type.cong-exam', 'type.sim-exam', 'type.exam', 'about.cong-exam', 'about.sim-exam', 'exam.sec.1', 'exam.sec.2', 'exam.sec.3', 'exam.goal.prove', 'exam.goal.ratio', 'exam.goal.calc',
   'lbl.examLocked', 'ui.rescueExam', 'ui.mastered', 'ui.masteredSub', 'lbl.mastered',
+  // where am I and the nudge (spec 2026-11-23 §9, §10.1; Task 15)
+  'lbl.toMastered', 'lbl.simNudge',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

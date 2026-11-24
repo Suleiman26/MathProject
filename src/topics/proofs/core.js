@@ -167,7 +167,8 @@ function missingKey(p, done, id) {
   const j = [...js].sort((u, v) => u.needs.filter((n) => !done.includes(n)).length - v.needs.filter((n) => !done.includes(n)).length)[0];
   const miss = j ? j.needs.filter((n) => !done.includes(n)) : [];
   if (miss.includes(anchorOf(p))) return 'rs.fact.sim';
-  return miss.every((n) => (p.given || []).includes(n)) ? 'st.needFirst' : 'st.needRow';
+  // (a row with no justification at all is never "only the order is missing": [].every() would say so forever)
+  return miss.length && miss.every((n) => (p.given || []).includes(n)) ? 'st.needFirst' : 'st.needRow';
 }
 /** Some justification has all its needs written. */
 export const provable = (p, done, id) => (p.just[id] || []).some((j) => within(j.needs, done));

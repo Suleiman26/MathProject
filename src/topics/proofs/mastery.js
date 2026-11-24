@@ -227,6 +227,15 @@ export function subjectMastered(state, subjectId) {
   const ex = examOf(subjectId);
   return !!ex && typeState(state, ex.id).level >= 4;
 }
+/** The subject's quiet prerequisite line (spec 2026-11-23 §9), as a text key, or null: shown on the first visit
+    (no level of the subject begun yet) while the level it leans on (`nudge.after`) is below `nudge.level`.
+    A nudge, never a lock: nothing else depends on it. */
+export function nudgeOf(state, subjectId) {
+  const s = subjectBy(subjectId), n = s && s.nudge;
+  if (!n) return null;
+  const began = s.types.some((id) => { const ts = typeState(state, id); return ts.done > 0 || ts.walked || ts.warm.done; });
+  return !began && typeState(state, n.after).level < n.level ? n.text : null;
+}
 
 /** After sign-up / sign-in: copy the guest progress into the user's key when that key is empty. */
 export function adoptGuest(store, accountId) {

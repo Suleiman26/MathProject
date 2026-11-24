@@ -182,7 +182,7 @@ function Sheet({ q }) {
               <div className="prf-stage prf-lab-fig"><ProofFigure problem={p} marks={marks} /></div>
               {(p.text || []).map((x, k) => <p key={k} className="prf-page-l"><Tx k={x.key} vars={x.vars} /></p>)}
               <p className="prf-page-l"><b>{TXT['lbl.given']}</b>{' '}{(p.givenText || []).map((g, k) => <React.Fragment key={k}>{k > 0 && ', '}{g.form === 'eq' ? <St st={p.facts[g.facts[0]]} /> : <Tx k={g.key} vars={g.vars} />}{g.byOrder && ` ${TXT['lbl.byOrder']}`}</React.Fragment>)}</p>
-              {type.n !== 1 && <p className="prf-page-l"><b>{TXT['lbl.toProve']}</b>{' '}{goal.map((f, k) => <React.Fragment key={f}>{k > 0 && ', '}<St st={p.facts[f]} /></React.Fragment>)}</p>}
+              {type.shape !== 'given' && <p className="prf-page-l"><b>{TXT['lbl.toProve']}</b>{' '}{goal.map((f, k) => <React.Fragment key={f}>{k > 0 && ', '}<St st={p.facts[f]} /></React.Fragment>)}</p>}
               <table className="prf-table">
                 <thead><tr><th scope="col">{TXT['lbl.claim']}</th><th scope="col">{TXT['lbl.reason']}</th></tr></thead>
                 <tbody>{canonRows(p).map((r, k) => <tr key={r.fact}><td><span className="prf-table-n">{k + 1}.</span> <St st={r.st} /></td><td>{(p.just[r.fact][0].reasons || []).map((id) => REASONS[id].full || REASONS[id].short).join(' / ')}</td></tr>)}</tbody>

@@ -1,6 +1,6 @@
 /* The proofs subjects (spec 2026-11-23 §5): subjects → levels (the types, in Ministry order) → help stages.
    A subject = { id, name, when, short, live, types:[type ids, level order], theorems:[reason ids shown on its
-   theorem page], hero:{ type, template, seed } | null, demos:{ [reasonId]: { type, template, seed, marks } } }.
+   theorem page], hero:{ type, template, seed } | null, nudge:{ after: type id, level, text: text key } (optional, §9), demos:{ [reasonId]: { type, template, seed, marks } } }.
    A demo = the small drawing beside a theorem on the "המשפטים" page (§6.3): one fixed instance of an existing
    template with only the theorem's own pattern marked (`marks` = fact ids of that problem; a congruence id
    tints its two triangles; `solo` = draw only the points of the triangles and of the marked facts, see soloFigure).
@@ -32,7 +32,7 @@ export const SUBJECTS = [
       bisector: demo('read-given', '1-b', 20261123, ['f2'], true),                       // a wide angle (78°), so both arcs are easy to see
       median: demo('read-given', '1-a', 20261104, ['f1'], true),
       midpoint: demo('read-given', '1-e', 20261123, ['f1']),
-      altitude: demo('read-given', '1-b', 20261123, ['f1'], true),
+      altitude: demo('read-given', '1-b', 20261145, ['f2'], true),                    // the foot well inside its side (39% along it), never near a corner
     },
   }),
   subject('similarity', {
@@ -40,6 +40,8 @@ export const SUBJECTS = [
     types: ['sim-parts', 'sim-side', 'prove-sim', 'sim-calc', 'sim-exam'],
     theorems: ['aa', 'corresponding', 'alternate', 'vertical', 'common-angle', 'right-angles', 'sim-angles', 'sim-ratio', 'solve'],
     hero: { type: 'prove-sim', template: '8-P-CC', seed: 20261127 },
+    // a quiet line on the first visit (nothing begun here yet) while congruence רמה 3 is not reached (§9): a nudge, never a lock
+    nudge: { after: 'prove-congruence', level: 3, text: 'lbl.simNudge' },
     // the parallel given is never a mark (it has no honest mark yet: ticks would say "equal lengths"); "solve" has no drawing
     demos: {
       aa: demo('prove-sim', '8-P-CC', 20261126, ['a0', 'a1']),                  // the two angle pairs ז.ז stands on
