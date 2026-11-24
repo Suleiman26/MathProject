@@ -300,6 +300,25 @@ export function checkProp(p, st, { need } = {}) {
   return { ok: true };
 }
 
+/* ── sides and their drawn pieces (similarity, spec 2026-11-23 §7.5) ──────── */
+/** A side's name as the figure spells it (a drawn segment with the same two points), else u+v. */
+export function sideName(fig, u, v) {
+  const k = segKey(u + v);
+  return [...(fig.segs || []), ...(fig.plain || [])].find((s) => segKey(s) === k) || u + v;
+}
+/** The three sides of a triangle, side i opposite vertex i. */
+export const sidesOf = (fig, t) => [0, 1, 2].map((i) => sideName(fig, t[(i + 1) % 3], t[(i + 2) % 3]));
+/** The drawn pieces of a segment: itself, or the parts between the points of its line that lie inside it. */
+export function piecesOf(fig, seg) {
+  const P = fig.points, [u, v] = [seg[0], seg[1]];
+  const line = (fig.lines || []).find((l) => l.includes(u) && l.includes(v));
+  if (!line) return [seg];
+  const d = sub(P[v], P[u]), len2 = dot(d, d);
+  const inside = line.map((x) => [x, dot(sub(P[x], P[u]), d) / len2]).filter(([, t]) => t > 1e-9 && t < 1 - 1e-9).sort((a, b) => a[1] - b[1]).map(([x]) => x);
+  if (!inside.length) return [seg];
+  const chain = [u, ...inside, v];
+  return chain.slice(1).map((x, i) => sideName(fig, chain[i], x));
+}
 /* ── a missing length: the numbers of its proportion (spec 2026-11-23 §7.5) ───── */
 /* The calculation of a `val` row: its proportion's fraction with the asked side and a fraction whose two sides are
    known ({ top: the asked side is the numerator, other: the number beside it, kn / kd: the known fraction }), or null. */
@@ -315,9 +334,9 @@ function calcOf(p, id) {
   const fi = pr.pairs.findIndex((fr) => fr.some((s) => segKey(s) === asked));
   const ki = pr.pairs.findIndex((fr, i) => i !== fi && fr.every((s) => val(s) != null));
   if (fi < 0 || ki < 0) return null;
-  const top = segKey(pr.pairs[fi][0]) === asked, other = val(pr.pairs[fi][top ? 1 : 0]);
+  const top = segKey(pr.pairs[fi][0]) === asked, os = pr.pairs[fi][top ? 1 : 0], other = val(os);
   if (other == null) return null;
-  return { fi, ki, top, other, kn: val(pr.pairs[ki][0]), kd: val(pr.pairs[ki][1]) };
+  return { fi, ki, top, other, kn: val(pr.pairs[ki][0]), kd: val(pr.pairs[ki][1]), sides: { other: os, kn: pr.pairs[ki][0], kd: pr.pairs[ki][1] } };
 }
 /** The answer a student gets with the known ratio upside down (x/10 = 15/4 for x/10 = 4/15), or null. */
 export function flipOf(p, id) {
@@ -326,14 +345,28 @@ export function flipOf(p, id) {
   return c.top ? (c.other * c.kd) / c.kn : (c.other * c.kn) / c.kd;
 }
 /** The work line under the ratio row (§7.5): the substitution built from the labels, x for the asked side, and the
-    cross-multiplication. → { sub:[[top, bottom] ×2] (strings, in the ratio's order), text:'4/10 = x/15', cross:'x · 10 = 4 · 15' } | null */
+    cross-multiplication. A side of the substitution that the drawing gives only by its labelled pieces is added up
+    first (controller ruling 2026-11-24: "TR = 16.5 + 11 = 27.5", every help stage: arithmetic, not a decision).
+    → { sums:['AB = 6 + 4 = 10'] (in the order the substitution uses them), sub:[[top, bottom] ×2] (strings, in the
+        ratio's order), text:'4/10 = x/15', cross:'x · 10 = 4 · 15' } | null */
 export function workOf(p, id) {
   const c = calcOf(p, id);
   if (!c) return null;
   const mine = c.top ? ['x', String(c.other)] : [String(c.other), 'x'], known = [String(c.kn), String(c.kd)];
   const sub = c.fi < c.ki ? [mine, known] : [known, mine];
   const cross = c.top ? `x · ${c.kd} = ${c.other} · ${c.kn}` : `x · ${c.kn} = ${c.other} · ${c.kd}`;
-  return { sub, text: sub.map(([a, b]) => `${a}/${b}`).join(' = '), cross };
+  const labels = new Map(Object.entries(p.figure.labels || {}).map(([s, v]) => [segKey(s), v]));
+  const mineS = c.top ? [null, c.sides.other] : [c.sides.other, null], knownS = [c.sides.kn, c.sides.kd];
+  const sides = (c.fi < c.ki ? [mineS, knownS] : [knownS, mineS]).flat(), sums = [];
+  for (const [i, q] of sub.flat().entries()) {
+    const side = sides[i];
+    if (!side || labels.has(segKey(side))) continue;
+    const parts = piecesOf(p.figure, side).map((s) => labels.get(segKey(s)));
+    if (parts.length < 2 || parts.some((v) => v == null)) continue;
+    const line = `${side} = ${parts.join(' + ')} = ${q}`;
+    if (!sums.includes(line)) sums.push(line);
+  }
+  return { sums, sub, text: sub.map(([a, b]) => `${a}/${b}`).join(' = '), cross };
 }
 
 /* ── family T: what an isosceles triangle gives (lead ruling on review I3) ── */

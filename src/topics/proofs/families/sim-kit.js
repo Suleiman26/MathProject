@@ -7,7 +7,7 @@
      ask? (the asked side), values? ({side → number}: every known side, wholes included), asks (allowed asks) }.
    Fact ids: 'par' (P, B), 'a0' 'a1' 'a2' (the angle pair at each matched vertex, map order), 'sim', 'prop', 'val'.
    The similarity map always goes small → big, so ratio p/q = (side of the 2nd triangle) / (side of the 1st). */
-import { measure, holds, angKey, segKey } from '../core.js';
+import { measure, holds, angKey, segKey, sideName, sidesOf, piecesOf } from '../core.js';
 import { layout } from '../figure-core.js';
 import { lies, cramped, rename, Ang, G } from './kit.js';
 import { add, sub, mul, dot, unit, dist, distPointSeg, textW, TH, triFromSides } from '../../new/chapters/geometry/geo.js';
@@ -55,24 +55,8 @@ export const shrink = (pts, s) => Object.fromEntries(Object.entries(pts).map(([k
 /* ── sides, pieces, the calculation (spec §7.5) ───────────────────────────── */
 const half = (v) => Math.abs(v * 2 - Math.round(v * 2)) < 1e-6;
 const round2 = (v) => Math.round(v * 2) / 2;
-/** A side's name as the figure spells it (a drawn segment with the same two points), else u+v. */
-export function sideName(fig, u, v) {
-  const k = segKey(u + v);
-  return [...(fig.segs || []), ...(fig.plain || [])].find((s) => segKey(s) === k) || u + v;
-}
-/** The three sides of a triangle, side i opposite vertex i. */
-export const sidesOf = (fig, t) => [0, 1, 2].map((i) => sideName(fig, t[(i + 1) % 3], t[(i + 2) % 3]));
-/** The drawn pieces of a segment: itself, or the parts between the points of its line that lie inside it. */
-export function piecesOf(fig, seg) {
-  const P = fig.points, [u, v] = [seg[0], seg[1]];
-  const line = (fig.lines || []).find((l) => l.includes(u) && l.includes(v));
-  if (!line) return [seg];
-  const d = sub(P[v], P[u]), len2 = dot(d, d);
-  const inside = line.map((x) => [x, dot(sub(P[x], P[u]), d) / len2]).filter(([, t]) => t > 1e-9 && t < 1 - 1e-9).sort((a, b) => a[1] - b[1]).map(([x]) => x);
-  if (!inside.length) return [seg];
-  const chain = [u, ...inside, v];
-  return chain.slice(1).map((x, i) => sideName(fig, chain[i], x));
-}
+/* sideName, sidesOf, piecesOf: in core.js (the work line adds the pieces up, spec §7.5); re-exported here */
+export { sideName, sidesOf, piecesOf } from '../core.js';
 const lenOf = (fig, s) => measure(fig, s) * fig.scale;
 /** Every allowed calculation: { asked, tri, a, b, known:[3 sides], pieces:[labelled], pairs } (role letters).
     The asked side is a drawn piece (no point inside), never a side of both triangles; a known whole side is shown

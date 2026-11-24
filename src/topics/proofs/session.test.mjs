@@ -325,6 +325,30 @@ test('the work line: the substitution from the labels, with x for the asked side
   }
   assert.equal(workOf(xsas(), 'cong'), null);
 });
+test('the work line: a side made of labelled pieces is added up first (TR = 16.5 + 11 = 27.5), then substituted', () => {
+  let sums = 0, total = 0;
+  for (const id of ['sim-side', 'sim-calc']) for (const only of typeOf(id).templates.map((t) => t.id)) for (let seed = 1; seed <= 40; seed++) {
+    const { p } = simProblem(id, 3, 'B', seed, { only }), w = workOf(p, 'val'), labels = p.figure.labels || {};
+    assert.ok(Array.isArray(w.sums), p.id);
+    const totals = new Map();
+    for (const line of w.sums) {
+      const m = line.match(/^([A-Z]{2}) = ([\d.]+(?: \+ [\d.]+)+) = ([\d.]+)$/);
+      assert.ok(m, `${p.id}: "${line}"`);
+      const parts = m[2].split(' + ').map(Number), v = Number(m[3]);
+      assert.ok(Math.abs(parts.reduce((a, b) => a + b, 0) - v) < 1e-9, `${p.id}: ${line}`);
+      assert.ok(!(m[1] in labels), `${p.id}: ${m[1]} is not written on the drawing, its pieces are`);
+      for (const q of parts) assert.ok(Object.values(labels).includes(q), `${p.id}: ${q} is a labelled piece`);
+      totals.set(v, m[1]);
+    }
+    assert.equal(new Set(w.sums).size, w.sums.length, `${p.id}: each sum once`);
+    // every number of the substitution is on the drawing, or was just added up
+    for (const q of w.sub.flat()) if (q !== 'x') assert.ok(Object.values(labels).includes(Number(q)) || totals.has(Number(q)), `${p.id}: ${q} in ${w.text} (${w.sums.join('; ')})`);
+    // and every sum is used by the substitution
+    for (const v of totals.keys()) assert.ok(w.sub.flat().includes(String(v)), p.id);
+    sums += w.sums.length; total++;
+  }
+  assert.ok(sums > total * 0.3, `pieces are common (P: AB = AD + DB): ${sums} sums in ${total}`);
+});
 test('לבד: a ratio is built by side pairs; the last pair judges it by rule; undo; mixed direction → ratio-flip', () => {
   const { p, view } = simProblem('sim-calc', 3, 'A', 6);
   let s = start(p, view);

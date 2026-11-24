@@ -8,7 +8,7 @@
    marked (ticks would say "equal"). */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { layout, markGeom, triEcho, partsNear, partId, partName, motionMatrix, motionFrames } from './figure-core.js';
-import { partsOf, segKey } from './core.js';
+import { partsOf, segKey, anchorOf } from './core.js';
 import { numberLabels } from './families/sim-kit.js';
 import { RULES } from './mastery.js';
 import { distPointSeg } from '../new/chapters/geometry/geo.js';
@@ -44,9 +44,11 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
   const fig = problem.figure;
   const L = useMemo(() => layout(fig), [fig]);
   const index = useMemo(() => Object.fromEntries(partsIndex(fig).map((x) => [x.id, x])), [fig]);
-  const svg = useRef(null), mover = useRef(null);
+  const svg = useRef(null), mover = useRef(null), flashes = useRef([]);
   const reduce = useReducedMotion();
-  const end = ending === 'move' && reduce ? 'tint' : ending;
+  const anchor = problem.facts[anchorOf(problem)], simP = !!anchor && anchor.kind === 'sim';
+  // reduced motion: a congruence only tints; a similarity's two triangles flash once together (opacity, no motion)
+  const end = ending === 'move' && reduce ? (simP ? 'flash' : 'tint') : ending;
 
   // what each part shows: { style:'on'|'goal', mark, part, delay }
   const paint = useMemo(() => {
@@ -80,7 +82,8 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
   const sel = (id) => (selected.includes(id) ? ' is-sel' : '');
   const centre = useMemo(() => { const P = Object.values(L.pts); return [P.reduce((s, p) => s + p[0], 0) / P.length, P.reduce((s, p) => s + p[1], 0) / P.length]; }, [L]);
 
-  // the ending: triangle 1 travels onto triangle 2 by the real rigid motion, rests, and returns
+  // the ending: triangle 1 travels onto triangle 2 by the real rigid motion, rests, and returns; a similarity's small
+  // triangle grows (turning / flipping as needed) until it lies exactly on the big one, rests, and settles back
   useEffect(() => {
     const el = mover.current;
     if (end !== 'move' || !el || !el.animate) return undefined;
@@ -94,6 +97,14 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
     }, 1250);
     return () => { clearTimeout(t); there.cancel(); if (back) back.cancel(); if (fade) fade.cancel(); };
   }, [end, L, problem]);
+
+  // reduced motion, a similarity: both triangles flash once together (Web Animations: the site-wide reduced-motion
+  // rule shortens every CSS animation to 1 ms; this is opacity only, no motion)
+  useEffect(() => {
+    if (end !== 'flash') return undefined;
+    const runs = flashes.current.filter((el) => el && el.animate).map((el) => el.animate([{ opacity: 0 }, { opacity: 0.5 }, { opacity: 0 }], { duration: 900, easing: 'ease-in-out' }));
+    return () => runs.forEach((a) => a.cancel());
+  }, [end]);
 
   function tap(e, id) {
     if (!onPart) return;
@@ -147,8 +158,8 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
     return t && [(t.pts[0][0] + t.pts[1][0] + t.pts[2][0]) / 3, (t.pts[0][1] + t.pts[1][1] + t.pts[2][1]) / 3];
   };
 
-  const cong = problem.facts[problem.cong || 'cong'];
-  const tri1 = cong ? cong.map.map((m) => L.pts[m[0]]) : null;
+  const tri1 = anchor && anchor.map ? anchor.map.map((m) => L.pts[m[0]]) : null;
+  const tri2 = anchor && anchor.map ? anchor.map.map((m) => L.pts[m[1]]) : null;
   const showAngles = Array.isArray(tappable) && tappable.includes('ang');
   const hits = Array.isArray(tappable) ? [...L.hits].filter((h) => tappable.includes(h.kind)).sort((a, b) => (a.kind === 'tri' ? 0 : a.kind === 'seg' ? 1 : 2) - (b.kind === 'tri' ? 0 : b.kind === 'seg' ? 1 : 2)) : [];
 
@@ -187,6 +198,7 @@ export default function ProofFigure({ problem, marks = [], focus = [], selected 
       {selected.map((id) => (index[id] && index[id].kind === 'ang' ? halo(id, 'prf-selw', `s${id}`) : null))}
       {[...new Set(pulse)].map((id) => halo(id, 'prf-pulse', `p${id}`))}
       {end && tri1 && <polygon ref={mover} className="prf-mover" points={pts(tri1)} />}
+      {end === 'flash' && tri1 && [tri1, tri2].map((t, i) => <polygon key={`f${i}`} ref={(el) => { flashes.current[i] = el; }} className="prf-flash" points={pts(t)} />)}
       {L.labels.map((l) => <text key={l.p} className="prf-lb" x={r1(l.x)} y={r1(l.y)} dy=".36em">{l.p}</text>)}
       {numbers.map((l) => (
         <text key={`n${l.seg}`} className={`prf-num${l.ask ? (l.found ? ' is-found' : ' is-ask') : ''}`} x={r1(l.x)} y={r1(l.y)} dy=".36em" data-num={l.seg}

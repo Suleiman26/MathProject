@@ -195,7 +195,9 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       if (over > 0.5) box.style.paddingBottom = `${parseFloat(getComputedStyle(box).paddingBottom) + Math.ceil(over)}px`;
       d = top - box.scrollTop;
     }
-    if (Math.abs(d) >= 1) box.scrollTo({ top: box.scrollTop + d, behavior: reduce || intro.current ? 'auto' : 'smooth' });
+    // a nudge of a few pixels is made at once: WebKit can drop a tiny smooth scroll (seen 2026-11-24: 450 → 447 never
+    // happened after the sheet shrank and clamped the notebook, leaving the theorem's first line cut)
+    if (Math.abs(d) >= 1) box.scrollTo({ top: box.scrollTop + d, behavior: reduce || intro.current || Math.abs(d) < 12 ? 'auto' : 'smooth' });
   }, [s.rows.length, curKey, leans, planQ, end, fbs, why, hintLine, openRow, peek, said, lawList, nbH]); // eslint-disable-line react-hooks/exhaustive-deps
   // on a computer the page itself scrolls (the sheet is as tall as its rows): keep the sheet's foot, where the tray is, in view
   useEffect(() => {
@@ -286,7 +288,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     const w = valId && workOf(p, valId);
     if (!w) return null;
     const fact = (p.just[valId] || []).flatMap((j) => j.needs).find((f) => p.facts[f] && p.facts[f].kind === 'prop');
-    return { fact, sub: w.sub, text: w.text, cross: level === 1 ? w.cross : null };
+    return { fact, sums: w.sums, sub: w.sub, text: w.text, cross: level === 1 ? w.cross : null };   // the sums at every help stage (arithmetic, not a decision)
   }, [p, valId, level]);
   if (planQ) {
     const gp = partsOf(p.facts[targets(p)[0]]).map(showPart), both = planQ.picked.length === 2;

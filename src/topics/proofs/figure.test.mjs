@@ -80,3 +80,48 @@ test('the goal echo of a triangle stays inside it, clear of the ticks; a small t
   for (const q of Q) for (let i = 0; i < 3; i++) assert.ok(dist(q, P[i], P[(i + 1) % 3]) >= 11);
   assert.equal(triEcho([[0, 0], [60, 0], [30, 30]]), null);
 });
+
+/* ── Task 12 (spec 2026-11-23 §7.6, the ending): the small triangle grows onto the big one ── */
+test('similarity ending: the final matrix lays △1 on △2 along the sim map (P, B, H, N, 1e-6 in screen space)', async () => {
+  const { seeded, makeR } = await import('../new/core.js');
+  const FAMS = await Promise.all(['p', 'b', 'h', 'n'].map((f) => import(`./families/${f}.js`).then((m) => m.default)));
+  const R = makeR(seeded(1212));
+  let flips = 0, turns = 0;
+  for (const fam of FAMS) for (const v of Object.keys(fam.variants)) for (const ask of [false, true]) for (let i = 0; i < 25; i++) {
+    const b = fam.build(R, v, { ask }), Lb = layout(b.figure), m = motionMatrix(Lb, b);
+    const ap = ([x, y]) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+    for (const [u, w] of b.facts.sim.map) { const q = ap(Lb.pts[u]); assert.ok(Math.hypot(q[0] - Lb.pts[w][0], q[1] - Lb.pts[w][1]) < 1e-6, `${v} ${u}→${w}`); }
+    const det = m[0] * m[3] - m[1] * m[2], k = Math.sqrt(Math.abs(det));
+    assert.ok(Math.abs(k - b.ratio.p / b.ratio.q) < 1e-6, `${v}: scale ${k} vs ${b.ratio.p}/${b.ratio.q} (the small one grows)`);
+    // a similarity: a turn and a scale (a = d, b = −c), or with a flip (a = −d, b = c)
+    if (det > 0) { turns++; assert.ok(Math.abs(m[0] - m[3]) < 1e-6 && Math.abs(m[1] + m[2]) < 1e-6, v); }
+    else { flips++; assert.ok(Math.abs(m[0] + m[3]) < 1e-6 && Math.abs(m[1] - m[2]) < 1e-6, v); }
+    const fr = motionFrames(m, 16), close = (x, y) => x.every((q, j) => Math.abs(q - y[j]) < 1e-6);
+    assert.equal(fr.length, 17); assert.ok(close(fr[0], [1, 0, 0, 1, 0, 0]), v); assert.ok(close(fr[16], m), v);
+    // it grows all the way (a turn: a similarity in every frame, its scale rising from 1 to k)
+    if (det > 0) {
+      let last = 1 - 1e-9;
+      for (const f of fr) {
+        assert.ok(Math.abs(f[0] - f[3]) < 1e-6 && Math.abs(f[1] + f[2]) < 1e-6, `${v}: a similarity in every frame`);
+        const s = Math.hypot(f[0], f[1]); assert.ok(s >= last, `${v}: grows`); last = s;
+      }
+    }
+    // a shared corner (P: A ↔ A) never moves: the small triangle grows out of it
+    for (const [u, w] of b.facts.sim.map) if (u === w) for (const f of fr) {
+      const p = Lb.pts[u], q = [f[0] * p[0] + f[2] * p[1] + f[4], f[1] * p[0] + f[3] * p[1] + f[5]];
+      assert.ok(Math.hypot(q[0] - p[0], q[1] - p[1]) < 1e-6, `${v}: ${u} stays`);
+    }
+  }
+  assert.ok(turns > 0, 'some endings turn and grow');
+  assert.ok(flips + turns > 0);
+});
+test('similarity frames: a flip grows too, through the axis squash, and ends on M', () => {
+  const close = (x, y) => x.every((q, j) => Math.abs(q - y[j]) < 1e-6);
+  const M = [2, 0, 0, -2, 0, 60];                                   // ×2 with a flip over y = 20 (the fixed point (0, 20))
+  const fr = motionFrames(M, 4);
+  assert.ok(close(fr[0], [1, 0, 0, 1, 0, 0])); assert.ok(close(fr[4], M));
+  assert.ok(Math.abs(fr[2][3]) < 1e-6, 'half way it is flat across the axis');
+  assert.ok(Math.abs(fr[2][0] - Math.SQRT2) < 1e-6, 'and √2 long along it');
+  const S = [3, 0, 0, 3, -20, -40];                                 // a plain ×3 about (10, 20)
+  for (const f of motionFrames(S, 6)) { const q = [f[0] * 10 + f[2] * 20 + f[4], f[1] * 10 + f[3] * 20 + f[5]]; assert.ok(Math.hypot(q[0] - 10, q[1] - 20) < 1e-6); }
+});

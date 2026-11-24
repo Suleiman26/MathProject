@@ -9,8 +9,9 @@
    the newest row's sentence (`said`: the why-line, the guide's bubble) the row waits, so it is on screen once.
 
    The work line (spec 2026-11-23 §7.5): under the written ratio row of a calculation, the substitution built from the
-   labels ("4/10 = x/15", one left-to-right island) and, at מודרך only, the cross-multiplication.
-   work = null | { fact, sub:[[top, bottom] ×2], text, cross: string|null }
+   labels ("4/10 = x/15", one left-to-right island) and, at מודרך only, the cross-multiplication. A side the drawing gives
+   by its labelled pieces is added up first, at every help stage ("TR = 16.5 + 11 = 27.5", its own island).
+   work = null | { fact, sums:[string], sub:[[top, bottom] ×2], text, cross: string|null }
 
    now = null | { at: index of a finished row being shown (walk-through, "על אילו שורות זה נשען?") }
               | { st: node|null, reason: node|null, ask: 'st'|'reason'|null }   (the open row)   */
@@ -53,6 +54,7 @@ export default function ProofRows({ problem, rows, total = rows.length, now = nu
               {!law && open && <p className="prf-row-full"><b>{T['lbl.reason']}:</b> {reason.full || reason.short}</p>}
               {work && work.fact === r.fact && (
                 <p className="prf-row-work">
+                  {(work.sums || []).map((q) => <span key={q} className="prf-work-s"><Mx s={q} className="prf-work-m" /></span>)}
                   <span className="prf-work-s"><span className="prf-work-k">{T['lbl.work']}</span><Fracs pairs={work.sub} label={work.text} className="prf-work-m" /></span>
                   {work.cross && <span className="prf-work-s"><span className="prf-work-k">{T['lbl.cross']}</span><Mx s={work.cross} className="prf-work-m" /></span>}
                 </p>

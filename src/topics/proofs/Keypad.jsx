@@ -6,7 +6,8 @@
 
    The box is an <output>, never an <input>: the phone's own keyboard stays closed, and the site-wide answer keypad
    (src/components/Keypad.jsx, which adopts every usable `#root input`) has nothing to attach to. On a computer the
-   real keyboard types into it too (digits, ".", Backspace, Enter). */
+   real keyboard types into it too (digits, ".", Backspace, Enter). A key never takes the focus on a click, and Enter
+   on a focused key submits (never presses that key again). While a modal sheet is open (המשפטים) the keyboard is its. */
 import React, { useEffect, useRef } from 'react';
 import { T, fill } from './texts.js';
 
@@ -31,12 +32,15 @@ export default function Keypad({ name, text = '', stale = false, onKey, onSubmit
   live.current = { onKey, onSubmit };
   useEffect(() => {
     const down = (e) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
       const el = e.target, tag = el && el.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el && el.isContentEditable)) return;
+      if (document.querySelector('[aria-modal="true"]')) return;           // a sheet (המשפטים) is open: its keys are its own
       const k = /^\d$/.test(e.key) ? e.key : e.key === '.' || e.key === ',' ? '.' : e.key === 'Backspace' ? 'del' : null;
       if (k) { e.preventDefault(); live.current.onKey(k); return; }
-      if (e.key === 'Enter' && tag !== 'BUTTON' && tag !== 'A') { e.preventDefault(); live.current.onSubmit(); }
+      // Enter submits, also on a keypad key (Space still presses that key); other buttons and links keep their Enter
+      const onKp = !!(el && el.closest && el.closest('.prf-kp-k'));
+      if (e.key === 'Enter' && (onKp || (tag !== 'BUTTON' && tag !== 'A'))) { e.preventDefault(); live.current.onSubmit(); }
     };
     window.addEventListener('keydown', down);
     return () => window.removeEventListener('keydown', down);
@@ -56,7 +60,8 @@ export default function Keypad({ name, text = '', stale = false, onKey, onSubmit
         {ROWS.flat().map((k) => (
           <button type="button" key={k} className={`prf-kp-k${k === 'del' ? ' is-del' : ''}`} data-kp={k}
             disabled={k === 'del' ? !text : full || (k === '.' && !stale && text.includes('.'))}
-            aria-label={k === 'del' ? T['lbl.kpDel'] : k === '.' ? T['lbl.kpDot'] : undefined} onClick={() => onKey(k)}>
+            aria-label={k === 'del' ? T['lbl.kpDel'] : k === '.' ? T['lbl.kpDot'] : undefined}
+            onMouseDown={(e) => e.preventDefault()} onClick={() => onKey(k)}>
             {k === 'del' ? <IcDel /> : k}
           </button>
         ))}

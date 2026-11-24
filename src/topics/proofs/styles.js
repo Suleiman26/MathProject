@@ -65,9 +65,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-qm{pointer-events:none}
 #root .prf-qm circle{fill:var(--bad-600);stroke:var(--surface);stroke-width:2}
 #root .prf-qm text{font:700 11.5px var(--font);fill:#fff;text-anchor:middle}
-#root .prf-mover{fill:var(--a-500);fill-opacity:.3;stroke:var(--prf-goal);stroke-width:2;stroke-linejoin:round;pointer-events:none}
-#root .prf-fig.is-end-tint .prf-mover{display:none}
-#root .prf-fig.is-end-tint .prf-tri,#root .prf-fig.is-end-move .prf-tri{fill-opacity:.17}
+#root .prf-mover{fill:var(--a-500);fill-opacity:.3;stroke:var(--prf-goal);stroke-width:2;stroke-linejoin:round;vector-effect:non-scaling-stroke;pointer-events:none}
+#root .prf-fig.is-end-tint .prf-mover,#root .prf-fig.is-end-flash .prf-mover{display:none}
+#root .prf-fig.is-end-tint .prf-tri,#root .prf-fig.is-end-move .prf-tri,#root .prf-fig.is-end-flash .prf-tri{fill-opacity:.17}
+#root .prf-flash{fill:var(--a-500);stroke:var(--prf-goal);stroke-width:2.4;stroke-linejoin:round;opacity:0;pointer-events:none}
 #root .prf-hit{fill:transparent;stroke:transparent;pointer-events:all;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
 #root .prf-hit-seg{fill:none;stroke-linecap:round}
 #root .prf-hit:focus-visible{stroke:var(--a-500);stroke-opacity:.38}

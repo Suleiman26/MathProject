@@ -4,7 +4,7 @@
    motion of the ending. Pure: no React, no window.
    L.segs = every drawn segment ({ id, n, a, b, tap }); `tap:false` for fig.plain (drawn, not tappable). */
 import { add, sub, mul, dot, unit, dist, distPointSeg, textW, TH } from '../new/chapters/geometry/geo.js';
-import { segKey, triKey, angKey, kindOf, congOf } from './core.js';
+import { segKey, triKey, angKey, kindOf, anchorOf } from './core.js';
 import { T } from './texts.js';
 
 const PAD = 24;                 // room around the drawing for the letters
@@ -207,10 +207,12 @@ export function partsNear(L, p, r = 22) {
   return c.sort((x, y) => x[1] - y[1]).map((x) => x[0]);
 }
 
-/** The rigid motion (SVG matrix [a,b,c,d,e,f], screen space) that lays triangle 1 on triangle 2
-    along the congruence's matching. The figure's motion kind says how the UI should move it. */
+/** The motion (SVG matrix [a,b,c,d,e,f], screen space) that lays triangle 1 on triangle 2 along the anchor's
+    matching: a rigid motion for a congruence, a similarity (scale k = the ratio, a turn, a flip when the
+    orientation changes) for a similarity (its map goes small → big, so the small one grows). The three matched
+    corners fix it exactly. The figure's motion kind says how the UI should move it. */
 export function motionMatrix(L, problem) {
-  const map = problem.facts[congOf(problem)].map;
+  const map = problem.facts[anchorOf(problem)].map;
   const S = map.map((m) => L.pts[m[0]]), D = map.map((m) => L.pts[m[1]]);
   const det3 = (m) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
   const M = S.map(([x, y]) => [x, y, 1]), det = det3(M);
@@ -219,10 +221,34 @@ export function motionMatrix(L, problem) {
   return [a, b, c, d, e, f];
 }
 
-/** A rigid motion M as n + 1 frames from "where it is" to M: a turn about its centre, a slide, or a
-    flip over its axis (with its glide). Each frame is an SVG matrix [a,b,c,d,e,f]. */
+/** A similarity M (scale k ≠ 1) as n + 1 frames about its fixed point c (M c = c; it exists since k ≠ 1):
+    with no flip, a spiral: the scale k^t and the turn θ·t together (a plain enlargement when θ = 0, so a shared corner
+    stays put and the small triangle grows out of it); with a flip, the scale k^t along the axis of the flip and
+    k^t·cos(πt) across it (the same squash as the rigid flip, growing all the way). */
+export function simFrames(M, n = 24) {
+  const [a, b, c, d, e, f] = M, det = a * d - b * c, k = Math.sqrt(Math.abs(det)), out = [];
+  // the fixed point: (I − A) c = (e, f)
+  const m11 = 1 - a, m12 = -c, m21 = -b, m22 = 1 - d, dd = m11 * m22 - m12 * m21;
+  const cx = (m22 * e - m12 * f) / dd, cy = (m11 * f - m21 * e) / dd;
+  const th = Math.atan2(b, a), ph = Math.atan2(b, a) / 2, u = [Math.cos(ph), Math.sin(ph)], nn = [-u[1], u[0]];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, s = k ** t;
+    let A, B, C, D;
+    if (det > 0) { const co = Math.cos(th * t), si = Math.sin(th * t); [A, B, C, D] = [s * co, s * si, -s * si, s * co]; }
+    else {
+      const q = Math.cos(Math.PI * t);
+      [A, B, C, D] = [s * (u[0] * u[0] + q * nn[0] * nn[0]), s * (u[1] * u[0] + q * nn[1] * nn[0]), s * (u[0] * u[1] + q * nn[0] * nn[1]), s * (u[1] * u[1] + q * nn[1] * nn[1])];
+    }
+    out.push(i === n ? [...M] : [A, B, C, D, cx - (A * cx + C * cy), cy - (B * cx + D * cy)]);
+  }
+  return out;
+}
+
+/** A motion M as n + 1 frames from "where it is" to M. Rigid: a turn about its centre, a slide, or a
+    flip over its axis (with its glide). A similarity (|det| ≠ 1): simFrames. Each frame is an SVG matrix [a,b,c,d,e,f]. */
 export function motionFrames(M, n = 24) {
   const [a, b, c, d, e, f] = M, det = a * d - b * c, out = [];
+  if (Math.abs(Math.abs(det) - 1) > 1e-6) return simFrames(M, n);
   for (let i = 0; i <= n; i++) {
     const t = i / n;
     if (det > 0) {
