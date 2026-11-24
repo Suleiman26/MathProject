@@ -46,7 +46,7 @@ for (const kind of KINDS) test(`${kind}: ${RUNS} tasks, one right answer, the dr
     tx(t.text.k, t.text.vars); tx(t.why.k, t.why.vars); assert.ok(T[t.why.k]);
     // a statement option that is not the answer is never a given or seen (marked) fact twice, and the options differ
     if (t.options && t.options[0].st) assert.equal(new Set(t.options.map((o) => norm(t.figure, o.st))).size, t.options.length);
-    seen.add(JSON.stringify([t.text, t.answer]));
+    seen.add(JSON.stringify([t.text, t.st || null, t.pairs || null, t.answer]));   // S1 shows its pair as t.st, S4 its proportion as t.pairs
   }
   assert.ok(seen.size >= 12, `${kind}: only ${seen.size} different tasks`);
 });
@@ -196,4 +196,20 @@ test('S5: equal angles — two triangles are similar (yes), two rectangles not n
     }
   }
   assert.ok(c.yes > 120 && c.no > 120, JSON.stringify(c));
+});
+
+/* Task 13 review: every sign (∢ △ ∼ ∥) sits inside a maths island with its letters, never beside one in the Hebrew */
+test('S1–S5 texts: signs only inside whole maths islands', () => {
+  const R = makeR(seeded(135)), SIGN = /[∢△∼∥≅]/;
+  for (const kind of SK) for (let i = 0; i < 200; i++) {
+    const t = makeTask(R, kind);
+    for (const x of [t.text, t.why]) {
+      const parts = tx(x.k, x.vars);
+      for (const q of parts) {
+        if (q.t === 'he') { assert.ok(!SIGN.test(q.v), `${kind} ${x.k}: a sign in the Hebrew`); continue; }
+        assert.ok(!/[א-ת]/.test(q.v), `${kind} ${x.k}: Hebrew inside an island`);
+        for (const m of q.v.matchAll(/[∢△]/g)) assert.match(q.v.slice(m.index + 1), /^[A-Z]{3}/, `${kind}: ${q.v}`);   // the sign and its letters in one island
+      }
+    }
+  }
 });

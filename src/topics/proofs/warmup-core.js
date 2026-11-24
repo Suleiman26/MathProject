@@ -198,7 +198,7 @@ function s1(R) {
     const direct = ['a0', 'a1', 'a2'].map((id) => [id, (b.just[id] || []).flatMap((j) => j.reasons).find((r) => SIM_REASONS.includes(r))]).filter(([, r]) => r);
     if (!direct.length || !b.facts.par) continue;
     const [id, reason] = R.pick(direct), st = plain(b.facts[id]);
-    return { kind: 'S1', text: { k: 'w.S1', vars: { st: show(st) } }, st, figure: b.figure,
+    return { kind: 'S1', text: { k: 'w.S1', vars: {} }, st, figure: b.figure,
       facts: { par: bare(b.facts.par), [id]: { ...st, mark: { arcs: 1, color: 1 } } }, marks: [id], reveal: [],
       given: [bare(b.facts.par)], input: 'chips', options: SIM_REASONS.map((r) => ({ id: r, label: REASONS[r].short })),
       answer: reason, why: { k: `w.S1.why.${reason}`, vars: {} } };

@@ -3,7 +3,7 @@
    A/B variants, the four dots, and device storage that never throws (Review Focus 1, 4). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { warmed, RULES, ERR, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord, takeRescue } from './mastery.js';
+import { warmed, RULES, ERR, ERR_WARM, rescueKinds, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord, takeRescue } from './mastery.js';
 
 const rec = (n, solo, o = {}) => ({ n, solo, helped: 0, missed: n - solo - (o.filled || 0), filled: o.filled || 0, variant: 'B', tpl: o.tpl || '3-X-SAS', day: 1 });
 const run = (ts, level, recs, opt) => { let out; for (const r of recs) { out = record(ts, level, r, opt); ts = out.ts; } return out; };
@@ -175,4 +175,20 @@ test('a queued rescue: an old W3 card still loads, the S kinds load, anything el
   for (const k of ['S0', 'S6', 'S', 'W8']) assert.equal(back({ step: 1, warm: k }), null);
   const errs = typeState({ v: 1, types: { t: { ...emptyType(), errs: { calc: 2, 'ratio-flip': 1, nope: 4 } } } }, 't').errs;
   assert.deepEqual(errs, { 'ratio-flip': 1, calc: 2 });
+});
+
+/* Task 13 review: congruence levels keep their routing (ProofChapter passes kinds: rescueKinds(type)) */
+test('rescue step 1 through ProofChapter\'s options: congruence routes as before, similarity stays in its own list', async () => {
+  const { typeById } = await import('./types/index.js');
+  const N = rec(8, 4);
+  const step1 = (id, errs) => { const t = typeById(id), k = rescueKinds(t); let o = record({ ...emptyType(), level: 2 }, 2, N, { errs, kinds: k }); o = record(o.ts, 2, N, { kinds: k }); return o.rescue; };
+  assert.deepEqual(step1('prove-congruence', { 'wrong-matching': 2 }), { step: 1, warm: 'W5' });
+  assert.deepEqual(step1('read-given', { 'looks-equal': 1 }), { step: 1, warm: 'W2' });
+  assert.deepEqual(step1('congruent-parts', { 'wrong-theorem': 1 }), { step: 1, warm: 'W4' });
+  assert.deepEqual(step1('then-conclusion', { 'wrong-source': 1 }), { step: 1, warm: 'W3' });
+  assert.deepEqual(step1('prove-congruence', {}), { step: 1, warm: 'W1' });
+  for (const id of ['read-given', 'congruent-parts', 'prove-congruence', 'then-conclusion']) assert.equal(rescueKinds(typeById(id)), null, id);
+  assert.deepEqual(step1('prove-sim', { 'wrong-matching': 2 }), { step: 1, warm: 'S2' });
+  assert.deepEqual(step1('sim-calc', { calc: 1, 'looks-equal': 1 }), { step: 1, warm: 'W2' });     // tie → the earlier kind, which the level has
+  assert.deepEqual(step1('sim-side', {}), { step: 1, warm: 'S2' });
 });

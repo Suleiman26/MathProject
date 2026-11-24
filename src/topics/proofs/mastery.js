@@ -97,6 +97,10 @@ function warmFor(errs, kinds = null) {
   return best ? kindOf(best) : kinds && kinds.length ? kinds[0] : 'W1';
 }
 
+/** The warm-up kinds record() should limit rescue step 1 to: a similarity level's own list (its kinds mix S and W, and a
+    congruence-only kind such as W5 would be a congruence task); null for a congruence level (every W kind is its own). */
+export const rescueKinds = (type) => (type && type.subject === 'similarity' && Array.isArray(type.warm) && type.warm.length ? type.warm : null);
+
 /**
  * Record one finished (or left) proof. Pure: returns a new state.
  * → { ts, event: null | 'level-up' | 'type-done', rescue: null | { step:1, warm } | { step:2 } | { step:3 } }

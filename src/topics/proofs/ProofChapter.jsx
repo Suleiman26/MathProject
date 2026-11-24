@@ -9,7 +9,7 @@ import { seeded, makeR } from '../new/core.js';
 import { useAccount, accountApi } from '@/lib/account';
 import { present, decisionsOf } from './core.js';
 import { snapshot, restore } from './session.js';
-import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord, takeRescue } from './mastery.js';
+import { RULES, rescueKinds, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord, takeRescue } from './mastery.js';
 import { TYPES, TABS, STAGES, typeById } from './types/index.js';
 import { typesOf, levelNo, stepBack } from './subjects.js';
 import { T, fill } from './texts.js';
@@ -164,7 +164,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     const s = cur.s, decided = [...s.decisions, ...(s.cur && s.cur.tainted ? [{ state: 'missed' }] : [])];
     const rec = leftRecord({ n: decisionsOf(s.view), decided, variant: cur.o.variant, tpl: s.problem.template, day: today() });
     if (!rec) return;
-    const out = record(typeState(stateRef.current, type.id), cur.o.level, rec, { counted: true, errs: s.errs, kinds: type.warm });
+    const out = record(typeState(stateRef.current, type.id), cur.o.level, rec, { counted: true, errs: s.errs, kinds: rescueKinds(type) });
     out.ts.done = Math.max(0, out.ts.done - 1);                       // left, not completed
     const next = { ...stateRef.current, types: { ...stateRef.current.types, [type.id]: out.ts } };
     stateRef.current = next; save(store(), whoRef.current, next);
@@ -186,7 +186,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     let out;
     if (o.walk) out = { ts: t, event: null, rescue: null };
     else if (!o.counted) { out = record(t, o.level, rec, { counted: false }); if (o.level === 1 && o.variant === 'A') out.ts = walked(out.ts); }
-    else out = record(t, o.level, rec, { counted: true, errs: r.errs, filledReason: r.filledReason, kinds: type.warm });
+    else out = record(t, o.level, rec, { counted: true, errs: r.errs, filledReason: r.filledReason, kinds: rescueKinds(type) });
     putType(out.ts);
     live.current = null; dropOpen();
     sitting.current += 1;
