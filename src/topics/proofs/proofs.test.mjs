@@ -32,8 +32,8 @@ test('type 3 has the 14 templates of §6.4', () => {
   assert.equal(t.templates.length, 14); assert.deepEqual(t.warm, ['W1', 'W2', 'W3', 'W4']);
   assert.ok(t.templates.every((x) => x.id === `3-${x.variant}`));
 });
-/* the congruence types (the similarity levels have their own sweep: types-sim.test.mjs, honesty by liesSim) */
-for (const type of TYPES.filter((t) => t.subject === 'congruence')) for (const level of [1, 2, 3]) for (const variant of ['A', 'B']) {
+/* the congruence types (the similarity levels have their own sweep: types-sim.test.mjs, honesty by liesSim; the exams: exam.test.mjs) */
+for (const type of TYPES.filter((t) => t.subject === 'congruence' && t.shape !== 'exam')) for (const level of [1, 2, 3]) for (const variant of ['A', 'B']) {
   test(`${type.id} L${level}-${variant}: ${RUNS} problems`, () => {
     const R = makeR(seeded(12345)); const seen = {}, drawn = {}; let avoid = { recent: [], last: null };
     for (let i = 0; i < RUNS; i++) {
@@ -314,10 +314,10 @@ test('type 1: remake rebuilds the same problem', () => {
   const t = typeById('read-given'), R = makeR(seeded(27));
   for (let i = 0; i < 30; i++) { const p = t.make(R, 2, 'B', { recent: [], last: null }, {}), q = t.remake(p); assert.equal(q.id, p.id); assert.deepEqual(q.facts, p.facts); assert.deepEqual(q.tiles, p.tiles); assert.deepEqual(q.figure, p.figure); assert.deepEqual(q.givenText, p.givenText); }
 });
-test('all types are present, in key order (congruence 1–4, similarity 6–9)', () => {
-  assert.deepEqual(TYPES.map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה', '6. מדמיון לשוויונות ויחס', '7. מיחס לצלע חסרה', '8. הוכחת דמיון', '9. דמיון ואז חישוב']);
+test('all types are present, in key order (congruence 1–4 + exam 5, similarity 6–9 + exam 10)', () => {
+  assert.deepEqual(TYPES.map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה', '5. חפיפה – כמו במבחן', '6. מדמיון לשוויונות ויחס', '7. מיחס לצלע חסרה', '8. הוכחת דמיון', '9. דמיון ואז חישוב', '10. דמיון – כמו במבחן']);
   const n = (subject) => TYPES.filter((t) => t.subject === subject).reduce((k, t) => k + t.templates.length, 0);
-  assert.equal(n('congruence'), 62); assert.equal(n('similarity'), 15);
+  assert.equal(n('congruence'), 62 + 33); assert.equal(n('similarity'), 15 + 6);   // + the exams (Task 14): type 4's 33, the six similarity variants
 });
 
 /* ── wiring (plan Task 20) ── */

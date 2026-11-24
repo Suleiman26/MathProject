@@ -10,18 +10,20 @@
    Stored names never change: a level button carries its tracker key in data-mp-key (type.button), the
    visible text is free. A `?ch=<key>` link to a level of the subject not on screen lands on a hidden
    stub that switches the subject and opens the level.
+   The exam level (§8) is each subject's last: locked (a lock and one line saying what opens it) until the last proof
+   level reaches לבד; passing it is "שולטים בנושא" (a seal on the ladder and on the subject switcher).
    Specs: docs/superpowers/specs/2026-11-21-proofs-design.md, 2026-11-23-proofs-subjects-similarity-design.md
    (§5, §10.1) · the proof screen: ./ProofScreen.jsx · the pure core: core.js, session.js, mastery.js. */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { TYPES, typeById, stageOf } from './types/index.js';
 import { SUBJECTS, typesOf, levelNo, canShow, lawsOf } from './subjects.js';
-import { typeState, SUBJECT_KEY } from './mastery.js';
+import { typeState, SUBJECT_KEY, examOpen, subjectMastered, lastProofOf } from './mastery.js';
 import { targets } from './core.js';
 import { T, fill } from './texts.js';
 import ProofChapter, { readOpen, peekState, deviceStore } from './ProofChapter.jsx';
 import ProofFigure from './ProofFigure.jsx';
 import Theorems from './Theorems.jsx';
-import { IcCheck, IcBook, IcDown } from './signs.jsx';
+import { IcCheck, IcBook, IcDown, IcLock, IcSeal } from './signs.jsx';
 import { isAdminFrame } from '@/lib/admin-frame';
 
 /* the drawing in the hero: one fixed, good-looking instance per level; a level without one shows its subject's */
@@ -57,8 +59,15 @@ function shownSubjects() {
   return out.length ? out : [{ s: SUBJECTS[0], levels: TYPES }];
 }
 const began = (ts) => ts.done > 0 || ts.walked || ts.warm.done;
-/* the student's spot on a subject's ladder: the first level not finished yet (the last one when all are) */
-const spotOf = (levels, state) => { const i = levels.findIndex((t) => typeState(state, t.id).level < 4); return i < 0 ? levels.length - 1 : i; };
+/* the student's spot on a subject's ladder: the first level not finished yet (the last one when all are). The exam is
+   the next step as soon as it is open and the only proof level left is the last one (it has reached לבד, §8). */
+function spotOf(levels, state) {
+  const e = levels.findIndex((t) => t.shape === 'exam'), proof = levels.filter((t) => t.shape !== 'exam');
+  const i = proof.findIndex((t) => typeState(state, t.id).level < 4);
+  if (e >= 0 && typeState(state, levels[e].id).level < 4 && examOpen(state, levels[e].subject) && (i < 0 || i === proof.length - 1)) return e;
+  if (i >= 0) return levels.indexOf(proof[i]);
+  return levels.length - 1;
+}
 /* where the landing opens: the proof left open by a refresh → the subject last looked at → a subject with
    progress → the first one; inside the subject, on the student's spot */
 function firstSpot(shown) {
@@ -120,7 +129,8 @@ export default function App({ devRescue }) {
      its help stages) comes from ProofChapter, which also owns the saved progress (`state`) */
   const path = useCallback(({ state, inner }) => {
     const all = cur.levels.map((t) => typeState(state, t.id));
-    const spot = all.findIndex((ts) => ts.level < 4);              // the recommended order is the ladder's
+    const spot = all.every((ts) => ts.level >= 4) ? -1 : spotOf(cur.levels, state);   // the recommended order is the ladder's (the exam: §8)
+    const open = examOpen(state, subject.id), last = lastProofOf(subject.id);
     const done = all.filter((ts) => ts.level >= 4).length;
     return (
       <>
@@ -128,7 +138,14 @@ export default function App({ devRescue }) {
           {many && (
             <div className="prf-subj" role="group" aria-label={T['lbl.subjects']} style={{ '--prf-n': shown.length, '--prf-i': si }}>
               <span className="prf-subj-thumb" aria-hidden="true" />
-              {shown.map((x, i) => <button type="button" key={x.s.id} className={`prf-subj-b${i === si ? ' is-on' : ''}`} aria-pressed={i === si} onClick={() => pick(x.s.id)}>{x.s.name}</button>)}
+              {shown.map((x, i) => {
+                const won = subjectMastered(state, x.s.id);
+                return (
+                  <button type="button" key={x.s.id} className={`prf-subj-b${i === si ? ' is-on' : ''}${won ? ' is-won' : ''}`} aria-pressed={i === si} onClick={() => pick(x.s.id)}>
+                    {won && <IcSeal className="prf-subj-seal" />}<span className="prf-subj-nm">{x.s.name}</span>{won && <span className="prf-sr"> · {T['lbl.mastered']}</span>}
+                  </button>
+                );
+              })}
             </div>
           )}
           <p className="prf-subj-meta" key={subject.id}>
@@ -138,22 +155,30 @@ export default function App({ devRescue }) {
         </div>
         <nav className="ch-btns prf-path" aria-label={T['lbl.order']} key={subject.id}>
           {cur.levels.map((t, i) => {
-            const ts = all[i], passed = ts.level >= 4, lv = Math.min(3, ts.level), open = at.ch === i, on = began(ts), no = levelNo(t.id);
+            const ts = all[i], passed = ts.level >= 4, lv = Math.min(3, ts.level), isOpen = at.ch === i, on = began(ts), no = levelNo(t.id);
+            const exam = t.shape === 'exam', locked = exam && !open;
             return (
-              <div key={t.id} className={`prf-pt${open ? ' is-open' : ''}${passed ? ' is-passed' : ''}${on ? ' is-began' : ''}`}>
+              <div key={t.id} className={`prf-pt${isOpen ? ' is-open' : ''}${passed ? ' is-passed' : ''}${on ? ' is-began' : ''}${exam ? ' is-exam' : ''}${locked ? ' is-locked' : ''}`}>
                 <div className="prf-pt-row">
-                  <button type="button" className={`ch-btn ${open ? 'active' : ''}`} data-mp-key={t.button} aria-expanded={open} onClick={() => go(i)}>
-                    <span className="prf-pt-n" aria-hidden="true">{no}</span>
-                    <span className="prf-pt-tx"><span className="prf-pt-k">{fill('lbl.levelN', { n: no })}</span><span className="prf-sr"> · </span><span className="prf-pt-name">{t.label}</span></span>
+                  <button type="button" className={`ch-btn ${isOpen ? 'active' : ''}`} data-mp-key={t.button} aria-expanded={isOpen} onClick={() => go(i)}>
+                    <span className="prf-pt-n" aria-hidden="true">{locked ? <IcLock /> : no}</span>
+                    <span className="prf-pt-tx">
+                      <span className="prf-pt-k">{fill('lbl.levelN', { n: no })}</span><span className="prf-sr"> · </span><span className="prf-pt-name">{t.label}</span>
+                      {locked && last && <span className="prf-pt-why">{fill('lbl.examLocked', { level: fill('lbl.levelN', { n: levelNo(last.id) }) })}</span>}
+                    </span>
                   </button>
-                  {i === spot && <span className="prf-pt-next">{on ? T['lbl.here'] : T['lbl.nextUp']}</span>}
-                  {passed && <span className="prf-pt-ok" aria-hidden="true"><IcCheck /></span>}
-                  <span className="prf-pt-lv" aria-hidden="true">
-                    {[0, 1, 2, 3].map((k) => <i key={k} className={passed || (k === 0 ? on : k < lv) ? 'is-on' : k === lv && on ? 'is-here' : ''} style={{ height: `${7 + k * 3}px` }} />)}
-                  </span>
-                  <span className="prf-sr">{passed ? T['lbl.passed'] : on ? stageOf(ts.level) : ''}</span>
+                  {i === spot && !locked && <span className="prf-pt-next">{on ? T['lbl.here'] : T['lbl.nextUp']}</span>}
+                  {exam && passed
+                    ? <span className="prf-pt-won"><IcSeal /><span>{T['lbl.mastered']}</span></span>
+                    : passed && <span className="prf-pt-ok" aria-hidden="true"><IcCheck /></span>}
+                  {!exam && (
+                    <span className="prf-pt-lv" aria-hidden="true">
+                      {[0, 1, 2, 3].map((k) => <i key={k} className={passed || (k === 0 ? on : k < lv) ? 'is-on' : k === lv && on ? 'is-here' : ''} style={{ height: `${7 + k * 3}px` }} />)}
+                    </span>
+                  )}
+                  {!(exam && passed) && <span className="prf-sr">{passed ? T['lbl.passed'] : on ? stageOf(ts.level) : ''}</span>}
                 </div>
-                {open && <div className="prf-pt-open">{inner}</div>}
+                {isOpen && <div className="prf-pt-open">{inner}</div>}
               </div>
             );
           })}

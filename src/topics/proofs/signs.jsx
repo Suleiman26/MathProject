@@ -142,6 +142,8 @@ export const IcClose = I(<path d="M5.5 5.5l9 9M14.5 5.5l-9 9" />, 20, 2);
 export const IcBook = I(<><path d="M4 4.5h5a2 2 0 012 2V16a1.5 1.5 0 00-1.5-1.5H4z" /><path d="M16 4.5h-5a2 2 0 00-2 2V16a1.5 1.5 0 011.5-1.5H16z" /></>, 20, 1.6);
 export const IcPen = I(<><path d="M12.8 4.6l2.6 2.6L7.6 15H5v-2.6z" /><path d="M11 6.4l2.6 2.6" /></>, 20, 1.7);
 export const IcDown = I(<path d="M5.5 8l4.5 4.5L14.5 8" />, 20, 2.2);
+/* "שולטים בנושא": a round seal with a check, on two short ribbons */
+export const IcSeal = I(<><path d="M7.4 12.9L6.2 17.6l3.8-1.9 3.8 1.9-1.2-4.7" /><circle cx="10" cy="8.3" r="5.4" /><path d="M7.7 8.4l1.6 1.6 3-3.1" /></>, 20, 1.6);
 export const IcHand = I(<><circle cx="10" cy="10" r="2.2" fill="currentColor" stroke="none" /><circle cx="10" cy="10" r="6.2" /></>, 20, 1.6);
 
 /** The pair glyph beside a finished row: n ticks or n arcs (or a square) in the pair colour. */

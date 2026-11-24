@@ -31,7 +31,7 @@ test('inventory: four similarity levels with the stored keys, shapes, subject, t
     for (const k of [`type.${id}`, `about.${id}`]) assert.ok(NEW_DRAFTS.includes(k), k);
   });
   assert.deepEqual(TYPES.map((t) => t.n), [...TYPES.map((t) => t.n)].sort((a, b) => a - b));
-  assert.deepEqual(typesOf('similarity').map((t) => t.id), SIM);
+  assert.deepEqual(typesOf('similarity').map((t) => t.id), [...SIM, 'sim-exam']);   // + the exam, always last (Task 14)
   assert.deepEqual(SIM.map(levelNo), [1, 2, 3, 4]);
   assert.equal(prevInSubject('sim-parts'), null); assert.equal(prevInSubject('sim-calc').id, 'prove-sim');
   // the keys are exactly the stored ones (en dash rules: none here), and every template id is unique
@@ -194,7 +194,7 @@ test('sim-calc: the first מודרך proof re-uses a drawing proved in הוכח�
 
 test('subject: similarity is live with its four levels, its theorems (each with a full sentence) and a P hero', () => {
   const s = SUBJECTS.find((x) => x.id === 'similarity');
-  assert.equal(s.live, true); assert.deepEqual(s.types, SIM);
+  assert.equal(s.live, true); assert.deepEqual(s.types, [...SIM, 'sim-exam']);
   assert.deepEqual(s.theorems, ['aa', 'corresponding', 'alternate', 'vertical', 'common-angle', 'right-angles', 'sim-angles', 'sim-ratio', 'solve']);
   for (const r of s.theorems) assert.equal(typeof REASONS[r].full, 'string', r);
   const { laws, more } = lawsOf('similarity');

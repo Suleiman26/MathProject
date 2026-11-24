@@ -3,15 +3,17 @@
    level is about, the help-stage tabs חימום · מודרך · ביחד · לבד and the start button; the subject's ladder
    around it comes from Topic.jsx as `path`), the warm-up (screen B), the proof flow, mastery (saved on the device), the rescue cards
    (screen F), and the open proof that survives a refresh.
-   Mastery does not depend on the answer tracker: record() is called here with the decision states. */
+   Mastery does not depend on the answer tracker: record() is called here with the decision states.
+   The exam level (spec 2026-11-23 §8, type.shape 'exam'): one help-stage tab, לבד (stored as "רמה 3"); locked until
+   the subject's last proof level reaches לבד; always variant B; its rescue card sends back to that level or goes on. */
 import React, { useEffect, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { useAccount, accountApi } from '@/lib/account';
 import { present, decisionsOf } from './core.js';
 import { snapshot, restore } from './session.js';
-import { RULES, rescueKinds, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord, takeRescue } from './mastery.js';
+import { RULES, rescueKinds, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord, takeRescue, examOpen, lastProofOf } from './mastery.js';
 import { TYPES, TABS, STAGES, typeById } from './types/index.js';
-import { typesOf, levelNo, stepBack } from './subjects.js';
+import { typesOf, levelNo, stepBack, subjectOf } from './subjects.js';
 import { T, fill } from './texts.js';
 import ProofScreen from './ProofScreen.jsx';
 import Warmup from './Warmup.jsx';
@@ -50,10 +52,13 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const [state, setState] = useState(() => load(store(), firstWho()));
   const stateRef = useRef(state), whoRef = useRef(who);
   const ts = typeState(state, type.id);
-  // a level without warm-up kinds (none today; kept as a safety for a level added later) has no חימום tab
-  const hasWarm = (type.warm || []).length > 0;
+  const isExam = type.shape === 'exam';
+  // a level without warm-up kinds (none today; kept as a safety for a level added later) has no חימום tab; the exam has
+  // none either (its warm-up kinds serve only the rescue card)
+  const hasWarm = (type.warm || []).length > 0 && !isExam;
   // a first visit opens on the warm-up tab (it never blocks: the student can tap מודרך and start there)
   const [tab, setTab] = useState(() => (ts.done > 0 || ts.walked || ts.warm.done || !hasWarm ? Math.max(1, Math.min(3, ts.level)) : 0));
+  const exOpts = isExam ? { exam: true } : {};
   const [open, setOpen] = useState(null);      // { key, problem, view, level, variant, counted, walk, restored }
   const [end, setEnd] = useState(null);
   const [rescue, setRescue] = useState(devRescue || null);
@@ -110,8 +115,8 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
       setEnd(null); setOpen(null); setWarm(null); setRescue(out.rescue);
       return;
     }
-    let { variant, counted } = variantFor(t, level);
-    let lv = level;
+    let { variant, counted } = variantFor(t, level, exOpts);
+    let lv = isExam ? 3 : level;
     if (opts.walk) { variant = 'A'; counted = false; lv = 1; }
     const seed = newSeed(), R = makeR(seeded(seed));
     // a "prove, then conclude" level: its first מודרך proof re-uses a drawing the student already proved in the
@@ -164,7 +169,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     const s = cur.s, decided = [...s.decisions, ...(s.cur && s.cur.tainted ? [{ state: 'missed' }] : [])];
     const rec = leftRecord({ n: decisionsOf(s.view), decided, variant: cur.o.variant, tpl: s.problem.template, day: today() });
     if (!rec) return;
-    const out = record(typeState(stateRef.current, type.id), cur.o.level, rec, { counted: true, errs: s.errs, kinds: rescueKinds(type) });
+    const out = record(typeState(stateRef.current, type.id), cur.o.level, rec, { counted: true, errs: s.errs, kinds: rescueKinds(type), ...exOpts });
     out.ts.done = Math.max(0, out.ts.done - 1);                       // left, not completed
     const next = { ...stateRef.current, types: { ...stateRef.current.types, [type.id]: out.ts } };
     stateRef.current = next; save(store(), whoRef.current, next);
@@ -186,13 +191,14 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     let out;
     if (o.walk) out = { ts: t, event: null, rescue: null };
     else if (!o.counted) { out = record(t, o.level, rec, { counted: false }); if (o.level === 1 && o.variant === 'A') out.ts = walked(out.ts); }
-    else out = record(t, o.level, rec, { counted: true, errs: r.errs, filledReason: r.filledReason, kinds: rescueKinds(type) });
+    else out = record(t, o.level, rec, { counted: true, errs: r.errs, filledReason: r.filledReason, kinds: rescueKinds(type), ...exOpts });
     putType(out.ts);
     live.current = null; dropOpen();
     sitting.current += 1;
     setEnd({
       clean: r.clean, filled: r.summary.filled > 0, counted: o.counted && !o.walk, dots: dots(out.ts, o.level), done: out.ts.done, lessHelp: less, event: out.event, newLevel: out.ts.level,
       round: sitting.current % RULES.ROUND === 0, typeName: type.label, levelName: STAGES[o.level],
+      exam: isExam, subjectName: (subjectOf(type.id) || {}).name || '',
       onMore: () => startProof(Math.max(1, Math.min(3, out.event ? out.ts.level : o.level))),   // a queued rescue card comes first
       onFinish: () => { setOpen(null); setEnd(null); setTab(Math.max(1, Math.min(3, typeState(stateRef.current, type.id).level))); },
     });
@@ -204,11 +210,14 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const lockedNext = level < 3 ? level + 1 : null;
   // rescue step 3 ("go back one") stays inside the subject: the level before, from the subject's first level its warm-up
   const back = stepBack(type.id), prev = back && back.type ? typeById(back.type) : null;
+  // the exam opens when the subject's last proof level has reached לבד (§8); until then it shows only what opens it
+  const locked = isExam && !examOpen(state, type.subject);
 
-  const tabs = (
+  const tabs = locked ? null : (
     <div className="sub-tabs prf-tabs">
       {TABS.map((name, i) => {
         if (i === 0 && !hasWarm) return null;
+        if (isExam && i !== 3) return null;                 // the exam: one help stage, לבד (stored as "רמה 3")
         const locked = i > level, done = !locked && ((i === 0 ? began : i < level) || passed);
         return (
           <button type="button" key={name} data-mp-key={name} className={`sub-tab${i === tab ? ' active' : ''}${done ? ' prf-is-done' : ''}`} disabled={locked} onClick={() => setTab(i)}>
@@ -233,6 +242,30 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
       <div className="content prf-ch prf-ch-open">
         <ProofScreen key={open.key} type={type} problem={open.problem} view={open.view} level={open.level} levelName={STAGES[open.level]} dots={dots(ts, open.level)}
           restored={open.restored} end={end} onEnd={onEnd} onLeave={onLeave} onSwap={end ? null : onSwap} onState={onState} />
+      </div>
+    ));
+  }
+
+  if (rescue && isExam) {
+    // the exam (§8): step 1 is the warm-up of the commonest error as usual; steps 2 and 3 are one card: practise the
+    // subject's last proof level, or go on here. Never a walk-through.
+    const warmUp = rescue.step === 1 && (type.warm || []).length > 0;
+    const last = lastProofOf(type.subject);
+    const here = () => startProof(3);
+    return frame(tabs, (
+      <div className="content prf-ch prf-ch-card">
+        <div className="prf-rescue">
+          {!warmUp && <span className="prf-rescue-k">{T['lbl.rescueCard']}</span>}
+          <p className="prf-rescue-t">{warmUp ? fill('ui.rescue1', { skill: T[`skill.${rescue.warm || type.warm[0]}`] }) : fill('ui.rescueExam', { prev: last ? `${fill('lbl.levelN', { n: levelNo(last.id) })} · ${last.label}` : STAGES[3] })}</p>
+          <div className="prf-rescue-b">
+            {warmUp
+              ? <button type="button" className="prf-go" onClick={() => startWarm({ only: rescue.warm || type.warm[0], then: 'proof' })}>{T['btn.go']}</button>
+              : <>
+                {last && <button type="button" className="prf-go" onClick={() => onGoType && onGoType(last.id)}>{`${fill('lbl.levelN', { n: levelNo(last.id) })} · ${last.label}`}</button>}
+                <button type="button" className={`prf-go${last ? ' is-quiet' : ''}`} onClick={here}>{T['btn.continue']}</button>
+              </>}
+          </div>
+        </div>
       </div>
     ));
   }
@@ -267,6 +300,10 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const viaWarm = tab === 0 && hasWarm;
   const goLevel = Math.min(Math.max(1, tab), level);
   const k = dots(ts, level).filter((d) => d === true).length;
+  if (locked) {
+    // what opens it is said on the ladder (Topic.jsx); here only what the level is about, and no start button
+    return frame(<p className="prf-pt-about">{T[`about.${type.id}`]}</p>, null);
+  }
   const inner = (
     <>
       <p className="prf-pt-about">{T[`about.${type.id}`]}</p>

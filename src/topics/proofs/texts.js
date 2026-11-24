@@ -17,6 +17,9 @@ export const T = {
   'type.sim-side': 'מיחס לצלע חסרה',
   'type.prove-sim': 'הוכחת דמיון',
   'type.sim-calc': 'דמיון ואז חישוב',
+  // the exam level of each subject (spec 2026-11-23 §8, draft): keys `5. חפיפה – כמו במבחן`, `10. דמיון – כמו במבחן`
+  'type.cong-exam': 'חפיפה – כמו במבחן', 'type.sim-exam': 'דמיון – כמו במבחן',   // the stored names (en dash U+2013): keep stable
+  'type.exam': 'כמו במבחן',                                                         // what the ladder shows
   'tab.warm': 'חימום', 'tab.1': 'רמה 1', 'tab.2': 'רמה 2', 'tab.3': 'רמה 3',
   /* ── subjects → levels → help stages (spec 2026-11-23 §5.1; all in NEW_DRAFTS). The tab texts above stay the
      stored keys; these are what the student sees. ── */
@@ -405,6 +408,19 @@ export const T = {
   'about.sim-side': 'שני משולשים דומים: כותבים את היחס ומוצאים צלע חסרה.',
   'about.prove-sim': 'משתי זוויות שוות מוכיחים ששני משולשים דומים.',
   'about.sim-calc': 'קודם מוכיחים דמיון, ואחר כך כותבים יחס ומוצאים צלע חסרה.',
+  'about.cong-exam': 'שרטוט אחד וכמה סעיפים, כמו בבחינה: בלי עזרה, ואתם בוחרים כל משפט.',
+  'about.sim-exam': 'שרטוט אחד וכמה סעיפים, כמו בבחינה: מוכיחים דמיון, כותבים יחס ומחשבים. בלי עזרה.',
+
+  /* ── the exam level "כמו במבחן" and "שולטים בנושא" (spec 2026-11-23 §8; all in NEW_DRAFTS) ── */
+  'exam.sec.1': 'א', 'exam.sec.2': 'ב', 'exam.sec.3': 'ג',
+  'exam.goal.prove': 'הוכיחו:',
+  'exam.goal.ratio': 'כתבו את יחס הצלעות שבעזרתו מחשבים את {x}.',
+  'exam.goal.calc': 'חשבו את {x}.',
+  'lbl.examLocked': "נפתח כשמגיעים ל'לבד' ב{{level}}",
+  'ui.rescueExam': 'שאלה כמו במבחן היא הרבה בבת אחת. כדאי לתרגל עוד קצת את {{prev}}, ואפשר גם להמשיך כאן.',
+  'ui.mastered': 'שולטים בנושא',
+  'ui.masteredSub': 'פתרתם שאלות כמו במבחן, לבד. {{subject}} פתוח לתרגול מתי שתרצו.',
+  'lbl.mastered': 'שולטים בנושא',
 };
 
 /** Open maths points for Sulaiman (printed on the review sheet, above the new texts). */
@@ -465,6 +481,9 @@ export const NEW_DRAFTS = [
   'w.S2', 'w.S2side', 'w.S2.why', 'w.S2side.why', 'w.S3', 'w.S3.why', 'w.S3.whyCommon', 'w.S4', 'w.S4.why',
   'w.S5', 'w.S5.yes', 'w.S5.no', 'w.S5.why.yes', 'w.S5.why.no',
   'skill.S1', 'skill.S2', 'skill.S3', 'skill.S4', 'skill.S5',
+  // the exam level and "שולטים בנושא" (spec 2026-11-23 §8; Task 14)
+  'type.cong-exam', 'type.sim-exam', 'type.exam', 'about.cong-exam', 'about.sim-exam', 'exam.sec.1', 'exam.sec.2', 'exam.sec.3', 'exam.goal.prove', 'exam.goal.ratio', 'exam.goal.calc',
+  'lbl.examLocked', 'ui.rescueExam', 'ui.mastered', 'ui.masteredSub', 'lbl.mastered',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

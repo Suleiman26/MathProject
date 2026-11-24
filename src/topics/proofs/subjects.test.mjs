@@ -23,7 +23,7 @@ const mk = (type, seed = 20261123, level = 1, variant = 'A', counted = 0) =>
 test('buttons: unique, and the four congruence buttons are exactly the stored keys', () => {
   const b = TYPES.map((t) => t.button);
   assert.equal(new Set(b).size, b.length);
-  assert.deepEqual(typesOf('congruence').map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה']);
+  assert.deepEqual(typesOf('congruence').map((t) => t.button), ['1. קוראים את הנתון', '2. מחפיפה לשוויונות', '3. הוכחת חפיפה', '4. חפיפה ואז מסקנה', '5. חפיפה – כמו במבחן']);   // + the exam (Task 14)
 });
 test('every type: subject, label (= today\'s visible name), shape, live', () => {
   const SH = { 'read-given': 'given', 'congruent-parts': 'parts', 'prove-congruence': 'prove', 'then-conclusion': 'then' };
@@ -43,7 +43,7 @@ test('SUBJECTS: two, Ministry order, names and months from texts', () => {
   const [c, s] = SUBJECTS;
   assert.deepEqual([c.name, c.when, c.short, c.live], ['חפיפת משולשים', 'ינואר–פברואר', 'חפיפה', true]);
   assert.deepEqual([s.name, s.when, s.short, s.live], ['דמיון משולשים', 'מרץ–אפריל', 'דמיון', true]);   // live since Task 10 (Abed: "show it live")
-  assert.deepEqual(c.types, CONG); assert.deepEqual(s.types, ['sim-parts', 'sim-side', 'prove-sim', 'sim-calc']); assert.equal(s.hero.type, 'prove-sim');
+  assert.deepEqual(c.types, [...CONG, 'cong-exam']); assert.deepEqual(s.types, ['sim-parts', 'sim-side', 'prove-sim', 'sim-calc', 'sim-exam']); assert.equal(s.hero.type, 'prove-sim');
   assert.deepEqual(c.theorems, ['sas', 'asa', 'sss', 'vertical', 'common-side', 'cp-sides', 'cp-angles', 'bisector', 'median', 'midpoint', 'altitude']);
   for (const r of c.theorems) assert.ok(r in REASONS, r);
   assert.deepEqual(c.hero, { type: 'prove-congruence', template: '3-X-SAS', seed: 20261121 });
@@ -56,7 +56,7 @@ test('SUBJECTS: two, Ministry order, names and months from texts', () => {
 test('subjectOf, levelNo, typesOf, prevInSubject', () => {
   assert.equal(subjectOf('then-conclusion').id, 'congruence'); assert.equal(subjectOf('nope'), null);
   assert.deepEqual(CONG.map(levelNo), [1, 2, 3, 4]); assert.equal(levelNo('prove-congruence'), 3); assert.equal(levelNo('nope'), 0);
-  assert.deepEqual(typesOf('congruence').map((t) => t.id), CONG); assert.equal(typesOf('similarity').length, 4); assert.deepEqual(typesOf('nope'), []);
+  assert.deepEqual(typesOf('congruence').map((t) => t.id), [...CONG, 'cong-exam']); assert.equal(typesOf('similarity').length, 5); assert.deepEqual(typesOf('nope'), []);
   assert.equal(prevInSubject('read-given'), null);
   assert.equal(prevInSubject('prove-congruence').id, 'congruent-parts'); assert.equal(prevInSubject('nope'), null);
 });

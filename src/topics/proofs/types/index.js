@@ -1,4 +1,5 @@
-/* The proof types, in order (spec §6.1; similarity 2026-11-23 §5.2): congruence 1–4, similarity 6–9 (keep TYPES sorted by n). A type =
+/* The proof types, in order (spec §6.1; similarity 2026-11-23 §5.2): congruence 1–4 + its exam 5, similarity 6–9 + its exam 10
+   (keep TYPES sorted by n; the exams: ./exam.js, spec §8). A type =
    { id, n, name, button: `${n}. ${name}`, warm:[W-ids], templates:[{ id, family, variant, theorem }],
      make(R, level, variant, avoid, ctx) → problem, remake(problem | snapshot meta) → problem,
      subject: 'congruence'|'similarity', label (what the UI shows), shape: 'given'|'parts'|'side'|'prove'|'then'|'exam'
@@ -14,8 +15,9 @@ import simParts from './sim-parts.js';
 import simSide from './sim-side.js';
 import proveSim from './prove-sim.js';
 import simCalc from './sim-calc.js';
+import { congExam, simExam } from './exam.js';
 
-export const TYPES = [readGiven, congruentParts, proveCongruence, thenConclusion, simParts, simSide, proveSim, simCalc];
+export const TYPES = [readGiven, congruentParts, proveCongruence, thenConclusion, congExam, simParts, simSide, proveSim, simCalc, simExam];
 export const TABS = [T['tab.warm'], T['tab.1'], T['tab.2'], T['tab.3']];
 /** The sub-tab of a level: 0 = warm-up; 4 (type finished) stays on רמה 3. */
 export const tabOf = (level) => TABS[Math.max(0, Math.min(3, level))];

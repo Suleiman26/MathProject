@@ -7,11 +7,14 @@
    plain screen state, never a session action, never recorded as help.
    Similarity (spec 2026-11-23 §7.5–§7.6): a length row is answered with three number chips (מודרך) or the number
    keypad (./Keypad.jsx; the typed text is screen state, the judged number is a session decision); at לבד a ratio is
-   built by tapping side pairs; the substitution sits under the written ratio row (ProofRows `work`). */
+   built by tapping side pairs; the substitution sits under the written ratio row (ProofRows `work`).
+   The exam (spec 2026-11-23 §8): the notebook shows the sections (א. הוכיחו: … · ב. …) instead of a צ״ל line, each
+   section's rows one block under its letter; the drawing shows no dashed goal (a test paper marks none) and the
+   "המשפטים" sheet highlights nothing. */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { seeded, makeR } from '../new/core.js';
 import { start, act, ready, summary } from './session.js';
-import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, anchorOf, acceptedReasons, showPart, workOf } from './core.js';
+import { reasonChips, partsOf, targets, roleOf, norm, required, whyOf, anchorOf, acceptedReasons, showPart, workOf, sectionOf } from './core.js';
 import { partId } from './figure-core.js';
 import { REASONS, reasonInline } from './reasons.js';
 import { RULES } from './mastery.js';
@@ -62,6 +65,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   // the two small shapes (no triangles to tap, the drawing never outlines an answer); the rest are full proofs
   const isGiven = type.shape === 'given', isParts = type.shape === 'parts', small = isGiven || isParts;
   const noTris = small || type.shape === 'side';                       // the relation is given: no triangle is ever tapped
+  const isExam = type.shape === 'exam';
   const sel = useSelection(problem, (key) => setFbs([{ id: ++n.current, cls: 'note', key, vars: {}, label: '' }]), noTris ? ['seg', 'ang'] : null);
   const [num, setNum] = useState({ key: null, text: '', stale: false });   // the keypad's text for the open number row (stale = a wrong try: the next key starts over)
   const p = problem, cur = s.cur, mode = s.view.mode, cong = anchorOf(p);
@@ -184,7 +188,7 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
       // never past the top of the row being worked on.
       const lim = r.top - b.top + box.scrollTop;
       let floor = 0;
-      for (const x of box.querySelectorAll('.prf-intro,.prf-gv,.prf-goals,.prf-plan,.prf-nb-th,.prf-rowlist > .prf-row:not(.is-now):not(.is-ghost) > *')) {
+      for (const x of box.querySelectorAll('.prf-intro,.prf-gv,.prf-goals,.prf-plan,.prf-nb-th,.prf-sec,.prf-rowlist > .prf-row:not(.is-now):not(.is-ghost) > *')) {
         const m = x.parentNode.classList.contains('prf-row') ? 0 : 2;       // a row's lines sit flush against each other
         const t = at(x) - m, e = at(x) + x.getBoundingClientRect().height + m;
         if (!(t < top && top < e)) continue;
@@ -235,10 +239,11 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
     for (const t of targets(p)) {
       if (s.done.includes(t) || isGiven) continue;            // type 1: the drawing never shows the answer before it is written
       if (isParts) { if (t === askFact) out.push({ fact: t, style: 'goal', only: p.cue && p.cue[t] }); continue; }   // type 2: only the asked part
+      if (isExam) continue;                                   // the exam: a test paper marks no goal (and a given in words would give its section away)
       out.push({ fact: t, style: 'goal' });
     }
     return out;
-  }, [s.done, s.view, p, isGiven, isParts, askFact]);
+  }, [s.done, s.view, p, isGiven, isParts, isExam, askFact]);
   const rowNo = s.rows.length + 1;
   const activeFact = leans ? leans.fact : cur ? (cur.kind === 'reason' ? cur.fact : (mode === 'fill' || mode === 'walk') ? cur.fact : null) : null;
   const cueFact = small && !leans && mode !== 'tap' && ((cur && cur.kind === 'statement') || (mode === 'walk' && !cur && !walkLast)) ? askFact : null;
@@ -457,12 +462,39 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
   // choosing it is the counted decision, so the sheet highlights nothing there.
   const hasLaws = useMemo(() => { const l = lawsOf(type.subject); return l.laws.length + l.more.length > 0; }, [type.subject]);
   const lawNow = (() => {
-    if (level !== 1 || end || isDone || planQ) return null;
+    if (level !== 1 || isExam || end || isDone || planQ) return null;   // never in the exam (spec §8: the sheet without highlight)
     const fact = leans ? leans.fact : cur ? (cur.fact || cur.expect) : walkLast ? walkLast.fact : null;
     if (!fact || !p.facts[fact]) return null;
     const row = s.rows.find((x) => x.fact === fact), js = p.just[fact] || [];
     const r = row ? row.reason : ((js.find((j) => j.needs.every((f) => s.done.includes(f))) || js[0] || {}).reasons || [])[0];
     return r && r !== 'given' ? r : null;
+  })();
+
+  /* the exam's sections: each a letter, its goal line (the congruence / similarity without its vertex order until it is
+     written, as at לבד), done when its targets are; the rows it holds (for the empty rows still to come) */
+  const sections = useMemo(() => {
+    if (!isExam || !Array.isArray(p.sections)) return null;
+    const known = s.view.known || [];
+    return p.sections.map((sec, k) => {
+      const done = sec.targets.every((t) => s.done.includes(t));
+      const goal = (
+        <>
+          <Tx k={sec.goalKey} vars={sec.goalVars || {}} />
+          {sec.goalKey === 'exam.goal.prove' && <> {sec.targets.map((t, i) => (
+            <React.Fragment key={t}>{i > 0 && ', '}{!done && t === cong && tris.length === 2
+              ? <Tx k={simP ? 'lbl.goalSim' : 'lbl.goalCong'} vars={{ t1: `△${tris[0].join('')}`, t2: `△${tris[1].join('')}` }} />
+              : <St st={p.facts[t]} />}</React.Fragment>
+          ))}</>}
+        </>
+      );
+      return { letter: sec.letter, goal, done, total: p.canon.filter((f) => !known.includes(f) && Math.max(0, sectionOf(p, f)) === k).length };
+    });
+  }, [isExam, p, s.view, s.done, cong, simP, tris]);
+  const secOf = useMemo(() => (isExam ? (f) => sectionOf(p, f) : null), [isExam, p]);
+  const openSec = (() => {
+    if (!sections) return 0;
+    const f = cur ? (cur.fact || cur.expect) : null, k = f ? sectionOf(p, f) : -1;
+    return k >= 0 ? k : Math.max(0, sections.findIndex((x) => !x.done));
   })();
 
   const tapping = mode === 'tap' && !end && !planQ && !!cur && cur.kind === 'statement' && !numFact && !leans && !isDone;
@@ -521,8 +553,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
                     );
                   })}
                 </ol>
-                {!isGiven && <span className="prf-nb-k">{T['lbl.toProve']}</span>}
-                {!isGiven && (
+                {!isGiven && !isExam && <span className="prf-nb-k">{T['lbl.toProve']}</span>}
+                {!isGiven && !isExam && (
                   <span className="prf-goals">
                     {targets(p).map((t) => {
                       const ok = s.done.includes(t);
@@ -535,7 +567,8 @@ export default function ProofScreen({ type, problem, view, level = 1, dots = [nu
                 )}
               </div>
               {s.view.plan === 'line' && <p className="prf-plan">{T[!simP ? 'lbl.planL3' : type.shape === 'then' ? 'lbl.planL3SimCalc' : 'lbl.planL3Sim']}</p>}
-              <ProofRows problem={p} rows={s.rows} total={totalRows} now={end ? null : now} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={leadRows} said={saidRow} work={work} />
+              <ProofRows problem={p} rows={s.rows} total={totalRows} now={end ? null : now} openRow={openRow} onOpen={setOpenRow} fresh={fresh} lead={leadRows} said={saidRow} work={work}
+                sections={sections} secOf={secOf} openSec={openSec} />
             </div>
             {!end && (
               <Tray label={label} head={head} body={body} fbs={fbs} why={whyShown} hintLine={hintLine} hint={hint}

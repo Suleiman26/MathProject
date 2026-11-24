@@ -900,5 +900,43 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
   #root .prf-row-work,#root .prf-kp-caret{animation:none}
   #root .prf-kp-k{transition:none}
 }
+/* ── the exam level "כמו במבחן" and "שולטים בנושא" (spec 2026-11-23 §8; Task 14) ── */
+/* the notebook: each section's goal line, like a test's sub-question, above its block of rows */
+#root .prf-sec{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 7px;margin:14px 0 0;padding:3px 4px 5px;border-bottom:1px solid var(--line-strong);font-size:.9rem;font-weight:600;line-height:1.45;color:var(--ink)}
+#root .prf-nb-th + .prf-sec{margin-top:6px}
+#root .prf-sec-l{flex:none;min-width:1.1em;font-size:1rem;font-weight:800;color:var(--a-700)}
+#root .prf-sec-g{flex:1 1 0;min-width:0}
+#root .prf-sec-ok{flex:none;align-self:center;color:var(--ok-600);font-size:15px}
+#root .prf-sec.is-done{color:var(--ink-2)}
+#root .prf-sec.is-done .prf-sec-l{color:var(--ok-700)}
+#root .prf-table .prf-table-sec td:first-child{width:auto;padding:12px 6px 5px;border-inline-end:0;border-bottom:1px solid var(--line-strong);white-space:normal;font-size:.88rem;font-weight:600;line-height:1.45;color:var(--ink)}
+#root .prf-table .prf-table-sec .prf-sec-l{font-size:.95rem}
+/* the ladder: the locked exam (a lock in its circle, one line saying what opens it), the passed one (a seal) */
+#root .prf-pt-why{display:block;margin-top:2px;font-size:.76rem;font-weight:500;line-height:1.35;color:var(--ink-3);text-wrap:pretty}
+#root .prf-pt.is-locked .prf-pt-n{background:var(--surface-2);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--ink-3)}
+#root .prf-pt.is-locked .prf-pt-n .prf-ic{font-size:17px}
+#root .prf-pt.is-locked.is-open .prf-pt-n{background:var(--a-100);box-shadow:inset 0 0 0 1.5px var(--a-300);color:var(--a-700)}
+#root .prf-pt.is-locked .prf-pt-name{color:var(--ink-2)}
+#root .prf-pt.is-exam.is-passed .prf-pt-n{background:var(--a-600);box-shadow:none;color:#fff}
+#root .prf-pt-won{flex:none;display:inline-flex;align-items:center;gap:4px;padding:2px 10px 2px 8px;border-radius:999px;background:var(--a-600);color:#fff;font-size:.74rem;font-weight:700;line-height:1.6;white-space:nowrap}
+#root .prf-pt-won .prf-ic{font-size:15px}
+/* the exam has one help stage (לבד): a short tab at the start of the row, not a bar across it */
+#root .prf-pt.is-exam .prf-tabs .sub-tab{flex:0 0 auto;min-width:104px;padding-inline:18px}
+#root .prf-pt.is-locked .prf-pt-open .prf-pt-about{margin-top:4px}
+/* the subject switcher: a small seal before a mastered subject's name */
+#root .prf-subj-b.is-won{display:inline-flex;align-items:center;justify-content:center;gap:5px}
+#root .prf-subj-nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#root .prf-subj-seal{flex:none;font-size:17px;color:var(--a-600)}
+/* the end card: "שולטים בנושא", calm and proud: a seal that settles, a ring that opens around it, the words */
+#root .prf-mastered{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 8px 8px;text-align:center}
+#root .prf-mastered-seal{position:relative;display:grid;place-items:center;width:68px;height:68px;margin-bottom:8px;border-radius:50%;background:var(--a-600);box-shadow:var(--sh-accent);color:#fff;font-size:38px;animation:prf-seal .7s .1s var(--ease-out) backwards}
+#root .prf-mastered-seal::after{content:"";position:absolute;inset:-9px;border-radius:50%;box-shadow:0 0 0 1.5px var(--a-200);animation:prf-seal-ring .9s .45s var(--ease-out) backwards}
+#root .prf-mastered-t{font-size:1.7rem;font-weight:800;line-height:1.2;color:var(--a-800);animation:prf-row .45s .3s var(--ease-out) backwards}
+#root .prf-mastered-s{max-width:32ch;font-size:.94rem;line-height:1.5;color:var(--ink-2);text-wrap:balance;animation:prf-row .45s .45s var(--ease-out) backwards}
+@keyframes prf-seal{from{opacity:0;transform:scale(.55) rotate(-16deg)}}
+@keyframes prf-seal-ring{from{opacity:0;transform:scale(.72)}}
+@media (prefers-reduced-motion: reduce){
+  #root .prf-mastered-seal,#root .prf-mastered-seal::after,#root .prf-mastered-t,#root .prf-mastered-s{animation:none}
+}
 `;
 export default css;

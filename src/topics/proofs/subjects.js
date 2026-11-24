@@ -17,7 +17,7 @@ const subject = (id, o) => ({ id, name: T[`subj.${id}`], when: T[`subj.when.${id
 export const SUBJECTS = [
   subject('congruence', {
     live: true,
-    types: ['read-given', 'congruent-parts', 'prove-congruence', 'then-conclusion'],
+    types: ['read-given', 'congruent-parts', 'prove-congruence', 'then-conclusion', 'cong-exam'],   // the exam is always the last level (spec §8)
     theorems: ['sas', 'asa', 'sss', 'vertical', 'common-side', 'cp-sides', 'cp-angles', 'bisector', 'median', 'midpoint', 'altitude'],
     hero: { type: 'prove-congruence', template: '3-X-SAS', seed: 20261121 },
     demos: {
@@ -37,7 +37,7 @@ export const SUBJECTS = [
   }),
   subject('similarity', {
     live: true,                                                   // Abed 2026-11-23: "Build, show it live"
-    types: ['sim-parts', 'sim-side', 'prove-sim', 'sim-calc'],
+    types: ['sim-parts', 'sim-side', 'prove-sim', 'sim-calc', 'sim-exam'],
     theorems: ['aa', 'corresponding', 'alternate', 'vertical', 'common-angle', 'right-angles', 'sim-angles', 'sim-ratio', 'solve'],
     hero: { type: 'prove-sim', template: '8-P-CC', seed: 20261127 },
     // the parallel given is never a mark (it has no honest mark yet: ticks would say "equal lengths"); "solve" has no drawing

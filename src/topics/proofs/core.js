@@ -179,6 +179,22 @@ export const anchorOf = (p) => p.cong || p.sim || Object.keys(p.facts).find((id)
 const isAnchor = (st) => st && (st.kind === 'cong' || st.kind === 'sim');
 /** Is the problem a similarity (its anchor is a `sim` fact)? */
 const isSimP = (p) => { const a = anchorOf(p); return !!a && !!p.facts[a] && p.facts[a].kind === 'sim'; };
+/** An exam problem's section a fact belongs to (spec 2026-11-23 §8): the first section whose targets stand on it
+    (any justification), as an index into p.sections; -1 when no section needs it, or the problem has no sections. */
+export function sectionOf(p, fact) {
+  const secs = (p && p.sections) || [];
+  for (let i = 0; i < secs.length; i++) {
+    const seen = new Set(), stack = [...secs[i].targets];
+    while (stack.length) {
+      const id = stack.pop();
+      if (id === fact) return i;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      for (const j of p.just[id] || []) stack.push(...j.needs);
+    }
+  }
+  return -1;
+}
 /** A row's role (hints, texts, step labels). Similarity (spec 2026-11-23 §7.3): 'similarity' (the sim row),
     'ratio' (a proportion), 'number' (a length), 'parallel' (angles between parallel lines), 'sim-partner' (an
     angle pair that follows from the similarity); a common angle is 'common', vertical angles 'vertical'. */
@@ -704,6 +720,7 @@ export function optionsFor(p, id, n = 3, R) {
 const SHAPE = {
   'read-given': 'given', 'congruent-parts': 'parts', 'prove-congruence': 'prove', 'then-conclusion': 'then',
   'sim-parts': 'parts', 'sim-side': 'side', 'prove-sim': 'prove', 'sim-calc': 'then',
+  'cong-exam': 'exam', 'sim-exam': 'exam',
 };
 export const shapeOf = (p) => (p && p.shape) || SHAPE[p && p.type] || 'prove';
 /**
@@ -717,9 +734,13 @@ export const shapeOf = (p) => (p && p.shape) || SHAPE[p && p.type] || 'prove';
  * given is never asked (§7.2: the app writes it, except as a shown step in the walk-through); a number row (`val`)
  * asks only its number (its reason is always "פתרון הפרופורציה"): chips at מודרך, never a tile (a keypad at ביחד and
  * לבד, Task 11); the "which two triangles" plan question is a congruence one.
+ * The exam (spec 2026-11-23 §8): always laid out like לבד, variant B (tap + two-step reason pick, no why-line, no
+ * automatic hint, no plan), whatever level is asked; `exam:true` and its `sections` ride along.
  */
-export function present(p, level, variant, ctx = {}) {
+export function present(p, level0, variant0, ctx = {}) {
   const shape = shapeOf(p), R = ctx.R, counted = ctx.counted || 0;
+  if (shape === 'exam') return { ...present({ ...p, shape: 'prove' }, 3, 'B', ctx), exam: true, sections: p.sections || [] };
+  const level = level0, variant = variant0;
   const given = shape === 'given', parts = shape === 'parts', side = shape === 'side', then = shape === 'then', big = !given && !parts && !side;
   const anc = anchorOf(p), simP = isSimP(p);
   const rows = p.canon.filter((f) => f !== anc || !(parts || side));

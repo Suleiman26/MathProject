@@ -3,6 +3,8 @@
    as arguments; nothing here reads window, Date or Math.random. Every number is in RULES (starting
    values to tune with real data; each is covered by mastery.test.mjs). */
 import { T } from './texts.js';
+import { typeById } from './types/index.js';
+import { SUBJECTS } from './subjects.js';
 
 export const RULES = {
   CLEAN_SOLO: 0.8,          // clean = no filled decision and solo ≥ 80% of the decisions
@@ -37,10 +39,10 @@ const WARM_TWIN = { W5: 'S2', S2: 'W5' };
 export const isClean = (rec) => rec.filled === 0 && rec.n > 0 && rec.solo / rec.n >= RULES.CLEAN_SOLO;
 export const isPerfect = (rec) => rec.n > 0 && rec.solo === rec.n;
 
-/** A fresh state for one proof type. */
-export function emptyType() {
+/** A fresh state for one proof type; { start } = the level it starts at (an exam: 3, the לבד stage, spec 2026-11-23 §8). */
+export function emptyType({ start = 1 } = {}) {
   return {
-    level: 1, walked: false, warm: { done: false, kinds: {} },
+    level: start, walked: false, warm: { done: false, kinds: {} },
     hist: { 1: [], 2: [], 3: [] }, count: { 1: 0, 2: 0, 3: 0 },
     done: 0, lastHelp: null, recent: [], errs: {},
     resc: { stage: 0, bad: 0 }, force: null, retry: null, queued: null,
@@ -53,10 +55,10 @@ const nat = (x, max = Infinity) => (Number.isFinite(x) && x >= 0 ? Math.min(Math
 const cleanRec = (r) => (isObj(r) && ['n', 'solo', 'helped', 'missed', 'filled'].every((k) => Number.isFinite(r[k]) && r[k] >= 0)
   ? { n: r.n, solo: r.solo, helped: r.helped, missed: r.missed, filled: r.filled, variant: r.variant === 'A' ? 'A' : 'B', tpl: typeof r.tpl === 'string' ? r.tpl : '', day: Number.isFinite(r.day) ? r.day : 0 }
   : null);
-function cleanType(x) {
-  const e = emptyType();
+function cleanType(x, start = 1) {
+  const e = emptyType({ start });
   if (!isObj(x)) return e;
-  const lv = Number.isFinite(x.level) ? Math.max(1, Math.min(4, Math.floor(x.level))) : 1;
+  const lv = Math.max(start, Number.isFinite(x.level) ? Math.max(1, Math.min(4, Math.floor(x.level))) : 1);
   const hist = {}, count = {};
   for (const l of [1, 2, 3]) {
     hist[l] = isObj(x.hist) && Array.isArray(x.hist[l]) ? x.hist[l].map(cleanRec).filter(Boolean).slice(-RULES.HIST) : [];
@@ -80,11 +82,12 @@ function cleanType(x) {
   };
 }
 const copy = (ts) => cleanType(ts);
-/* a rescue card waiting for the next start: { step:1, warm:'W1'…'W7' | 'S1'…'S5' } | { step:2 } | { step:3 } */
+/* a rescue card waiting for the next start: { step:1, warm:'W1'…'W7' | 'S1'…'S5' } | { step:2 } | { step:3 }
+   | { step:'exam' } (the exam's card: practise the level before, or go on) */
 function cleanQueued(q) {
   if (!isObj(q)) return null;
   if (q.step === 1) return /^(W[1-7]|S[1-5])$/.test(q.warm) ? { step: 1, warm: q.warm } : null;
-  return q.step === 2 || q.step === 3 ? { step: q.step } : null;
+  return q.step === 2 || q.step === 3 || q.step === 'exam' ? { step: q.step } : null;
 }
 
 /* the warm-up kind for the commonest error at this level (tie → the earlier kind; none → W1). With the level's own
@@ -103,12 +106,13 @@ export const rescueKinds = (type) => (type && type.subject === 'similarity' && A
 
 /**
  * Record one finished (or left) proof. Pure: returns a new state.
- * → { ts, event: null | 'level-up' | 'type-done', rescue: null | { step:1, warm } | { step:2 } | { step:3 } }
+ * → { ts, event: null | 'level-up' | 'type-done', rescue: null | { step:1, warm } | { step:2 } | { step:3 } | { step:'exam' } }
  * `kinds` = the level's warm-up kinds (type.warm): step 1 then always names a warm-up the level has.
  * A rescue is also kept on the type (ts.queued) until the next proof starts (takeRescue), so a proof left
  * in the middle, or "סיום" on the end card, never uses up a stage of the ladder without showing it (review M3).
+ * `exam` (spec 2026-11-23 §8): no fast track, and rescue steps 2 and 3 become the exam card { step:'exam' } (never a walk-through).
  */
-export function record(ts0, level, rec, { counted = true, errs = {}, filledReason = null, kinds = null } = {}) {
+export function record(ts0, level, rec, { counted = true, errs = {}, filledReason = null, kinds = null, exam = false } = {}) {
   const ts = copy(ts0);
   ts.done += 1;
   ts.lastHelp = rec.n - rec.solo;
@@ -126,7 +130,7 @@ export function record(ts0, level, rec, { counted = true, errs = {}, filledReaso
   // level up: 3 clean among the last 4, or the fast track
   const h = ts.hist[level], last = h.slice(-RULES.WINDOW);
   const allPerfect = ts.count[level] === h.length && h.every(isPerfect);
-  const fast = allPerfect && h.length >= RULES.FAST_MIN_PROOFS && h.reduce((s, x) => s + x.n, 0) >= RULES.FAST_MIN_DECISIONS;
+  const fast = !exam && allPerfect && h.length >= RULES.FAST_MIN_PROOFS && h.reduce((s, x) => s + x.n, 0) >= RULES.FAST_MIN_DECISIONS;
   if (fast || last.filter(isClean).length >= RULES.NEED) {
     ts.level = Math.min(4, ts.level + 1);
     ts.errs = {}; ts.resc = { stage: 0, bad: 0 }; ts.force = null; ts.queued = null;
@@ -141,6 +145,8 @@ export function record(ts0, level, rec, { counted = true, errs = {}, filledReaso
     else { rescue = { step: 2 }; ts.resc.stage = 2; }
     ts.resc.bad = 0; ts.force = 'A';
   }
+  if (rescue && exam && rescue.step !== 1) rescue = { step: 'exam' };
+  if (rescue && exam) ts.force = null;                     // an exam is always variant B
   if (rescue) ts.queued = rescue;
   return { ts, event, rescue };
 }
@@ -151,8 +157,9 @@ export function takeRescue(ts0) {
   return { ts, rescue };
 }
 
-/** Which variant the next proof at this level is, and whether it counts. */
-export function variantFor(ts, level) {
+/** Which variant the next proof at this level is, and whether it counts. An exam: always B, always counted. */
+export function variantFor(ts, level, { exam = false } = {}) {
+  if (exam) return { variant: 'B', counted: true };
   if (level === 1 && !ts.walked) return { variant: 'A', counted: false };
   if (ts.force === 'A' || !(ts.count && ts.count[level])) return { variant: 'A', counted: true };
   return { variant: 'B', counted: true };
@@ -199,7 +206,27 @@ export function load(store, who) {
 export function save(store, who, state) {
   try { if (!store) return false; store.setItem(KEY + who, JSON.stringify(state)); return true; } catch { return false; }
 }
-export const typeState = (state, typeId) => cleanType(state && isObj(state.types) ? state.types[typeId] : null);
+/** The level a type starts at: an exam starts at לבד (3), every other level at 1. */
+const startOf = (typeId) => { const t = typeById(typeId); return t && t.shape === 'exam' ? 3 : 1; };
+/** One type's state ({ start } overrides where it starts; an exam type starts at 3 by itself). */
+export const typeState = (state, typeId, { start = startOf(typeId) } = {}) => cleanType(state && isObj(state.types) ? state.types[typeId] : null, start);
+
+/* ── the exam level and "שולטים בנושא" (spec 2026-11-23 §8) ── */
+const subjectBy = (id) => SUBJECTS.find((s) => s.id === id) || null;
+/** The exam type of a subject, or null. */
+export const examOf = (subjectId) => { const s = subjectBy(subjectId); return (s ? s.types.map(typeById) : []).find((t) => t && t.shape === 'exam') || null; };
+/** The subject's last proof level (the level before its exam), or null. */
+export const lastProofOf = (subjectId) => { const s = subjectBy(subjectId); const ts = (s ? s.types.map(typeById) : []).filter((t) => t && t.shape !== 'exam'); return ts.length ? ts[ts.length - 1] : null; };
+/** The exam opens when the subject's last proof level has reached לבד (level ≥ 3; server rows restore "רמה 3"). */
+export function examOpen(state, subjectId) {
+  const last = lastProofOf(subjectId);
+  return !!last && !!examOf(subjectId) && typeState(state, last.id).level >= 3;
+}
+/** "שולטים בנושא": the subject's exam is passed (3 clean of the last 4 at the exam). */
+export function subjectMastered(state, subjectId) {
+  const ex = examOf(subjectId);
+  return !!ex && typeState(state, ex.id).level >= 4;
+}
 
 /** After sign-up / sign-in: copy the guest progress into the user's key when that key is empty. */
 export function adoptGuest(store, accountId) {
@@ -226,7 +253,7 @@ export function seedFromServer(state, rows, TYPES) {
     const type = TYPES.find((t) => t.button === parts[0]), n = tabs[parts[1]];
     if (!type || !n) continue;
     types = types || { ...state.types };
-    const ts = cleanType(types[type.id]);
+    const ts = cleanType(types[type.id], startOf(type.id));
     const done = n === 3 && Number.isFinite(row.win) && row.win >= RULES.NEED;
     ts.level = Math.max(ts.level, done ? 4 : n); ts.warm.done = true;
     types[type.id] = ts;
