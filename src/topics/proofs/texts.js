@@ -291,6 +291,31 @@ export const T = {
   'skill.W5': 'אילו קודקודים מתאימים',
   'skill.W6': 'מתי מותר להשתמש במסקנה',
   'skill.W7': 'מה המילה בנתון אומרת',
+  /* the similarity warm-up S1–S5 (spec 2026-11-23 §7.7; Task 13; all in NEW_DRAFTS) */
+  'w.S1': 'למה הזוויות המסומנות שוות? בחרו את הנימוק.',
+  'w.S1.why.common-angle': 'זו אותה זווית בשני המשולשים: זווית משותפת.',
+  'w.S1.why.vertical': 'שתי הזוויות נמצאות זו מול זו, בין שני ישרים נחתכים: זוויות קודקודיות.',
+  'w.S1.why.corresponding': 'שתי הזוויות נמצאות באותו צד של החותך, ובאותו מקום ליד כל אחד מהישרים המקבילים: זוויות מתאימות בין מקבילים.',
+  'w.S1.why.alternate': 'שתי הזוויות נמצאות משני צדי החותך, בין שני הישרים המקבילים: זוויות מתחלפות בין מקבילים.',
+  'w.S2': '{sim}. איזה קודקוד מתאים לקודקוד {p}?',
+  'w.S2side': '{sim}. איזו צלע מתאימה לצלע {s}?',
+  'w.S2.why': 'הקודקוד {p} כתוב במקום {{place}} במשולש הראשון. באותו מקום במשולש השני כתוב {q}.',
+  'w.S2side.why': 'הצלע {s} בנויה מהקודקודים {p1}, {p2}. באותם מקומות במשולש השני כתובים {q1}, {q2}, ולכן הצלע המתאימה היא {t}.',
+  'w.S3': 'זוויות עם אותו סימון שוות. איזו צלע של {t} מתאימה לצלע {s}?',
+  'w.S3.why': 'הצלע {s} נמצאת מול הזווית {a}. הזווית השווה לה היא {b}, והצלע שמולה היא {t}.',
+  'w.S3.whyCommon': 'הצלע {s} נמצאת מול הזווית {a}, שמשותפת לשני המשולשים. במשולש השני, מול אותה זווית, נמצאת הצלע {t}.',
+  'w.S4': 'פתרו את הפרופורציה. מה המספר {x}?',
+  'w.S4.why': 'כופלים בהצלבה: {cross}. מחלקים, ומקבלים {res}.',
+  'w.S5': 'הזוויות המתאימות במצולעים {p1}, {p2} שוות. האם המצולעים דומים?',
+  'w.S5.yes': 'כן, דומים',
+  'w.S5.no': 'לא בהכרח',
+  'w.S5.why.yes': 'במשולשים, שני זוגות של זוויות שוות כבר מספיקים: המשולשים דומים (משפט ז.ז).',
+  'w.S5.why.no': 'כל הזוויות ישרות, אבל היחס בין הצלעות שונה: מלבן אחד ארוך וצר, והשני כמעט ריבוע. במצולע עם יותר משלוש צלעות, זוויות שוות לא מספיקות לדמיון.',
+  'skill.S1': 'למה הזוויות שוות',
+  'skill.S2': 'אילו קודקודים מתאימים בדמיון',
+  'skill.S3': 'איזו צלע מתאימה',
+  'skill.S4': 'פתרון פרופורציה',
+  'skill.S5': 'מתי מצולעים דומים',
 
   /* ── screen texts written by the builder (all in NEW_DRAFTS) ── */
   'lbl.title': 'הוכחות',
@@ -435,6 +460,11 @@ export const NEW_DRAFTS = [
   'btn.answer', 'btn.unpair', 'q.number', 'lbl.kp', 'lbl.kpDel', 'lbl.kpDot', 'lbl.work', 'lbl.cross', 'lbl.tapSim', 'lbl.tapSimParts', 'lbl.sameAng', 'lbl.rowN', 'lbl.tapPair1', 'lbl.tapPair2',
   'say.frac', 'say.numBox', 'say.numLabel', 'say.numAsk',
   'hint.common-angle.1', 'hint.common-angle.2', 'hint.given-par.1', 'hint.given-par.2', 'hint.matching-sim.1', 'hint.matching-sim.2',
+  // the similarity warm-up S1–S5 (spec 2026-11-23 §7.7; Task 13)
+  'w.S1', 'w.S1.why.common-angle', 'w.S1.why.vertical', 'w.S1.why.corresponding', 'w.S1.why.alternate',
+  'w.S2', 'w.S2side', 'w.S2.why', 'w.S2side.why', 'w.S3', 'w.S3.why', 'w.S3.whyCommon', 'w.S4', 'w.S4.why',
+  'w.S5', 'w.S5.yes', 'w.S5.no', 'w.S5.why.yes', 'w.S5.why.no',
+  'skill.S1', 'skill.S2', 'skill.S3', 'skill.S4', 'skill.S5',
 ];
 
 const PH = /\{\{(\w+)\}\}|\{(\w+)\}/g;

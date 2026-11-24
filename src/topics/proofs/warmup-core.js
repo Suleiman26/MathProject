@@ -7,11 +7,17 @@
      options?:[{ id, label? | m? | st? }], tap?:{ kinds, need:[partId] }, answer, why:{ k, vars },
      st? (the statement asked about), sent? ({ key, vars }: the given sentence, W7),
      given?:[statement] (the chips of the "נתון:" line), trap? (W4) }
-   Every figure comes from the proof generators, so it is already honest (§6.6). */
+   Every figure comes from the proof generators, so it is already honest (§6.6).
+
+   Similarity (spec 2026-11-23 §7.7): S1–S5, built from the similarity families P and B (honest by liesSim). S1 asks
+   the reason of a marked angle pair (common / vertical / corresponding / alternate, as the geometry gives it); S2 the
+   partner of a vertex or side in a written similarity; S3 the side opposite the equal angle, from the marks only;
+   S4 a bare proportion (no drawing: figure null; pairs with one 'x', input 'keypad', answer a number); S5 whether two
+   polygons with equal angles are similar (two triangles: yes; two rectangles: not necessarily). */
 import { T } from './texts.js';
 import { REASONS } from './reasons.js';
 import { RULES } from './mastery.js';
-import { show, norm, segKey, congOf, targets, measure, isoLater } from './core.js';
+import { show, norm, segKey, angKey, congOf, targets, measure, isoLater } from './core.js';
 import { partId } from './figure-core.js';
 import { bare, plain } from './types/tiles.js';
 import readGiven from './types/read-given.js';
@@ -19,8 +25,13 @@ import congruentParts from './types/congruent-parts.js';
 import proveCongruence from './types/prove-congruence.js';
 import thenConclusion from './types/then-conclusion.js';
 import TWO from './families/two.js';
+import { SIM_FAMS } from './types/sim-tools.js';
+import { K_ALL, lengths, triangle } from './families/sim-kit.js';
+import { pickNames, Ang, G, cramped } from './families/kit.js';
+import { layout, labelErrors } from './figure-core.js';
+import { numberOf } from './session.js';
 
-export const KINDS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7'];
+export const KINDS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'S1', 'S2', 'S3', 'S4', 'S5'];
 const NONE = { recent: [], last: null };
 const freeOf = (p) => Object.keys(p.roles).find((id) => p.roles[id] === 'vertical' || p.roles[id] === 'common') || null;
 const pickFacts = (p, ids) => Object.fromEntries(ids.map((id) => [id, p.facts[id]]));
@@ -168,14 +179,162 @@ function w7(R) {
 }
 const tplFill = (key, vars) => (T[key] || '').replace(/\{(\w+)\}/g, (_, n) => (vars[n] == null ? '' : String(vars[n])));
 
-const MAKE = { W1: w1, W2: w2, W3: w3, W4: w4, W5: w5, W6: w6, W7: w7 };
+/* ── similarity (spec 2026-11-23 §7.7) ────────────────────────────────────── */
+const SIM_REASONS = ['common-angle', 'vertical', 'corresponding', 'alternate'];
+const PLACE = ['lbl.place1', 'lbl.place2', 'lbl.place3'];
+/* a similarity drawing of family P (the pyramid) or B (the butterfly), any variant: honest by the family's own check */
+function simBase(R) {
+  const fam = SIM_FAMS[R.pick(['P', 'B'])];
+  return fam.build(R, R.pick(Object.keys(fam.variants)), {});
+}
+const angName = (tri, i) => `∢${tri[(i + 1) % 3]}${tri[i]}${tri[(i + 2) % 3]}`;
+const sideOpp = (tri, i) => segKey(tri[(i + 1) % 3] + tri[(i + 2) % 3]);
+
+/* S1: "למה הזוויות המסומנות שוות?" — one angle pair known without the similarity, and the reason the drawing gives
+   (the family's own reason; corresponding vs alternate is checked by parallelKind in the family's honesty check) */
+function s1(R) {
+  for (let i = 0; i < 50; i++) {
+    const b = simBase(R);
+    const direct = ['a0', 'a1', 'a2'].map((id) => [id, (b.just[id] || []).flatMap((j) => j.reasons).find((r) => SIM_REASONS.includes(r))]).filter(([, r]) => r);
+    if (!direct.length || !b.facts.par) continue;
+    const [id, reason] = R.pick(direct), st = plain(b.facts[id]);
+    return { kind: 'S1', text: { k: 'w.S1', vars: { st: show(st) } }, st, figure: b.figure,
+      facts: { par: bare(b.facts.par), [id]: { ...st, mark: { arcs: 1, color: 1 } } }, marks: [id], reveal: [],
+      given: [bare(b.facts.par)], input: 'chips', options: SIM_REASONS.map((r) => ({ id: r, label: REASONS[r].short })),
+      answer: reason, why: { k: `w.S1.why.${reason}`, vars: {} } };
+  }
+  throw new Error('warm-up S1: no angle pair with a reason');
+}
+
+/* S2: "△ADE ∼ △ABC. איזה קודקוד מתאים לקודקוד D?" / which side matches — read from the written vertex order
+   (never a shared vertex: it matches itself) */
+function s2(R) {
+  for (let i = 0; i < 50; i++) {
+    const b = simBase(R), M = b.facts.sim.map, sim = show(b.facts.sim);
+    const common = { kind: 'S2', figure: b.figure, facts: {}, marks: [], reveal: [], input: 'chips', map: M.map((m) => [...m]) };
+    if (R.bool()) {
+      const k = R.pick([0, 1, 2].filter((j) => M[j][0] !== M[j][1])), p = M[k][0], q = M[k][1];
+      return { ...common, text: { k: 'w.S2', vars: { sim, p } }, ask: { p }, options: M.map((m) => m[1]).sort().map((x) => ({ id: x, m: x })), answer: q,
+        why: { k: 'w.S2.why', vars: { p, q, place: T[PLACE[k]] } } };
+    }
+    const pairs = [[0, 1], [1, 2], [0, 2]].filter(([a, c]) => segKey(M[a][0] + M[c][0]) !== segKey(M[a][1] + M[c][1]));
+    if (!pairs.length) continue;
+    const [a, c] = R.pick(pairs), s = M[a][0] + M[c][0], t = segKey(M[a][1] + M[c][1]);
+    const options = [[0, 1], [1, 2], [0, 2]].map(([x, y]) => segKey(M[x][1] + M[y][1])).sort().map((x) => ({ id: x, m: x }));
+    return { ...common, text: { k: 'w.S2side', vars: { sim, s } }, ask: { s }, options, answer: t,
+      why: { k: 'w.S2side.why', vars: { s, p1: M[a][0], p2: M[c][0], q1: M[a][1], q2: M[c][1], t } } };
+  }
+  throw new Error('warm-up S2: no vertex to ask');
+}
+
+/* S3: "איזו צלע מתאימה?" — the three angle pairs marked (no similarity written, the triangles named in letter order):
+   the side opposite the equal angle */
+function s3(R) {
+  const b = simBase(R), M = b.facts.sim.map, facts = {};
+  ['a0', 'a1', 'a2'].forEach((id, k) => { facts[id] = { ...plain(b.facts[id]), mark: { arcs: k + 1, color: k + 1 } }; });
+  const tris = [M.map((m) => m[0]), M.map((m) => m[1])], dir = R.bool() ? 0 : 1, from = tris[dir], to = tris[1 - dir], i = R.int(0, 2);
+  const s = sideOpp(from, i), t = sideOpp(to, i);
+  const shared = angKey(b.figure, Ang(from[i], [from[(i + 1) % 3], from[(i + 2) % 3]])) === angKey(b.figure, Ang(to[i], [to[(i + 1) % 3], to[(i + 2) % 3]]));   // one angle (P: ∢A), not vertical angles at a shared point (B: O)
+  const options = [0, 1, 2].map((j) => sideOpp(to, j)).sort().map((x) => ({ id: x, m: x }));
+  return { kind: 'S3', text: { k: 'w.S3', vars: { t: `△${[...to].sort().join('')}`, s } }, figure: b.figure, facts, marks: ['a0', 'a1', 'a2'], reveal: [],
+    input: 'chips', options, answer: t, ask: { s, tris: [[...from], [...to]] },
+    why: shared ? { k: 'w.S3.whyCommon', vars: { s, a: angName(from, i), t } } : { k: 'w.S3.why', vars: { s, a: angName(from, i), b: angName(to, i), t } } };
+}
+
+/* S4: solve a proportion "4/10 = x/15" on the keypad — the lengths of a real similar pair (whole or x.5, at most 30),
+   x in any of the four places, the four numbers all different */
+function s4(R) {
+  for (let i = 0; i < 400; i++) {
+    const L = lengths(R, R.pick(K_ALL));
+    if (!L) continue;
+    const [i1, i2] = R.shuffle([0, 1, 2]).slice(0, 2), big = R.bool();
+    const pairs = [i1, i2].map((j) => (big ? [L.big[j], L.small[j]] : [L.small[j], L.big[j]]));
+    const nums = pairs.flat();
+    if (new Set(nums).size !== 4) continue;
+    const at = R.int(0, 3), shown = pairs.map((pr, a) => pr.map((v, c) => (a * 2 + c === at ? 'x' : String(v))));
+    const [[n1, d1], [n2, d2]] = shown;
+    return { kind: 'S4', text: { k: 'w.S4', vars: { x: 'x' } }, figure: null, facts: {}, marks: [], reveal: [], input: 'keypad', name: 'x',
+      pairs: shown, answer: nums[at], why: { k: 'w.S4.why', vars: { cross: `${n1} · ${d2} = ${d1} · ${n2}`, res: `x = ${nums[at]}` } } };
+  }
+  throw new Error('warm-up S4: no proportion');
+}
+
+/* S5: "האם המצולעים דומים?" — equal angles: two triangles (similar, ז.ז) or two rectangles whose side ratios clearly
+   differ (not necessarily: right angles everywhere, different shapes). Drawn side by side, letters clear of the lines. */
+const QUAD_SETS = [['A', 'B', 'C', 'D'], ['E', 'F', 'G', 'H'], ['K', 'L', 'M', 'N'], ['P', 'R', 'S', 'T']];
+const turn = (p, t) => [p[0] * Math.cos(t) - p[1] * Math.sin(t), p[0] * Math.sin(t) + p[1] * Math.cos(t)];
+/* the second shape to the right of the first, a gap between them */
+function sideBySide(one, two, gap = 0.3) {
+  const xs = (q) => q.map((p) => p[0]), ys = (q) => q.map((p) => p[1]);
+  const r1 = Math.max(...xs(one)), l2 = Math.min(...xs(two)), m1 = (Math.min(...ys(one)) + Math.max(...ys(one))) / 2, m2 = (Math.min(...ys(two)) + Math.max(...ys(two))) / 2;
+  return two.map((p) => [p[0] + r1 - l2 + gap, p[1] + m1 - m2]);
+}
+function twoTris(R) {
+  const L = lengths(R, R.pick(K_ALL.filter((k) => k.p / k.q <= 2.5)));
+  if (!L) return null;
+  const s = Math.max(...L.big), small = triangle(L.small).map((p) => [p[0] / s, p[1] / s]), big = triangle(L.big).map((p) => [p[0] / s, p[1] / s]);
+  const centred = (q) => { const c = [0, 1].map((k) => q.reduce((a, p) => a + p[k], 0) / 3); return q.map((p) => [p[0] - c[0], p[1] - c[1]]); };
+  const t1 = R.int(-3, 3) * 15 * Math.PI / 180, t2 = R.int(-3, 3) * 15 * Math.PI / 180, mirror = R.bool();
+  let one = centred(small).map((p) => turn(p, t1)), two = centred(big).map((p) => turn(mirror ? [-p[0], p[1]] : p, t2));
+  if (R.bool()) [one, two] = [two, one];
+  const placed = sideBySide(one, two, 0.45), names = pickNames(R, 6), n1 = names.slice(0, 3), n2 = names.slice(3);
+  const pts = {};
+  n1.forEach((q, i) => { pts[q] = one[i]; }); n2.forEach((q, i) => { pts[q] = placed[i]; });
+  const facts = {}, angles = [];
+  for (let i = 0; i < 3; i++) {
+    const x = Ang(n1[i], [n1[(i + 1) % 3], n1[(i + 2) % 3]]), y = Ang(n2[i], [n2[(i + 1) % 3], n2[(i + 2) % 3]]);
+    facts[`a${i}`] = { ...G(x, y), mark: { arcs: i + 1, color: i + 1 } }; angles.push(x, y);
+  }
+  const figure = { points: pts, lines: [], segs: [0, 1, 2].flatMap((i) => [n1[i] + n1[(i + 1) % 3], n2[i] + n2[(i + 1) % 3]]), angles, tris: [n1, n2] };
+  return { figure, facts, marks: ['a0', 'a1', 'a2'], polys: [n1, n2], names: [`△${n1.join('')}`, `△${n2.join('')}`] };
+}
+function twoRects(R) {
+  const near = R.pick([1.15, 1.25, 1.35]), far = R.pick([2.5, 2.8, 3.1]), h1 = 1, h2 = R.pick([0.55, 0.7, 0.85]);   // almost a square beside a long thin one
+  const rect = (w, h) => [[0, 0], [w, 0], [w, h], [0, h]];
+  let one = rect(near * h1, h1), two = rect(far * h2, h2);
+  if (R.bool()) [one, two] = [two, one];
+  const placed = sideBySide(one, two, 0.7), [n1, n2] = R.shuffle(QUAD_SETS).slice(0, 2), pts = {};
+  n1.forEach((q, i) => { pts[q] = one[i]; }); n2.forEach((q, i) => { pts[q] = placed[i]; });
+  const facts = {}, angles = [];
+  for (let i = 0; i < 4; i++) {
+    const x = Ang(n1[i], [n1[(i + 3) % 4], n1[(i + 1) % 4]]), y = Ang(n2[i], [n2[(i + 3) % 4], n2[(i + 1) % 4]]);
+    facts[`r${i}`] = { ...G(x, y, { right: true }), mark: { right: true, color: 1 } }; angles.push(x, y);
+  }
+  const figure = { points: pts, lines: [], segs: [0, 1, 2, 3].flatMap((i) => [n1[i] + n1[(i + 1) % 4], n2[i] + n2[(i + 1) % 4]]), angles };
+  return { figure, facts, marks: ['r0', 'r1', 'r2', 'r3'], polys: [n1, n2], names: [n1.join(''), n2.join('')] };
+}
+const APART_PX = 30;                                   // two letters of different shapes at least this far apart: the shapes read apart
+function apart(L, [p1, p2]) {
+  const at = Object.fromEntries(L.labels.map((l) => [l.p, l]));
+  return p1.every((a) => p2.every((b) => Math.hypot(at[a].x - at[b].x, at[a].y - at[b].y) >= APART_PX));
+}
+function s5(R) {
+  const yes = R.bool();
+  for (let i = 0; i < 200; i++) {
+    const d = yes ? twoTris(R) : twoRects(R);
+    if (!d) continue;
+    const L = layout(d.figure);
+    if (labelErrors(L).length || cramped(d.figure).length || !apart(L, d.polys)) continue;
+    return { kind: 'S5', text: { k: 'w.S5', vars: { p1: d.names[0], p2: d.names[1] } }, figure: d.figure, facts: d.facts, marks: d.marks, reveal: [],
+      polys: d.polys, input: 'chips', options: [{ id: 'yes', label: T['w.S5.yes'] }, { id: 'no', label: T['w.S5.no'] }],
+      answer: yes ? 'yes' : 'no', why: { k: `w.S5.why.${yes ? 'yes' : 'no'}`, vars: {} } };
+  }
+  throw new Error('warm-up S5: no drawing with room for its letters');
+}
+
+const MAKE = { W1: w1, W2: w2, W3: w3, W4: w4, W5: w5, W6: w6, W7: w7, S1: s1, S2: s2, S3: s3, S4: s4, S5: s5 };
 /** One warm-up task of a kind. */
 export function makeTask(R, kind) {
   if (!MAKE[kind]) throw new Error(`warm-up: no kind ${kind}`);
   return MAKE[kind](R);
 }
-/** Is this the task's answer? (chips: the option id; a tap: the same set of parts, in any order) */
+/** Is this the task's answer? (chips: the option id; a tap: the same set of parts, in any order; the keypad: the
+    number, as typed or as a number — a format slip such as "06" or "." is never right) */
 export function checkTask(task, answer) {
+  if (task.input === 'keypad') {
+    const v = typeof answer === 'number' ? answer : typeof answer === 'string' ? numberOf(answer).v : undefined;
+    return Number.isFinite(v) && Math.abs(v - task.answer) < 1e-9;
+  }
   if (task.input === 'tap') {
     if (!Array.isArray(answer)) return false;
     const a = [...new Set(answer)].sort(), b = [...task.tap.need].sort();

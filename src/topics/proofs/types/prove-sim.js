@@ -37,6 +37,6 @@ function remake(x) {
 
 export default {
   id: 'prove-sim', n: 8, name: T['type.prove-sim'], button: `8. ${T['type.prove-sim']}`,
-  warm: [], templates: TEMPLATES, make, remake,
+  warm: ['S1', 'S2', 'W2'], templates: TEMPLATES, make, remake,
   subject: 'similarity', label: T['type.prove-sim'], shape: 'prove', live: true,
 };

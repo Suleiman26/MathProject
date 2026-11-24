@@ -21,13 +21,17 @@ export const RULES = {
   NEAR_PX: 22,              // a tap this close to two parts opens the chooser
 };
 
-/** Error kinds (§8), in tie-break order. */
-export const ERR = ['goal-as-known', 'looks-equal', 'too-early', 'wrong-theorem', 'wrong-matching', 'wrong-source', 'wrong-word', 'false-statement'];
+/** Error kinds (§8; similarity 2026-11-23 §7.8), in tie-break order. */
+export const ERR = ['goal-as-known', 'looks-equal', 'too-early', 'wrong-theorem', 'wrong-matching', 'wrong-source', 'wrong-word', 'false-statement',
+  'ratio-flip', 'non-matching-sides', 'calc', 'wrong-parallel-reason'];
 /** The warm-up kind each error kind sends the student to. */
 export const ERR_WARM = {
   'goal-as-known': 'W6', 'too-early': 'W6', 'looks-equal': 'W2', 'wrong-theorem': 'W4',
   'wrong-matching': 'W5', 'wrong-source': 'W3', 'wrong-word': 'W7', 'false-statement': 'W1',
+  'ratio-flip': 'S2', 'non-matching-sides': 'S3', calc: 'S4', 'wrong-parallel-reason': 'S1',
 };
+/* the same skill in the other subject's warm-up (a level whose list lacks the first one: vertex order in a similarity is S2) */
+const WARM_TWIN = { W5: 'S2', S2: 'W5' };
 
 /* rec = { n, solo, helped, missed, filled, variant, tpl, day } */
 export const isClean = (rec) => rec.filled === 0 && rec.n > 0 && rec.solo / rec.n >= RULES.CLEAN_SOLO;
@@ -76,27 +80,31 @@ function cleanType(x) {
   };
 }
 const copy = (ts) => cleanType(ts);
-/* a rescue card waiting for the next start: { step:1, warm:'W1'…'W7' } | { step:2 } | { step:3 } */
+/* a rescue card waiting for the next start: { step:1, warm:'W1'…'W7' | 'S1'…'S5' } | { step:2 } | { step:3 } */
 function cleanQueued(q) {
   if (!isObj(q)) return null;
-  if (q.step === 1) return /^W[1-7]$/.test(q.warm) ? { step: 1, warm: q.warm } : null;
+  if (q.step === 1) return /^(W[1-7]|S[1-5])$/.test(q.warm) ? { step: 1, warm: q.warm } : null;
   return q.step === 2 || q.step === 3 ? { step: q.step } : null;
 }
 
-/* the warm-up kind for the commonest error at this level (tie → the earlier kind; none → W1) */
-function warmFor(errs) {
+/* the warm-up kind for the commonest error at this level (tie → the earlier kind; none → W1). With the level's own
+   warm-up kinds (`kinds`), only an error whose kind (or its twin) the level has counts; none → the level's first kind. */
+function warmFor(errs, kinds = null) {
+  const has = (k) => !kinds || kinds.includes(k);
+  const kindOf = (e) => (has(ERR_WARM[e]) ? ERR_WARM[e] : has(WARM_TWIN[ERR_WARM[e]]) ? WARM_TWIN[ERR_WARM[e]] : null);
   let best = null;
-  for (const k of ERR) if ((errs[k] || 0) > 0 && (!best || errs[k] > errs[best])) best = k;
-  return best ? ERR_WARM[best] : 'W1';
+  for (const k of ERR) if ((errs[k] || 0) > 0 && kindOf(k) && (!best || errs[k] > errs[best])) best = k;
+  return best ? kindOf(best) : kinds && kinds.length ? kinds[0] : 'W1';
 }
 
 /**
  * Record one finished (or left) proof. Pure: returns a new state.
  * → { ts, event: null | 'level-up' | 'type-done', rescue: null | { step:1, warm } | { step:2 } | { step:3 } }
+ * `kinds` = the level's warm-up kinds (type.warm): step 1 then always names a warm-up the level has.
  * A rescue is also kept on the type (ts.queued) until the next proof starts (takeRescue), so a proof left
  * in the middle, or "סיום" on the end card, never uses up a stage of the ladder without showing it (review M3).
  */
-export function record(ts0, level, rec, { counted = true, errs = {}, filledReason = null } = {}) {
+export function record(ts0, level, rec, { counted = true, errs = {}, filledReason = null, kinds = null } = {}) {
   const ts = copy(ts0);
   ts.done += 1;
   ts.lastHelp = rec.n - rec.solo;
@@ -125,7 +133,7 @@ export function record(ts0, level, rec, { counted = true, errs = {}, filledReaso
   if (isClean(r)) ts.resc.bad = 0; else ts.resc.bad += 1;
   if (ts.count[level] === RULES.STUCK) rescue = { step: 3 };
   else if (ts.resc.bad >= RULES.RESCUE_STREAK) {
-    if (ts.resc.stage === 0) { rescue = { step: 1, warm: warmFor(ts.errs) }; ts.resc.stage = 1; }
+    if (ts.resc.stage === 0) { rescue = { step: 1, warm: warmFor(ts.errs, Array.isArray(kinds) && kinds.length ? kinds : null) }; ts.resc.stage = 1; }
     else { rescue = { step: 2 }; ts.resc.stage = 2; }
     ts.resc.bad = 0; ts.force = 'A';
   }

@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { seeded, makeR } from '../new/core.js';
 import { TYPES, typeById } from './types/index.js';
-import { SUBJECTS, subjectOf, levelNo, typesOf, prevInSubject, canShow, lawsOf, demoOf } from './subjects.js';
+import { SUBJECTS, subjectOf, levelNo, typesOf, prevInSubject, stepBack, canShow, lawsOf, demoOf } from './subjects.js';
 import { shapeOf, present, decisionsOf, acceptedReasons, roleOf, congOf, measure } from './core.js';
 import { layout } from './figure-core.js';
 const lettersOf = (st) => (st.kind === 'seg' ? [...st.x, ...st.y] : [st.x.v, ...st.x.r, st.y.v, ...st.y.r]);
@@ -59,6 +59,15 @@ test('subjectOf, levelNo, typesOf, prevInSubject', () => {
   assert.deepEqual(typesOf('congruence').map((t) => t.id), CONG); assert.equal(typesOf('similarity').length, 4); assert.deepEqual(typesOf('nope'), []);
   assert.equal(prevInSubject('read-given'), null);
   assert.equal(prevInSubject('prove-congruence').id, 'congruent-parts'); assert.equal(prevInSubject('nope'), null);
+});
+/* spec 2026-11-23 §9: rescue step 3 ("go back one") stays inside the subject; from a subject's first level it is that level's warm-up */
+test('rescue step 3: the level before in the same subject, from the first level its warm-up', () => {
+  assert.deepEqual(stepBack('prove-sim'), { type: 'sim-side' });
+  assert.deepEqual(stepBack('sim-side'), { type: 'sim-parts' });
+  assert.deepEqual(stepBack('sim-parts'), { warm: true });             // never the other subject's last level (the flat TYPES list)
+  assert.deepEqual(stepBack('read-given'), { warm: true });
+  assert.deepEqual(stepBack('then-conclusion'), { type: 'prove-congruence' });
+  assert.equal(stepBack('nope'), null);
 });
 test('canShow: live, or the review frame, or a local / preview host', () => {
   const off = { live: false }, on = { live: true };

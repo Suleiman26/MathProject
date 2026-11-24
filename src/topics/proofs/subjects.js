@@ -70,6 +70,15 @@ export const prevInSubject = (typeId) => {
   return i > 0 ? typeById(s.types[i - 1]) : null;
 };
 
+/** Where rescue step 3 ("go back one", spec 2026-11-23 §9) sends the student: the level before in the same subject
+    ({ type }), from a subject's first level that level's warm-up ({ warm:true }); null when there is neither. */
+export function stepBack(typeId) {
+  const prev = prevInSubject(typeId);
+  if (prev) return { type: prev.id };
+  const t = byType(typeId) ? typeById(typeId) : null;
+  return t && (t.warm || []).length ? { warm: true } : null;
+}
+
 /* Hidden subjects/levels still show where Abed and Sulaiman look: localhost, the admin review frame, and
    mathix branch previews on Abed's Vercel team. Never on the live site or anywhere else. */
 const PREVIEW = /^mathix-[a-z0-9-]+-abed-shalgams-projects\.vercel\.app$/;

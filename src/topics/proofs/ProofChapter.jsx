@@ -10,8 +10,8 @@ import { useAccount, accountApi } from '@/lib/account';
 import { present, decisionsOf } from './core.js';
 import { snapshot, restore } from './session.js';
 import { RULES, OPEN_KEY, load, save, typeState, whoKey, adoptGuest, seedFromServer, record, variantFor, walked, warmed, useForce as clearForce, dots, lessHelp, leftRecord, takeRescue } from './mastery.js';
-import { TYPES, TABS, STAGES } from './types/index.js';
-import { typesOf, levelNo, prevInSubject } from './subjects.js';
+import { TYPES, TABS, STAGES, typeById } from './types/index.js';
+import { typesOf, levelNo, stepBack } from './subjects.js';
 import { T, fill } from './texts.js';
 import ProofScreen from './ProofScreen.jsx';
 import Warmup from './Warmup.jsx';
@@ -50,7 +50,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const [state, setState] = useState(() => load(store(), firstWho()));
   const stateRef = useRef(state), whoRef = useRef(who);
   const ts = typeState(state, type.id);
-  // a level without warm-up kinds yet (the similarity levels until their warm-up is built) has no חימום tab
+  // a level without warm-up kinds (none today; kept as a safety for a level added later) has no חימום tab
   const hasWarm = (type.warm || []).length > 0;
   // a first visit opens on the warm-up tab (it never blocks: the student can tap מודרך and start there)
   const [tab, setTab] = useState(() => (ts.done > 0 || ts.walked || ts.warm.done || !hasWarm ? Math.max(1, Math.min(3, ts.level)) : 0));
@@ -164,7 +164,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     const s = cur.s, decided = [...s.decisions, ...(s.cur && s.cur.tainted ? [{ state: 'missed' }] : [])];
     const rec = leftRecord({ n: decisionsOf(s.view), decided, variant: cur.o.variant, tpl: s.problem.template, day: today() });
     if (!rec) return;
-    const out = record(typeState(stateRef.current, type.id), cur.o.level, rec, { counted: true, errs: s.errs });
+    const out = record(typeState(stateRef.current, type.id), cur.o.level, rec, { counted: true, errs: s.errs, kinds: type.warm });
     out.ts.done = Math.max(0, out.ts.done - 1);                       // left, not completed
     const next = { ...stateRef.current, types: { ...stateRef.current.types, [type.id]: out.ts } };
     stateRef.current = next; save(store(), whoRef.current, next);
@@ -186,7 +186,7 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
     let out;
     if (o.walk) out = { ts: t, event: null, rescue: null };
     else if (!o.counted) { out = record(t, o.level, rec, { counted: false }); if (o.level === 1 && o.variant === 'A') out.ts = walked(out.ts); }
-    else out = record(t, o.level, rec, { counted: true, errs: r.errs, filledReason: r.filledReason });
+    else out = record(t, o.level, rec, { counted: true, errs: r.errs, filledReason: r.filledReason, kinds: type.warm });
     putType(out.ts);
     live.current = null; dropOpen();
     sitting.current += 1;
@@ -202,7 +202,8 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   const level = Math.min(3, ts.level), passed = ts.level >= 4;
   const began = ts.done > 0 || ts.walked || ts.warm.done;
   const lockedNext = level < 3 ? level + 1 : null;
-  const prev = prevInSubject(type.id);                              // rescue step 3 stays inside the subject
+  // rescue step 3 ("go back one") stays inside the subject: the level before, from the subject's first level its warm-up
+  const back = stepBack(type.id), prev = back && back.type ? typeById(back.type) : null;
 
   const tabs = (
     <div className="sub-tabs prf-tabs">
@@ -237,9 +238,11 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
   }
 
   if (rescue) {
-    // no warm-up kinds on this level: the warm-up step of the rescue ladder becomes the worked example
-    const step = rescue.step === 1 && !hasWarm ? 2 : rescue.step;
+    // no warm-up kinds on this level: the warm-up step of the rescue ladder becomes the worked example (and so does
+    // "go back one" when there is neither a level before nor a warm-up)
+    const step = (rescue.step === 1 && !hasWarm) || (rescue.step === 3 && !back) ? 2 : rescue.step;
     const go = () => (step === 1 ? startWarm({ only: rescue.warm || 'W1', then: 'proof' }) : step === 2 ? startProof(level, { walk: true }) : startProof(level));
+    const backTo = () => (prev ? onGoType && onGoType(prev.id) : startWarm({ then: 'proof' }));
     return frame(tabs, (
       <div className="content prf-ch prf-ch-card">
         <div className="prf-rescue">
@@ -250,10 +253,10 @@ export default function ProofChapter({ type, path, onOpen, onGoType, devRescue, 
             {step === 3 && fill('ui.rescue3', { prev: prev ? prev.label : STAGES[0] })}
           </p>
           <div className="prf-rescue-b">
-            {step === 3 && prev
-              ? <button type="button" className="prf-go" onClick={() => onGoType && onGoType(prev.id)}>{fill('lbl.levelN', { n: levelNo(prev.id) })} · {prev.label}</button>
+            {step === 3
+              ? <button type="button" className="prf-go" onClick={backTo}>{prev ? `${fill('lbl.levelN', { n: levelNo(prev.id) })} · ${prev.label}` : STAGES[0]}</button>
               : <button type="button" className="prf-go" onClick={go}>{step === 2 ? T['ui.rescue2Btn'] : T['btn.go']}</button>}
-            {step === 3 && prev && <button type="button" className="prf-go is-quiet" onClick={go}>{T['btn.continue']}</button>}
+            {step === 3 && <button type="button" className="prf-go is-quiet" onClick={go}>{T['btn.continue']}</button>}
           </div>
         </div>
       </div>

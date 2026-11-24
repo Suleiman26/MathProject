@@ -45,6 +45,6 @@ function remake(x) {
 
 export default {
   id: 'sim-side', n: 7, name: T['type.sim-side'], button: `7. ${T['type.sim-side']}`,
-  warm: [], templates: TEMPLATES, make, remake,
+  warm: ['S2', 'S3', 'S4'], templates: TEMPLATES, make, remake,
   subject: 'similarity', label: T['type.sim-side'], shape: 'side', live: true,
 };

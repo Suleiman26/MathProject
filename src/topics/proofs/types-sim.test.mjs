@@ -19,13 +19,14 @@ const SHAPES = ['parts', 'side', 'prove', 'then'];
 const half = (v) => Number.isInteger(v * 2);
 const STAGES = [[1, 'A'], [1, 'B'], [2, 'A'], [2, 'B'], [3, 'A'], [3, 'B']];
 
-test('inventory: four similarity levels with the stored keys, shapes, subject, no warm-up yet, live', () => {
+const WARM = [['S5', 'S2', 'S3', 'W2'], ['S2', 'S3', 'S4'], ['S1', 'S2', 'W2'], ['S1', 'S3', 'S4', 'W2']];   // spec 2026-11-23 §7.7
+test('inventory: four similarity levels with the stored keys, shapes, subject, their warm-up (Task 13), live', () => {
   SIM.forEach((id, i) => {
     const t = typeById(id);
     assert.ok(t, id);
     assert.equal(t.button, KEYS[i]); assert.equal(t.n, 6 + i); assert.equal(t.label, T[`type.${id}`]); assert.equal(t.name, t.label);
     assert.equal(t.shape, SHAPES[i]); assert.equal(shapeOf({ type: id }), SHAPES[i]); assert.equal(t.subject, 'similarity');
-    assert.deepEqual(t.warm, []); assert.equal(t.live, true);
+    assert.deepEqual(t.warm, WARM[i]); assert.equal(t.live, true);
     assert.ok(T[`about.${id}`], id);
     for (const k of [`type.${id}`, `about.${id}`]) assert.ok(NEW_DRAFTS.includes(k), k);
   });

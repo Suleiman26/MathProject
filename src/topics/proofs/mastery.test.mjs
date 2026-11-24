@@ -3,7 +3,7 @@
    A/B variants, the four dots, and device storage that never throws (Review Focus 1, 4). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { warmed, RULES, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord, takeRescue } from './mastery.js';
+import { warmed, RULES, ERR, ERR_WARM, isClean, isPerfect, emptyType, record, variantFor, walked, useForce, dots, lessHelp, load, save, typeState, adoptGuest, seedFromServer, whoKey, KEY, OPEN_KEY, leftRecord, takeRescue } from './mastery.js';
 
 const rec = (n, solo, o = {}) => ({ n, solo, helped: 0, missed: n - solo - (o.filled || 0), filled: o.filled || 0, variant: 'B', tpl: o.tpl || '3-X-SAS', day: 1 });
 const run = (ts, level, recs, opt) => { let out; for (const r of recs) { out = record(ts, level, r, opt); ts = out.ts; } return out; };
@@ -149,4 +149,30 @@ test('server seeding restores a finished type: 3 clean proofs ("win") at רמה 
   assert.equal(seedFromServer({ v: 1, types: {} }, [row(2)], TYPES).types['prove-congruence'].level, 3);
   assert.equal(seedFromServer({ v: 1, types: {} }, [row('3')], TYPES).types['prove-congruence'].level, 3);
   assert.equal(seedFromServer({ v: 1, types: {} }, [{ ...row(5), chapter: '3. הוכחת חפיפה › רמה 2' }], TYPES).types['prove-congruence'].level, 2);
+});
+
+/* Task 13 (spec 2026-11-23 §7.8): the similarity error kinds feed the rescue ladder with the similarity warm-up */
+test('similarity errors: ERR order, ERR_WARM, and a calculation slip twice → warm-up S4', () => {
+  assert.deepEqual(ERR.slice(-4), ['ratio-flip', 'non-matching-sides', 'calc', 'wrong-parallel-reason']);
+  assert.deepEqual(['ratio-flip', 'non-matching-sides', 'calc', 'wrong-parallel-reason'].map((k) => ERR_WARM[k]), ['S2', 'S3', 'S4', 'S1']);
+  const N = rec(8, 4);
+  let o = record({ ...emptyType(), level: 2 }, 2, N, { errs: { calc: 2 } });
+  assert.equal(o.rescue, null);
+  o = record(o.ts, 2, N, { errs: { calc: 2 } });
+  assert.deepEqual(o.rescue, { step: 1, warm: 'S4' }); assert.deepEqual(o.ts.queued, { step: 1, warm: 'S4' });
+  // a level's own warm-up list: an error whose kind the level has not (W5 is a congruence task) goes to the level's twin or its first kind
+  o = record({ ...emptyType(), level: 2 }, 2, N, { errs: { 'wrong-matching': 3 }, kinds: ['S1', 'S2', 'W2'] });
+  o = record(o.ts, 2, N, { kinds: ['S1', 'S2', 'W2'] }); assert.deepEqual(o.rescue, { step: 1, warm: 'S2' });
+  o = record({ ...emptyType(), level: 2 }, 2, N, { errs: { 'false-statement': 1, calc: 1 }, kinds: ['S1', 'S3', 'S4', 'W2'] });
+  o = record(o.ts, 2, N, { kinds: ['S1', 'S3', 'S4', 'W2'] }); assert.deepEqual(o.rescue, { step: 1, warm: 'S4' });
+  o = record({ ...emptyType(), level: 2 }, 2, N, { kinds: ['S5', 'S2', 'S3', 'W2'] });
+  o = record(o.ts, 2, N, { kinds: ['S5', 'S2', 'S3', 'W2'] }); assert.deepEqual(o.rescue, { step: 1, warm: 'S5' });
+});
+test('a queued rescue: an old W3 card still loads, the S kinds load, anything else is dropped', () => {
+  const back = (q) => typeState({ v: 1, types: { t: { ...emptyType(), queued: q } } }, 't').queued;
+  assert.deepEqual(back({ step: 1, warm: 'W3' }), { step: 1, warm: 'W3' });
+  for (const k of ['S1', 'S2', 'S3', 'S4', 'S5']) assert.deepEqual(back({ step: 1, warm: k }), { step: 1, warm: k });
+  for (const k of ['S0', 'S6', 'S', 'W8']) assert.equal(back({ step: 1, warm: k }), null);
+  const errs = typeState({ v: 1, types: { t: { ...emptyType(), errs: { calc: 2, 'ratio-flip': 1, nope: 4 } } } }, 't').errs;
+  assert.deepEqual(errs, { 'ratio-flip': 1, calc: 2 });
 });

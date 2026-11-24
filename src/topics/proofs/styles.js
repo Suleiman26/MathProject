@@ -397,7 +397,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 }
 
 /* ── warm ── */
-#root .prf-warm-mid{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;padding:10px 16px;text-align:start;animation:prf-row .25s var(--ease-out) backwards}
+#root .prf-warm-mid{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start;gap:8px;padding:10px 16px;text-align:start;animation:prf-row .25s var(--ease-out) backwards}
+/* centred while it fits; when the answer sheet grows, it scrolls from its top (centring would cut the top off, unreachable) */
+#root .prf-warm-mid>:first-child{margin-top:auto}
+#root .prf-warm-mid>:last-child{margin-bottom:auto}
 #root .prf-warm-k{padding:2px 10px;border-radius:999px;background:var(--a-50);color:var(--a-800);font-size:.78rem;font-weight:600;line-height:1.5}
 #root .prf-warm-q{font-size:1.16rem;font-weight:600;line-height:1.45;color:var(--ink);text-wrap:balance}
 #root .prf-warm-st{font-size:1.55rem;line-height:1.3;color:var(--ink)}
@@ -409,6 +412,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff7ed;color:#1c1b19;mi
 #root .prf-warm-picked{flex:1;min-width:0;display:flex;align-items:center;gap:6px;font-size:1.05rem}
 #root .prf-warm-picked .prf-slot{height:26px}
 #root .prf-warm-tap .prf-go{flex:0 0 auto}
+/* S4: the proportion stands where the drawing would be (no drawing to solve a proportion) */
+#root .prf-warm-eq{display:flex;align-items:center;justify-content:center;font-size:clamp(1.9rem,9vw,2.6rem);color:var(--ink);animation:prf-row .25s var(--ease-out) backwards}
+#root .prf-warm-eq .prf-frac-t,#root .prf-warm-eq .prf-frac-b{min-width:1.7em}
+#root .prf-warm-x{font-weight:700;color:var(--a-700)}
+#root .prf-warm-x.is-found{color:var(--ok-700)}
+#root .prf-warm .prf-kp{margin-top:2px}
+@media (prefers-reduced-motion: reduce){#root .prf-warm-eq{animation:none}}
 
 /* ── rescue ── */
 #root .prf-rescue{display:flex;flex-direction:column;gap:10px;width:100%;max-width:440px;margin:0 auto;padding:22px 20px;border-radius:22px;background:var(--surface);box-shadow:var(--sh-2);text-align:center}
