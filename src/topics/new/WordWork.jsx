@@ -7,7 +7,7 @@
    is never counted as an answer in the stats (src/lib/mp-runtime.js) and the check button below is
    never pressed by it. data-kp-scope: the phone keypad's ✓ presses this panel's own button. */
 import React, { useState } from 'react';
-import { checkEquation, checkTable, parseEquation, toM } from './work';
+import { checkEquation, checkSolveStep, checkTable, parseEquation, rootOf, toM } from './work';
 import { M, Rich } from './rich';
 
 const COLS = [['מהירות', 'קמ״ש'], ['זמן', 'שעות'], ['דרך', 'ק״מ']];
@@ -37,6 +37,47 @@ function EquationPad({ xs, locked }) {
         {!locked && <button type="button" className="btn nw-wk-go" data-kp-ok="" onClick={check}>בודקים</button>}
       </div>
       {p && p.ok && <div className="nw-wk-show" aria-hidden="true"><M s={`${toM(p.L)} = ${toM(p.R)}`} /></div>}
+      <Msg m={msg} />
+      {msg && msg.ok && rootOf(src) != null && <SolvePad key={src} root={rootOf(src)} locked={locked} />}
+    </div>
+  );
+}
+
+/* solving the accepted equation here, line by line (board #93, Sulaiman 2026-11-25): every line is checked
+   to stay equivalent to it; the solving ends at "x = a number". Its own data-kp-scope: the keypad's ✓ checks this line. */
+function SolvePad({ root, locked }) {
+  const [lines, setLines] = useState([]);           // the accepted lines, as rendered math
+  const [src, setSrc] = useState('');
+  const [msg, setMsg] = useState(null);
+  const done = lines.length > 0 && lines[lines.length - 1].done;
+  const max = lines.length >= 10;
+  function check() {
+    if (!src.trim()) { setMsg({ format: true, msg: 'כתבו כאן את השורה הבאה בפתרון' }); return; }
+    const r = checkSolveStep(src, root);
+    setMsg(r);
+    if (r.ok) {
+      const e = parseEquation(src);
+      setLines((ls) => [...ls, { m: `${toM(e.L)} = ${toM(e.R)}`, done: !!r.done }]);
+      setSrc('');
+    }
+  }
+  return (
+    <div className="nw-wk-solve" data-kp-scope="">
+      <p className="nw-wk-lbl"><Rich text="פותרים את המשוואה: בכל שורה עושים פעולה אחת בשני האגפים, עד [[x = …]]" /></p>
+      {lines.length > 0 && (
+        <ol className="nw-wk-lines">
+          {lines.map((l, i) => <li key={i} className={l.done ? 'is-done' : undefined}><M s={l.m} /></li>)}
+        </ol>
+      )}
+      {!done && !locked && !max && (
+        <div className="nw-wk-eqrow">
+          <input {...BOX} dir="ltr" className="nw-wk-in" value={src} maxLength={60} aria-label="השורה הבאה בפתרון"
+            placeholder={lines.length ? 'השורה הבאה' : '3x = 15'}
+            onChange={(e) => { setSrc(e.target.value); setMsg(null); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); check(); } }} />
+          <button type="button" className="btn nw-wk-go" data-kp-ok="" onClick={check}>בודקים</button>
+        </div>
+      )}
       <Msg m={msg} />
     </div>
   );

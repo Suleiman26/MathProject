@@ -134,6 +134,11 @@ export const NW_CSS = `/* ── math ── */
 #root .nw-wk-msg.is-err{background:var(--bad-50);color:var(--bad-700);border:1px solid var(--bad-200)}
 #root .nw-wk-msg.is-warn{background:var(--warn-50);color:var(--warn-800);border:1px solid var(--warn-200)}
 #root .nw-wk-msg :is(.nw-m,.nw-v){color:inherit}
+#root .nw-wk-solve{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:4px;padding-top:14px;border-top:1px dashed var(--a-200);animation:nw-wk-in 220ms cubic-bezier(.2,.8,.2,1)}
+#root .nw-wk-lines{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+#root .nw-wk-lines li{direction:ltr;text-align:center;font-size:clamp(1.1rem,4.6vw,1.3rem);padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--a-50) 55%,#fff);overflow-x:auto}
+#root .nw-wk-lines li.is-done{background:var(--ok-50);color:var(--ok-800);border:1px solid var(--ok-200);font-weight:700}
+#root .nw-wk-lines li.is-done :is(.nw-m,.nw-v){color:inherit}
 #root .nw-wk-acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 #root .nw-wk-tablewrap{max-width:100%;overflow-x:auto}
 #root .nw-wk-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;table-layout:fixed}
@@ -158,7 +163,7 @@ export const NW_CSS = `/* ── math ── */
   #root .nw-wk-table thead th{font-size:.82rem}
   #root .nw-wk-table tbody th{font-size:.8rem}
 }
-@media (prefers-reduced-motion:reduce){#root .nw-wk-body{animation:none}}
+@media (prefers-reduced-motion:reduce){#root :is(.nw-wk-body,.nw-wk-solve){animation:none}}
 
 /* ── drawings ── */
 #root .nw-figbox{margin:14px auto 0;display:grid;justify-items:center;gap:6px;max-width:100%}

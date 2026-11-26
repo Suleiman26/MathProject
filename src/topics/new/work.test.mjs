@@ -83,3 +83,48 @@ test('motion stories have the table, the others do not', () => {
     else assert.equal(q.work.table, null);
   }
 });
+
+// Board #93 (2026-11-25): solving the accepted equation line by line
+import { rootOf, checkSolveStep } from './work.js';
+
+test('every story: the accepted equation is solved step by step to x = its root', () => {
+  let n = 0;
+  for (let seed = 0; seed < 30; seed++) {
+    const next = deck(wordsLinear);
+    for (let i = 0; i < 30; i++) {
+      const q = next();
+      const eq = refEquation(q);
+      const root = rootOf(eq);
+      assert.ok(root != null, `${q.gen}: "${eq}" has a root`);
+      assert.ok(q.work.xs.some((v) => Math.abs(v - root) < 1e-7), `${q.gen}: root ${root} is a story quantity`);
+      const k = 3, c = Math.round(root * k * 1e6) / 1e6;
+      const mid = checkSolveStep(`${k}x = ${c}`, root);
+      assert.equal(mid.ok, true, `${q.gen}: ${k}x = ${c} (${mid.msg})`);
+      assert.ok(!mid.done, 'a middle line does not end the solving');
+      assert.equal(checkSolveStep(`${k}x = ${c} + 1`, root).ok, false, 'a wrong line is rejected');
+      const end = checkSolveStep(`x = ${Math.round(root * 1e6) / 1e6}`, root);
+      assert.equal(end.ok && end.done, true, `${q.gen}: x = root ends it`);
+      const flip = checkSolveStep(`${Math.round(root * 1e6) / 1e6} = x`, root);
+      assert.equal(flip.ok && flip.done, true, 'root = x also ends it');
+      assert.equal(checkSolveStep(`x = ${root + 1}`, root).ok, false, 'a wrong final value is rejected');
+      n++;
+    }
+  }
+  assert.ok(n >= 900);
+});
+
+test('solving lines: formats and traps', () => {
+  const root = rootOf('3x + 5 = 20');
+  assert.equal(root, 5);
+  assert.equal(checkSolveStep('3x = 15', root).ok, true);
+  assert.equal(checkSolveStep('3x = 25', root).ok, false);
+  assert.equal(checkSolveStep('15 = 15', root).format, true);       // x gone, numbers only
+  assert.equal(checkSolveStep('x - x = 0', root).ok, false);        // identity
+  assert.equal(checkSolveStep('x*x = 25', root).ok, false);         // not linear
+  assert.equal(checkSolveStep('x = 15/3', root).done, undefined);   // still arithmetic to do
+  assert.equal(checkSolveStep('x = 15/3', root).ok, true);
+  assert.equal(checkSolveStep('x = 5', root).done, true);
+  assert.equal(checkSolveStep('3x = ', root).format, true);
+  assert.equal(rootOf('x*x = 4'), null);
+  assert.equal(rootOf('x/4 + 2 = 5'), 12);
+});

@@ -50,9 +50,51 @@ export function checkEquation(src, xs) {
     return { ok: false, msg: 'המשוואה נכונה לכל [[x]], ולכן אי אפשר למצוא ממנה את [[x]]. בדקו שהשתמשתם בנתונים מהסיפור.' };
   }
   if (xs.some((c) => { const v = f(c); return Number.isFinite(v) && close(v, 0); })) {
-    return { ok: true, msg: 'המשוואה מתאימה לסיפור. עכשיו פתרו אותה וכתבו למטה את התשובה הסופית.' };
+    return { ok: true, msg: 'המשוואה מתאימה לסיפור. עכשיו פתרו אותה כאן, שורה אחרי שורה, וכתבו למטה את התשובה הסופית.' };
   }
   return { ok: false, msg: 'המשוואה עדיין לא מתאימה לסיפור. בדקו מה מסמן [[x]], ושכל נתון מהסיפור נמצא במקום הנכון.' };
+}
+
+/* ── solving the equation the student wrote (board #93, Sulaiman 2026-11-25: "let them also solve the
+   equation once they write it correctly"). Every line must stay equivalent to that equation: linear
+   with the same root. The solving ends at "x = a number". ── */
+
+/** f(x) = L − R as a·x + b, or null when it is not linear (or not finite) */
+export function linearOf(L, R) {
+  const f = (x) => evalAst(L, x) - evalAst(R, x);
+  const b = f(0), a = f(1) - b;
+  if (![a, b].every(Number.isFinite)) return null;
+  if (!PROBES.every((x) => { const v = f(x); return Number.isFinite(v) && close(v, a * x + b); })) return null;
+  return { a, b };
+}
+
+/** The root of the student's accepted equation, or null when it cannot be solved step by step */
+export function rootOf(src) {
+  const r = parseEquation(src);
+  if (!r.ok) return null;
+  const lin = linearOf(r.L, r.R);
+  if (!lin || close(lin.a, 0)) return null;
+  const x = -lin.b / lin.a;
+  return Number.isFinite(x) ? x : null;
+}
+
+const plainNum = (n) => n.t === 'n' || (n.t === 'neg' && n.a.t === 'n') || (n.t === 'grp' && plainNum(n.a));
+const fmt = (x) => String(Math.round(x * 1e6) / 1e6);
+
+/** One solving line → { ok, done?, format?, msg } */
+export function checkSolveStep(src, root) {
+  const r = parseEquation(src);
+  if (!r.ok) return { ok: false, format: true, msg: r.msg };
+  const { L, R } = r;
+  if (!hasX(L) && !hasX(R)) return { ok: false, format: true, msg: 'בכל שורה של הפתרון נשאר הנעלם [[x]], עד שמגיעים ל-[[x = …]]' };
+  const lin = linearOf(L, R);
+  if (!lin) return { ok: false, msg: 'השורה הזאת כבר לא משוואה כמו שלכם. בדקו את הפעולה שעשיתם.' };
+  if (close(lin.a, 0)) return { ok: false, msg: 'ה-[[x]] נעלם מהמשוואה. בדקו את הפעולה שעשיתם בשני האגפים.' };
+  if (!close(-lin.b / lin.a, root)) return { ok: false, msg: 'השורה הזאת לא שקולה לשורה הקודמת. בדקו שעשיתם את אותה פעולה בשני האגפים, ואת החשבון.' };
+  if ((bareX(L) && plainNum(R)) || (bareX(R) && plainNum(L))) {
+    return { ok: true, done: true, msg: `פתרתם את המשוואה: [[x = ${fmt(root)}]]. עכשיו בדקו מה מסמן [[x]] בסיפור, וכתבו למטה את התשובה הסופית.` };
+  }
+  return { ok: true, msg: 'נכון. כתבו את השורה הבאה.' };
 }
 
 /** One row of the motion table: [speed, time, distance] as typed.
